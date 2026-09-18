@@ -1,0 +1,1012 @@
+Bạn là Senior Software Architect + Senior Android Developer,
+chịu trách nhiệm xây dựng ứng dụng marketplace C2C có tên:
+
+TẤT TẦN TẬT
+
+Slogan:
+“Mua gì cũng có – Bán gì cũng dễ”
+
+==================================================
+1. MỤC TIÊU SẢN PHẨM
+==================================================
+
+Xây dựng một marketplace nơi mọi người có thể:
+
+- Đăng bán một món hàng cực nhanh.
+- Tìm kiếm và mua hàng dễ dàng.
+- Chat trực tiếp với người bán.
+- Lưu sản phẩm yêu thích.
+- Đặt hàng.
+- Theo dõi đơn hàng.
+- Đánh giá người mua/người bán.
+- Báo cáo sản phẩm hoặc người dùng vi phạm.
+
+Triết lý UX:
+
+ĐĂNG BÁN CỰC DỄ
+TÌM HÀNG CỰC NHANH
+CHAT CỰC NHANH
+MUA BÁN AN TOÀN
+
+Ứng dụng phải ưu tiên trải nghiệm đơn giản,
+không làm giao diện marketplace quá phức tạp.
+
+==================================================
+2. KIẾN TRÚC HỆ THỐNG
+==================================================
+
+Kiến trúc tổng thể:
+
+Android App
+     |
+     v
+REST API / WebSocket
+     |
+     v
+NestJS Backend
+     |
+     +------ PostgreSQL
+     |
+     +------ Redis
+     |
+     +------ Object Storage
+     |
+     +------ OpenSearch
+     |
+     +------ Firebase FCM
+
+Website và Admin sau này cũng sử dụng cùng Backend API.
+
+KHÔNG được xây business logic riêng trong Android.
+
+Business logic quan trọng phải nằm ở Backend/API.
+
+==================================================
+3. ANDROID APP
+==================================================
+
+Ngôn ngữ:
+
+Kotlin
+
+UI:
+
+Jetpack Compose
+
+Design System:
+
+Material 3
+
+Architecture:
+
+Clean Architecture + MVVM
+
+Dependency Injection:
+
+Hilt
+
+Networking:
+
+Retrofit + OkHttp
+
+Async:
+
+Kotlin Coroutines + Flow
+
+Local database:
+
+Room
+
+Local settings:
+
+DataStore
+
+Navigation:
+
+Navigation Compose
+
+Image loading:
+
+Coil
+
+Push notification:
+
+Firebase Cloud Messaging
+
+Authentication:
+
+JWT + Refresh Token
+
+==================================================
+4. PACKAGE STRUCTURE
+==================================================
+
+Tạo project với cấu trúc:
+
+com.tattantat.app
+
+app/
+│
+├── core/
+│   ├── network/
+│   ├── database/
+│   ├── datastore/
+│   ├── ui/
+│   ├── navigation/
+│   ├── common/
+│   ├── security/
+│   └── utils/
+│
+├── data/
+│   ├── remote/
+│   ├── local/
+│   ├── repository/
+│   └── mapper/
+│
+├── domain/
+│   ├── auth/
+│   ├── user/
+│   ├── product/
+│   ├── category/
+│   ├── search/
+│   ├── favorite/
+│   ├── chat/
+│   ├── order/
+│   ├── payment/
+│   ├── shipping/
+│   ├── review/
+│   ├── notification/
+│   └── report/
+│
+└── presentation/
+    ├── auth/
+    ├── home/
+    ├── category/
+    ├── search/
+    ├── product/
+    ├── sell/
+    ├── favorite/
+    ├── chat/
+    ├── order/
+    ├── notification/
+    ├── profile/
+    └── settings/
+
+Không gom toàn bộ code vào một Activity hoặc một package.
+
+==================================================
+5. MÀU SẮC THƯƠNG HIỆU
+==================================================
+
+Tên thương hiệu:
+
+TẤT TẦN TẬT
+
+Phong cách:
+
+Modern Marketplace
+Friendly
+Simple
+Trustworthy
+Fast
+
+Tông màu chính:
+
+Primary:
+#FF6B35
+
+Secondary:
+#111827
+
+Background:
+#F8FAFC
+
+Surface:
+#FFFFFF
+
+Success:
+#16A34A
+
+Warning:
+#F59E0B
+
+Error:
+#DC2626
+
+Không sử dụng quá nhiều màu.
+
+Màu cam là màu nhận diện chính.
+
+Giao diện phải tạo cảm giác:
+
+TIN CẬY
+THÂN THIỆN
+NHANH
+HIỆN ĐẠI
+
+==================================================
+6. NAVIGATION
+==================================================
+
+Bottom Navigation gồm 5 mục:
+
+1. Trang chủ
+2. Khám phá
+3. Đăng bán
+4. Tin nhắn
+5. Cá nhân
+
+Nút “Đăng bán” phải nổi bật hơn các tab khác.
+
+==================================================
+7. CÁC MÀN HÌNH MVP
+==================================================
+
+Triển khai các màn hình sau:
+
+AUTH
+
+01. Splash
+02. Login
+03. Register
+04. OTP Verification
+
+HOME
+
+05. Home
+06. Category
+07. Search
+08. Search Result
+
+PRODUCT
+
+09. Product Detail
+10. Seller Profile
+11. Favorite
+
+SELL
+
+12. Create Product
+13. Select Category
+14. Add Product Images
+15. Edit Product
+16. My Listings
+
+CHAT
+
+17. Chat List
+18. Chat Detail
+
+ORDER
+
+19. Checkout
+20. Address
+21. Order Confirmation
+22. My Orders
+23. Order Detail
+
+PROFILE
+
+24. Profile
+25. Edit Profile
+26. My Reviews
+27. Settings
+
+OTHER
+
+28. Notifications
+29. Report Product
+30. Report User
+
+==================================================
+8. TRANG CHỦ
+==================================================
+
+Home phải có:
+
+Header:
+
+Logo Tất Tần Tật
+Search bar
+Notification icon
+
+Search:
+
+“Tìm kiếm mọi thứ bạn cần…”
+
+Banner quảng cáo
+
+Danh mục nổi bật
+
+Sản phẩm gần bạn
+
+Sản phẩm mới đăng
+
+Sản phẩm nổi bật
+
+Gợi ý cho bạn
+
+Product card cần hiển thị:
+
+Ảnh
+Tên sản phẩm
+Giá
+Địa điểm
+Thời gian đăng
+Avatar người bán
+Tên người bán
+Favorite button
+
+Không làm card quá nhiều thông tin.
+
+==================================================
+9. PRODUCT DETAIL
+==================================================
+
+Product Detail gồm:
+
+Image Gallery
+
+Tên sản phẩm
+
+Giá
+
+Tình trạng
+
+Địa điểm
+
+Thời gian đăng
+
+Mô tả
+
+Thông tin sản phẩm
+
+Người bán
+
+Rating người bán
+
+Số giao dịch
+
+Nút:
+
+“Chat với người bán”
+
+“Mua ngay”
+
+“Yêu thích”
+
+“Chia sẻ”
+
+Nếu sản phẩm không còn:
+
+“Đã bán”
+
+hoặc
+
+“Hết hàng”
+
+==================================================
+10. ĐĂNG BÁN
+==================================================
+
+Đây là tính năng QUAN TRỌNG NHẤT.
+
+Quy trình:
+
+Nhấn “Đăng bán”
+
+↓
+
+Chụp/chọn ảnh
+
+↓
+
+Chọn danh mục
+
+↓
+
+Nhập tên sản phẩm
+
+↓
+
+Nhập giá
+
+↓
+
+Chọn tình trạng
+
+↓
+
+Nhập mô tả
+
+↓
+
+Chọn vị trí
+
+↓
+
+Xem trước
+
+↓
+
+Đăng bán
+
+Tối đa hóa sự đơn giản.
+
+Không bắt người dùng nhập quá nhiều trường.
+
+Có thể tự động:
+
+- nhận diện danh mục
+- nhận diện sản phẩm
+- đề xuất tiêu đề
+- đề xuất giá
+
+ở phiên bản AI sau này.
+
+==================================================
+11. SEARCH
+==================================================
+
+Search hỗ trợ:
+
+Keyword
+Category
+Price range
+Location
+Condition
+Brand
+Sort
+
+Sort:
+
+- Liên quan nhất
+- Mới nhất
+- Giá thấp → cao
+- Giá cao → thấp
+- Gần bạn
+
+Search architecture:
+
+MVP:
+PostgreSQL
+
+Scale:
+OpenSearch
+
+==================================================
+12. CHAT
+==================================================
+
+Chat realtime.
+
+Sử dụng:
+
+WebSocket
+
+Chat hỗ trợ:
+
+TEXT
+IMAGE
+LOCATION
+PRODUCT
+ORDER
+
+Hiển thị:
+
+Online
+Last seen
+Typing indicator
+Read status
+
+Có nút:
+
+“Đề nghị mua”
+
+==================================================
+13. ORDER
+==================================================
+
+Luồng:
+
+Product Detail
+
+↓
+
+Mua ngay
+
+↓
+
+Checkout
+
+↓
+
+Chọn địa chỉ
+
+↓
+
+Chọn phương thức thanh toán
+
+↓
+
+Xác nhận
+
+↓
+
+Order Created
+
+↓
+
+Seller Confirm
+
+↓
+
+Shipping
+
+↓
+
+Delivered
+
+↓
+
+Completed
+
+↓
+
+Review
+
+Order status:
+
+PENDING
+CONFIRMED
+PREPARING
+SHIPPING
+DELIVERED
+COMPLETED
+CANCELLED
+DISPUTED
+
+==================================================
+14. DATABASE
+==================================================
+
+Backend sử dụng PostgreSQL.
+
+Đã có thiết kế Database:
+
+Users
+User Profiles
+User Addresses
+User Devices
+User Verifications
+User Blocks
+User Follows
+
+Categories
+Brands
+Attributes
+Attribute Options
+
+Products
+Product Images
+Product Attributes
+Favorites
+Search History
+
+Chats
+Messages
+
+Orders
+Order Items
+Order Status History
+Product Status History
+
+Payments
+
+Shipments
+Shipment Tracking
+
+Reviews
+Review Images
+
+Reports
+
+Notifications
+
+Promotions
+Banners
+
+Admin Users
+Admin Logs
+
+KHÔNG tự ý thay đổi database design nếu chưa giải thích
+lý do và được phê duyệt.
+
+==================================================
+15. BACKEND
+==================================================
+
+Backend:
+
+NestJS
+
+Language:
+
+TypeScript
+
+Database:
+
+PostgreSQL
+
+Cache:
+
+Redis
+
+Search:
+
+OpenSearch
+
+Realtime:
+
+WebSocket
+
+Storage:
+
+S3-compatible Object Storage
+
+Authentication:
+
+JWT + Refresh Token
+
+Backend modules:
+
+auth
+users
+products
+categories
+brands
+search
+favorites
+chat
+orders
+payments
+shipping
+reviews
+notifications
+reports
+promotions
+admin
+
+==================================================
+16. API DESIGN
+==================================================
+
+REST API:
+
+/api/v1/auth
+/api/v1/users
+/api/v1/products
+/api/v1/categories
+/api/v1/brands
+/api/v1/search
+/api/v1/favorites
+/api/v1/chats
+/api/v1/messages
+/api/v1/orders
+/api/v1/payments
+/api/v1/shipments
+/api/v1/reviews
+/api/v1/notifications
+/api/v1/reports
+/api/v1/promotions
+
+Tất cả API phải version:
+
+/api/v1/...
+
+Response format thống nhất:
+
+{
+  "success": true,
+  "data": {},
+  "message": null,
+  "meta": {}
+}
+
+Error:
+
+{
+  "success": false,
+  "data": null,
+  "message": "Error message",
+  "errorCode": "ERROR_CODE"
+}
+
+==================================================
+17. SECURITY
+==================================================
+
+Bắt buộc:
+
+- Password hash
+- JWT access token
+- Refresh token rotation
+- Rate limiting
+- Input validation
+- SQL injection protection
+- XSS protection
+- File upload validation
+- Image MIME validation
+- API authorization
+- Role-based access
+- Sensitive data protection
+- Audit log
+
+KHÔNG lưu:
+
+plaintext password
+plaintext OTP
+thông tin nhạy cảm không cần thiết
+
+==================================================
+18. OFFLINE / NETWORK
+==================================================
+
+App phải xử lý:
+
+Loading
+Success
+Empty
+Error
+Offline
+
+Có network interceptor.
+
+Nếu mất mạng:
+
+Hiển thị:
+
+“Không có kết nối Internet”
+
+Không crash app.
+
+==================================================
+19. UI/UX
+==================================================
+
+Thiết kế theo Material 3.
+
+Ưu tiên:
+
+- ít thao tác
+- typography rõ ràng
+- card bo góc vừa phải
+- khoảng trắng hợp lý
+- hình ảnh sản phẩm lớn
+- CTA rõ ràng
+- animation nhẹ
+- skeleton loading
+- pull to refresh
+
+Không sử dụng:
+
+- gradient quá nhiều
+- shadow nặng
+- text quá nhỏ
+- quá nhiều icon
+- quá nhiều màu
+
+==================================================
+20. RESPONSIVE / ACCESSIBILITY
+==================================================
+
+Hỗ trợ:
+
+Dark mode
+Font scaling
+Screen reader
+Content description
+Touch target tối thiểu 48dp
+
+==================================================
+21. CODING RULES
+==================================================
+
+Code phải:
+
+- Clean
+- Modular
+- Testable
+- Maintainable
+- SOLID
+- DRY
+
+Không viết code hack.
+
+Không hard-code API URL.
+
+Dùng BuildConfig/environment.
+
+Không hard-code token.
+
+Không hard-code database credentials.
+
+==================================================
+22. TESTING
+==================================================
+
+Viết:
+
+Unit Test
+Repository Test
+ViewModel Test
+API Test
+UI Test
+
+MVP phải có test cho:
+
+Login
+Register
+Product listing
+Product detail
+Create product
+Favorite
+Chat
+Create order
+Order status
+
+==================================================
+23. DEVELOPMENT PHASE
+==================================================
+
+KHÔNG triển khai toàn bộ hệ thống cùng lúc.
+
+Làm theo phase.
+
+PHASE 1:
+
+Project Foundation
+
+- Android project
+- Kotlin
+- Compose
+- Material 3
+- Navigation
+- Hilt
+- Network layer
+- Error handling
+- Theme
+- Architecture
+
+PHASE 2:
+
+Authentication
+
+- Login
+- Register
+- OTP
+- JWT
+- Refresh token
+
+PHASE 3:
+
+Marketplace
+
+- Home
+- Category
+- Search
+- Product list
+- Product detail
+
+PHASE 4:
+
+Selling
+
+- Create product
+- Upload images
+- Edit product
+- My listings
+
+PHASE 5:
+
+Chat
+
+- Chat list
+- Chat detail
+- WebSocket
+- Image message
+
+PHASE 6:
+
+Order
+
+- Checkout
+- Address
+- Order
+- Order status
+
+PHASE 7:
+
+Profile
+
+- Profile
+- Favorite
+- Notifications
+- Reviews
+- Settings
+
+==================================================
+24. QUY TẮC LÀM VIỆC
+==================================================
+
+Trước khi code:
+
+1. Phân tích yêu cầu.
+2. Xác định module.
+3. Đề xuất file cần tạo/thay đổi.
+4. Giải thích kiến trúc.
+5. Sau đó mới viết code.
+
+Không tự ý tạo hàng trăm file không cần thiết.
+
+Mỗi phase phải build được.
+
+Sau mỗi phase:
+
+- chạy build
+- chạy test
+- kiểm tra lỗi
+- sửa lỗi
+- báo cáo kết quả
+
+Không chuyển sang phase tiếp theo nếu phase hiện tại
+không build thành công.
+
+==================================================
+25. TASK ĐẦU TIÊN
+==================================================
+
+Bắt đầu bằng PHASE 1.
+
+Hãy:
+
+1. Tạo Android project hoàn chỉnh.
+2. Kotlin.
+3. Jetpack Compose.
+4. Material 3.
+5. Clean Architecture + MVVM.
+6. Hilt.
+7. Navigation Compose.
+8. Retrofit.
+9. Room.
+10. DataStore.
+11. Coil.
+12. Theme Tất Tần Tật.
+13. Bottom Navigation.
+14. Tạo skeleton cho các feature module.
+15. Tạo môi trường DEV.
+16. Tạo cấu trúc để kết nối NestJS API sau này.
+17. Tạo màn hình Splash.
+18. Tạo Home UI prototype.
+19. Tạo Product Card component.
+20. Tạo Category component.
+21. Tạo Loading / Empty / Error component.
+22. Viết README hướng dẫn build project.
+
+Sau khi hoàn thành:
+
+- Build project.
+- Chạy unit test.
+- Kiểm tra lint.
+- Báo cáo tất cả file đã tạo.
+- Báo cáo lỗi nếu có.
+- KHÔNG tự chuyển sang PHASE 2.
+
+Mục tiêu của PHASE 1:
+
+Có một Android project Tất Tần Tật
+có thể mở bằng Android Studio,
+build thành công,
+chạy được trên Android Emulator,
+có giao diện Home prototype,
+và sẵn sàng kết nối Backend API.
