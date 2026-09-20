@@ -61,14 +61,18 @@ export function MarketplaceHome({ query }: { query: string; group: string; sort:
   const router = useRouter();
   const [products, setProducts] = useState<Product[]>([]);
   const [searchQuery, setSearchQuery] = useState(query);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
     async function load() {
+      setIsLoading(true);
       try {
         const prodData = await api.products(query).catch(() => []);
         if (!cancelled) setProducts(prodData);
-      } catch (err) {}
+      } catch (err) {} finally {
+        if (!cancelled) setIsLoading(false);
+      }
     }
     void load();
     return () => { cancelled = true; };
@@ -127,50 +131,73 @@ export function MarketplaceHome({ query }: { query: string; group: string; sort:
         </div>
       </section>
 
+      {/* VÙNG MÀU TRẮNG BO TRÒN 4 GÓC BAO BỌC LOGO DANH MỤC */}
       <section className="categories-section">
-        <div className="shell" style={{position:'relative'}}>
-          <button className="nav-arrow left"><ChevronLeft size={22} color="#555" /></button>
-          <div className="category-scroll">
-            {cats.map((c, i) => (
-              <Link href={'/categories'} key={i} className="cat-card-clean">
-                <div className="cat-icon-wrapper">
-                  <img src={c.img} alt={c.name} />
-                </div>
-                <span>{c.name}</span>
-              </Link>
-            ))}
+        <div className="shell">
+          <div className="white-card-box">
+            <div className="section-title" style={{marginBottom: 16}}>
+              <h2>Danh mục sản phẩm</h2>
+            </div>
+            <div style={{position:'relative'}}>
+              <button className="nav-arrow left"><ChevronLeft size={24} color="#555" /></button>
+              <div className="category-scroll">
+                {cats.map((c, i) => (
+                  <Link href={'/categories'} key={i} className="cat-card-clean">
+                    <div className="cat-icon-wrapper">
+                      <img src={c.img} alt={c.name} />
+                    </div>
+                    <span>{c.name}</span>
+                  </Link>
+                ))}
+              </div>
+              <button className="nav-arrow right"><ChevronRight size={24} color="#555" /></button>
+            </div>
           </div>
-          <button className="nav-arrow right"><ChevronRight size={22} color="#555" /></button>
         </div>
       </section>
 
+      {/* BỌC NỘI DUNG VÀ KHỐI BÊN DƯỚI TRONG KHUNG TRẮNG BO TRÒN */}
       <section className="shell main-grid">
-        <div className="main-content">
-          <div className="section-title">
-            <h2><Flame /> {query ? `Kết quả cho "${query}"` : 'Sản phẩm nổi bật'}</h2>
-            <Link href="/categories" className="view-all">Xem tất cả <ArrowRight size={16} /></Link>
+        <div className="main-content" style={{display:'flex', flexDirection:'column', gap: 24}}>
+          {/* KHỐI SẢN PHẨM NỔI BẬT */}
+          <div className="white-card-box">
+            <div className="section-title">
+              <h2><Flame /> {query ? `Kết quả cho "${query}"` : 'Sản phẩm nổi bật'}</h2>
+              <Link href="/categories" className="view-all">Xem tất cả <ArrowRight size={16} /></Link>
+            </div>
+
+            <div className="products-grid-6">
+              {isLoading ? (
+                <p style={{padding: 20, color: '#666', gridColumn: 'span 6'}}>Đang tải sản phẩm...</p>
+              ) : products.length > 0 ? (
+                products.slice(0, 12).map(product => (
+                  <ProductCard key={product.id} product={product} />
+                ))
+              ) : (
+                <p style={{padding: 20, color: '#666', gridColumn: 'span 6'}}>Chưa có dữ liệu hoặc không tìm thấy sản phẩm nào.</p>
+              )}
+            </div>
           </div>
 
-          <div className="products-grid-6">
-            {products.length > 0 ? products.slice(0, 12).map(product => (
-              <ProductCard key={product.id} product={product} />
-            )) : (
-              <p style={{padding: 20, color: '#666', gridColumn: 'span 6'}}>Đang tải sản phẩm hoặc chưa có dữ liệu...</p>
-            )}
-          </div>
-
+          {/* KHỐI TIN MỚI ĐĂNG */}
           {!query && (
-            <>
-              <div className="section-title" style={{marginTop: 40}}>
+            <div className="white-card-box">
+              <div className="section-title">
                 <h2><MessageSquare /> Tin mới đăng</h2>
                 <Link href="/categories" className="view-all">Xem tất cả <ArrowRight size={16} /></Link>
               </div>
               <div className="products-grid-6">
-                {products.slice().reverse().slice(0, 6).map(product => (
-                  <ProductCard key={'new'+product.id} product={product} />
-                ))}
+                {isLoading ? (
+                  <p style={{padding: 20, color: '#666', gridColumn: 'span 6'}}>Đang tải tin mới...</p>
+                ) : products.length > 0 ? (
+                  products.slice().reverse().slice(0, 6).map(product => (
+                    <ProductCard key={'new'+product.id} product={product} />
+                  ))
+                ) : (
+                  <p style={{padding: 20, color: '#666', gridColumn: 'span 6'}}>Chưa có tin mới đăng.</p>
+                )}
               </div>
-            </>
+            </div>
           )}
         </div>
 
