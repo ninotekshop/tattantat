@@ -60,8 +60,16 @@ try {
     const _backendPort = process.env.BACKEND_PORT || '3009';
     console.log('[Hostinger Standalone] Launching NestJS Backend process on internal port ' + _backendPort + ' from ' + _targetBackend + '...');
     const _backendEnv = Object.assign({}, process.env, { PORT: _backendPort });
-    const _backendProc = _cp.fork(_targetBackend, [], { env: _backendEnv, stdio: 'inherit' });
-    _backendProc.on('error', (err) => console.error('[Hostinger Standalone] Backend process error:', err));
+
+    const _startBackend = () => {
+      const _backendProc = _cp.fork(_targetBackend, [], { env: _backendEnv, stdio: 'inherit' });
+      _backendProc.on('error', (err) => console.error('[Hostinger Standalone] Backend process error:', err));
+      _backendProc.on('exit', (code, signal) => {
+        console.warn('[Hostinger Standalone] Backend process exited with code ' + code + ', signal ' + signal + '. Restarting in 2s...');
+        setTimeout(_startBackend, 2000);
+      });
+    };
+    _startBackend();
 
     // Tell Next.js SSR to fetch from this backend port
     process.env.API_INTERNAL_BASE_URL = 'http://127.0.0.1:' + _backendPort + '/api/v1';

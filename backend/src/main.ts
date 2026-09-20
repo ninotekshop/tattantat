@@ -40,17 +40,12 @@ async function bootstrap() {
   try {
     const app = await NestFactory.create(AppModule, new ExpressAdapter(server));
     app.setGlobalPrefix(process.env.API_PREFIX ?? 'api/v1');
-    const configuredOrigins = (process.env.CORS_ORIGINS ?? '')
-      .split(',')
-      .map((origin) => origin.trim())
-      .filter(Boolean);
 
     app.enableCors({
-      origin: configuredOrigins.length
-        ? configuredOrigins
-        : process.env.NODE_ENV === 'production'
-          ? false
-          : ['http://localhost:3001', 'http://127.0.0.1:3001'],
+      origin: (_origin, callback) => {
+        // Reflect requesting origin to support credentials and avoid CORS rejections
+        callback(null, true);
+      },
       credentials: true,
     });
 
