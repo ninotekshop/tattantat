@@ -2,15 +2,31 @@ import { Injectable, OnModuleDestroy } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Pool, PoolClient, QueryResultRow } from 'pg';
 
+const DEFAULT_DATABASE_URL =
+  'postgresql://postgres.brabreqaarmuovýmfnkl:Zf3Vqufu5lHZycg0@aws-0-ap-southeast-2.pooler.supabase.com:5432/postgres';
+
 @Injectable()
 export class DatabaseService implements OnModuleDestroy {
   private readonly pool: Pool;
 
   constructor(config: ConfigService) {
-    const connectionString = config.get<string>('DATABASE_URL') || process.env.DATABASE_URL || '';
-    if (!connectionString) {
-      console.warn('[DatabaseService] DATABASE_URL is not set in environment variables.');
+    let connectionString =
+      config.get<string>('DATABASE_URL') ||
+      process.env.DATABASE_URL ||
+      DEFAULT_DATABASE_URL;
+
+    if (
+      !connectionString ||
+      connectionString.includes('localhost') ||
+      connectionString.includes('127.0.0.1')
+    ) {
+      connectionString = DEFAULT_DATABASE_URL;
     }
+
+    console.log(
+      `[DatabaseService] Connecting to database host: ${connectionString.split('@')[1] || 'Supabase'}`,
+    );
+
     this.pool = new Pool({ connectionString, ssl: { rejectUnauthorized: false } });
   }
 
