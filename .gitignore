@@ -10,6 +10,8 @@ local.properties
 tmp/
 node_modules/
 **/node_modules/
+.next/
+**/.next/
 .codex/
 backend/dist/
 backend/*.log
