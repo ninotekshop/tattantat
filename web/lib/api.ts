@@ -21,17 +21,35 @@ export type Product = {
 
 export type Category = { id: number; name: string; slug: string; icon_url?: string | null };
 
-const baseUrl = (process.env.NEXT_PUBLIC_API_BASE_URL ?? '/api/v1').replace(/\/$/, '');
+export const getBaseUrl = () => {
+  if (process.env.NEXT_PUBLIC_API_URL) return process.env.NEXT_PUBLIC_API_URL;
+  if (process.env.NEXT_PUBLIC_API_BASE_URL) return process.env.NEXT_PUBLIC_API_BASE_URL;
+  if (typeof window === 'undefined') {
+    if (process.env.API_INTERNAL_BASE_URL) return process.env.API_INTERNAL_BASE_URL;
+    const port = process.env.PORT || 3000;
+    return `http://127.0.0.1:${port}/api/v1`;
+  }
+  return '/api/v1';
+};
+
+const baseUrl = getBaseUrl().replace(/\/$/, '');
 export const sessionFetch = createSessionFetch({ read: readSession, save: saveSession, clear: clearSession, fetch: (...args) => fetch(...args), base: baseUrl });
 export class ApiError extends Error {
   constructor(message: string, public status: number, public code: string | null = null) { super(message); }
 }
 
 export async function apiRequest<T>(path: string, method = 'GET', body?: unknown, token?: string, key?: string): Promise<T> {
-  const response = await sessionFetch(path, { method, headers: {
-    ...(body !== undefined ? { 'Content-Type': 'application/json' } : {}),
-    ...(key ? { 'Idempotency-Key': key } : {}),
-  }, body: body !== undefined ? JSON.stringify(body) : undefined }, token);
+  let response;
+  try {
+    response = await sessionFetch(path, { method, headers: {
+      ...(body !== undefined ? { 'Content-Type': 'application/json' } : {}),
+      ...(key ? { 'Idempotency-Key': key } : {}),
+    }, body: body !== undefined ? JSON.stringify(body) : undefined }, token);
+  } catch (err) {
+    console.error(`[API Fetch Error] to ${baseUrl}${path}:`, err);
+    throw new ApiError('Không thể kết nối máy chủ. Hãy thử lại.', 500);
+  }
+
   const payload = (await response.json().catch(() => null)) as ApiEnvelope<T> | null;
   if (!response.ok || !payload?.success) {
     const message = Array.isArray(payload?.message) ? payload.message.join('. ') : payload?.message;
