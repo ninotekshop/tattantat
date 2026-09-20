@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useSyncExternalStore } from 'react';
 import { useRouter } from 'next/navigation';
 import { clearSession, readSession } from '../lib/auth';
+import { Home, PlusCircle, Heart, MessageSquare, User, MapPin, Bell, ChevronDown } from 'lucide-react';
 
 function subscribeSession(listener:()=>void) {
   if (typeof window === 'undefined') return () => {};
@@ -14,35 +15,47 @@ function subscribeSession(listener:()=>void) {
 export function AppHeader() {
   const router = useRouter();
   const name=useSyncExternalStore(subscribeSession,()=>readSession()?.user.fullName??'',()=> '');
-  return <header className="topbar">
-    <div className="shell topbar-inner">
-      <button className="icon-btn mobile-menu" aria-label="Mở menu">☰</button>
-      <Link className="brand" href="/">
-        <img src="/assets/logo.png" alt="Tất Tần Tật" />
-      </Link>
-      <nav className="main-nav">
-        <Link className="active" href="/">Trang chủ</Link>
-        <Link href="/categories">Danh mục</Link>
-        <Link href="/#new">Tin mới</Link>
-        <Link href="/sell">Đăng tin</Link>
-        <Link href="/messages">Tin nhắn</Link>
-      </nav>
-      <div className="top-actions">
-        {name ? (
-           <>
-             <Link href="/account" className="ghost-btn">♙ <span>{name}</span></Link>
-             <button onClick={() => { clearSession(); router.replace('/login'); }} className="ghost-btn">Đăng xuất</button>
-             <Link href="/sell" className="primary-btn">＋ Đăng tin</Link>
-             <div className="avatar">{name.substring(0, 2).toUpperCase()}</div>
-           </>
-        ) : (
-           <>
-             <Link href="/login" className="ghost-btn">♙ <span>Đăng nhập</span></Link>
-             <Link href="/register" className="ghost-btn">Đăng ký</Link>
-             <Link href="/sell" className="primary-btn">＋ Đăng tin</Link>
-           </>
-        )}
+
+  return (
+    <header className="topbar">
+      <div className="shell topbar-inner">
+        <Link className="brand" href="/">
+          <div className="brand-icon">T</div>
+          <div className="brand-text">
+            <strong>Tất Tần Tật</strong>
+            <span>Mua bán mọi thứ, gần bạn</span>
+          </div>
+        </Link>
+
+        <nav className="main-nav">
+          <Link className="nav-link active" href="/"><Home size={18} /><span>Trang chủ</span></Link>
+          <Link className="nav-link" href="/sell"><PlusCircle size={18} /><span>Đăng tin</span></Link>
+          <Link className="nav-link" href="/favorites"><Heart size={18} /><span>Yêu thích</span></Link>
+          <Link className="nav-link" href="/messages"><MessageSquare size={18} /><span>Tin nhắn</span></Link>
+          <Link className="nav-link" href={name ? "/account" : "/login"}><User size={18} /><span>Tài khoản</span></Link>
+        </nav>
+
+        <div className="top-actions">
+          <button className="location-picker">
+            <MapPin size={16} /> Bình Định (Gia Lai mới) <ChevronDown size={14} />
+          </button>
+
+          <button className="bell-btn" onClick={() => router.push('/account')}>
+            <Bell size={20} />
+            <span className="bell-badge">3</span>
+          </button>
+
+          {name ? (
+            <button className="user-avatar" onClick={() => { clearSession(); router.replace('/login'); }} title="Đăng xuất">
+              {name.substring(0, 2).toUpperCase()}
+            </button>
+          ) : (
+            <button className="user-avatar" onClick={() => router.push('/login')} title="Đăng nhập">
+              <User size={18} />
+            </button>
+          )}
+        </div>
       </div>
-    </div>
-  </header>;
+    </header>
+  );
 }
