@@ -17,6 +17,10 @@ async function bootstrap() {
   const server = express();
   const httpServer = http.createServer(server);
 
+  // Fallbacks to ensure backend never fails silently if variables are missing
+  process.env.SUPABASE_URL = process.env.SUPABASE_URL || 'https://brabreqaarmuowymfnkl.supabase.co';
+  process.env.DATABASE_URL = process.env.DATABASE_URL || 'postgresql://postgres.brabreqaarmuowymfnkl:Zf3Vqufu5lHZycg0@aws-0-ap-southeast-2.pooler.supabase.com:5432/postgres';
+
   // Call listen() IMMEDIATELY so Hostinger Node.js supervisor detects listen() in < 100ms
   httpServer.listen(port, () => {
     console.log(`[Hostinger] Backend HTTP server listening immediately on port ${port}`);

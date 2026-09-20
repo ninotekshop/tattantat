@@ -20,7 +20,9 @@ export class ListingMediaService {
   private readonly client;
   private readonly bucket = 'listing-media';
   constructor(config: ConfigService) {
-    this.client=createClient(config.getOrThrow('SUPABASE_URL'),config.getOrThrow('SUPABASE_SECRET_KEY'),{auth:{persistSession:false,autoRefreshToken:false}});
+    const url = config.get<string>('SUPABASE_URL') || process.env.SUPABASE_URL || 'https://brabreqaarmuowymfnkl.supabase.co';
+    const key = config.get<string>('SUPABASE_SECRET_KEY') || config.get<string>('SUPABASE_PUBLISHABLE_KEY') || process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_PUBLISHABLE_KEY || '';
+    this.client=createClient(url, key, {auth:{persistSession:false,autoRefreshToken:false}});
   }
   async upload(userId: string, listingId: string, kind: 'images'|'videos', file: {buffer:Buffer;mimetype:string}) {
     const mime=detectMedia(file.buffer,kind);

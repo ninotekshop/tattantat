@@ -1,12 +1,12 @@
 'use client';
 
-import { Search, PlusCircle, UserRound } from 'lucide-react';
 import Link from 'next/link';
-import { type FormEvent, useSyncExternalStore } from 'react';
+import { useSyncExternalStore } from 'react';
 import { useRouter } from 'next/navigation';
 import { clearSession, readSession } from '../lib/auth';
 
 function subscribeSession(listener:()=>void) {
+  if (typeof window === 'undefined') return () => {};
   window.addEventListener('storage',listener);window.addEventListener('tattantat-auth-change',listener);
   return()=>{window.removeEventListener('storage',listener);window.removeEventListener('tattantat-auth-change',listener);};
 }
@@ -14,21 +14,35 @@ function subscribeSession(listener:()=>void) {
 export function AppHeader() {
   const router = useRouter();
   const name=useSyncExternalStore(subscribeSession,()=>readSession()?.user.fullName??'',()=> '');
-  function search(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const query = String(new FormData(event.currentTarget).get('q') ?? '').trim();
-    router.push('/?q=' + encodeURIComponent(query) + '#products');
-  }
-  return <header className="header-main">
-    <Link className="logo-area" href="/" aria-label="Tất Tần Tật - Trang chủ"><img src="/TatTanTat_logo_horizontal.svg" alt="Tất Tần Tật - Mua bán mọi thứ, gần bạn" width="208" height="60" /></Link>
-    <form className="search-bar" role="search" onSubmit={search}>
-      <input name="q" aria-label="Tìm sản phẩm" placeholder="Bạn đang tìm gì? (ví dụ: iPhone, laptop, nhà đất,...)" maxLength={200} />
-      <button type="submit" aria-label="Tìm kiếm"><Search size={21} /></button>
-    </form>
-    <div className="user-actions">
-      <Link className="btn-post" href="/sell"><PlusCircle size={19} /> <span>Đăng tin</span></Link>
-      <Link className="btn-text" href={name?'/account':'/login'} aria-label={name?'Tài khoản của '+name:'Đăng nhập'}><UserRound size={20} /><span>{name?'Tài khoản':'Đăng nhập'}</span></Link>
-      {name?<button type="button" className="btn-text register-link" onClick={()=>{clearSession();router.replace('/login');}}>Đăng xuất</button>:<Link className="btn-text register-link" href="/register"><UserRound size={20} /><span>Đăng ký</span></Link>}
+  return <header className="topbar">
+    <div className="shell topbar-inner">
+      <button className="icon-btn mobile-menu" aria-label="Mở menu">☰</button>
+      <Link className="brand" href="/">
+        <img src="/assets/logo.png" alt="Tất Tần Tật" />
+      </Link>
+      <nav className="main-nav">
+        <Link className="active" href="/">Trang chủ</Link>
+        <Link href="/categories">Danh mục</Link>
+        <Link href="/#new">Tin mới</Link>
+        <Link href="/sell">Đăng tin</Link>
+        <Link href="/messages">Tin nhắn</Link>
+      </nav>
+      <div className="top-actions">
+        {name ? (
+           <>
+             <Link href="/account" className="ghost-btn">♙ <span>{name}</span></Link>
+             <button onClick={() => { clearSession(); router.replace('/login'); }} className="ghost-btn">Đăng xuất</button>
+             <Link href="/sell" className="primary-btn">＋ Đăng tin</Link>
+             <div className="avatar">{name.substring(0, 2).toUpperCase()}</div>
+           </>
+        ) : (
+           <>
+             <Link href="/login" className="ghost-btn">♙ <span>Đăng nhập</span></Link>
+             <Link href="/register" className="ghost-btn">Đăng ký</Link>
+             <Link href="/sell" className="primary-btn">＋ Đăng tin</Link>
+           </>
+        )}
+      </div>
     </div>
   </header>;
 }

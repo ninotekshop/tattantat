@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 import './marketplace.css';
 import './member.css';
+import './dog-theme.css';
 import { AppHeader } from '../components/AppHeader';
 import { SubNav } from '../components/SubNav';
 import { Footer } from '../components/Footer';
@@ -15,16 +16,9 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="vi">
       <body>
-        <a className="skip-link" href="#main-content">Đến nội dung chính</a>
-        <div className="header-wrapper">
-          <div className="container">
-            <AppHeader />
-            <SubNav />
-          </div>
-        </div>
-
+        <a className="skip-link" href="#home">Đến nội dung chính</a>
+        <AppHeader />
         {children}
-
         <Footer />
       </body>
     </html>
