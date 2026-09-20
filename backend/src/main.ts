@@ -22,7 +22,7 @@ async function bootstrap() {
   process.env.DATABASE_URL = process.env.DATABASE_URL || 'postgresql://postgres.brabreqaarmuowymfnkl:Zf3Vqufu5lHZycg0@aws-0-ap-southeast-2.pooler.supabase.com:5432/postgres';
 
   // Call listen() IMMEDIATELY so Hostinger Node.js supervisor detects listen() in < 100ms
-  httpServer.listen(port, () => {
+  httpServer.listen(port, '0.0.0.0', () => {
     console.log(`[Hostinger] Backend HTTP server listening immediately on port ${port}`);
   });
 
