@@ -12,6 +12,7 @@ node_modules/
 **/node_modules/
 .next/
 **/.next/
+public/
 .codex/
 backend/dist/
 backend/*.log
