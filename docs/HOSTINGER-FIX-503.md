@@ -1,63 +1,56 @@
-# Hướng dẫn sửa lỗi 503 Service Unavailable trên Hostinger
+# Hướng dẫn Khắc phục Lỗi trên Hostinger (503 & 404 "Cannot GET /")
 
-Lỗi **503 Service Unavailable** xuất hiện khi LiteSpeed/Nginx trên Hostinger không kết nối được tới tiến trình Node.js (do tiến trình bị ngắt, chưa build, hoặc sai file khởi chạy).
+## 1. Nguyên nhân lỗi `{"message":"Cannot GET /","error":"Not Found","statusCode":404}`
 
-## Các thay đổi đã được cập nhật trong Codebase
-1. **Thêm `server.js` ở gốc dự án & `web/server.js`**: Giúp Hostinger Passenger / Node.js Manager nhận diện file khởi chạy chuẩn.
-2. **Loại bỏ cổng cứng `--port 3001`**: Giúp Next.js lắng nghe cổng động `process.env.PORT` do Hostinger chỉ định.
-3. **Cập nhật `package.json` ở gốc**: Cho phép chạy `npm run build` để build cả `web` và `backend` chỉ với 1 lệnh.
+Phản hồi dạng JSON:
+```json
+{"message":"Cannot GET /","error":"Not Found","statusCode":404}
+```
+Đây là **phản hồi 404 mặc định của NestJS Backend** khi truy cập vào đường dẫn gốc `/` (vì API NestJS đặt tiền tố là `/api/v1`).
+
+Lỗi này xảy ra khi Hostinger chạy thẳng NestJS Backend (`backend/dist/main.js`) cho tên miền chính `tattantat.vn` thay vì chạy ứng dụng **Next.js Web Frontend** (`web/`).
+
+### Giải pháp trong Codebase mới:
+Tệp `server.js` ở thư mục gốc vừa được nâng cấp để **tự động đồng thời khởi chạy cả hai**:
+1. Tự động bật **NestJS Backend** ở cổng nội bộ `3000` (phục vụ các API `/api/v1/...`).
+2. Tự động bật **Next.js Web Frontend** ở cổng máy chủ Hostinger cấp (`process.env.PORT`) phục vụ giao diện trang web tại `tattantat.vn`.
+3. Next.js tự động proxy các request `/api/v1/...` sang NestJS Backend.
 
 ---
 
-## Các bước xử lý trên Hostinger hPanel (Shared / Cloud Hosting)
+## 2. Các bước triển khai chuẩn trên Hostinger hPanel
 
-### Bước 1: Khai báo Cấu hình Node.js trên hPanel
+### Bước 1: Cấu hình Node.js Application trên hPanel
 Vào **Hostinger hPanel** -> **Node.js** (hoặc Web Applications):
-- **Node.js Version**: Chọn `18.x` hoặc `20.x` (Bắt buộc >= 18.18.0 cho Next.js 16).
+- **Node.js Version**: Chọn `18.x` hoặc `20.x` (Yêu cầu >= 18.18.0 cho Next.js 16).
 - **Application Mode**: `Production`
-- **Application Root**: `/` (hoặc `public_html` nếu clone ở thư mục gốc, hoặc `web`)
+- **Application Root**: `/` (thư mục gốc chứa repository)
 - **Application Startup File**: `server.js`
 
-### Bước 2: Chạy npm install & npm run build
-1. Vào **Hostinger hPanel** -> **SSH / Terminal** (hoặc dùng Git Webhook / Terminal).
-2. Di chuyển vào thư mục dự án và chạy:
+### Bước 2: Kéo Code mới & Chạy Build trên Hostinger Terminal
+1. Mở **SSH / Terminal** trong Hostinger hPanel.
+2. Chạy lệnh:
    ```bash
-   npm install
-   npm run build
-   ```
-3. Khởi động lại ứng dụng Node.js trong hPanel (bấm **Restart Application**).
-
----
-
-## Các bước xử lý trên Hostinger VPS (Ubuntu / Debian + Nginx + PM2)
-
-1. Kết nối SSH vào VPS.
-2. Kiểm tra log lỗi:
-   ```bash
-   pm2 status
-   pm2 logs
-   ```
-3. Cập nhật và build lại ứng dụng:
-   ```bash
-   cd /var/www/tattantat
    git pull origin main
    npm install
    npm run build
-   pm2 restart all
    ```
+   *(Lệnh `npm run build` sẽ đóng gói cả `web` và `backend`)*.
+3. Nhấn **Restart Application** trong hPanel.
 
 ---
 
-## Kiểm tra File Môi trường `.env`
-Đảm bảo đã tạo file cấu hình môi trường:
-- `web/.env.local`:
-  ```env
-  API_INTERNAL_BASE_URL=http://localhost:3000/api/v1
-  NEXT_PUBLIC_API_URL=https://yourdomain.com/api/v1
-  ```
-- `backend/.env`:
-  ```env
-  PORT=3000
-  DATABASE_URL=postgresql://...
-  JWT_SECRET=your_jwt_secret
-  ```
+## 3. Cấu hình biến môi trường `.env`
+
+Tạo file `web/.env.local` nếu chưa có:
+```env
+API_INTERNAL_BASE_URL=http://localhost:3000/api/v1
+NEXT_PUBLIC_API_URL=https://tattantat.vn/api/v1
+```
+
+Tạo file `backend/.env` nếu chưa có:
+```env
+PORT=3000
+DATABASE_URL=postgresql://postgres.brabreqaarmuowymfnkl:PASSWORD@aws-0-ap-southeast-2.pooler.supabase.com:5432/postgres
+JWT_SECRET=tat_tan_tat_secret_key_2026
+```
