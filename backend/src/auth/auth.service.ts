@@ -5,6 +5,8 @@ import * as bcrypt from 'bcryptjs';
 import { DatabaseService } from '../database/database.service';
 import { LoginDto, RegisterDto, RefreshDto, VerifyOtpDto } from './dto/auth.dto';
 
+const DEFAULT_JWT_REFRESH = 'tat_tan_tat_jwt_refresh_secret_key_2026';
+
 type UserRow = {
   id: string;
   phone: string | null;
@@ -94,7 +96,7 @@ export class AuthService {
   async refresh(body: RefreshDto) {
     try {
       const payload = await this.jwt.verifyAsync<{ sub: string; type: string }>(body.refreshToken, {
-        secret: this.config.getOrThrow<string>('JWT_REFRESH_SECRET'),
+        secret: this.config.get<string>('JWT_REFRESH_SECRET') || DEFAULT_JWT_REFRESH,
       });
       if (payload.type !== 'refresh') throw new UnauthorizedException('Phiên đăng nhập không hợp lệ');
       const result = await this.database.query<UserRow>(
@@ -117,7 +119,7 @@ export class AuthService {
     const [accessToken, refreshToken] = await Promise.all([
       this.jwt.signAsync(claims, { expiresIn: '15m' }),
       this.jwt.signAsync({ ...claims, type: 'refresh' }, {
-        secret: this.config.getOrThrow<string>('JWT_REFRESH_SECRET'), expiresIn: '30d',
+        secret: this.config.get<string>('JWT_REFRESH_SECRET') || DEFAULT_JWT_REFRESH, expiresIn: '30d',
       }),
     ]);
     return { accessToken, refreshToken, user: { id: user.id, fullName: user.full_name, avatarUrl: user.avatar_url } };

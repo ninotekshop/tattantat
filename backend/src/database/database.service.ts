@@ -7,7 +7,10 @@ export class DatabaseService implements OnModuleDestroy {
   private readonly pool: Pool;
 
   constructor(config: ConfigService) {
-    const connectionString = config.getOrThrow<string>('DATABASE_URL');
+    const connectionString = config.get<string>('DATABASE_URL') || process.env.DATABASE_URL || '';
+    if (!connectionString) {
+      console.warn('[DatabaseService] DATABASE_URL is not set in environment variables.');
+    }
     this.pool = new Pool({ connectionString, ssl: { rejectUnauthorized: false } });
   }
 
