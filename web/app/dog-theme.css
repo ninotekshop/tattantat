@@ -670,3 +670,13 @@ body {
   .nav-link span { display: none; }
   .top-actions span { display: none; }
 }
+
+/* --- FOOTER --- */
+.main-footer { background: #04392f; color: #d9eee7; padding: 38px 0 16px; margin-top: 40px; }
+.footer-grid { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 30px; }
+.footer-brand img { width: 140px; filter: brightness(0) invert(1); display: block; margin-bottom: 12px; }
+.footer-grid h4 { margin-top: 0; color: #fff; font-size: 16px; }
+.footer-grid a { display: block; color: #c3ddd5; text-decoration: none; margin: 9px 0; font-size: 14px; }
+.footer-grid a:hover { color: #fff; text-decoration: underline; }
+.copyright { border-top: 1px solid rgba(255,255,255,0.15); padding-top: 15px; margin-top: 25px; font-size: 12px; text-align: center; }
+
