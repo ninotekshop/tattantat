@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "postinstall": "cd web && npm install --prefer-offline --no-audit && cd ../backend && npm install --prefer-offline --no-audit",
-    "build": "cd web && npm run build && cd ../backend && npm run build",
+    "build": "cd web && npm run build && cd ../backend && npm run build && cd .. && node scripts/hostinger-postbuild.js",
     "start": "node server.js",
     "start:web": "cd web && npm run start",
     "start:backend": "cd backend && npm run start:prod"
