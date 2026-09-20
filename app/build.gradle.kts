@@ -24,6 +24,7 @@ android {
         release { isMinifyEnabled = false; buildConfigField("String", "DEMO_ADMIN_EMAIL", "\"\""); buildConfigField("String", "DEMO_USER_EMAIL", "\"\""); buildConfigField("String", "DEMO_PASSWORD", "\"\""); proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro") }
     }
     buildFeatures { compose = true; buildConfig = true }
+    sourceSets.getByName("main").assets.srcDir(rootProject.file("shared"))
     compileOptions { sourceCompatibility = JavaVersion.VERSION_17; targetCompatibility = JavaVersion.VERSION_17 }
     kotlinOptions { jvmTarget = "17" }
 }
@@ -53,4 +54,6 @@ dependencies {
     implementation(libs.androidx.datastore.preferences)
     implementation(libs.coil.compose)
     testImplementation(libs.junit)
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.messaging)
 }

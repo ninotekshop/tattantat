@@ -1,0 +1,2 @@
+document.querySelectorAll(".search button").forEach(b=>b.addEventListener("click",()=>alert("Tìm kiếm sẽ kết nối API ở bước backend.")));
+document.querySelectorAll(".post-btn,.hero button,.side-ad button,.promo button").forEach(b=>b.addEventListener("click",()=>alert("Tính năng này sẽ được nối với trang/ứng dụng thật khi tích hợp backend.")));

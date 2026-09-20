@@ -1,5 +1,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <application android:name=".TatTanTatApplication" android:allowBackup="true" android:label="Tất Tần Tật" android:supportsRtl="true" android:theme="@style/Theme.TatTanTat">
         <activity android:name=".MainActivity" android:exported="true">
             <intent-filter>

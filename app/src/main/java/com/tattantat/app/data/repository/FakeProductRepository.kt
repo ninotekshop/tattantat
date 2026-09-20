@@ -14,6 +14,6 @@ class FakeProductRepository @Inject constructor() : ProductRepository {
         Product("2", "Máy ảnh Fujifilm X-T30", "14.900.000 đ", "TP. Hồ Chí Minh", "25 phút trước", "Ngọc Hà", "https://images.unsplash.com/photo-1516035069371-29a1b244cc32?w=800"),
         Product("3", "Bàn làm việc gỗ sồi", "1.200.000 đ", "Hà Nội", "1 giờ trước", "Hoàng Nam", "https://images.unsplash.com/photo-1518455027359-f3f8164ba6bd?w=800")
     )
-    override fun observeProducts(query: String): Flow<List<Product>> = flowOf(products.filter { it.title.contains(query, ignoreCase = true) })
+    override fun observeProducts(query: String, categoryId: Long?): Flow<List<Product>> = flowOf(products.filter { it.title.contains(query, ignoreCase = true) })
     override fun observeProduct(id: String): Flow<Product?> = flowOf(products.find { it.id == id })
 }

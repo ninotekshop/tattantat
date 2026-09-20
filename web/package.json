@@ -1,0 +1,30 @@
+{
+  "name": "tattantat-web",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "predev": "node scripts/sync-map-assets.cjs",
+    "prebuild": "node scripts/sync-map-assets.cjs",
+    "dev": "next dev --port 3001",
+    "build": "next build",
+    "start": "next start --port 3001",
+    "lint": "eslint .",
+    "test:ui": "node --experimental-strip-types --test tests/*.test.mjs"
+  },
+  "dependencies": {
+    "@types/node": "^22.10.7",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "leaflet": "1.9.4",
+    "lucide-react": "^1.47.0",
+    "next": "^16.3.5",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "typescript": "^5.7.2"
+  },
+  "devDependencies": {
+    "caniuse-lite": "^1.0.30001810",
+    "eslint": "^9.18.0",
+    "eslint-config-next": "^16.3.5"
+  }
+}

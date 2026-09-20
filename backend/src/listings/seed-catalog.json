@@ -1,0 +1,7780 @@
+[
+  {
+    "slug": "do-cong-nghe",
+    "name": "Đồ công nghệ",
+    "order": 0,
+    "config": {
+      "priceModes": [
+        "FIXED",
+        "CONTACT",
+        "FREE"
+      ]
+    },
+    "fields": [
+      {
+        "key": "brand",
+        "label": "Hãng",
+        "type": "text",
+        "required": false,
+        "enabled": true,
+        "options": [],
+        "config": {
+          "maxLength": 150
+        }
+      },
+      {
+        "key": "model",
+        "label": "Model",
+        "type": "text",
+        "required": false,
+        "enabled": true,
+        "options": [],
+        "config": {
+          "maxLength": 150
+        }
+      },
+      {
+        "key": "origin",
+        "label": "Xuất xứ",
+        "type": "text",
+        "required": false,
+        "enabled": true,
+        "options": [],
+        "config": {
+          "maxLength": 150
+        }
+      },
+      {
+        "key": "warranty",
+        "label": "Bảo hành",
+        "type": "text",
+        "required": false,
+        "enabled": true,
+        "options": [],
+        "config": {
+          "maxLength": 150
+        }
+      }
+    ],
+    "children": [
+      {
+        "slug": "dien-thoai",
+        "name": "Điện thoại",
+        "fields": [
+          {
+            "key": "brand",
+            "label": "Hãng",
+            "type": "text",
+            "required": true,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "model",
+            "label": "Model",
+            "type": "text",
+            "required": true,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "ram",
+            "label": "RAM",
+            "type": "number",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "min": 0,
+              "unit": "GB"
+            }
+          },
+          {
+            "key": "storage",
+            "label": "Bộ nhớ",
+            "type": "number",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "min": 0,
+              "unit": "GB"
+            }
+          },
+          {
+            "key": "color",
+            "label": "Màu sắc",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "screen",
+            "label": "Màn hình",
+            "type": "number",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "min": 0,
+              "unit": "inch"
+            }
+          },
+          {
+            "key": "camera",
+            "label": "Camera",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "battery",
+            "label": "Pin",
+            "type": "number",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "min": 0,
+              "unit": "mAh"
+            }
+          },
+          {
+            "key": "sim",
+            "label": "SIM",
+            "type": "select",
+            "required": false,
+            "enabled": true,
+            "options": [
+              {
+                "value": "1 SIM",
+                "label": "1 SIM"
+              },
+              {
+                "value": "2 SIM",
+                "label": "2 SIM"
+              },
+              {
+                "value": "eSIM",
+                "label": "eSIM"
+              }
+            ],
+            "config": {}
+          },
+          {
+            "key": "five_g",
+            "label": "Hỗ trợ 5G",
+            "type": "boolean",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {}
+          },
+          {
+            "key": "os",
+            "label": "Hệ điều hành",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "origin",
+            "label": "Xuất xứ",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "warranty",
+            "label": "Bảo hành",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          }
+        ]
+      },
+      {
+        "slug": "laptop",
+        "name": "Laptop",
+        "fields": [
+          {
+            "key": "brand",
+            "label": "Hãng",
+            "type": "text",
+            "required": true,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "model",
+            "label": "Model",
+            "type": "text",
+            "required": true,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "cpu",
+            "label": "CPU",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "ram",
+            "label": "RAM",
+            "type": "number",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "min": 0,
+              "unit": "GB"
+            }
+          },
+          {
+            "key": "storage",
+            "label": "SSD / HDD",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "gpu",
+            "label": "GPU",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "screen",
+            "label": "Kích thước màn hình",
+            "type": "number",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "min": 0,
+              "unit": "inch"
+            }
+          },
+          {
+            "key": "resolution",
+            "label": "Độ phân giải",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "os",
+            "label": "Hệ điều hành",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "battery",
+            "label": "Tình trạng pin",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "warranty",
+            "label": "Bảo hành",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          }
+        ]
+      },
+      {
+        "slug": "may-tinh-bang",
+        "name": "Máy tính bảng",
+        "fields": [
+          {
+            "key": "brand",
+            "label": "Hãng",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "model",
+            "label": "Model",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "origin",
+            "label": "Xuất xứ",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "warranty",
+            "label": "Bảo hành",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          }
+        ]
+      },
+      {
+        "slug": "may-tinh-de-ban",
+        "name": "Máy tính để bàn",
+        "fields": [
+          {
+            "key": "brand",
+            "label": "Hãng",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "model",
+            "label": "Model",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "origin",
+            "label": "Xuất xứ",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "warranty",
+            "label": "Bảo hành",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          }
+        ]
+      },
+      {
+        "slug": "may-anh",
+        "name": "Máy ảnh",
+        "fields": [
+          {
+            "key": "brand",
+            "label": "Hãng",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "model",
+            "label": "Model",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "origin",
+            "label": "Xuất xứ",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "warranty",
+            "label": "Bảo hành",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          }
+        ]
+      },
+      {
+        "slug": "may-quay",
+        "name": "Máy quay",
+        "fields": [
+          {
+            "key": "brand",
+            "label": "Hãng",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "model",
+            "label": "Model",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "origin",
+            "label": "Xuất xứ",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "warranty",
+            "label": "Bảo hành",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          }
+        ]
+      },
+      {
+        "slug": "tv",
+        "name": "TV",
+        "fields": [
+          {
+            "key": "brand",
+            "label": "Hãng",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "model",
+            "label": "Model",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "origin",
+            "label": "Xuất xứ",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "warranty",
+            "label": "Bảo hành",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          }
+        ]
+      },
+      {
+        "slug": "thiet-bi-am-thanh",
+        "name": "Thiết bị âm thanh",
+        "fields": [
+          {
+            "key": "brand",
+            "label": "Hãng",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "model",
+            "label": "Model",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "origin",
+            "label": "Xuất xứ",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "warranty",
+            "label": "Bảo hành",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          }
+        ]
+      },
+      {
+        "slug": "phu-kien-cong-nghe",
+        "name": "Phụ kiện công nghệ",
+        "fields": [
+          {
+            "key": "brand",
+            "label": "Hãng",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "model",
+            "label": "Model",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "origin",
+            "label": "Xuất xứ",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "warranty",
+            "label": "Bảo hành",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          }
+        ]
+      },
+      {
+        "slug": "may-choi-game",
+        "name": "Máy chơi game",
+        "fields": [
+          {
+            "key": "brand",
+            "label": "Hãng",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "model",
+            "label": "Model",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "origin",
+            "label": "Xuất xứ",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "warranty",
+            "label": "Bảo hành",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          }
+        ]
+      },
+      {
+        "slug": "dong-ho-thong-minh",
+        "name": "Đồng hồ thông minh",
+        "fields": [
+          {
+            "key": "brand",
+            "label": "Hãng",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "model",
+            "label": "Model",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "origin",
+            "label": "Xuất xứ",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "warranty",
+            "label": "Bảo hành",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "slug": "xe-co",
+    "name": "Xe cộ",
+    "order": 1,
+    "config": {
+      "priceModes": [
+        "FIXED",
+        "CONTACT",
+        "FREE"
+      ]
+    },
+    "fields": [
+      {
+        "key": "brand",
+        "label": "Hãng xe",
+        "type": "text",
+        "required": true,
+        "enabled": true,
+        "options": [],
+        "config": {
+          "maxLength": 150
+        }
+      },
+      {
+        "key": "model",
+        "label": "Dòng xe",
+        "type": "text",
+        "required": true,
+        "enabled": true,
+        "options": [],
+        "config": {
+          "maxLength": 150
+        }
+      },
+      {
+        "key": "variant",
+        "label": "Phiên bản",
+        "type": "text",
+        "required": false,
+        "enabled": true,
+        "options": [],
+        "config": {
+          "maxLength": 150
+        }
+      },
+      {
+        "key": "year",
+        "label": "Năm sản xuất",
+        "type": "year",
+        "required": true,
+        "enabled": true,
+        "options": [],
+        "config": {}
+      },
+      {
+        "key": "mileage",
+        "label": "Số km",
+        "type": "number",
+        "required": false,
+        "enabled": true,
+        "options": [],
+        "config": {
+          "min": 0,
+          "unit": "km"
+        }
+      },
+      {
+        "key": "transmission",
+        "label": "Hộp số",
+        "type": "select",
+        "required": false,
+        "enabled": true,
+        "options": [
+          {
+            "value": "Tự động",
+            "label": "Tự động"
+          },
+          {
+            "value": "Số sàn",
+            "label": "Số sàn"
+          },
+          {
+            "value": "Bán tự động",
+            "label": "Bán tự động"
+          }
+        ],
+        "config": {}
+      },
+      {
+        "key": "fuel",
+        "label": "Nhiên liệu",
+        "type": "select",
+        "required": false,
+        "enabled": true,
+        "options": [
+          {
+            "value": "Xăng",
+            "label": "Xăng"
+          },
+          {
+            "value": "Dầu",
+            "label": "Dầu"
+          },
+          {
+            "value": "Hybrid",
+            "label": "Hybrid"
+          },
+          {
+            "value": "Điện",
+            "label": "Điện"
+          }
+        ],
+        "config": {}
+      },
+      {
+        "key": "engine",
+        "label": "Dung tích động cơ",
+        "type": "number",
+        "required": false,
+        "enabled": true,
+        "options": [],
+        "config": {
+          "min": 0,
+          "unit": "cc",
+          "visibleWhen": {
+            "field": "fuel",
+            "operator": "ne",
+            "value": "Điện"
+          }
+        }
+      },
+      {
+        "key": "seats",
+        "label": "Số chỗ",
+        "type": "number",
+        "required": false,
+        "enabled": true,
+        "options": [],
+        "config": {
+          "min": 0
+        }
+      },
+      {
+        "key": "color",
+        "label": "Màu sắc",
+        "type": "text",
+        "required": false,
+        "enabled": true,
+        "options": [],
+        "config": {
+          "maxLength": 150
+        }
+      },
+      {
+        "key": "origin",
+        "label": "Xuất xứ",
+        "type": "text",
+        "required": false,
+        "enabled": true,
+        "options": [],
+        "config": {
+          "maxLength": 150
+        }
+      },
+      {
+        "key": "inspection",
+        "label": "Hạn đăng kiểm",
+        "type": "date",
+        "required": false,
+        "enabled": true,
+        "options": [],
+        "config": {}
+      },
+      {
+        "key": "maintenance",
+        "label": "Lịch sử bảo dưỡng",
+        "type": "textarea",
+        "required": false,
+        "enabled": true,
+        "options": [],
+        "config": {
+          "maxLength": 2000
+        }
+      },
+      {
+        "key": "documents",
+        "label": "Giấy tờ",
+        "type": "text",
+        "required": false,
+        "enabled": true,
+        "options": [],
+        "config": {
+          "maxLength": 150
+        }
+      },
+      {
+        "key": "warranty",
+        "label": "Bảo hành",
+        "type": "text",
+        "required": false,
+        "enabled": true,
+        "options": [],
+        "config": {
+          "maxLength": 150
+        }
+      }
+    ],
+    "children": [
+      {
+        "slug": "o-to",
+        "name": "Ô tô",
+        "fields": [
+          {
+            "key": "brand",
+            "label": "Hãng xe",
+            "type": "text",
+            "required": true,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "model",
+            "label": "Dòng xe",
+            "type": "text",
+            "required": true,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "variant",
+            "label": "Phiên bản",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "year",
+            "label": "Năm sản xuất",
+            "type": "year",
+            "required": true,
+            "enabled": true,
+            "options": [],
+            "config": {}
+          },
+          {
+            "key": "mileage",
+            "label": "Số km",
+            "type": "number",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "min": 0,
+              "unit": "km"
+            }
+          },
+          {
+            "key": "transmission",
+            "label": "Hộp số",
+            "type": "select",
+            "required": false,
+            "enabled": true,
+            "options": [
+              {
+                "value": "Tự động",
+                "label": "Tự động"
+              },
+              {
+                "value": "Số sàn",
+                "label": "Số sàn"
+              },
+              {
+                "value": "Bán tự động",
+                "label": "Bán tự động"
+              }
+            ],
+            "config": {}
+          },
+          {
+            "key": "fuel",
+            "label": "Nhiên liệu",
+            "type": "select",
+            "required": false,
+            "enabled": true,
+            "options": [
+              {
+                "value": "Xăng",
+                "label": "Xăng"
+              },
+              {
+                "value": "Dầu",
+                "label": "Dầu"
+              },
+              {
+                "value": "Hybrid",
+                "label": "Hybrid"
+              },
+              {
+                "value": "Điện",
+                "label": "Điện"
+              }
+            ],
+            "config": {}
+          },
+          {
+            "key": "engine",
+            "label": "Dung tích động cơ",
+            "type": "number",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "min": 0,
+              "unit": "cc",
+              "visibleWhen": {
+                "field": "fuel",
+                "operator": "ne",
+                "value": "Điện"
+              }
+            }
+          },
+          {
+            "key": "seats",
+            "label": "Số chỗ",
+            "type": "number",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "min": 0
+            }
+          },
+          {
+            "key": "color",
+            "label": "Màu sắc",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "origin",
+            "label": "Xuất xứ",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "inspection",
+            "label": "Hạn đăng kiểm",
+            "type": "date",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {}
+          },
+          {
+            "key": "maintenance",
+            "label": "Lịch sử bảo dưỡng",
+            "type": "textarea",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 2000
+            }
+          },
+          {
+            "key": "documents",
+            "label": "Giấy tờ",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "warranty",
+            "label": "Bảo hành",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          }
+        ]
+      },
+      {
+        "slug": "xe-may",
+        "name": "Xe máy",
+        "fields": [
+          {
+            "key": "brand",
+            "label": "Hãng xe",
+            "type": "text",
+            "required": true,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "model",
+            "label": "Dòng xe",
+            "type": "text",
+            "required": true,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "variant",
+            "label": "Phiên bản",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "year",
+            "label": "Năm sản xuất",
+            "type": "year",
+            "required": true,
+            "enabled": true,
+            "options": [],
+            "config": {}
+          },
+          {
+            "key": "mileage",
+            "label": "Số km",
+            "type": "number",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "min": 0,
+              "unit": "km"
+            }
+          },
+          {
+            "key": "transmission",
+            "label": "Hộp số",
+            "type": "select",
+            "required": false,
+            "enabled": true,
+            "options": [
+              {
+                "value": "Tự động",
+                "label": "Tự động"
+              },
+              {
+                "value": "Số sàn",
+                "label": "Số sàn"
+              },
+              {
+                "value": "Bán tự động",
+                "label": "Bán tự động"
+              }
+            ],
+            "config": {}
+          },
+          {
+            "key": "fuel",
+            "label": "Nhiên liệu",
+            "type": "select",
+            "required": false,
+            "enabled": true,
+            "options": [
+              {
+                "value": "Xăng",
+                "label": "Xăng"
+              },
+              {
+                "value": "Dầu",
+                "label": "Dầu"
+              },
+              {
+                "value": "Hybrid",
+                "label": "Hybrid"
+              },
+              {
+                "value": "Điện",
+                "label": "Điện"
+              }
+            ],
+            "config": {}
+          },
+          {
+            "key": "engine",
+            "label": "Dung tích động cơ",
+            "type": "number",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "min": 0,
+              "unit": "cc",
+              "visibleWhen": {
+                "field": "fuel",
+                "operator": "ne",
+                "value": "Điện"
+              }
+            }
+          },
+          {
+            "key": "seats",
+            "label": "Số chỗ",
+            "type": "number",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "min": 0
+            }
+          },
+          {
+            "key": "color",
+            "label": "Màu sắc",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "origin",
+            "label": "Xuất xứ",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "inspection",
+            "label": "Hạn đăng kiểm",
+            "type": "date",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {}
+          },
+          {
+            "key": "maintenance",
+            "label": "Lịch sử bảo dưỡng",
+            "type": "textarea",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 2000
+            }
+          },
+          {
+            "key": "documents",
+            "label": "Giấy tờ",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "warranty",
+            "label": "Bảo hành",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "vehicle_type",
+            "label": "Loại xe",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          }
+        ]
+      },
+      {
+        "slug": "xe-dien",
+        "name": "Xe điện",
+        "fields": [
+          {
+            "key": "brand",
+            "label": "Hãng xe",
+            "type": "text",
+            "required": true,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "model",
+            "label": "Dòng xe",
+            "type": "text",
+            "required": true,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "variant",
+            "label": "Phiên bản",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "year",
+            "label": "Năm sản xuất",
+            "type": "year",
+            "required": true,
+            "enabled": true,
+            "options": [],
+            "config": {}
+          },
+          {
+            "key": "mileage",
+            "label": "Số km",
+            "type": "number",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "min": 0,
+              "unit": "km"
+            }
+          },
+          {
+            "key": "transmission",
+            "label": "Hộp số",
+            "type": "select",
+            "required": false,
+            "enabled": true,
+            "options": [
+              {
+                "value": "Tự động",
+                "label": "Tự động"
+              },
+              {
+                "value": "Số sàn",
+                "label": "Số sàn"
+              },
+              {
+                "value": "Bán tự động",
+                "label": "Bán tự động"
+              }
+            ],
+            "config": {}
+          },
+          {
+            "key": "fuel",
+            "label": "Nhiên liệu",
+            "type": "select",
+            "required": false,
+            "enabled": true,
+            "options": [
+              {
+                "value": "Xăng",
+                "label": "Xăng"
+              },
+              {
+                "value": "Dầu",
+                "label": "Dầu"
+              },
+              {
+                "value": "Hybrid",
+                "label": "Hybrid"
+              },
+              {
+                "value": "Điện",
+                "label": "Điện"
+              }
+            ],
+            "config": {}
+          },
+          {
+            "key": "engine",
+            "label": "Dung tích động cơ",
+            "type": "number",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "min": 0,
+              "unit": "cc",
+              "visibleWhen": {
+                "field": "fuel",
+                "operator": "ne",
+                "value": "Điện"
+              }
+            }
+          },
+          {
+            "key": "seats",
+            "label": "Số chỗ",
+            "type": "number",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "min": 0
+            }
+          },
+          {
+            "key": "color",
+            "label": "Màu sắc",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "origin",
+            "label": "Xuất xứ",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "inspection",
+            "label": "Hạn đăng kiểm",
+            "type": "date",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {}
+          },
+          {
+            "key": "maintenance",
+            "label": "Lịch sử bảo dưỡng",
+            "type": "textarea",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 2000
+            }
+          },
+          {
+            "key": "documents",
+            "label": "Giấy tờ",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "warranty",
+            "label": "Bảo hành",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          }
+        ]
+      },
+      {
+        "slug": "xe-tai",
+        "name": "Xe tải",
+        "fields": [
+          {
+            "key": "brand",
+            "label": "Hãng xe",
+            "type": "text",
+            "required": true,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "model",
+            "label": "Dòng xe",
+            "type": "text",
+            "required": true,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "variant",
+            "label": "Phiên bản",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "year",
+            "label": "Năm sản xuất",
+            "type": "year",
+            "required": true,
+            "enabled": true,
+            "options": [],
+            "config": {}
+          },
+          {
+            "key": "mileage",
+            "label": "Số km",
+            "type": "number",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "min": 0,
+              "unit": "km"
+            }
+          },
+          {
+            "key": "transmission",
+            "label": "Hộp số",
+            "type": "select",
+            "required": false,
+            "enabled": true,
+            "options": [
+              {
+                "value": "Tự động",
+                "label": "Tự động"
+              },
+              {
+                "value": "Số sàn",
+                "label": "Số sàn"
+              },
+              {
+                "value": "Bán tự động",
+                "label": "Bán tự động"
+              }
+            ],
+            "config": {}
+          },
+          {
+            "key": "fuel",
+            "label": "Nhiên liệu",
+            "type": "select",
+            "required": false,
+            "enabled": true,
+            "options": [
+              {
+                "value": "Xăng",
+                "label": "Xăng"
+              },
+              {
+                "value": "Dầu",
+                "label": "Dầu"
+              },
+              {
+                "value": "Hybrid",
+                "label": "Hybrid"
+              },
+              {
+                "value": "Điện",
+                "label": "Điện"
+              }
+            ],
+            "config": {}
+          },
+          {
+            "key": "engine",
+            "label": "Dung tích động cơ",
+            "type": "number",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "min": 0,
+              "unit": "cc",
+              "visibleWhen": {
+                "field": "fuel",
+                "operator": "ne",
+                "value": "Điện"
+              }
+            }
+          },
+          {
+            "key": "seats",
+            "label": "Số chỗ",
+            "type": "number",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "min": 0
+            }
+          },
+          {
+            "key": "color",
+            "label": "Màu sắc",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "origin",
+            "label": "Xuất xứ",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "inspection",
+            "label": "Hạn đăng kiểm",
+            "type": "date",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {}
+          },
+          {
+            "key": "maintenance",
+            "label": "Lịch sử bảo dưỡng",
+            "type": "textarea",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 2000
+            }
+          },
+          {
+            "key": "documents",
+            "label": "Giấy tờ",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "warranty",
+            "label": "Bảo hành",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          }
+        ]
+      },
+      {
+        "slug": "xe-ban-tai",
+        "name": "Xe bán tải",
+        "fields": [
+          {
+            "key": "brand",
+            "label": "Hãng xe",
+            "type": "text",
+            "required": true,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "model",
+            "label": "Dòng xe",
+            "type": "text",
+            "required": true,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "variant",
+            "label": "Phiên bản",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "year",
+            "label": "Năm sản xuất",
+            "type": "year",
+            "required": true,
+            "enabled": true,
+            "options": [],
+            "config": {}
+          },
+          {
+            "key": "mileage",
+            "label": "Số km",
+            "type": "number",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "min": 0,
+              "unit": "km"
+            }
+          },
+          {
+            "key": "transmission",
+            "label": "Hộp số",
+            "type": "select",
+            "required": false,
+            "enabled": true,
+            "options": [
+              {
+                "value": "Tự động",
+                "label": "Tự động"
+              },
+              {
+                "value": "Số sàn",
+                "label": "Số sàn"
+              },
+              {
+                "value": "Bán tự động",
+                "label": "Bán tự động"
+              }
+            ],
+            "config": {}
+          },
+          {
+            "key": "fuel",
+            "label": "Nhiên liệu",
+            "type": "select",
+            "required": false,
+            "enabled": true,
+            "options": [
+              {
+                "value": "Xăng",
+                "label": "Xăng"
+              },
+              {
+                "value": "Dầu",
+                "label": "Dầu"
+              },
+              {
+                "value": "Hybrid",
+                "label": "Hybrid"
+              },
+              {
+                "value": "Điện",
+                "label": "Điện"
+              }
+            ],
+            "config": {}
+          },
+          {
+            "key": "engine",
+            "label": "Dung tích động cơ",
+            "type": "number",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "min": 0,
+              "unit": "cc",
+              "visibleWhen": {
+                "field": "fuel",
+                "operator": "ne",
+                "value": "Điện"
+              }
+            }
+          },
+          {
+            "key": "seats",
+            "label": "Số chỗ",
+            "type": "number",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "min": 0
+            }
+          },
+          {
+            "key": "color",
+            "label": "Màu sắc",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "origin",
+            "label": "Xuất xứ",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "inspection",
+            "label": "Hạn đăng kiểm",
+            "type": "date",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {}
+          },
+          {
+            "key": "maintenance",
+            "label": "Lịch sử bảo dưỡng",
+            "type": "textarea",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 2000
+            }
+          },
+          {
+            "key": "documents",
+            "label": "Giấy tờ",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "warranty",
+            "label": "Bảo hành",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          }
+        ]
+      },
+      {
+        "slug": "xe-khach",
+        "name": "Xe khách",
+        "fields": [
+          {
+            "key": "brand",
+            "label": "Hãng xe",
+            "type": "text",
+            "required": true,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "model",
+            "label": "Dòng xe",
+            "type": "text",
+            "required": true,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "variant",
+            "label": "Phiên bản",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "year",
+            "label": "Năm sản xuất",
+            "type": "year",
+            "required": true,
+            "enabled": true,
+            "options": [],
+            "config": {}
+          },
+          {
+            "key": "mileage",
+            "label": "Số km",
+            "type": "number",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "min": 0,
+              "unit": "km"
+            }
+          },
+          {
+            "key": "transmission",
+            "label": "Hộp số",
+            "type": "select",
+            "required": false,
+            "enabled": true,
+            "options": [
+              {
+                "value": "Tự động",
+                "label": "Tự động"
+              },
+              {
+                "value": "Số sàn",
+                "label": "Số sàn"
+              },
+              {
+                "value": "Bán tự động",
+                "label": "Bán tự động"
+              }
+            ],
+            "config": {}
+          },
+          {
+            "key": "fuel",
+            "label": "Nhiên liệu",
+            "type": "select",
+            "required": false,
+            "enabled": true,
+            "options": [
+              {
+                "value": "Xăng",
+                "label": "Xăng"
+              },
+              {
+                "value": "Dầu",
+                "label": "Dầu"
+              },
+              {
+                "value": "Hybrid",
+                "label": "Hybrid"
+              },
+              {
+                "value": "Điện",
+                "label": "Điện"
+              }
+            ],
+            "config": {}
+          },
+          {
+            "key": "engine",
+            "label": "Dung tích động cơ",
+            "type": "number",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "min": 0,
+              "unit": "cc",
+              "visibleWhen": {
+                "field": "fuel",
+                "operator": "ne",
+                "value": "Điện"
+              }
+            }
+          },
+          {
+            "key": "seats",
+            "label": "Số chỗ",
+            "type": "number",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "min": 0
+            }
+          },
+          {
+            "key": "color",
+            "label": "Màu sắc",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "origin",
+            "label": "Xuất xứ",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "inspection",
+            "label": "Hạn đăng kiểm",
+            "type": "date",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {}
+          },
+          {
+            "key": "maintenance",
+            "label": "Lịch sử bảo dưỡng",
+            "type": "textarea",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 2000
+            }
+          },
+          {
+            "key": "documents",
+            "label": "Giấy tờ",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "warranty",
+            "label": "Bảo hành",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          }
+        ]
+      },
+      {
+        "slug": "xe-dap",
+        "name": "Xe đạp",
+        "fields": [
+          {
+            "key": "brand",
+            "label": "Hãng",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "model",
+            "label": "Model",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "origin",
+            "label": "Xuất xứ",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "warranty",
+            "label": "Bảo hành",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          }
+        ]
+      },
+      {
+        "slug": "phu-tung-xe",
+        "name": "Phụ tùng & đồ chơi xe",
+        "fields": [
+          {
+            "key": "brand",
+            "label": "Hãng",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "model",
+            "label": "Model",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "origin",
+            "label": "Xuất xứ",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "warranty",
+            "label": "Bảo hành",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "slug": "bat-dong-san",
+    "name": "Nhà đất",
+    "order": 2,
+    "config": {
+      "priceModes": [
+        "FIXED",
+        "MONTH",
+        "M2",
+        "CONTACT"
+      ]
+    },
+    "fields": [
+      {
+        "key": "property_type",
+        "label": "Loại nhà",
+        "type": "select",
+        "required": true,
+        "enabled": true,
+        "options": [
+          {
+            "value": "Nhà riêng",
+            "label": "Nhà riêng"
+          },
+          {
+            "value": "Nhà mặt phố",
+            "label": "Nhà mặt phố"
+          },
+          {
+            "value": "Biệt thự",
+            "label": "Biệt thự"
+          },
+          {
+            "value": "Căn hộ",
+            "label": "Căn hộ"
+          }
+        ],
+        "config": {}
+      },
+      {
+        "key": "land_area",
+        "label": "Diện tích đất",
+        "type": "number",
+        "required": true,
+        "enabled": true,
+        "options": [],
+        "config": {
+          "min": 0,
+          "unit": "m²"
+        }
+      },
+      {
+        "key": "usable_area",
+        "label": "Diện tích sử dụng",
+        "type": "number",
+        "required": false,
+        "enabled": true,
+        "options": [],
+        "config": {
+          "min": 0,
+          "unit": "m²"
+        }
+      },
+      {
+        "key": "floors",
+        "label": "Số tầng",
+        "type": "number",
+        "required": false,
+        "enabled": true,
+        "options": [],
+        "config": {
+          "min": 0
+        }
+      },
+      {
+        "key": "bedrooms",
+        "label": "Số phòng ngủ",
+        "type": "number",
+        "required": false,
+        "enabled": true,
+        "options": [],
+        "config": {
+          "min": 0
+        }
+      },
+      {
+        "key": "bathrooms",
+        "label": "Số WC",
+        "type": "number",
+        "required": false,
+        "enabled": true,
+        "options": [],
+        "config": {
+          "min": 0
+        }
+      },
+      {
+        "key": "direction",
+        "label": "Hướng nhà",
+        "type": "text",
+        "required": false,
+        "enabled": true,
+        "options": [],
+        "config": {
+          "maxLength": 150
+        }
+      },
+      {
+        "key": "frontage",
+        "label": "Mặt tiền",
+        "type": "number",
+        "required": false,
+        "enabled": true,
+        "options": [],
+        "config": {
+          "min": 0,
+          "unit": "m"
+        }
+      },
+      {
+        "key": "road",
+        "label": "Đường vào",
+        "type": "number",
+        "required": false,
+        "enabled": true,
+        "options": [],
+        "config": {
+          "min": 0,
+          "unit": "m"
+        }
+      },
+      {
+        "key": "legal",
+        "label": "Pháp lý",
+        "type": "text",
+        "required": true,
+        "enabled": true,
+        "options": [],
+        "config": {
+          "maxLength": 150
+        }
+      },
+      {
+        "key": "furnished",
+        "label": "Nội thất",
+        "type": "select",
+        "required": false,
+        "enabled": true,
+        "options": [
+          {
+            "value": "Không nội thất",
+            "label": "Không nội thất"
+          },
+          {
+            "value": "Nội thất cơ bản",
+            "label": "Nội thất cơ bản"
+          },
+          {
+            "value": "Đầy đủ nội thất",
+            "label": "Đầy đủ nội thất"
+          }
+        ],
+        "config": {}
+      },
+      {
+        "key": "property_state",
+        "label": "Tình trạng nhà",
+        "type": "text",
+        "required": false,
+        "enabled": true,
+        "options": [],
+        "config": {
+          "maxLength": 150
+        }
+      }
+    ],
+    "children": [
+      {
+        "slug": "ban-nha",
+        "name": "Bán nhà",
+        "fields": [
+          {
+            "key": "property_type",
+            "label": "Loại nhà",
+            "type": "select",
+            "required": true,
+            "enabled": true,
+            "options": [
+              {
+                "value": "Nhà riêng",
+                "label": "Nhà riêng"
+              },
+              {
+                "value": "Nhà mặt phố",
+                "label": "Nhà mặt phố"
+              },
+              {
+                "value": "Biệt thự",
+                "label": "Biệt thự"
+              },
+              {
+                "value": "Căn hộ",
+                "label": "Căn hộ"
+              }
+            ],
+            "config": {}
+          },
+          {
+            "key": "land_area",
+            "label": "Diện tích đất",
+            "type": "number",
+            "required": true,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "min": 0,
+              "unit": "m²"
+            }
+          },
+          {
+            "key": "usable_area",
+            "label": "Diện tích sử dụng",
+            "type": "number",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "min": 0,
+              "unit": "m²"
+            }
+          },
+          {
+            "key": "floors",
+            "label": "Số tầng",
+            "type": "number",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "min": 0
+            }
+          },
+          {
+            "key": "bedrooms",
+            "label": "Số phòng ngủ",
+            "type": "number",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "min": 0
+            }
+          },
+          {
+            "key": "bathrooms",
+            "label": "Số WC",
+            "type": "number",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "min": 0
+            }
+          },
+          {
+            "key": "direction",
+            "label": "Hướng nhà",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "frontage",
+            "label": "Mặt tiền",
+            "type": "number",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "min": 0,
+              "unit": "m"
+            }
+          },
+          {
+            "key": "road",
+            "label": "Đường vào",
+            "type": "number",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "min": 0,
+              "unit": "m"
+            }
+          },
+          {
+            "key": "legal",
+            "label": "Pháp lý",
+            "type": "text",
+            "required": true,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "furnished",
+            "label": "Nội thất",
+            "type": "select",
+            "required": false,
+            "enabled": true,
+            "options": [
+              {
+                "value": "Không nội thất",
+                "label": "Không nội thất"
+              },
+              {
+                "value": "Nội thất cơ bản",
+                "label": "Nội thất cơ bản"
+              },
+              {
+                "value": "Đầy đủ nội thất",
+                "label": "Đầy đủ nội thất"
+              }
+            ],
+            "config": {}
+          },
+          {
+            "key": "property_state",
+            "label": "Tình trạng nhà",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          }
+        ]
+      },
+      {
+        "slug": "ban-dat",
+        "name": "Bán đất",
+        "fields": [
+          {
+            "key": "land_type",
+            "label": "Loại đất",
+            "type": "text",
+            "required": true,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "area",
+            "label": "Diện tích",
+            "type": "number",
+            "required": true,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "min": 0,
+              "unit": "m²"
+            }
+          },
+          {
+            "key": "width",
+            "label": "Chiều ngang",
+            "type": "number",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "min": 0,
+              "unit": "m"
+            }
+          },
+          {
+            "key": "length",
+            "label": "Chiều dài",
+            "type": "number",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "min": 0,
+              "unit": "m"
+            }
+          },
+          {
+            "key": "direction",
+            "label": "Hướng",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "road",
+            "label": "Đường vào",
+            "type": "number",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "min": 0,
+              "unit": "m"
+            }
+          },
+          {
+            "key": "legal",
+            "label": "Pháp lý",
+            "type": "text",
+            "required": true,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "planning",
+            "label": "Thông tin quy hoạch",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "position",
+            "label": "Đặc điểm vị trí",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          }
+        ]
+      },
+      {
+        "slug": "can-ho",
+        "name": "Căn hộ",
+        "fields": [
+          {
+            "key": "property_type",
+            "label": "Loại nhà",
+            "type": "select",
+            "required": true,
+            "enabled": true,
+            "options": [
+              {
+                "value": "Nhà riêng",
+                "label": "Nhà riêng"
+              },
+              {
+                "value": "Nhà mặt phố",
+                "label": "Nhà mặt phố"
+              },
+              {
+                "value": "Biệt thự",
+                "label": "Biệt thự"
+              },
+              {
+                "value": "Căn hộ",
+                "label": "Căn hộ"
+              }
+            ],
+            "config": {}
+          },
+          {
+            "key": "land_area",
+            "label": "Diện tích đất",
+            "type": "number",
+            "required": true,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "min": 0,
+              "unit": "m²"
+            }
+          },
+          {
+            "key": "usable_area",
+            "label": "Diện tích sử dụng",
+            "type": "number",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "min": 0,
+              "unit": "m²"
+            }
+          },
+          {
+            "key": "floors",
+            "label": "Số tầng",
+            "type": "number",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "min": 0
+            }
+          },
+          {
+            "key": "bedrooms",
+            "label": "Số phòng ngủ",
+            "type": "number",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "min": 0
+            }
+          },
+          {
+            "key": "bathrooms",
+            "label": "Số WC",
+            "type": "number",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "min": 0
+            }
+          },
+          {
+            "key": "direction",
+            "label": "Hướng nhà",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "frontage",
+            "label": "Mặt tiền",
+            "type": "number",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "min": 0,
+              "unit": "m"
+            }
+          },
+          {
+            "key": "road",
+            "label": "Đường vào",
+            "type": "number",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "min": 0,
+              "unit": "m"
+            }
+          },
+          {
+            "key": "legal",
+            "label": "Pháp lý",
+            "type": "text",
+            "required": true,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "furnished",
+            "label": "Nội thất",
+            "type": "select",
+            "required": false,
+            "enabled": true,
+            "options": [
+              {
+                "value": "Không nội thất",
+                "label": "Không nội thất"
+              },
+              {
+                "value": "Nội thất cơ bản",
+                "label": "Nội thất cơ bản"
+              },
+              {
+                "value": "Đầy đủ nội thất",
+                "label": "Đầy đủ nội thất"
+              }
+            ],
+            "config": {}
+          },
+          {
+            "key": "property_state",
+            "label": "Tình trạng nhà",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          }
+        ]
+      },
+      {
+        "slug": "phong-tro",
+        "name": "Phòng trọ",
+        "fields": [
+          {
+            "key": "property_type",
+            "label": "Loại nhà",
+            "type": "select",
+            "required": true,
+            "enabled": true,
+            "options": [
+              {
+                "value": "Nhà riêng",
+                "label": "Nhà riêng"
+              },
+              {
+                "value": "Nhà mặt phố",
+                "label": "Nhà mặt phố"
+              },
+              {
+                "value": "Biệt thự",
+                "label": "Biệt thự"
+              },
+              {
+                "value": "Căn hộ",
+                "label": "Căn hộ"
+              }
+            ],
+            "config": {}
+          },
+          {
+            "key": "land_area",
+            "label": "Diện tích đất",
+            "type": "number",
+            "required": true,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "min": 0,
+              "unit": "m²"
+            }
+          },
+          {
+            "key": "usable_area",
+            "label": "Diện tích sử dụng",
+            "type": "number",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "min": 0,
+              "unit": "m²"
+            }
+          },
+          {
+            "key": "floors",
+            "label": "Số tầng",
+            "type": "number",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "min": 0
+            }
+          },
+          {
+            "key": "bedrooms",
+            "label": "Số phòng ngủ",
+            "type": "number",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "min": 0
+            }
+          },
+          {
+            "key": "bathrooms",
+            "label": "Số WC",
+            "type": "number",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "min": 0
+            }
+          },
+          {
+            "key": "direction",
+            "label": "Hướng nhà",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "frontage",
+            "label": "Mặt tiền",
+            "type": "number",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "min": 0,
+              "unit": "m"
+            }
+          },
+          {
+            "key": "road",
+            "label": "Đường vào",
+            "type": "number",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "min": 0,
+              "unit": "m"
+            }
+          },
+          {
+            "key": "legal",
+            "label": "Pháp lý",
+            "type": "text",
+            "required": true,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "furnished",
+            "label": "Nội thất",
+            "type": "select",
+            "required": false,
+            "enabled": true,
+            "options": [
+              {
+                "value": "Không nội thất",
+                "label": "Không nội thất"
+              },
+              {
+                "value": "Nội thất cơ bản",
+                "label": "Nội thất cơ bản"
+              },
+              {
+                "value": "Đầy đủ nội thất",
+                "label": "Đầy đủ nội thất"
+              }
+            ],
+            "config": {}
+          },
+          {
+            "key": "property_state",
+            "label": "Tình trạng nhà",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          }
+        ]
+      },
+      {
+        "slug": "cho-thue-nha",
+        "name": "Cho thuê nhà",
+        "fields": [
+          {
+            "key": "property_type",
+            "label": "Loại nhà",
+            "type": "select",
+            "required": true,
+            "enabled": true,
+            "options": [
+              {
+                "value": "Nhà riêng",
+                "label": "Nhà riêng"
+              },
+              {
+                "value": "Nhà mặt phố",
+                "label": "Nhà mặt phố"
+              },
+              {
+                "value": "Biệt thự",
+                "label": "Biệt thự"
+              },
+              {
+                "value": "Căn hộ",
+                "label": "Căn hộ"
+              }
+            ],
+            "config": {}
+          },
+          {
+            "key": "land_area",
+            "label": "Diện tích đất",
+            "type": "number",
+            "required": true,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "min": 0,
+              "unit": "m²"
+            }
+          },
+          {
+            "key": "usable_area",
+            "label": "Diện tích sử dụng",
+            "type": "number",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "min": 0,
+              "unit": "m²"
+            }
+          },
+          {
+            "key": "floors",
+            "label": "Số tầng",
+            "type": "number",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "min": 0
+            }
+          },
+          {
+            "key": "bedrooms",
+            "label": "Số phòng ngủ",
+            "type": "number",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "min": 0
+            }
+          },
+          {
+            "key": "bathrooms",
+            "label": "Số WC",
+            "type": "number",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "min": 0
+            }
+          },
+          {
+            "key": "direction",
+            "label": "Hướng nhà",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "frontage",
+            "label": "Mặt tiền",
+            "type": "number",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "min": 0,
+              "unit": "m"
+            }
+          },
+          {
+            "key": "road",
+            "label": "Đường vào",
+            "type": "number",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "min": 0,
+              "unit": "m"
+            }
+          },
+          {
+            "key": "legal",
+            "label": "Pháp lý",
+            "type": "text",
+            "required": true,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "furnished",
+            "label": "Nội thất",
+            "type": "select",
+            "required": false,
+            "enabled": true,
+            "options": [
+              {
+                "value": "Không nội thất",
+                "label": "Không nội thất"
+              },
+              {
+                "value": "Nội thất cơ bản",
+                "label": "Nội thất cơ bản"
+              },
+              {
+                "value": "Đầy đủ nội thất",
+                "label": "Đầy đủ nội thất"
+              }
+            ],
+            "config": {}
+          },
+          {
+            "key": "property_state",
+            "label": "Tình trạng nhà",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          }
+        ]
+      },
+      {
+        "slug": "cho-thue-mat-bang",
+        "name": "Cho thuê mặt bằng",
+        "fields": [
+          {
+            "key": "property_type",
+            "label": "Loại nhà",
+            "type": "select",
+            "required": true,
+            "enabled": true,
+            "options": [
+              {
+                "value": "Nhà riêng",
+                "label": "Nhà riêng"
+              },
+              {
+                "value": "Nhà mặt phố",
+                "label": "Nhà mặt phố"
+              },
+              {
+                "value": "Biệt thự",
+                "label": "Biệt thự"
+              },
+              {
+                "value": "Căn hộ",
+                "label": "Căn hộ"
+              }
+            ],
+            "config": {}
+          },
+          {
+            "key": "land_area",
+            "label": "Diện tích đất",
+            "type": "number",
+            "required": true,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "min": 0,
+              "unit": "m²"
+            }
+          },
+          {
+            "key": "usable_area",
+            "label": "Diện tích sử dụng",
+            "type": "number",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "min": 0,
+              "unit": "m²"
+            }
+          },
+          {
+            "key": "floors",
+            "label": "Số tầng",
+            "type": "number",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "min": 0
+            }
+          },
+          {
+            "key": "bedrooms",
+            "label": "Số phòng ngủ",
+            "type": "number",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "min": 0
+            }
+          },
+          {
+            "key": "bathrooms",
+            "label": "Số WC",
+            "type": "number",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "min": 0
+            }
+          },
+          {
+            "key": "direction",
+            "label": "Hướng nhà",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "frontage",
+            "label": "Mặt tiền",
+            "type": "number",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "min": 0,
+              "unit": "m"
+            }
+          },
+          {
+            "key": "road",
+            "label": "Đường vào",
+            "type": "number",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "min": 0,
+              "unit": "m"
+            }
+          },
+          {
+            "key": "legal",
+            "label": "Pháp lý",
+            "type": "text",
+            "required": true,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "furnished",
+            "label": "Nội thất",
+            "type": "select",
+            "required": false,
+            "enabled": true,
+            "options": [
+              {
+                "value": "Không nội thất",
+                "label": "Không nội thất"
+              },
+              {
+                "value": "Nội thất cơ bản",
+                "label": "Nội thất cơ bản"
+              },
+              {
+                "value": "Đầy đủ nội thất",
+                "label": "Đầy đủ nội thất"
+              }
+            ],
+            "config": {}
+          },
+          {
+            "key": "property_state",
+            "label": "Tình trạng nhà",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          }
+        ]
+      },
+      {
+        "slug": "van-phong",
+        "name": "Văn phòng",
+        "fields": [
+          {
+            "key": "property_type",
+            "label": "Loại nhà",
+            "type": "select",
+            "required": true,
+            "enabled": true,
+            "options": [
+              {
+                "value": "Nhà riêng",
+                "label": "Nhà riêng"
+              },
+              {
+                "value": "Nhà mặt phố",
+                "label": "Nhà mặt phố"
+              },
+              {
+                "value": "Biệt thự",
+                "label": "Biệt thự"
+              },
+              {
+                "value": "Căn hộ",
+                "label": "Căn hộ"
+              }
+            ],
+            "config": {}
+          },
+          {
+            "key": "land_area",
+            "label": "Diện tích đất",
+            "type": "number",
+            "required": true,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "min": 0,
+              "unit": "m²"
+            }
+          },
+          {
+            "key": "usable_area",
+            "label": "Diện tích sử dụng",
+            "type": "number",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "min": 0,
+              "unit": "m²"
+            }
+          },
+          {
+            "key": "floors",
+            "label": "Số tầng",
+            "type": "number",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "min": 0
+            }
+          },
+          {
+            "key": "bedrooms",
+            "label": "Số phòng ngủ",
+            "type": "number",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "min": 0
+            }
+          },
+          {
+            "key": "bathrooms",
+            "label": "Số WC",
+            "type": "number",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "min": 0
+            }
+          },
+          {
+            "key": "direction",
+            "label": "Hướng nhà",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "frontage",
+            "label": "Mặt tiền",
+            "type": "number",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "min": 0,
+              "unit": "m"
+            }
+          },
+          {
+            "key": "road",
+            "label": "Đường vào",
+            "type": "number",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "min": 0,
+              "unit": "m"
+            }
+          },
+          {
+            "key": "legal",
+            "label": "Pháp lý",
+            "type": "text",
+            "required": true,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "furnished",
+            "label": "Nội thất",
+            "type": "select",
+            "required": false,
+            "enabled": true,
+            "options": [
+              {
+                "value": "Không nội thất",
+                "label": "Không nội thất"
+              },
+              {
+                "value": "Nội thất cơ bản",
+                "label": "Nội thất cơ bản"
+              },
+              {
+                "value": "Đầy đủ nội thất",
+                "label": "Đầy đủ nội thất"
+              }
+            ],
+            "config": {}
+          },
+          {
+            "key": "property_state",
+            "label": "Tình trạng nhà",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          }
+        ]
+      },
+      {
+        "slug": "bat-dong-san-khac",
+        "name": "Bất động sản khác",
+        "fields": [
+          {
+            "key": "property_type",
+            "label": "Loại nhà",
+            "type": "select",
+            "required": true,
+            "enabled": true,
+            "options": [
+              {
+                "value": "Nhà riêng",
+                "label": "Nhà riêng"
+              },
+              {
+                "value": "Nhà mặt phố",
+                "label": "Nhà mặt phố"
+              },
+              {
+                "value": "Biệt thự",
+                "label": "Biệt thự"
+              },
+              {
+                "value": "Căn hộ",
+                "label": "Căn hộ"
+              }
+            ],
+            "config": {}
+          },
+          {
+            "key": "land_area",
+            "label": "Diện tích đất",
+            "type": "number",
+            "required": true,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "min": 0,
+              "unit": "m²"
+            }
+          },
+          {
+            "key": "usable_area",
+            "label": "Diện tích sử dụng",
+            "type": "number",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "min": 0,
+              "unit": "m²"
+            }
+          },
+          {
+            "key": "floors",
+            "label": "Số tầng",
+            "type": "number",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "min": 0
+            }
+          },
+          {
+            "key": "bedrooms",
+            "label": "Số phòng ngủ",
+            "type": "number",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "min": 0
+            }
+          },
+          {
+            "key": "bathrooms",
+            "label": "Số WC",
+            "type": "number",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "min": 0
+            }
+          },
+          {
+            "key": "direction",
+            "label": "Hướng nhà",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "frontage",
+            "label": "Mặt tiền",
+            "type": "number",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "min": 0,
+              "unit": "m"
+            }
+          },
+          {
+            "key": "road",
+            "label": "Đường vào",
+            "type": "number",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "min": 0,
+              "unit": "m"
+            }
+          },
+          {
+            "key": "legal",
+            "label": "Pháp lý",
+            "type": "text",
+            "required": true,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "furnished",
+            "label": "Nội thất",
+            "type": "select",
+            "required": false,
+            "enabled": true,
+            "options": [
+              {
+                "value": "Không nội thất",
+                "label": "Không nội thất"
+              },
+              {
+                "value": "Nội thất cơ bản",
+                "label": "Nội thất cơ bản"
+              },
+              {
+                "value": "Đầy đủ nội thất",
+                "label": "Đầy đủ nội thất"
+              }
+            ],
+            "config": {}
+          },
+          {
+            "key": "property_state",
+            "label": "Tình trạng nhà",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "slug": "do-gia-dung",
+    "name": "Đồ gia dụng & nội thất",
+    "order": 3,
+    "config": {
+      "priceModes": [
+        "FIXED",
+        "CONTACT",
+        "FREE"
+      ]
+    },
+    "fields": [
+      {
+        "key": "brand",
+        "label": "Hãng",
+        "type": "text",
+        "required": false,
+        "enabled": true,
+        "options": [],
+        "config": {
+          "maxLength": 150
+        }
+      },
+      {
+        "key": "model",
+        "label": "Model",
+        "type": "text",
+        "required": false,
+        "enabled": true,
+        "options": [],
+        "config": {
+          "maxLength": 150
+        }
+      },
+      {
+        "key": "origin",
+        "label": "Xuất xứ",
+        "type": "text",
+        "required": false,
+        "enabled": true,
+        "options": [],
+        "config": {
+          "maxLength": 150
+        }
+      },
+      {
+        "key": "warranty",
+        "label": "Bảo hành",
+        "type": "text",
+        "required": false,
+        "enabled": true,
+        "options": [],
+        "config": {
+          "maxLength": 150
+        }
+      },
+      {
+        "key": "material",
+        "label": "Chất liệu",
+        "type": "text",
+        "required": false,
+        "enabled": true,
+        "options": [],
+        "config": {
+          "maxLength": 150
+        }
+      },
+      {
+        "key": "dimensions",
+        "label": "Kích thước",
+        "type": "text",
+        "required": false,
+        "enabled": true,
+        "options": [],
+        "config": {
+          "maxLength": 150
+        }
+      },
+      {
+        "key": "capacity",
+        "label": "Dung tích / công suất",
+        "type": "text",
+        "required": false,
+        "enabled": true,
+        "options": [],
+        "config": {
+          "maxLength": 150
+        }
+      }
+    ],
+    "children": [
+      {
+        "slug": "sofa",
+        "name": "Sofa",
+        "fields": [
+          {
+            "key": "brand",
+            "label": "Hãng",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "model",
+            "label": "Model",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "origin",
+            "label": "Xuất xứ",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "warranty",
+            "label": "Bảo hành",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "material",
+            "label": "Chất liệu",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "dimensions",
+            "label": "Kích thước",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "capacity",
+            "label": "Dung tích / công suất",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          }
+        ]
+      },
+      {
+        "slug": "ban-ghe",
+        "name": "Bàn ghế",
+        "fields": [
+          {
+            "key": "brand",
+            "label": "Hãng",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "model",
+            "label": "Model",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "origin",
+            "label": "Xuất xứ",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "warranty",
+            "label": "Bảo hành",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "material",
+            "label": "Chất liệu",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "dimensions",
+            "label": "Kích thước",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "capacity",
+            "label": "Dung tích / công suất",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          }
+        ]
+      },
+      {
+        "slug": "tu",
+        "name": "Tủ",
+        "fields": [
+          {
+            "key": "brand",
+            "label": "Hãng",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "model",
+            "label": "Model",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "origin",
+            "label": "Xuất xứ",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "warranty",
+            "label": "Bảo hành",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "material",
+            "label": "Chất liệu",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "dimensions",
+            "label": "Kích thước",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "capacity",
+            "label": "Dung tích / công suất",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          }
+        ]
+      },
+      {
+        "slug": "giuong",
+        "name": "Giường",
+        "fields": [
+          {
+            "key": "brand",
+            "label": "Hãng",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "model",
+            "label": "Model",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "origin",
+            "label": "Xuất xứ",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "warranty",
+            "label": "Bảo hành",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "material",
+            "label": "Chất liệu",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "dimensions",
+            "label": "Kích thước",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "capacity",
+            "label": "Dung tích / công suất",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          }
+        ]
+      },
+      {
+        "slug": "tu-lanh",
+        "name": "Tủ lạnh",
+        "fields": [
+          {
+            "key": "brand",
+            "label": "Hãng",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "model",
+            "label": "Model",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "origin",
+            "label": "Xuất xứ",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "warranty",
+            "label": "Bảo hành",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "material",
+            "label": "Chất liệu",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "dimensions",
+            "label": "Kích thước",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "capacity",
+            "label": "Dung tích / công suất",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          }
+        ]
+      },
+      {
+        "slug": "may-giat",
+        "name": "Máy giặt",
+        "fields": [
+          {
+            "key": "brand",
+            "label": "Hãng",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "model",
+            "label": "Model",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "origin",
+            "label": "Xuất xứ",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "warranty",
+            "label": "Bảo hành",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "material",
+            "label": "Chất liệu",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "dimensions",
+            "label": "Kích thước",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "capacity",
+            "label": "Dung tích / công suất",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          }
+        ]
+      },
+      {
+        "slug": "dieu-hoa",
+        "name": "Điều hòa",
+        "fields": [
+          {
+            "key": "brand",
+            "label": "Hãng",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "model",
+            "label": "Model",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "origin",
+            "label": "Xuất xứ",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "warranty",
+            "label": "Bảo hành",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "material",
+            "label": "Chất liệu",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "dimensions",
+            "label": "Kích thước",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "capacity",
+            "label": "Dung tích / công suất",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          }
+        ]
+      },
+      {
+        "slug": "thiet-bi-nha-bep",
+        "name": "Thiết bị nhà bếp",
+        "fields": [
+          {
+            "key": "brand",
+            "label": "Hãng",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "model",
+            "label": "Model",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "origin",
+            "label": "Xuất xứ",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "warranty",
+            "label": "Bảo hành",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "material",
+            "label": "Chất liệu",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "dimensions",
+            "label": "Kích thước",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "capacity",
+            "label": "Dung tích / công suất",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "slug": "thoi-trang",
+    "name": "Thời trang & phụ kiện",
+    "order": 4,
+    "config": {
+      "priceModes": [
+        "FIXED",
+        "CONTACT",
+        "FREE"
+      ]
+    },
+    "fields": [
+      {
+        "key": "brand",
+        "label": "Hãng",
+        "type": "text",
+        "required": false,
+        "enabled": true,
+        "options": [],
+        "config": {
+          "maxLength": 150
+        }
+      },
+      {
+        "key": "model",
+        "label": "Model",
+        "type": "text",
+        "required": false,
+        "enabled": true,
+        "options": [],
+        "config": {
+          "maxLength": 150
+        }
+      },
+      {
+        "key": "origin",
+        "label": "Xuất xứ",
+        "type": "text",
+        "required": false,
+        "enabled": true,
+        "options": [],
+        "config": {
+          "maxLength": 150
+        }
+      },
+      {
+        "key": "warranty",
+        "label": "Bảo hành",
+        "type": "text",
+        "required": false,
+        "enabled": true,
+        "options": [],
+        "config": {
+          "maxLength": 150
+        }
+      },
+      {
+        "key": "size",
+        "label": "Kích cỡ",
+        "type": "text",
+        "required": false,
+        "enabled": true,
+        "options": [],
+        "config": {
+          "maxLength": 150
+        }
+      },
+      {
+        "key": "color",
+        "label": "Màu sắc",
+        "type": "text",
+        "required": false,
+        "enabled": true,
+        "options": [],
+        "config": {
+          "maxLength": 150
+        }
+      },
+      {
+        "key": "material",
+        "label": "Chất liệu",
+        "type": "text",
+        "required": false,
+        "enabled": true,
+        "options": [],
+        "config": {
+          "maxLength": 150
+        }
+      },
+      {
+        "key": "audience",
+        "label": "Dành cho",
+        "type": "select",
+        "required": false,
+        "enabled": true,
+        "options": [
+          {
+            "value": "Nam",
+            "label": "Nam"
+          },
+          {
+            "value": "Nữ",
+            "label": "Nữ"
+          },
+          {
+            "value": "Unisex",
+            "label": "Unisex"
+          },
+          {
+            "value": "Trẻ em",
+            "label": "Trẻ em"
+          }
+        ],
+        "config": {}
+      }
+    ],
+    "children": [
+      {
+        "slug": "quan-ao",
+        "name": "Quần áo",
+        "fields": [
+          {
+            "key": "brand",
+            "label": "Hãng",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "model",
+            "label": "Model",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "origin",
+            "label": "Xuất xứ",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "warranty",
+            "label": "Bảo hành",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "size",
+            "label": "Kích cỡ",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "color",
+            "label": "Màu sắc",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "material",
+            "label": "Chất liệu",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "audience",
+            "label": "Dành cho",
+            "type": "select",
+            "required": false,
+            "enabled": true,
+            "options": [
+              {
+                "value": "Nam",
+                "label": "Nam"
+              },
+              {
+                "value": "Nữ",
+                "label": "Nữ"
+              },
+              {
+                "value": "Unisex",
+                "label": "Unisex"
+              },
+              {
+                "value": "Trẻ em",
+                "label": "Trẻ em"
+              }
+            ],
+            "config": {}
+          }
+        ]
+      },
+      {
+        "slug": "giay-dep",
+        "name": "Giày dép",
+        "fields": [
+          {
+            "key": "brand",
+            "label": "Hãng",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "model",
+            "label": "Model",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "origin",
+            "label": "Xuất xứ",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "warranty",
+            "label": "Bảo hành",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "size",
+            "label": "Kích cỡ",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "color",
+            "label": "Màu sắc",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "material",
+            "label": "Chất liệu",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "audience",
+            "label": "Dành cho",
+            "type": "select",
+            "required": false,
+            "enabled": true,
+            "options": [
+              {
+                "value": "Nam",
+                "label": "Nam"
+              },
+              {
+                "value": "Nữ",
+                "label": "Nữ"
+              },
+              {
+                "value": "Unisex",
+                "label": "Unisex"
+              },
+              {
+                "value": "Trẻ em",
+                "label": "Trẻ em"
+              }
+            ],
+            "config": {}
+          }
+        ]
+      },
+      {
+        "slug": "tui-xach",
+        "name": "Túi xách",
+        "fields": [
+          {
+            "key": "brand",
+            "label": "Hãng",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "model",
+            "label": "Model",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "origin",
+            "label": "Xuất xứ",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "warranty",
+            "label": "Bảo hành",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "size",
+            "label": "Kích cỡ",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "color",
+            "label": "Màu sắc",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "material",
+            "label": "Chất liệu",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "audience",
+            "label": "Dành cho",
+            "type": "select",
+            "required": false,
+            "enabled": true,
+            "options": [
+              {
+                "value": "Nam",
+                "label": "Nam"
+              },
+              {
+                "value": "Nữ",
+                "label": "Nữ"
+              },
+              {
+                "value": "Unisex",
+                "label": "Unisex"
+              },
+              {
+                "value": "Trẻ em",
+                "label": "Trẻ em"
+              }
+            ],
+            "config": {}
+          }
+        ]
+      },
+      {
+        "slug": "thoi-trang-dong-ho",
+        "name": "Đồng hồ",
+        "fields": [
+          {
+            "key": "brand",
+            "label": "Hãng",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "model",
+            "label": "Model",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "origin",
+            "label": "Xuất xứ",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "warranty",
+            "label": "Bảo hành",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "size",
+            "label": "Kích cỡ",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "color",
+            "label": "Màu sắc",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "material",
+            "label": "Chất liệu",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "audience",
+            "label": "Dành cho",
+            "type": "select",
+            "required": false,
+            "enabled": true,
+            "options": [
+              {
+                "value": "Nam",
+                "label": "Nam"
+              },
+              {
+                "value": "Nữ",
+                "label": "Nữ"
+              },
+              {
+                "value": "Unisex",
+                "label": "Unisex"
+              },
+              {
+                "value": "Trẻ em",
+                "label": "Trẻ em"
+              }
+            ],
+            "config": {}
+          }
+        ]
+      },
+      {
+        "slug": "phu-kien-thoi-trang",
+        "name": "Phụ kiện",
+        "fields": [
+          {
+            "key": "brand",
+            "label": "Hãng",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "model",
+            "label": "Model",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "origin",
+            "label": "Xuất xứ",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "warranty",
+            "label": "Bảo hành",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "size",
+            "label": "Kích cỡ",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "color",
+            "label": "Màu sắc",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "material",
+            "label": "Chất liệu",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "audience",
+            "label": "Dành cho",
+            "type": "select",
+            "required": false,
+            "enabled": true,
+            "options": [
+              {
+                "value": "Nam",
+                "label": "Nam"
+              },
+              {
+                "value": "Nữ",
+                "label": "Nữ"
+              },
+              {
+                "value": "Unisex",
+                "label": "Unisex"
+              },
+              {
+                "value": "Trẻ em",
+                "label": "Trẻ em"
+              }
+            ],
+            "config": {}
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "slug": "the-thao",
+    "name": "Thể thao & giải trí",
+    "order": 5,
+    "config": {
+      "priceModes": [
+        "FIXED",
+        "CONTACT",
+        "FREE"
+      ]
+    },
+    "fields": [
+      {
+        "key": "brand",
+        "label": "Hãng",
+        "type": "text",
+        "required": false,
+        "enabled": true,
+        "options": [],
+        "config": {
+          "maxLength": 150
+        }
+      },
+      {
+        "key": "model",
+        "label": "Model",
+        "type": "text",
+        "required": false,
+        "enabled": true,
+        "options": [],
+        "config": {
+          "maxLength": 150
+        }
+      },
+      {
+        "key": "origin",
+        "label": "Xuất xứ",
+        "type": "text",
+        "required": false,
+        "enabled": true,
+        "options": [],
+        "config": {
+          "maxLength": 150
+        }
+      },
+      {
+        "key": "warranty",
+        "label": "Bảo hành",
+        "type": "text",
+        "required": false,
+        "enabled": true,
+        "options": [],
+        "config": {
+          "maxLength": 150
+        }
+      },
+      {
+        "key": "accessories",
+        "label": "Phụ kiện đi kèm",
+        "type": "text",
+        "required": false,
+        "enabled": true,
+        "options": [],
+        "config": {
+          "maxLength": 150
+        }
+      },
+      {
+        "key": "age_range",
+        "label": "Độ tuổi phù hợp",
+        "type": "text",
+        "required": false,
+        "enabled": true,
+        "options": [],
+        "config": {
+          "maxLength": 150
+        }
+      }
+    ],
+    "children": [
+      {
+        "slug": "playstation",
+        "name": "Playstation",
+        "fields": [
+          {
+            "key": "brand",
+            "label": "Hãng",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "model",
+            "label": "Model",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "origin",
+            "label": "Xuất xứ",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "warranty",
+            "label": "Bảo hành",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "accessories",
+            "label": "Phụ kiện đi kèm",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "age_range",
+            "label": "Độ tuổi phù hợp",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          }
+        ]
+      },
+      {
+        "slug": "xbox",
+        "name": "Xbox",
+        "fields": [
+          {
+            "key": "brand",
+            "label": "Hãng",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "model",
+            "label": "Model",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "origin",
+            "label": "Xuất xứ",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "warranty",
+            "label": "Bảo hành",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "accessories",
+            "label": "Phụ kiện đi kèm",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "age_range",
+            "label": "Độ tuổi phù hợp",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          }
+        ]
+      },
+      {
+        "slug": "nintendo",
+        "name": "Nintendo",
+        "fields": [
+          {
+            "key": "brand",
+            "label": "Hãng",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "model",
+            "label": "Model",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "origin",
+            "label": "Xuất xứ",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "warranty",
+            "label": "Bảo hành",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "accessories",
+            "label": "Phụ kiện đi kèm",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "age_range",
+            "label": "Độ tuổi phù hợp",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          }
+        ]
+      },
+      {
+        "slug": "dung-cu-the-thao",
+        "name": "Dụng cụ thể thao",
+        "fields": [
+          {
+            "key": "brand",
+            "label": "Hãng",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "model",
+            "label": "Model",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "origin",
+            "label": "Xuất xứ",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "warranty",
+            "label": "Bảo hành",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "accessories",
+            "label": "Phụ kiện đi kèm",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "age_range",
+            "label": "Độ tuổi phù hợp",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          }
+        ]
+      },
+      {
+        "slug": "nhac-cu",
+        "name": "Nhạc cụ",
+        "fields": [
+          {
+            "key": "brand",
+            "label": "Hãng",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "model",
+            "label": "Model",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "origin",
+            "label": "Xuất xứ",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "warranty",
+            "label": "Bảo hành",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "accessories",
+            "label": "Phụ kiện đi kèm",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "age_range",
+            "label": "Độ tuổi phù hợp",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          }
+        ]
+      },
+      {
+        "slug": "do-choi",
+        "name": "Đồ chơi",
+        "fields": [
+          {
+            "key": "brand",
+            "label": "Hãng",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "model",
+            "label": "Model",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "origin",
+            "label": "Xuất xứ",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "warranty",
+            "label": "Bảo hành",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "accessories",
+            "label": "Phụ kiện đi kèm",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "age_range",
+            "label": "Độ tuổi phù hợp",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "slug": "sach-van-phong-pham",
+    "name": "Sách & học tập",
+    "order": 6,
+    "config": {
+      "priceModes": [
+        "FIXED",
+        "CONTACT",
+        "FREE"
+      ]
+    },
+    "fields": [
+      {
+        "key": "author",
+        "label": "Tác giả",
+        "type": "text",
+        "required": false,
+        "enabled": true,
+        "options": [],
+        "config": {
+          "maxLength": 150
+        }
+      },
+      {
+        "key": "publisher",
+        "label": "Nhà xuất bản",
+        "type": "text",
+        "required": false,
+        "enabled": true,
+        "options": [],
+        "config": {
+          "maxLength": 150
+        }
+      },
+      {
+        "key": "year",
+        "label": "Năm xuất bản",
+        "type": "year",
+        "required": false,
+        "enabled": true,
+        "options": [],
+        "config": {}
+      },
+      {
+        "key": "language",
+        "label": "Ngôn ngữ",
+        "type": "text",
+        "required": false,
+        "enabled": true,
+        "options": [],
+        "config": {
+          "maxLength": 150
+        }
+      },
+      {
+        "key": "subject",
+        "label": "Môn học / chủ đề",
+        "type": "text",
+        "required": false,
+        "enabled": true,
+        "options": [],
+        "config": {
+          "maxLength": 150
+        }
+      }
+    ],
+    "children": [
+      {
+        "slug": "sach",
+        "name": "Sách",
+        "fields": [
+          {
+            "key": "author",
+            "label": "Tác giả",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "publisher",
+            "label": "Nhà xuất bản",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "year",
+            "label": "Năm xuất bản",
+            "type": "year",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {}
+          },
+          {
+            "key": "language",
+            "label": "Ngôn ngữ",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "subject",
+            "label": "Môn học / chủ đề",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          }
+        ]
+      },
+      {
+        "slug": "giao-trinh",
+        "name": "Giáo trình",
+        "fields": [
+          {
+            "key": "author",
+            "label": "Tác giả",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "publisher",
+            "label": "Nhà xuất bản",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "year",
+            "label": "Năm xuất bản",
+            "type": "year",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {}
+          },
+          {
+            "key": "language",
+            "label": "Ngôn ngữ",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "subject",
+            "label": "Môn học / chủ đề",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          }
+        ]
+      },
+      {
+        "slug": "do-dung-hoc-tap",
+        "name": "Đồ dùng học tập",
+        "fields": [
+          {
+            "key": "author",
+            "label": "Tác giả",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "publisher",
+            "label": "Nhà xuất bản",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "year",
+            "label": "Năm xuất bản",
+            "type": "year",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {}
+          },
+          {
+            "key": "language",
+            "label": "Ngôn ngữ",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "subject",
+            "label": "Môn học / chủ đề",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "slug": "may-moc-cong-cu",
+    "name": "Máy móc & công cụ",
+    "order": 7,
+    "config": {
+      "priceModes": [
+        "FIXED",
+        "CONTACT",
+        "FREE"
+      ]
+    },
+    "fields": [
+      {
+        "key": "brand",
+        "label": "Hãng",
+        "type": "text",
+        "required": false,
+        "enabled": true,
+        "options": [],
+        "config": {
+          "maxLength": 150
+        }
+      },
+      {
+        "key": "model",
+        "label": "Model",
+        "type": "text",
+        "required": false,
+        "enabled": true,
+        "options": [],
+        "config": {
+          "maxLength": 150
+        }
+      },
+      {
+        "key": "origin",
+        "label": "Xuất xứ",
+        "type": "text",
+        "required": false,
+        "enabled": true,
+        "options": [],
+        "config": {
+          "maxLength": 150
+        }
+      },
+      {
+        "key": "warranty",
+        "label": "Bảo hành",
+        "type": "text",
+        "required": false,
+        "enabled": true,
+        "options": [],
+        "config": {
+          "maxLength": 150
+        }
+      },
+      {
+        "key": "power",
+        "label": "Công suất",
+        "type": "text",
+        "required": false,
+        "enabled": true,
+        "options": [],
+        "config": {
+          "maxLength": 150
+        }
+      },
+      {
+        "key": "voltage",
+        "label": "Điện áp",
+        "type": "text",
+        "required": false,
+        "enabled": true,
+        "options": [],
+        "config": {
+          "maxLength": 150
+        }
+      },
+      {
+        "key": "weight",
+        "label": "Khối lượng",
+        "type": "number",
+        "required": false,
+        "enabled": true,
+        "options": [],
+        "config": {
+          "min": 0,
+          "unit": "kg"
+        }
+      },
+      {
+        "key": "usage",
+        "label": "Mục đích sử dụng",
+        "type": "text",
+        "required": false,
+        "enabled": true,
+        "options": [],
+        "config": {
+          "maxLength": 150
+        }
+      }
+    ],
+    "children": [
+      {
+        "slug": "may-moc-cong-nghiep",
+        "name": "Máy móc công nghiệp",
+        "fields": [
+          {
+            "key": "brand",
+            "label": "Hãng",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "model",
+            "label": "Model",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "origin",
+            "label": "Xuất xứ",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "warranty",
+            "label": "Bảo hành",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "power",
+            "label": "Công suất",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "voltage",
+            "label": "Điện áp",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "weight",
+            "label": "Khối lượng",
+            "type": "number",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "min": 0,
+              "unit": "kg"
+            }
+          },
+          {
+            "key": "usage",
+            "label": "Mục đích sử dụng",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          }
+        ]
+      },
+      {
+        "slug": "dung-cu",
+        "name": "Dụng cụ",
+        "fields": [
+          {
+            "key": "brand",
+            "label": "Hãng",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "model",
+            "label": "Model",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "origin",
+            "label": "Xuất xứ",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "warranty",
+            "label": "Bảo hành",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "power",
+            "label": "Công suất",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "voltage",
+            "label": "Điện áp",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "weight",
+            "label": "Khối lượng",
+            "type": "number",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "min": 0,
+              "unit": "kg"
+            }
+          },
+          {
+            "key": "usage",
+            "label": "Mục đích sử dụng",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          }
+        ]
+      },
+      {
+        "slug": "thiet-bi-xay-dung",
+        "name": "Thiết bị xây dựng",
+        "fields": [
+          {
+            "key": "brand",
+            "label": "Hãng",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "model",
+            "label": "Model",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "origin",
+            "label": "Xuất xứ",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "warranty",
+            "label": "Bảo hành",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "power",
+            "label": "Công suất",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "voltage",
+            "label": "Điện áp",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "weight",
+            "label": "Khối lượng",
+            "type": "number",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "min": 0,
+              "unit": "kg"
+            }
+          },
+          {
+            "key": "usage",
+            "label": "Mục đích sử dụng",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          }
+        ]
+      },
+      {
+        "slug": "thiet-bi-dien",
+        "name": "Thiết bị điện",
+        "fields": [
+          {
+            "key": "brand",
+            "label": "Hãng",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "model",
+            "label": "Model",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "origin",
+            "label": "Xuất xứ",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "warranty",
+            "label": "Bảo hành",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "power",
+            "label": "Công suất",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "voltage",
+            "label": "Điện áp",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "weight",
+            "label": "Khối lượng",
+            "type": "number",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "min": 0,
+              "unit": "kg"
+            }
+          },
+          {
+            "key": "usage",
+            "label": "Mục đích sử dụng",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "slug": "do-suu-tam",
+    "name": "Đồ sưu tầm",
+    "order": 8,
+    "config": {
+      "priceModes": [
+        "FIXED",
+        "CONTACT",
+        "FREE"
+      ]
+    },
+    "fields": [
+      {
+        "key": "maker",
+        "label": "Nhà sản xuất / tác giả",
+        "type": "text",
+        "required": false,
+        "enabled": true,
+        "options": [],
+        "config": {
+          "maxLength": 150
+        }
+      },
+      {
+        "key": "period",
+        "label": "Niên đại",
+        "type": "text",
+        "required": false,
+        "enabled": true,
+        "options": [],
+        "config": {
+          "maxLength": 150
+        }
+      },
+      {
+        "key": "material",
+        "label": "Chất liệu",
+        "type": "text",
+        "required": false,
+        "enabled": true,
+        "options": [],
+        "config": {
+          "maxLength": 150
+        }
+      },
+      {
+        "key": "origin",
+        "label": "Nguồn gốc",
+        "type": "text",
+        "required": false,
+        "enabled": true,
+        "options": [],
+        "config": {
+          "maxLength": 150
+        }
+      },
+      {
+        "key": "certificate",
+        "label": "Chứng nhận / tài liệu kèm theo",
+        "type": "text",
+        "required": false,
+        "enabled": true,
+        "options": [],
+        "config": {
+          "maxLength": 150
+        }
+      }
+    ],
+    "children": [
+      {
+        "slug": "suu-tam-dong-ho",
+        "name": "Đồng hồ",
+        "fields": [
+          {
+            "key": "maker",
+            "label": "Nhà sản xuất / tác giả",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "period",
+            "label": "Niên đại",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "material",
+            "label": "Chất liệu",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "origin",
+            "label": "Nguồn gốc",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "certificate",
+            "label": "Chứng nhận / tài liệu kèm theo",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          }
+        ]
+      },
+      {
+        "slug": "do-co",
+        "name": "Đồ cổ",
+        "fields": [
+          {
+            "key": "maker",
+            "label": "Nhà sản xuất / tác giả",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "period",
+            "label": "Niên đại",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "material",
+            "label": "Chất liệu",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "origin",
+            "label": "Nguồn gốc",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "certificate",
+            "label": "Chứng nhận / tài liệu kèm theo",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          }
+        ]
+      },
+      {
+        "slug": "mo-hinh",
+        "name": "Mô hình",
+        "fields": [
+          {
+            "key": "maker",
+            "label": "Nhà sản xuất / tác giả",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "period",
+            "label": "Niên đại",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "material",
+            "label": "Chất liệu",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "origin",
+            "label": "Nguồn gốc",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "certificate",
+            "label": "Chứng nhận / tài liệu kèm theo",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          }
+        ]
+      },
+      {
+        "slug": "tem",
+        "name": "Tem",
+        "fields": [
+          {
+            "key": "maker",
+            "label": "Nhà sản xuất / tác giả",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "period",
+            "label": "Niên đại",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "material",
+            "label": "Chất liệu",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "origin",
+            "label": "Nguồn gốc",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "certificate",
+            "label": "Chứng nhận / tài liệu kèm theo",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          }
+        ]
+      },
+      {
+        "slug": "vat-pham-suu-tam",
+        "name": "Vật phẩm sưu tầm",
+        "fields": [
+          {
+            "key": "maker",
+            "label": "Nhà sản xuất / tác giả",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "period",
+            "label": "Niên đại",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "material",
+            "label": "Chất liệu",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "origin",
+            "label": "Nguồn gốc",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "certificate",
+            "label": "Chứng nhận / tài liệu kèm theo",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "slug": "thu-cung",
+    "name": "Thú cưng & vật dụng",
+    "order": 9,
+    "config": {
+      "priceModes": [
+        "FIXED",
+        "CONTACT",
+        "FREE"
+      ]
+    },
+    "fields": [
+      {
+        "key": "species",
+        "label": "Loài / dòng",
+        "type": "text",
+        "required": false,
+        "enabled": true,
+        "options": [],
+        "config": {
+          "maxLength": 150
+        }
+      },
+      {
+        "key": "breed",
+        "label": "Giống",
+        "type": "text",
+        "required": false,
+        "enabled": true,
+        "options": [],
+        "config": {
+          "maxLength": 150
+        }
+      },
+      {
+        "key": "age",
+        "label": "Độ tuổi",
+        "type": "number",
+        "required": false,
+        "enabled": true,
+        "options": [],
+        "config": {
+          "min": 0,
+          "unit": "tháng"
+        }
+      },
+      {
+        "key": "health",
+        "label": "Tình trạng sức khỏe",
+        "type": "text",
+        "required": false,
+        "enabled": true,
+        "options": [],
+        "config": {
+          "maxLength": 150
+        }
+      },
+      {
+        "key": "vaccinated",
+        "label": "Đã tiêm phòng",
+        "type": "boolean",
+        "required": false,
+        "enabled": true,
+        "options": [],
+        "config": {}
+      },
+      {
+        "key": "origin",
+        "label": "Nguồn gốc hợp pháp",
+        "type": "text",
+        "required": false,
+        "enabled": true,
+        "options": [],
+        "config": {
+          "maxLength": 150
+        }
+      }
+    ],
+    "children": [
+      {
+        "slug": "thu-cung-canh",
+        "name": "Thú cưng",
+        "fields": [
+          {
+            "key": "species",
+            "label": "Loài / dòng",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "breed",
+            "label": "Giống",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "age",
+            "label": "Độ tuổi",
+            "type": "number",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "min": 0,
+              "unit": "tháng"
+            }
+          },
+          {
+            "key": "health",
+            "label": "Tình trạng sức khỏe",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "vaccinated",
+            "label": "Đã tiêm phòng",
+            "type": "boolean",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {}
+          },
+          {
+            "key": "origin",
+            "label": "Nguồn gốc hợp pháp",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          }
+        ]
+      },
+      {
+        "slug": "phu-kien-thu-cung",
+        "name": "Phụ kiện",
+        "fields": [
+          {
+            "key": "species",
+            "label": "Loài / dòng",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "breed",
+            "label": "Giống",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "age",
+            "label": "Độ tuổi",
+            "type": "number",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "min": 0,
+              "unit": "tháng"
+            }
+          },
+          {
+            "key": "health",
+            "label": "Tình trạng sức khỏe",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "vaccinated",
+            "label": "Đã tiêm phòng",
+            "type": "boolean",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {}
+          },
+          {
+            "key": "origin",
+            "label": "Nguồn gốc hợp pháp",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          }
+        ]
+      },
+      {
+        "slug": "thuc-an-thu-cung",
+        "name": "Thức ăn",
+        "fields": [
+          {
+            "key": "species",
+            "label": "Loài / dòng",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "breed",
+            "label": "Giống",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "age",
+            "label": "Độ tuổi",
+            "type": "number",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "min": 0,
+              "unit": "tháng"
+            }
+          },
+          {
+            "key": "health",
+            "label": "Tình trạng sức khỏe",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "vaccinated",
+            "label": "Đã tiêm phòng",
+            "type": "boolean",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {}
+          },
+          {
+            "key": "origin",
+            "label": "Nguồn gốc hợp pháp",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "slug": "khac",
+    "name": "Hàng hóa khác",
+    "order": 10,
+    "config": {
+      "priceModes": [
+        "FIXED",
+        "CONTACT",
+        "FREE"
+      ]
+    },
+    "fields": [
+      {
+        "key": "brand",
+        "label": "Hãng",
+        "type": "text",
+        "required": false,
+        "enabled": true,
+        "options": [],
+        "config": {
+          "maxLength": 150
+        }
+      },
+      {
+        "key": "model",
+        "label": "Model",
+        "type": "text",
+        "required": false,
+        "enabled": true,
+        "options": [],
+        "config": {
+          "maxLength": 150
+        }
+      },
+      {
+        "key": "origin",
+        "label": "Xuất xứ",
+        "type": "text",
+        "required": false,
+        "enabled": true,
+        "options": [],
+        "config": {
+          "maxLength": 150
+        }
+      },
+      {
+        "key": "warranty",
+        "label": "Bảo hành",
+        "type": "text",
+        "required": false,
+        "enabled": true,
+        "options": [],
+        "config": {
+          "maxLength": 150
+        }
+      },
+      {
+        "key": "material",
+        "label": "Chất liệu",
+        "type": "text",
+        "required": false,
+        "enabled": true,
+        "options": [],
+        "config": {
+          "maxLength": 150
+        }
+      },
+      {
+        "key": "details",
+        "label": "Đặc điểm khác",
+        "type": "text",
+        "required": false,
+        "enabled": true,
+        "options": [],
+        "config": {
+          "maxLength": 150
+        }
+      }
+    ],
+    "children": [
+      {
+        "slug": "hang-hoa-khac",
+        "name": "Hàng hóa khác",
+        "fields": [
+          {
+            "key": "brand",
+            "label": "Hãng",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "model",
+            "label": "Model",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "origin",
+            "label": "Xuất xứ",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "warranty",
+            "label": "Bảo hành",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "material",
+            "label": "Chất liệu",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "details",
+            "label": "Đặc điểm khác",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "slug": "dich-vu",
+    "name": "Dịch vụ",
+    "order": 11,
+    "config": {
+      "priceModes": [
+        "FIXED",
+        "HOUR",
+        "DAY",
+        "MONTH",
+        "CONTACT"
+      ]
+    },
+    "fields": [
+      {
+        "key": "service_name",
+        "label": "Tên dịch vụ",
+        "type": "text",
+        "required": true,
+        "enabled": true,
+        "options": [],
+        "config": {
+          "maxLength": 150
+        }
+      },
+      {
+        "key": "experience",
+        "label": "Kinh nghiệm",
+        "type": "text",
+        "required": false,
+        "enabled": true,
+        "options": [],
+        "config": {
+          "maxLength": 150
+        }
+      },
+      {
+        "key": "service_area",
+        "label": "Khu vực phục vụ",
+        "type": "text",
+        "required": true,
+        "enabled": true,
+        "options": [],
+        "config": {
+          "maxLength": 150
+        }
+      },
+      {
+        "key": "availability",
+        "label": "Thời gian phục vụ",
+        "type": "text",
+        "required": false,
+        "enabled": true,
+        "options": [],
+        "config": {
+          "maxLength": 150
+        }
+      },
+      {
+        "key": "at_home",
+        "label": "Phục vụ tại nhà",
+        "type": "boolean",
+        "required": false,
+        "enabled": true,
+        "options": [],
+        "config": {}
+      },
+      {
+        "key": "scope",
+        "label": "Phạm vi công việc",
+        "type": "textarea",
+        "required": false,
+        "enabled": true,
+        "options": [],
+        "config": {
+          "maxLength": 2000
+        }
+      }
+    ],
+    "children": [
+      {
+        "slug": "sua-chua",
+        "name": "Sửa chữa",
+        "fields": [
+          {
+            "key": "service_name",
+            "label": "Tên dịch vụ",
+            "type": "text",
+            "required": true,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "experience",
+            "label": "Kinh nghiệm",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "service_area",
+            "label": "Khu vực phục vụ",
+            "type": "text",
+            "required": true,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "availability",
+            "label": "Thời gian phục vụ",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "at_home",
+            "label": "Phục vụ tại nhà",
+            "type": "boolean",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {}
+          },
+          {
+            "key": "scope",
+            "label": "Phạm vi công việc",
+            "type": "textarea",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 2000
+            }
+          }
+        ]
+      },
+      {
+        "slug": "van-chuyen",
+        "name": "Vận chuyển",
+        "fields": [
+          {
+            "key": "service_name",
+            "label": "Tên dịch vụ",
+            "type": "text",
+            "required": true,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "experience",
+            "label": "Kinh nghiệm",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "service_area",
+            "label": "Khu vực phục vụ",
+            "type": "text",
+            "required": true,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "availability",
+            "label": "Thời gian phục vụ",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "at_home",
+            "label": "Phục vụ tại nhà",
+            "type": "boolean",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {}
+          },
+          {
+            "key": "scope",
+            "label": "Phạm vi công việc",
+            "type": "textarea",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 2000
+            }
+          }
+        ]
+      },
+      {
+        "slug": "thiet-ke",
+        "name": "Thiết kế",
+        "fields": [
+          {
+            "key": "service_name",
+            "label": "Tên dịch vụ",
+            "type": "text",
+            "required": true,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "experience",
+            "label": "Kinh nghiệm",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "service_area",
+            "label": "Khu vực phục vụ",
+            "type": "text",
+            "required": true,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "availability",
+            "label": "Thời gian phục vụ",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "at_home",
+            "label": "Phục vụ tại nhà",
+            "type": "boolean",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {}
+          },
+          {
+            "key": "scope",
+            "label": "Phạm vi công việc",
+            "type": "textarea",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 2000
+            }
+          }
+        ]
+      },
+      {
+        "slug": "cho-thue",
+        "name": "Cho thuê",
+        "fields": [
+          {
+            "key": "service_name",
+            "label": "Tên dịch vụ",
+            "type": "text",
+            "required": true,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "experience",
+            "label": "Kinh nghiệm",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "service_area",
+            "label": "Khu vực phục vụ",
+            "type": "text",
+            "required": true,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "availability",
+            "label": "Thời gian phục vụ",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "at_home",
+            "label": "Phục vụ tại nhà",
+            "type": "boolean",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {}
+          },
+          {
+            "key": "scope",
+            "label": "Phạm vi công việc",
+            "type": "textarea",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 2000
+            }
+          }
+        ]
+      },
+      {
+        "slug": "dich-vu-ca-nhan",
+        "name": "Dịch vụ cá nhân",
+        "fields": [
+          {
+            "key": "service_name",
+            "label": "Tên dịch vụ",
+            "type": "text",
+            "required": true,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "experience",
+            "label": "Kinh nghiệm",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "service_area",
+            "label": "Khu vực phục vụ",
+            "type": "text",
+            "required": true,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "availability",
+            "label": "Thời gian phục vụ",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "at_home",
+            "label": "Phục vụ tại nhà",
+            "type": "boolean",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {}
+          },
+          {
+            "key": "scope",
+            "label": "Phạm vi công việc",
+            "type": "textarea",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 2000
+            }
+          }
+        ]
+      },
+      {
+        "slug": "dich-vu-doanh-nghiep",
+        "name": "Dịch vụ doanh nghiệp",
+        "fields": [
+          {
+            "key": "service_name",
+            "label": "Tên dịch vụ",
+            "type": "text",
+            "required": true,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "experience",
+            "label": "Kinh nghiệm",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "service_area",
+            "label": "Khu vực phục vụ",
+            "type": "text",
+            "required": true,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "availability",
+            "label": "Thời gian phục vụ",
+            "type": "text",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 150
+            }
+          },
+          {
+            "key": "at_home",
+            "label": "Phục vụ tại nhà",
+            "type": "boolean",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {}
+          },
+          {
+            "key": "scope",
+            "label": "Phạm vi công việc",
+            "type": "textarea",
+            "required": false,
+            "enabled": true,
+            "options": [],
+            "config": {
+              "maxLength": 2000
+            }
+          }
+        ]
+      }
+    ]
+  }
+]

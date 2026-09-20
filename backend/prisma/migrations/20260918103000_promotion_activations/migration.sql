@@ -1,0 +1,2 @@
+CREATE TABLE promotion_activations (id UUID PRIMARY KEY DEFAULT gen_random_uuid(), promotion_order_id UUID NOT NULL UNIQUE REFERENCES promotion_orders(id), product_id UUID NOT NULL REFERENCES products(id), promotion_type promotion_type NOT NULL, starts_at TIMESTAMPTZ NOT NULL, ends_at TIMESTAMPTZ NOT NULL, status TEXT NOT NULL DEFAULT 'ACTIVE' CHECK(status IN ('ACTIVE','EXPIRED','CANCELLED')), created_at TIMESTAMPTZ NOT NULL DEFAULT now());
+CREATE INDEX promotion_activations_product_active_idx ON promotion_activations(product_id,status,ends_at);

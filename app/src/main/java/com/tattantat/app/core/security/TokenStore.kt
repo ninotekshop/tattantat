@@ -13,7 +13,10 @@ import javax.inject.Singleton
 @Singleton
 class TokenStore @Inject constructor(private val dataStore: DataStore<Preferences>) {
     private val refreshTokenKey = stringPreferencesKey("refresh_token")
+    private val accessTokenKey = stringPreferencesKey("access_token")
+    suspend fun accessToken(): String? = dataStore.data.first()[accessTokenKey]
+    suspend fun saveAccessToken(token: String) = dataStore.edit { it[accessTokenKey] = token }
     suspend fun refreshToken(): String? = dataStore.data.first()[refreshTokenKey]
     suspend fun saveRefreshToken(token: String) = dataStore.edit { it[refreshTokenKey] = token }
-    suspend fun clear() = dataStore.edit { it.remove(refreshTokenKey) }
+    suspend fun clear() = dataStore.edit { it.remove(refreshTokenKey); it.remove(accessTokenKey) }
 }

@@ -8,10 +8,21 @@ local.properties
 .idea/
 *.iml
 tmp/
-backend/node_modules/
+node_modules/
+**/node_modules/
+.codex/
 backend/dist/
+backend/*.log
 
 # Signing and local secrets
 *.jks
 *.keystore
 .env
+*.env
+google-services*.json
+firebase-service-account*.json
+resources/Hostinger/
+resources/Supabase/
+resources/Domain/
+pass.txt
+API.txt
