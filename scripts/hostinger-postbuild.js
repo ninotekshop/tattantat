@@ -3,6 +3,8 @@ const path = require('path');
 
 const rootDir = path.join(__dirname, '..');
 const webDir = path.join(rootDir, 'web');
+const backendDir = path.join(rootDir, 'backend');
+const backendDist = path.join(backendDir, 'dist');
 const webPublic = path.join(webDir, 'public');
 const webNext = path.join(webDir, '.next');
 const webStatic = path.join(webNext, 'static');
@@ -24,6 +26,19 @@ function copyDirSync(src, dest) {
   }
 }
 
+function linkOrCopy(src, dest) {
+  if (!fs.existsSync(src)) return;
+  fs.mkdirSync(path.dirname(dest), { recursive: true });
+  if (fs.existsSync(dest)) {
+    fs.rmSync(dest, { recursive: true, force: true });
+  }
+  try {
+    fs.symlinkSync(src, dest, 'junction');
+  } catch (e) {
+    copyDirSync(src, dest);
+  }
+}
+
 function patchStandaloneServer(serverFilePath) {
   if (!fs.existsSync(serverFilePath)) return;
   try {
@@ -36,20 +51,22 @@ const _fs = require('fs');
 const _cp = require('child_process');
 
 try {
-  const _b1 = _path.resolve(__dirname, '..', 'backend', 'dist', 'main.js');
-  const _b2 = _path.resolve(__dirname, 'backend', 'dist', 'main.js');
+  const _b1 = _path.resolve(__dirname, 'backend', 'dist', 'main.js');
+  const _b2 = _path.resolve(__dirname, '..', 'backend', 'dist', 'main.js');
   const _b3 = _path.resolve(__dirname, '..', '..', 'backend', 'dist', 'main.js');
   const _targetBackend = _fs.existsSync(_b1) ? _b1 : _fs.existsSync(_b2) ? _b2 : _fs.existsSync(_b3) ? _b3 : null;
 
   if (_targetBackend) {
     const _backendPort = process.env.BACKEND_PORT || '3009';
-    console.log('[Hostinger Standalone] Launching NestJS Backend process on internal port ' + _backendPort + '...');
+    console.log('[Hostinger Standalone] Launching NestJS Backend process on internal port ' + _backendPort + ' from ' + _targetBackend + '...');
     const _backendEnv = Object.assign({}, process.env, { PORT: _backendPort });
     const _backendProc = _cp.fork(_targetBackend, [], { env: _backendEnv, stdio: 'inherit' });
     _backendProc.on('error', (err) => console.error('[Hostinger Standalone] Backend process error:', err));
 
     // Tell Next.js SSR to fetch from this backend port
     process.env.API_INTERNAL_BASE_URL = 'http://127.0.0.1:' + _backendPort + '/api/v1';
+  } else {
+    console.error('[Hostinger Standalone] ERROR: Could not locate backend/dist/main.js in standalone environment!');
   }
 } catch (e) {
   console.warn('[Hostinger Standalone] Could not auto-launch backend process:', e.message);
@@ -62,7 +79,7 @@ try {
   }
 }
 
-console.log('[Hostinger Postbuild] Processing Next.js standalone static assets & public files...');
+console.log('[Hostinger Postbuild] Processing Next.js standalone static assets & backend bundle...');
 
 // 1. Copy public assets into standalone directories
 if (fs.existsSync(webPublic)) {
@@ -81,13 +98,19 @@ if (fs.existsSync(webStatic) && fs.existsSync(webStandalone)) {
   console.log('[Hostinger Postbuild] .next/static build traces copied successfully.');
 }
 
-// 3. Patch standalone server.js files to auto-launch backend
+// 3. Copy compiled NestJS backend dist & node_modules into standalone directory
+if (fs.existsSync(backendDist) && fs.existsSync(webStandalone)) {
+  linkOrCopy(backendDir, path.join(webStandalone, 'backend'));
+  console.log('[Hostinger Postbuild] Compiled NestJS Backend bundled into standalone folder successfully.');
+}
+
+// 4. Patch standalone server.js files to auto-launch backend
 if (fs.existsSync(webStandalone)) {
   patchStandaloneServer(path.join(webStandalone, 'server.js'));
   patchStandaloneServer(path.join(webStandalone, 'web', 'server.js'));
 }
 
-// 4. Link web/.next to root .next
+// 5. Link web/.next to root .next
 if (fs.existsSync(webNext)) {
   try {
     if (fs.existsSync(rootNext)) {
@@ -110,3 +133,6 @@ if (fs.existsSync(webNext)) {
 // Patch root .next standalone files if present
 patchStandaloneServer(path.join(rootNext, 'standalone', 'server.js'));
 patchStandaloneServer(path.join(rootNext, 'standalone', 'web', 'server.js'));
+if (fs.existsSync(backendDist) && fs.existsSync(path.join(rootNext, 'standalone'))) {
+  linkOrCopy(backendDir, path.join(rootNext, 'standalone', 'backend'));
+}
