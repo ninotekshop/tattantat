@@ -7,11 +7,15 @@ const { fork } = require('child_process');
 // Ensure working directory is web/
 process.chdir(__dirname);
 
-// Automatically start NestJS Backend process on port 3000 if compiled dist/main.js exists
+// Choose an open port for the backend to avoid 3000 collision on Hostinger
+const BACKEND_INTERNAL_PORT = process.env.BACKEND_PORT || '3009';
+process.env.API_INTERNAL_BASE_URL = `http://127.0.0.1:${BACKEND_INTERNAL_PORT}/api/v1`;
+
+// Automatically start NestJS Backend process on a safe port if compiled dist/main.js exists
 const backendDist = path.join(__dirname, '..', 'backend', 'dist', 'main.js');
 if (fs.existsSync(backendDist)) {
-  console.log('[Hostinger Web] Starting NestJS Backend process on internal port 3000...');
-  const backendEnv = Object.assign({}, process.env, { PORT: process.env.BACKEND_PORT || '3000' });
+  console.log(`[Hostinger Web] Starting NestJS Backend process on internal port ${BACKEND_INTERNAL_PORT}...`);
+  const backendEnv = Object.assign({}, process.env, { PORT: BACKEND_INTERNAL_PORT });
   const backendProc = fork(backendDist, [], { env: backendEnv, stdio: 'inherit' });
 
   backendProc.on('error', (err) => {

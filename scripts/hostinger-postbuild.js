@@ -42,10 +42,14 @@ try {
   const _targetBackend = _fs.existsSync(_b1) ? _b1 : _fs.existsSync(_b2) ? _b2 : _fs.existsSync(_b3) ? _b3 : null;
 
   if (_targetBackend) {
-    console.log('[Hostinger Standalone] Launching NestJS Backend process on internal port 3000...');
-    const _backendEnv = Object.assign({}, process.env, { PORT: process.env.BACKEND_PORT || '3000' });
+    const _backendPort = process.env.BACKEND_PORT || '3009';
+    console.log('[Hostinger Standalone] Launching NestJS Backend process on internal port ' + _backendPort + '...');
+    const _backendEnv = Object.assign({}, process.env, { PORT: _backendPort });
     const _backendProc = _cp.fork(_targetBackend, [], { env: _backendEnv, stdio: 'inherit' });
     _backendProc.on('error', (err) => console.error('[Hostinger Standalone] Backend process error:', err));
+
+    // Tell Next.js SSR to fetch from this backend port
+    process.env.API_INTERNAL_BASE_URL = 'http://127.0.0.1:' + _backendPort + '/api/v1';
   }
 } catch (e) {
   console.warn('[Hostinger Standalone] Could not auto-launch backend process:', e.message);
