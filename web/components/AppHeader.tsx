@@ -20,11 +20,7 @@ export function AppHeader() {
     <header className="topbar">
       <div className="shell topbar-inner">
         <Link className="brand" href="/">
-          <div className="brand-icon">T</div>
-          <div className="brand-text">
-            <strong>Tất Tần Tật</strong>
-            <span>Mua bán mọi thứ, gần bạn</span>
-          </div>
+          <img src="/assets/logo.png" alt="Tất Tần Tật - Mua bán mọi thứ, gần bạn" className="header-logo-img" />
         </Link>
 
         <nav className="main-nav">
@@ -37,7 +33,7 @@ export function AppHeader() {
 
         <div className="top-actions">
           <button className="location-picker">
-            <MapPin size={16} /> Bình Định (Gia Lai mới) <ChevronDown size={14} />
+            <MapPin size={15} /> Bình Định (Gia Lai mới) <ChevronDown size={14} />
           </button>
 
           <button className="bell-btn" onClick={() => router.push('/account')}>
