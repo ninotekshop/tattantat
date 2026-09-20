@@ -80,32 +80,25 @@ export function MarketplaceHome({ query }: { query: string; group: string; sort:
   }
 
   const cats = [
-    { name: 'Đồ công nghệ', img: '/assets/cat-tech.jpg' },
-    { name: 'Xe cộ', img: '/assets/cat-car.jpg' },
-    { name: 'Nhà đất', img: '/assets/cat-home.jpg' },
-    { name: 'Đồ gia dụng', img: '/assets/cat-furniture.jpg' },
-    { name: 'Thời trang', img: '/assets/cat-fashion.jpg' },
-    { name: 'Thể thao & giải trí', img: '/assets/cat-sport.jpg' },
-    { name: 'Sách & học tập', img: '/assets/cat-books.jpg' },
-    { name: 'Máy móc & công cụ', img: '/assets/cat-tools.jpg' },
-    { name: 'Đồ sưu tầm', img: '/assets/cat-collect.jpg' },
-    { name: 'Thú cưng', img: '/assets/cat-pets.jpg' },
-    { name: 'Hàng hóa khác', img: '/assets/cat-other.jpg' },
-    { name: 'Dịch vụ', img: '/assets/cat-service.jpg' },
+    { name: 'Đồ công nghệ', img: '/assets/01-do-cong-nghe.png', slug: 'electronics' },
+    { name: 'Xe cộ', img: '/assets/02-xe-co.png', slug: 'vehicles' },
+    { name: 'Nhà đất', img: '/assets/03-nha-dat.png', slug: 'property' },
+    { name: 'Đồ gia dụng', img: '/assets/04-do-gia-dung.png', slug: 'home-appliances' },
+    { name: 'Thời trang', img: '/assets/05-thoi-trang.png', slug: 'fashion' },
+    { name: 'Thể thao & giải trí', img: '/assets/06-the-thao-giai-tri.png', slug: 'sports' },
+    { name: 'Sách & học tập', img: '/assets/07-sach-hoc-tap.png', slug: 'books' },
+    { name: 'Máy móc & công cụ', img: '/assets/08-may-moc-cong-cu.png', slug: 'tools' },
+    { name: 'Đồ sưu tầm', img: '/assets/09-do-suu-tam.png', slug: 'collectibles' },
+    { name: 'Thú cưng', img: '/assets/10-thu-cung.png', slug: 'pets' },
+    { name: 'Hàng hóa khác', img: '/assets/11-hang-hoa-khac.png', slug: 'others' },
+    { name: 'Dịch vụ', img: '/assets/12-dich-vu.png', slug: 'services' },
   ];
 
   return (
     <main id="home">
       <section className="hero">
-        <div className="hero-bg" style={{backgroundImage: "url('/assets/hero.jpg')"}}></div>
+        <div className="hero-bg"></div>
         <div className="shell hero-content">
-          <h1>Mua bán mọi thứ,<br/><strong>gần bạn! <HeartIcon /></strong></h1>
-          <div className="hero-features">
-            <div className="feature-pill"><ShieldCheck color="#00985f" /> An toàn</div>
-            <div className="feature-pill"><Zap color="#00985f" /> Nhanh chóng</div>
-            <div className="feature-pill"><Users color="#00985f" /> Kết nối dễ dàng</div>
-          </div>
-
           <form className="search-box" onSubmit={handleSearch}>
             <div className="search-input-group">
               <Search color="#999" size={20} />
