@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ShieldCheck, Zap, Users, Search, MapPin, ChevronLeft, ChevronRight, Flame, ArrowRight, ArrowRightCircle } from 'lucide-react';
+import { ShieldCheck, Zap, Users, Search, MapPin, ChevronLeft, ChevronRight, Flame, ArrowRight, ArrowRightCircle, MessageSquare } from 'lucide-react';
 import { api, type Product, type Category } from '../lib/api';
 
 function formatVnd(val: string) {
