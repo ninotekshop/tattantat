@@ -1,46 +1,52 @@
-# Hướng dẫn Khắc phục Lỗi trên Hostinger (503 & 404 "Cannot GET /")
+# Hướng dẫn Khắc phục Lỗi trên Hostinger (503, 404 & Timeout listen 3s)
 
-## 1. Nguyên nhân lỗi `{"message":"Cannot GET /","error":"Not Found","statusCode":404}`
+## 1. Nguyên nhân lỗi `App did not call listen() within 3 seconds`
 
-Phản hồi dạng JSON:
-```json
-{"message":"Cannot GET /","error":"Not Found","statusCode":404}
-```
-Đây là **phản hồi 404 mặc định của NestJS Backend** khi truy cập vào đường dẫn gốc `/` (vì API NestJS đặt tiền tố là `/api/v1`).
+Máy chủ Hostinger Node.js giám sát tiến trình ngay khi khởi động. Nếu tệp entrypoint không gọi `http.createServer().listen()` trong vòng 3 giây, Hostinger sẽ ngắt container và báo lỗi timeout.
 
-Lỗi này xảy ra khi Hostinger chạy thẳng NestJS Backend (`backend/dist/main.js`) cho tên miền chính `tattantat.vn` thay vì chạy ứng dụng **Next.js Web Frontend** (`web/`).
+### Nguyên nhân trước đây:
+Trước đây, lệnh `listen()` nằm bên trong callback bất đồng bộ `app.prepare().then(...)` của Next.js. Do Next.js cần 5 - 10 giây để nạp các route, lệnh `listen()` bị trì hoãn quá 3 giây.
 
-### Giải pháp trong Codebase mới:
-Tệp `server.js` ở thư mục gốc vừa được nâng cấp để **tự động đồng thời khởi chạy cả hai**:
-1. Tự động bật **NestJS Backend** ở cổng nội bộ `3000` (phục vụ các API `/api/v1/...`).
-2. Tự động bật **Next.js Web Frontend** ở cổng máy chủ Hostinger cấp (`process.env.PORT`) phục vụ giao diện trang web tại `tattantat.vn`.
-3. Next.js tự động proxy các request `/api/v1/...` sang NestJS Backend.
+### Giải pháp đã cập nhật trong `web/server.js`:
+- Lệnh `server.listen(port)` hiện được gọi **đồng bộ ngay lập tức** trong dưới 0.1 giây khi file được nạp.
+- `app.prepare()` của Next.js tiếp tục chuẩn bị ngầm ở background. Nếu request tới trong lúc chuẩn bị, server sẽ tự động chờ xong rồi xử lý.
+- Giúp ứng dụng vượt qua bài kiểm tra sức khỏe (health check) của Hostinger tức thì.
 
 ---
 
-## 2. Các bước triển khai chuẩn trên Hostinger hPanel
+## 2. Nguyên nhân lỗi `{"message":"Cannot GET /","error":"Not Found","statusCode":404}`
+
+Đây là phản hồi 404 của NestJS khi Hostinger chạy duy nhất Backend API thay vì Web Frontend.
+
+Tệp `server.js` ở góc dự án hiện tự động:
+1. Chạy **NestJS Backend** ở cổng nội bộ `3000`.
+2. Chạy **Next.js Web Frontend** ở cổng máy chủ Hostinger cấp (`process.env.PORT`).
+3. Next.js tự động chuyển tiếp (proxy) các request `/api/v1/...` sang NestJS Backend.
+
+---
+
+## 3. Các bước triển khai chuẩn trên Hostinger hPanel
 
 ### Bước 1: Cấu hình Node.js Application trên hPanel
 Vào **Hostinger hPanel** -> **Node.js** (hoặc Web Applications):
 - **Node.js Version**: Chọn `18.x` hoặc `20.x` (Yêu cầu >= 18.18.0 cho Next.js 16).
 - **Application Mode**: `Production`
-- **Application Root**: `/` (thư mục gốc chứa repository)
+- **Application Root**: `/` (thư mục gốc chứa repository) hoặc `web`
 - **Application Startup File**: `server.js`
 
 ### Bước 2: Kéo Code mới & Chạy Build trên Hostinger Terminal
-1. Mở **SSH / Terminal** trong Hostinger hPanel.
+1. Mở **SSH / Terminal** trong Hostinger hPanel (hoặc bấm **Redeploy** trên giao diện).
 2. Chạy lệnh:
    ```bash
    git pull origin main
    npm install
    npm run build
    ```
-   *(Lệnh `npm run build` sẽ đóng gói cả `web` và `backend`)*.
-3. Nhấn **Restart Application** trong hPanel.
+3. Nhấn **Restart Application** (Khởi động lại ứng dụng).
 
 ---
 
-## 3. Cấu hình biến môi trường `.env`
+## 4. Cấu hình biến môi trường `.env`
 
 Tạo file `web/.env.local` nếu chưa có:
 ```env
