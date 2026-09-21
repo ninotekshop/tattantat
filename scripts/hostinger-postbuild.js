@@ -26,16 +26,15 @@ function copyDirSync(src, dest) {
   }
 }
 
-function linkOrCopy(src, dest) {
-  if (!fs.existsSync(src)) return;
-  fs.mkdirSync(path.dirname(dest), { recursive: true });
-  if (fs.existsSync(dest)) {
-    fs.rmSync(dest, { recursive: true, force: true });
-  }
-  try {
-    fs.symlinkSync(src, dest, 'junction');
-  } catch (e) {
-    copyDirSync(src, dest);
+function copyBackendForStandalone(destParent) {
+  if (!fs.existsSync(backendDist) || !fs.existsSync(destParent)) return;
+  const targetBackend = path.join(destParent, 'backend');
+  const targetBackendDist = path.join(targetBackend, 'dist');
+  fs.mkdirSync(targetBackendDist, { recursive: true });
+  copyDirSync(backendDist, targetBackendDist);
+  const pkgFile = path.join(backendDir, 'package.json');
+  if (fs.existsSync(pkgFile)) {
+    fs.copyFileSync(pkgFile, path.join(targetBackend, 'package.json'));
   }
 }
 
@@ -51,10 +50,17 @@ const _fs = require('fs');
 const _cp = require('child_process');
 
 try {
-  const _b1 = _path.resolve(__dirname, 'backend', 'dist', 'main.js');
-  const _b2 = _path.resolve(__dirname, '..', 'backend', 'dist', 'main.js');
-  const _b3 = _path.resolve(__dirname, '..', '..', 'backend', 'dist', 'main.js');
-  const _targetBackend = _fs.existsSync(_b1) ? _b1 : _fs.existsSync(_b2) ? _b2 : _fs.existsSync(_b3) ? _b3 : null;
+  const _candidates = [
+    _path.resolve(__dirname, 'backend', 'dist', 'main.js'),
+    _path.resolve(__dirname, '..', 'backend', 'dist', 'main.js'),
+    _path.resolve(__dirname, '..', '..', 'backend', 'dist', 'main.js'),
+    _path.resolve(__dirname, '..', '..', '..', 'backend', 'dist', 'main.js'),
+    _path.resolve(__dirname, '..', '..', '..', '..', 'backend', 'dist', 'main.js'),
+    _path.resolve(process.cwd(), 'backend', 'dist', 'main.js'),
+    _path.resolve(process.cwd(), '..', 'backend', 'dist', 'main.js'),
+    _path.resolve(process.cwd(), '..', '..', 'backend', 'dist', 'main.js'),
+  ];
+  const _targetBackend = _candidates.find((c) => _fs.existsSync(c)) || null;
 
   if (_targetBackend) {
     const _backendPort = process.env.BACKEND_PORT || '3009';
@@ -74,7 +80,7 @@ try {
     // Tell Next.js SSR to fetch from this backend port
     process.env.API_INTERNAL_BASE_URL = 'http://127.0.0.1:' + _backendPort + '/api/v1';
   } else {
-    console.error('[Hostinger Standalone] ERROR: Could not locate backend/dist/main.js in standalone environment!');
+    console.error('[Hostinger Standalone] ERROR: Could not locate backend/dist/main.js in standalone environment! Tried:', _candidates);
   }
 } catch (e) {
   console.warn('[Hostinger Standalone] Could not auto-launch backend process:', e.message);
@@ -106,10 +112,17 @@ if (fs.existsSync(webStatic) && fs.existsSync(webStandalone)) {
   console.log('[Hostinger Postbuild] .next/static build traces copied successfully.');
 }
 
-// 3. Copy compiled NestJS backend dist & node_modules into standalone directory
-if (fs.existsSync(backendDist) && fs.existsSync(webStandalone)) {
-  linkOrCopy(backendDir, path.join(webStandalone, 'backend'));
-  console.log('[Hostinger Postbuild] Compiled NestJS Backend bundled into standalone folder successfully.');
+// 3. Copy compiled NestJS backend dist into standalone directories
+if (fs.existsSync(backendDist)) {
+  if (fs.existsSync(webStandalone)) {
+    copyBackendForStandalone(webStandalone);
+    copyBackendForStandalone(path.join(webStandalone, 'web'));
+  }
+  if (fs.existsSync(path.join(rootNext, 'standalone'))) {
+    copyBackendForStandalone(path.join(rootNext, 'standalone'));
+    copyBackendForStandalone(path.join(rootNext, 'standalone', 'web'));
+  }
+  console.log('[Hostinger Postbuild] Compiled NestJS Backend bundled into standalone folders successfully.');
 }
 
 // 4. Patch standalone server.js files to auto-launch backend
@@ -118,21 +131,16 @@ if (fs.existsSync(webStandalone)) {
   patchStandaloneServer(path.join(webStandalone, 'web', 'server.js'));
 }
 
-// 5. Link web/.next to root .next
+// 5. Copy web/.next to root .next
 if (fs.existsSync(webNext)) {
   try {
-    if (fs.existsSync(rootNext)) {
+    if (fs.existsSync(rootNext) && rootNext !== webNext) {
       fs.rmSync(rootNext, { recursive: true, force: true });
     }
-    try {
-      fs.symlinkSync('web/.next', rootNext, 'junction');
-      console.log('[Hostinger Postbuild] Root .next directory symlinked successfully.');
-    } catch (e) {
-      copyDirSync(webNext, rootNext);
-      console.log('[Hostinger Postbuild] Root .next directory copied successfully.');
-    }
+    copyDirSync(webNext, rootNext);
+    console.log('[Hostinger Postbuild] Root .next directory copied successfully.');
   } catch (err) {
-    console.error('[Hostinger Postbuild] Error linking root .next:', err);
+    console.error('[Hostinger Postbuild] Error copying root .next:', err);
   }
 } else {
   console.error('[Hostinger Postbuild] ERROR: web/.next directory not found!');
@@ -141,6 +149,3 @@ if (fs.existsSync(webNext)) {
 // Patch root .next standalone files if present
 patchStandaloneServer(path.join(rootNext, 'standalone', 'server.js'));
 patchStandaloneServer(path.join(rootNext, 'standalone', 'web', 'server.js'));
-if (fs.existsSync(backendDist) && fs.existsSync(path.join(rootNext, 'standalone'))) {
-  linkOrCopy(backendDir, path.join(rootNext, 'standalone', 'backend'));
-}
