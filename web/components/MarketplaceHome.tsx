@@ -116,24 +116,14 @@ export function MarketplaceHome({ query }: { query: string; group: string; sort:
               <form className="search-box" onSubmit={handleSearch}>
                 <div className="search-input-group">
                   <Search color="#888" size={19} />
-                  <input type="text" placeholder="Tìm kiếm sản phẩm, dịch vụ..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
+                  <input type="text" placeholder="Tìm trên Tất Tần Tật..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
                 </div>
                 <div className="search-divider"></div>
                 <div className="search-location">
                   <MapPin size={17} /> Bình Định (Gia Lai mới) ▾
                 </div>
-                <button type="submit" className="search-btn"><Search size={17} /> Tìm kiếm</button>
+                <button type="submit" className="search-btn"><Search size={18} /> Tìm kiếm</button>
               </form>
-
-              <div className="quick-tags">
-                <button type="button" onClick={() => router.push('/?q=iPhone')}>iPhone 15</button>
-                <button type="button" onClick={() => router.push('/?q=Xe máy')}>Xe máy</button>
-                <button type="button" onClick={() => router.push('/?q=Nhà đất')}>Nhà đất</button>
-                <button type="button" onClick={() => router.push('/?q=Laptop')}>Laptop</button>
-                <button type="button" onClick={() => router.push('/?q=Sofa')}>Sofa</button>
-                <button type="button" onClick={() => router.push('/?q=Máy ảnh')}>Máy ảnh</button>
-                <button type="button" onClick={() => router.push('/?q=Dịch vụ')}>Dịch vụ sửa chữa</button>
-              </div>
             </div>
           </div>
         </div>
@@ -233,6 +223,44 @@ export function MarketplaceHome({ query }: { query: string; group: string; sort:
             </div>
           </div>
         </aside>
+      </section>
+
+      {/* KHỐI TỪ KHÓA TÌM KIẾM NHIỀU NHẤT (TƯƠNG TỰ CHỢ TỐT) */}
+      <section className="shell" style={{ marginTop: 20, marginBottom: 32 }}>
+        <div className="white-card-box">
+          <div className="section-title" style={{ marginBottom: 16 }}>
+            <h2><Search size={19} color="#00a65a" /> Từ khóa tìm kiếm nhiều nhất</h2>
+          </div>
+          <div className="popular-keywords-grid">
+            {[
+              { label: 'Xe máy giá rẻ', query: 'Xe máy' },
+              { label: 'iPhone 15 Pro Max', query: 'iPhone 15' },
+              { label: 'Nhà đất Bình Định', query: 'Nhà đất' },
+              { label: 'Laptop văn phòng', query: 'Laptop' },
+              { label: 'Tủ lạnh LG', query: 'Tủ lạnh' },
+              { label: 'Chung cư giá rẻ', query: 'Chung cư' },
+              { label: 'Máy giặt Toshiba', query: 'Máy giặt' },
+              { label: 'Sofa phòng khách', query: 'Sofa' },
+              { label: 'Mèo cảnh / Thú cưng', query: 'Thú cưng' },
+              { label: 'Thời trang nam nữ', query: 'Thời trang' },
+              { label: 'Tivi Samsung 4K', query: 'Tivi' },
+              { label: 'Dịch vụ sửa chữa tại nhà', query: 'Dịch vụ' },
+              { label: 'Xe Honda Wave Alpha', query: 'Wave' },
+              { label: 'Điện thoại cũ giá rẻ', query: 'Điện thoại' },
+              { label: 'Bàn ghế gỗ tự nhiên', query: 'Bàn ghế' },
+              { label: 'Đồng hồ thông minh', query: 'Đồng hồ' },
+            ].map((kw, i) => (
+              <button
+                key={i}
+                type="button"
+                className="popular-keyword-chip"
+                onClick={() => router.push('/?q=' + encodeURIComponent(kw.query))}
+              >
+                {kw.label}
+              </button>
+            ))}
+          </div>
+        </div>
       </section>
     </main>
   );

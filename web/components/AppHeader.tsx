@@ -32,10 +32,6 @@ export function AppHeader() {
         </nav>
 
         <div className="top-actions">
-          <button className="location-picker">
-            <MapPin size={15} /> Bình Định (Gia Lai mới) <ChevronDown size={14} />
-          </button>
-
           <button className="bell-btn" onClick={() => router.push('/account')}>
             <Bell size={20} />
             <span className="bell-badge">3</span>
