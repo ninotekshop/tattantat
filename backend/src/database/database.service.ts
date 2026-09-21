@@ -3,7 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { Pool, PoolClient, QueryResultRow } from 'pg';
 
 const DEFAULT_DATABASE_URL =
-  'postgresql://postgres.brabreqaarmuovýmfnkl:Zf3Vqufu5lHZycg0@aws-0-ap-southeast-2.pooler.supabase.com:5432/postgres';
+  'postgresql://postgres.brabreqaarmuowymfnkl:Zf3Vqufu5lHZycg0@aws-0-ap-southeast-2.pooler.supabase.com:5432/postgres';
 
 @Injectable()
 export class DatabaseService implements OnModuleDestroy {

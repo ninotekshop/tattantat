@@ -6,9 +6,9 @@ import * as express from 'express';
 import * as http from 'http';
 import * as path from 'path';
 
-const DEFAULT_SUPABASE_URL = 'https://brabreqaarmuovýmfnkl.supabase.co';
+const DEFAULT_SUPABASE_URL = 'https://brabreqaarmuowymfnkl.supabase.co';
 const DEFAULT_DATABASE_URL =
-  'postgresql://postgres.brabreqaarmuovýmfnkl:Zf3Vqufu5lHZycg0@aws-0-ap-southeast-2.pooler.supabase.com:5432/postgres';
+  'postgresql://postgres.brabreqaarmuowymfnkl:Zf3Vqufu5lHZycg0@aws-0-ap-southeast-2.pooler.supabase.com:5432/postgres';
 
 // Load environment variables synchronously
 dotenv.config({ path: path.resolve(__dirname, '..', '.env') });
