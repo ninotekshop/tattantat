@@ -15,6 +15,9 @@ export class DatabaseService implements OnModuleDestroy {
       process.env.DATABASE_URL ||
       DEFAULT_DATABASE_URL;
 
+    // Sanitize any non-ASCII en-dash or em-dash in hostnames (e.g. Hostinger UI auto-formatting)
+    connectionString = connectionString.replace(/[–—]/g, '-');
+
     if (
       !connectionString ||
       connectionString.includes('localhost') ||

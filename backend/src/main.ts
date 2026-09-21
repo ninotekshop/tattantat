@@ -8,13 +8,17 @@ import * as path from 'path';
 
 const DEFAULT_SUPABASE_URL = 'https://brabreqaarmuowymfnkl.supabase.co';
 const DEFAULT_DATABASE_URL =
-  'postgresql://postgres.brabreqaarmuowymfnkl:Zf3Vqufu5lHZycg0@aws-0-ap-southeast-2.pooler.supabase.com:5432/postgres';
+  'postgresql://postgres.brabreqaarmuovýmfnkl:Zf3Vqufu5lHZycg0@aws-0-ap-southeast-2.pooler.supabase.com:5432/postgres';
 
 // Load environment variables synchronously
 dotenv.config({ path: path.resolve(__dirname, '..', '.env') });
 dotenv.config({ path: path.resolve(__dirname, '..', '..', 'backend', '.env') });
 dotenv.config({ path: path.resolve(process.cwd(), '.env') });
 dotenv.config({ path: path.resolve(process.cwd(), 'backend', '.env') });
+
+if (process.env.DATABASE_URL) {
+  process.env.DATABASE_URL = process.env.DATABASE_URL.replace(/[–—]/g, '-');
+}
 
 if (!process.env.SUPABASE_URL) process.env.SUPABASE_URL = DEFAULT_SUPABASE_URL;
 if (
