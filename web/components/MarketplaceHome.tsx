@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Search, MapPin, ChevronLeft, ChevronRight, Flame, ArrowRight, ArrowRightCircle, MessageSquare } from 'lucide-react';
 import { api, type Product } from '../lib/api';
@@ -62,6 +62,14 @@ export function MarketplaceHome({ query }: { query: string; group: string; sort:
   const [products, setProducts] = useState<Product[]>([]);
   const [searchQuery, setSearchQuery] = useState(query);
   const [isLoading, setIsLoading] = useState(true);
+  const categoryScrollRef = useRef<HTMLDivElement>(null);
+
+  const scrollCategories = (direction: 'left' | 'right') => {
+    if (categoryScrollRef.current) {
+      const scrollAmount = direction === 'left' ? -350 : 350;
+      categoryScrollRef.current.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+    }
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -135,23 +143,22 @@ export function MarketplaceHome({ query }: { query: string; group: string; sort:
       <section className="categories-section">
         <div className="shell">
           <div className="white-card-box">
-            <div className="section-title" style={{marginBottom: 16}}>
-              <h2>Danh mục sản phẩm</h2>
+            <button type="button" className="nav-arrow left" onClick={() => scrollCategories('left')} aria-label="Cuộn sang trái">
+              <ChevronLeft size={20} color="#555" />
+            </button>
+            <div className="category-scroll" ref={categoryScrollRef}>
+              {cats.map((c, i) => (
+                <Link href={'/categories'} key={i} className="cat-card-clean">
+                  <div className="cat-icon-wrapper">
+                    <img src={c.img} alt={c.name} />
+                  </div>
+                  <span>{c.name}</span>
+                </Link>
+              ))}
             </div>
-            <div style={{position:'relative'}}>
-              <button className="nav-arrow left"><ChevronLeft size={24} color="#555" /></button>
-              <div className="category-scroll">
-                {cats.map((c, i) => (
-                  <Link href={'/categories'} key={i} className="cat-card-clean">
-                    <div className="cat-icon-wrapper">
-                      <img src={c.img} alt={c.name} />
-                    </div>
-                    <span>{c.name}</span>
-                  </Link>
-                ))}
-              </div>
-              <button className="nav-arrow right"><ChevronRight size={24} color="#555" /></button>
-            </div>
+            <button type="button" className="nav-arrow right" onClick={() => scrollCategories('right')} aria-label="Cuộn sang phải">
+              <ChevronRight size={20} color="#555" />
+            </button>
           </div>
         </div>
       </section>
