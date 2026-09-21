@@ -42,10 +42,7 @@ async function bootstrap() {
     app.setGlobalPrefix(process.env.API_PREFIX ?? 'api/v1');
 
     app.enableCors({
-      origin: (_origin, callback) => {
-        // Reflect requesting origin to support credentials and avoid CORS rejections
-        callback(null, true);
-      },
+      origin: true,
       credentials: true,
     });
 

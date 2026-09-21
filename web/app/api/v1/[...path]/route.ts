@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next';
+import { NextRequest, NextResponse } from 'next/server';
 
 const BACKEND_PORTS = [
   process.env.BACKEND_PORT || '3009',
