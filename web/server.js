@@ -18,7 +18,20 @@ function startBackendProcess() {
   const backendDist = path.join(__dirname, '..', 'backend', 'dist', 'main.js');
   if (fs.existsSync(backendDist)) {
     console.log(`[Hostinger Web] Starting NestJS Backend process on internal port ${BACKEND_INTERNAL_PORT}...`);
-    const backendEnv = Object.assign({}, process.env, { PORT: BACKEND_INTERNAL_PORT });
+
+    const nodePaths = [
+      path.resolve(__dirname, 'node_modules'),
+      path.resolve(__dirname, '..', 'node_modules'),
+      path.resolve(__dirname, '..', 'backend', 'node_modules'),
+      path.resolve(process.cwd(), 'node_modules'),
+      path.resolve(process.cwd(), 'backend', 'node_modules'),
+    ].filter(p => fs.existsSync(p)).join(path.delimiter);
+
+    const backendEnv = Object.assign({}, process.env, {
+      PORT: BACKEND_INTERNAL_PORT,
+      NODE_PATH: nodePaths + (process.env.NODE_PATH ? path.delimiter + process.env.NODE_PATH : '')
+    });
+
     const backendProc = fork(backendDist, [], { env: backendEnv, stdio: 'inherit' });
 
     backendProc.on('error', (err) => {

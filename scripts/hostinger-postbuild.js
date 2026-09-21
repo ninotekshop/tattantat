@@ -18,23 +18,29 @@ function copyDirSync(src, dest) {
   for (const entry of entries) {
     const srcPath = path.join(src, entry.name);
     const destPath = path.join(dest, entry.name);
-    if (entry.isDirectory()) {
-      copyDirSync(srcPath, destPath);
-    } else {
-      fs.copyFileSync(srcPath, destPath);
+    try {
+      const stat = fs.statSync(srcPath);
+      if (stat.isDirectory()) {
+        copyDirSync(srcPath, destPath);
+      } else {
+        fs.copyFileSync(srcPath, destPath);
+      }
+    } catch (e) {
+      // Ignore broken symlinks or unreadable files
     }
   }
 }
 
-function copyBackendForStandalone(destParent) {
-  if (!fs.existsSync(backendDist) || !fs.existsSync(destParent)) return;
-  const targetBackend = path.join(destParent, 'backend');
-  const targetBackendDist = path.join(targetBackend, 'dist');
-  fs.mkdirSync(targetBackendDist, { recursive: true });
-  copyDirSync(backendDist, targetBackendDist);
-  const pkgFile = path.join(backendDir, 'package.json');
-  if (fs.existsSync(pkgFile)) {
-    fs.copyFileSync(pkgFile, path.join(targetBackend, 'package.json'));
+function linkOrCopy(src, dest) {
+  if (!fs.existsSync(src)) return;
+  fs.mkdirSync(path.dirname(dest), { recursive: true });
+  if (fs.existsSync(dest)) {
+    fs.rmSync(dest, { recursive: true, force: true });
+  }
+  try {
+    fs.symlinkSync(src, dest, process.platform === 'win32' ? 'junction' : 'dir');
+  } catch (e) {
+    copyDirSync(src, dest);
   }
 }
 
@@ -65,7 +71,26 @@ try {
   if (_targetBackend) {
     const _backendPort = process.env.BACKEND_PORT || '3009';
     console.log('[Hostinger Standalone] Launching NestJS Backend process on internal port ' + _backendPort + ' from ' + _targetBackend + '...');
-    const _backendEnv = Object.assign({}, process.env, { PORT: _backendPort });
+
+    const _nodePaths = [
+      _path.resolve(__dirname, 'node_modules'),
+      _path.resolve(__dirname, 'backend', 'node_modules'),
+      _path.resolve(__dirname, '..', 'node_modules'),
+      _path.resolve(__dirname, '..', 'backend', 'node_modules'),
+      _path.resolve(__dirname, '..', '..', 'node_modules'),
+      _path.resolve(__dirname, '..', '..', 'backend', 'node_modules'),
+      _path.resolve(__dirname, '..', '..', '..', 'node_modules'),
+      _path.resolve(__dirname, '..', '..', '..', 'backend', 'node_modules'),
+      _path.resolve(process.cwd(), 'node_modules'),
+      _path.resolve(process.cwd(), 'backend', 'node_modules'),
+      _path.resolve(process.cwd(), '..', 'node_modules'),
+      _path.resolve(process.cwd(), '..', 'backend', 'node_modules'),
+    ].filter(p => _fs.existsSync(p)).join(_path.delimiter);
+
+    const _backendEnv = Object.assign({}, process.env, {
+      PORT: _backendPort,
+      NODE_PATH: _nodePaths + (process.env.NODE_PATH ? _path.delimiter + process.env.NODE_PATH : '')
+    });
 
     const _startBackend = () => {
       const _backendProc = _cp.fork(_targetBackend, [], { env: _backendEnv, stdio: 'inherit' });
@@ -112,15 +137,15 @@ if (fs.existsSync(webStatic) && fs.existsSync(webStandalone)) {
   console.log('[Hostinger Postbuild] .next/static build traces copied successfully.');
 }
 
-// 3. Copy compiled NestJS backend dist into standalone directories
+// 3. Link/copy compiled NestJS backend & node_modules into standalone directories
 if (fs.existsSync(backendDist)) {
   if (fs.existsSync(webStandalone)) {
-    copyBackendForStandalone(webStandalone);
-    copyBackendForStandalone(path.join(webStandalone, 'web'));
+    linkOrCopy(backendDir, path.join(webStandalone, 'backend'));
+    linkOrCopy(backendDir, path.join(webStandalone, 'web', 'backend'));
   }
   if (fs.existsSync(path.join(rootNext, 'standalone'))) {
-    copyBackendForStandalone(path.join(rootNext, 'standalone'));
-    copyBackendForStandalone(path.join(rootNext, 'standalone', 'web'));
+    linkOrCopy(backendDir, path.join(rootNext, 'standalone', 'backend'));
+    linkOrCopy(backendDir, path.join(rootNext, 'standalone', 'web', 'backend'));
   }
   console.log('[Hostinger Postbuild] Compiled NestJS Backend bundled into standalone folders successfully.');
 }
