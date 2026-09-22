@@ -260,9 +260,10 @@ export function MarketplaceHome({ query = '', group = '', sort = '', view = '' }
 
   const displayedProducts = filteredProducts.slice(0, visibleCount);
 
+  // Smooth sliding scroll for category logos
   const scrollCategories = (direction: 'left' | 'right') => {
     if (categoryScrollRef.current) {
-      const scrollAmount = direction === 'left' ? -350 : 350;
+      const scrollAmount = direction === 'left' ? -380 : 380;
       categoryScrollRef.current.scrollBy({ left: scrollAmount, behavior: 'smooth' });
     }
   };
@@ -415,9 +416,9 @@ export function MarketplaceHome({ query = '', group = '', sort = '', view = '' }
         </div>
       </section>
 
-      {/* 3D CATEGORIES CAROUSEL */}
+      {/* 3D CATEGORIES CAROUSEL - COMPACT CARD CONTAINER WITH GLOW & SMOOTH SCROLL */}
       <section className="shell" style={{ marginBottom: 16 }}>
-        <div className="white-card-box" style={{ padding: '10px 16px', position: 'relative' }}>
+        <div className="white-card-box" style={{ padding: '8px 14px', position: 'relative' }}>
           <div className="category-carousel-wrapper">
             <button
               className="cat-scroll-arrow left"
@@ -443,7 +444,7 @@ export function MarketplaceHome({ query = '', group = '', sort = '', view = '' }
             <button
               className="cat-scroll-arrow right"
               onClick={() => scrollCategories('right')}
-              title="Cuộn sang phải"
+              title="Cuộn sang phía sau"
             >
               <ChevronRight size={20} color="#0f172a" />
             </button>
@@ -451,93 +452,84 @@ export function MarketplaceHome({ query = '', group = '', sort = '', view = '' }
         </div>
       </section>
 
-      {/* TABBED EXPLORE PRODUCTS SECTION */}
+      {/* TABBED EXPLORE PRODUCTS SECTION - LEFT ALIGNED TABS & COMPACT VIEW SWITCHER ON SAME ROW */}
       <section className="shell" style={{ marginBottom: 40 }}>
-        <div className="white-card-box" style={{ padding: '20px' }}>
-          {/* HEADER ROW WITH CENTERED TABS & VIEW MODE SWITCHER ON THE RIGHT */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, marginBottom: 20, borderBottom: '1px solid #f1f5f9', paddingBottom: 14 }}>
-            <div style={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
-              <div className="tabbed-header-centered" style={{ display: 'flex', gap: 8, overflowX: 'auto', scrollbarWidth: 'none', padding: '2px 0' }}>
-                <button
-                  className={`explore-tab-btn ${activeTab === 'FOR_YOU' ? 'active' : ''}`}
-                  onClick={() => setActiveTab('FOR_YOU')}
-                  style={{ display: 'flex', alignItems: 'center', gap: 6 }}
-                >
-                  <Sparkles size={15} /> Dành cho bạn
-                </button>
-                <button
-                  className={`explore-tab-btn ${activeTab === 'MOST_VIEWED' ? 'active' : ''}`}
-                  onClick={() => setActiveTab('MOST_VIEWED')}
-                  style={{ display: 'flex', alignItems: 'center', gap: 6 }}
-                >
-                  <Eye size={15} /> Xem nhiều nhất
-                </button>
-                <button
-                  className={`explore-tab-btn ${activeTab === 'VIP' ? 'active' : ''}`}
-                  onClick={() => setActiveTab('VIP')}
-                  style={{ display: 'flex', alignItems: 'center', gap: 6 }}
-                >
-                  <Crown size={15} /> Tin đăng VIP
-                </button>
-                <button
-                  className={`explore-tab-btn ${activeTab === 'NEARBY' ? 'active' : ''}`}
-                  onClick={() => {
-                    setActiveTab('NEARBY');
-                    setShowLocationModal(true);
-                  }}
-                  style={{ display: 'flex', alignItems: 'center', gap: 6 }}
-                >
-                  <MapPin size={15} /> Gần bạn
-                </button>
-                <button
-                  className={`explore-tab-btn ${activeTab === 'TODAY_DEALS' ? 'active' : ''}`}
-                  onClick={() => setActiveTab('TODAY_DEALS')}
-                  style={{ display: 'flex', alignItems: 'center', gap: 6 }}
-                >
-                  <Clock size={15} /> Mới đăng hôm nay
-                </button>
-                <button
-                  className={`explore-tab-btn ${activeTab === 'VERIFIED' ? 'active' : ''}`}
-                  onClick={() => setActiveTab('VERIFIED')}
-                  style={{ display: 'flex', alignItems: 'center', gap: 6 }}
-                >
-                  <CheckCircle2 size={15} /> Đã xác thực
-                </button>
-                <button
-                  className={`explore-tab-btn ${activeTab === 'GIVEAWAY' ? 'active' : ''}`}
-                  onClick={() => setActiveTab('GIVEAWAY')}
-                  style={{ display: 'flex', alignItems: 'center', gap: 6 }}
-                >
-                  <Gift size={15} /> Tặng miễn phí (0đ)
-                </button>
-              </div>
+        <div className="white-card-box" style={{ padding: '18px 20px' }}>
+          {/* SINGLE HEADER ROW: LEFT-ALIGNED COMPACT TABS + RIGHT-ALIGNED ICON-ONLY SWITCHER */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 16, borderBottom: '1px solid #f1f5f9', paddingBottom: 12 }}>
+            <div className="tabbed-header-left" style={{ display: 'flex', gap: 6, overflowX: 'auto', scrollbarWidth: 'none', padding: '2px 0', alignItems: 'center', flex: 1 }}>
+              <button
+                className={`explore-tab-btn ${activeTab === 'FOR_YOU' ? 'active' : ''}`}
+                onClick={() => setActiveTab('FOR_YOU')}
+              >
+                <Sparkles size={14} /> Dành cho bạn
+              </button>
+              <button
+                className={`explore-tab-btn ${activeTab === 'MOST_VIEWED' ? 'active' : ''}`}
+                onClick={() => setActiveTab('MOST_VIEWED')}
+              >
+                <Eye size={14} /> Xem nhiều nhất
+              </button>
+              <button
+                className={`explore-tab-btn ${activeTab === 'VIP' ? 'active' : ''}`}
+                onClick={() => setActiveTab('VIP')}
+              >
+                <Crown size={14} /> Tin đăng VIP
+              </button>
+              <button
+                className={`explore-tab-btn ${activeTab === 'NEARBY' ? 'active' : ''}`}
+                onClick={() => {
+                  setActiveTab('NEARBY');
+                  setShowLocationModal(true);
+                }}
+              >
+                <MapPin size={14} /> Gần bạn
+              </button>
+              <button
+                className={`explore-tab-btn ${activeTab === 'TODAY_DEALS' ? 'active' : ''}`}
+                onClick={() => setActiveTab('TODAY_DEALS')}
+              >
+                <Clock size={14} /> Mới đăng hôm nay
+              </button>
+              <button
+                className={`explore-tab-btn ${activeTab === 'VERIFIED' ? 'active' : ''}`}
+                onClick={() => setActiveTab('VERIFIED')}
+              >
+                <CheckCircle2 size={14} /> Đã xác thực
+              </button>
+              <button
+                className={`explore-tab-btn ${activeTab === 'GIVEAWAY' ? 'active' : ''}`}
+                onClick={() => setActiveTab('GIVEAWAY')}
+              >
+                <Gift size={14} /> Tặng miễn phí (0đ)
+              </button>
             </div>
 
-            {/* VIEW MODE SWITCHER (DEFAULT ACTIVE: GRID_4 / LƯỚI 4X3) */}
-            <div className="view-mode-switcher" style={{ display: 'flex', alignItems: 'center', gap: 4, background: '#f8fafc', padding: 4, borderRadius: 10, border: '1px solid #e2e8f0' }}>
+            {/* VIEW MODE SWITCHER ON SAME ROW - ICONS ONLY (REQ 5) */}
+            <div className="view-mode-switcher" style={{ display: 'flex', alignItems: 'center', gap: 2, background: '#f8fafc', padding: 3, borderRadius: 10, border: '1px solid #e2e8f0', flexShrink: 0 }}>
               <button
                 onClick={() => setViewMode('GRID_4')}
                 className={`view-mode-btn ${viewMode === 'GRID_4' ? 'active' : ''}`}
                 title="Lưới 4x3 (Mặc định)"
-                style={{ padding: '6px 10px', borderRadius: 8, border: 'none', background: viewMode === 'GRID_4' ? '#ffffff' : 'transparent', color: viewMode === 'GRID_4' ? '#00a65a' : '#64748b', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, fontWeight: 600, boxShadow: viewMode === 'GRID_4' ? '0 2px 6px rgba(0,0,0,0.08)' : 'none' }}
+                style={{ padding: '6px 8px', borderRadius: 8, border: 'none', background: viewMode === 'GRID_4' ? '#ffffff' : 'transparent', color: viewMode === 'GRID_4' ? '#00a65a' : '#64748b', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: viewMode === 'GRID_4' ? '0 2px 6px rgba(0,0,0,0.08)' : 'none' }}
               >
-                <Grid3x3 size={16} /> Lưới 4x3 (Mặc định)
+                <Grid3x3 size={17} />
               </button>
               <button
                 onClick={() => setViewMode('GRID_6')}
                 className={`view-mode-btn ${viewMode === 'GRID_6' ? 'active' : ''}`}
                 title="Lưới 6 cột"
-                style={{ padding: '6px 10px', borderRadius: 8, border: 'none', background: viewMode === 'GRID_6' ? '#ffffff' : 'transparent', color: viewMode === 'GRID_6' ? '#00a65a' : '#64748b', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, fontWeight: 600, boxShadow: viewMode === 'GRID_6' ? '0 2px 6px rgba(0,0,0,0.08)' : 'none' }}
+                style={{ padding: '6px 8px', borderRadius: 8, border: 'none', background: viewMode === 'GRID_6' ? '#ffffff' : 'transparent', color: viewMode === 'GRID_6' ? '#00a65a' : '#64748b', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: viewMode === 'GRID_6' ? '0 2px 6px rgba(0,0,0,0.08)' : 'none' }}
               >
-                <LayoutGrid size={16} /> Lưới 6x2
+                <LayoutGrid size={17} />
               </button>
               <button
                 onClick={() => setViewMode('LIST')}
                 className={`view-mode-btn ${viewMode === 'LIST' ? 'active' : ''}`}
                 title="Hiển thị dạng Danh sách"
-                style={{ padding: '6px 10px', borderRadius: 8, border: 'none', background: viewMode === 'LIST' ? '#ffffff' : 'transparent', color: viewMode === 'LIST' ? '#00a65a' : '#64748b', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, fontWeight: 600, boxShadow: viewMode === 'LIST' ? '0 2px 6px rgba(0,0,0,0.08)' : 'none' }}
+                style={{ padding: '6px 8px', borderRadius: 8, border: 'none', background: viewMode === 'LIST' ? '#ffffff' : 'transparent', color: viewMode === 'LIST' ? '#00a65a' : '#64748b', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: viewMode === 'LIST' ? '0 2px 6px rgba(0,0,0,0.08)' : 'none' }}
               >
-                <List size={16} /> Danh sách
+                <List size={17} />
               </button>
             </div>
           </div>

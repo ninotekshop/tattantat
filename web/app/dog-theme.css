@@ -395,11 +395,11 @@ body {
 
 /* REQ 4: ENLARGED 3D ICONS BY 2X, REMOVED BORDER FRAME */
 .category-card-3d-large {
-  flex: 0 0 calc(100% / 7 - 14px);
-  min-width: 120px;
+  flex: 0 0 calc(100% / 7 - 12px);
+  min-width: 105px;
   background: transparent;
   border: none;
-  padding: 4px 2px;
+  padding: 2px 2px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -411,37 +411,46 @@ body {
 }
 
 .category-card-3d-large:hover {
-  transform: scale(1.08) translateY(-3px);
+  transform: translateY(-2px);
+}
+
+.category-card-3d-large:hover .cat-3d-img-large {
+  transform: scale(1.08);
+  filter: drop-shadow(0 0 14px rgba(0, 166, 90, 0.45));
 }
 
 .cat-3d-img-large {
-  width: 88px;
-  height: 88px;
+  width: 76px;
+  height: 76px;
   object-fit: contain;
-  margin-bottom: 1px;
-  filter: drop-shadow(0 4px 10px rgba(0,0,0,0.1));
+  margin-bottom: 2px;
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.3s ease;
+  filter: drop-shadow(0 4px 8px rgba(0,0,0,0.08));
 }
 
 .cat-title-large {
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 700;
   color: #0f172a;
-  line-height: 1.2;
+  line-height: 1.15;
   margin-top: 0;
 }
 
-/* QUICK FILTER CHIPS (PILLS) - REQ 5: CENTERED TABS */
+/* QUICK FILTER CHIPS (PILLS) - LEFT ALIGNED & COMPACT */
 .explore-tab-btn {
   background: #f8fafc;
   border: 1px solid #cbd5e1;
   border-radius: 999px;
-  padding: 8px 18px;
-  font-size: 13.5px;
+  padding: 6px 14px;
+  font-size: 13px;
   font-weight: 600;
   color: #334155;
   cursor: pointer;
   transition: all 0.2s ease;
   white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 5px;
 }
 
 .explore-tab-btn:hover {
