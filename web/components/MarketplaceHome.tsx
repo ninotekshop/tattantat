@@ -31,7 +31,7 @@ function ProductCardSkeleton() {
   );
 }
 
-function ProductCard({ product, viewMode = 'GRID_6' }: { product: Product; viewMode?: 'GRID_6' | 'GRID_4' | 'LIST' }) {
+function ProductCard({ product, viewMode = 'GRID_4' }: { product: Product; viewMode?: 'GRID_6' | 'GRID_4' | 'LIST' }) {
   const [failedImage, setFailedImage] = useState(false);
   const [isFavorite, setIsFavorite] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -100,7 +100,6 @@ function ProductCard({ product, viewMode = 'GRID_6' }: { product: Product; viewM
             <span className="price">{product.priceMode === 'CONTACT' ? 'LIÊN HỆ' : product.priceMode === 'FREE' ? 'TẶNG MIỄN PHÍ' : formatVnd(product.price)}</span>
           </div>
 
-          {/* REQ 9: Simple monochrome icons */}
           <div className="location-row" style={{ display: 'flex', alignItems: 'center', gap: 5, color: '#64748b' }}>
             <MapPin size={13} color="#64748b" /> {product.location || 'Quy Nhơn'}
           </div>
@@ -160,11 +159,11 @@ export function MarketplaceHome({ query = '', group = '', sort = '', view = '' }
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [showBackToTop, setShowBackToTop] = useState(false);
 
-  // REQ 10: Default display minimum 12 items matrix
+  // Default display minimum 12 items matrix
   const [visibleCount, setVisibleCount] = useState(12);
 
-  // REQ 6: View mode switcher state
-  const [viewMode, setViewMode] = useState<'GRID_6' | 'GRID_4' | 'LIST'>('GRID_6');
+  // Default view mode: GRID_4 (Lưới 4x3) across all pages
+  const [viewMode, setViewMode] = useState<'GRID_6' | 'GRID_4' | 'LIST'>('GRID_4');
 
   // Unified Location Engine Selection
   const [locationSelection, setLocationSelection] = useState<LocationSelection>({
@@ -173,7 +172,7 @@ export function MarketplaceHome({ query = '', group = '', sort = '', view = '' }
   });
   const [showLocationModal, setShowLocationModal] = useState(false);
 
-  // REQ 5: Tabs include MOST_VIEWED and VIP
+  // Tabs include MOST_VIEWED and VIP
   const [activeTab, setActiveTab] = useState<'FOR_YOU' | 'MOST_VIEWED' | 'VIP' | 'NEARBY' | 'TODAY_DEALS' | 'VERIFIED' | 'GIVEAWAY'>('FOR_YOU');
 
   const [activeBanners, setActiveBanners] = useState<{
@@ -334,7 +333,7 @@ export function MarketplaceHome({ query = '', group = '', sort = '', view = '' }
         </div>
       )}
 
-      {/* HERO BANNER & SEARCH BAR - REQ 1 & 3: Flush to top menu, narrower search box */}
+      {/* HERO BANNER & SEARCH BAR */}
       <section className="hero" style={{ paddingTop: 0 }}>
         <div className="shell" style={{ padding: '0 8px' }}>
           <div
@@ -343,7 +342,6 @@ export function MarketplaceHome({ query = '', group = '', sort = '', view = '' }
           >
             <div className="hero-banner-bg" />
             <div className="hero-banner-overlay" style={{ maxWidth: 660 }}>
-              {/* REQ 3: Updated slogan */}
               <div style={{ textAlign: 'center', marginBottom: 14 }}>
                 <h1 style={{ fontSize: 25, fontWeight: 800, color: '#ffffff', margin: '0 0 4px 0', letterSpacing: '0.2px', textShadow: '0 2px 8px rgba(0,0,0,0.3)' }}>
                   Mua bán dễ dàng - Kết nối mọi người
@@ -404,7 +402,7 @@ export function MarketplaceHome({ query = '', group = '', sort = '', view = '' }
                 )}
               </form>
 
-              {/* REQ 2: CENTER-ALIGNED HOT KEYWORDS WITH HIGH CONTRAST */}
+              {/* CENTER-ALIGNED HOT KEYWORDS */}
               <div className="hero-quick-keywords" style={{ justifyContent: 'center', textAlign: 'center', width: '100%', marginTop: 14 }}>
                 <span style={{ fontWeight: 700, color: '#ffffff', textShadow: '0 1px 4px rgba(0,0,0,0.5)' }}>🔥 Từ khóa HOT:</span>
                 <button onClick={() => { setSearchQuery('iPhone 15'); router.push('/?q=iPhone+15'); }}>iPhone 15</button>
@@ -417,7 +415,7 @@ export function MarketplaceHome({ query = '', group = '', sort = '', view = '' }
         </div>
       </section>
 
-      {/* 3D CATEGORIES CAROUSEL - REQ 4: Double icon size, no border, no section title */}
+      {/* 3D CATEGORIES CAROUSEL */}
       <section className="shell" style={{ marginBottom: 16 }}>
         <div className="white-card-box" style={{ padding: '16px 20px', position: 'relative', border: 'none', background: 'transparent', boxShadow: 'none' }}>
           <div className="category-carousel-wrapper">
@@ -456,7 +454,7 @@ export function MarketplaceHome({ query = '', group = '', sort = '', view = '' }
       {/* TABBED EXPLORE PRODUCTS SECTION */}
       <section className="shell" style={{ marginBottom: 40 }}>
         <div className="white-card-box" style={{ padding: '20px' }}>
-          {/* HEADER ROW WITH CENTERED TABS & VIEW MODE SWITCHER ON THE RIGHT (REQ 5 & REQ 6) */}
+          {/* HEADER ROW WITH CENTERED TABS & VIEW MODE SWITCHER ON THE RIGHT */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, marginBottom: 20, borderBottom: '1px solid #f1f5f9', paddingBottom: 14 }}>
             <div style={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
               <div className="tabbed-header-centered" style={{ display: 'flex', gap: 8, overflowX: 'auto', scrollbarWidth: 'none', padding: '2px 0' }}>
@@ -515,23 +513,23 @@ export function MarketplaceHome({ query = '', group = '', sort = '', view = '' }
               </div>
             </div>
 
-            {/* REQ 6: VIEW MODE SWITCHER ON THE RIGHT */}
+            {/* VIEW MODE SWITCHER (DEFAULT ACTIVE: GRID_4 / LƯỚI 4X3) */}
             <div className="view-mode-switcher" style={{ display: 'flex', alignItems: 'center', gap: 4, background: '#f8fafc', padding: 4, borderRadius: 10, border: '1px solid #e2e8f0' }}>
-              <button
-                onClick={() => setViewMode('GRID_6')}
-                className={`view-mode-btn ${viewMode === 'GRID_6' ? 'active' : ''}`}
-                title="Lưới 6 cột (Mặc định)"
-                style={{ padding: '6px 10px', borderRadius: 8, border: 'none', background: viewMode === 'GRID_6' ? '#ffffff' : 'transparent', color: viewMode === 'GRID_6' ? '#00a65a' : '#64748b', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, fontWeight: 600, boxShadow: viewMode === 'GRID_6' ? '0 2px 6px rgba(0,0,0,0.08)' : 'none' }}
-              >
-                <LayoutGrid size={16} /> Lưới 6x2
-              </button>
               <button
                 onClick={() => setViewMode('GRID_4')}
                 className={`view-mode-btn ${viewMode === 'GRID_4' ? 'active' : ''}`}
-                title="Lưới 4 cột lớn"
+                title="Lưới 4x3 (Mặc định)"
                 style={{ padding: '6px 10px', borderRadius: 8, border: 'none', background: viewMode === 'GRID_4' ? '#ffffff' : 'transparent', color: viewMode === 'GRID_4' ? '#00a65a' : '#64748b', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, fontWeight: 600, boxShadow: viewMode === 'GRID_4' ? '0 2px 6px rgba(0,0,0,0.08)' : 'none' }}
               >
-                <Grid3x3 size={16} /> Lưới 4x3
+                <Grid3x3 size={16} /> Lưới 4x3 (Mặc định)
+              </button>
+              <button
+                onClick={() => setViewMode('GRID_6')}
+                className={`view-mode-btn ${viewMode === 'GRID_6' ? 'active' : ''}`}
+                title="Lưới 6 cột"
+                style={{ padding: '6px 10px', borderRadius: 8, border: 'none', background: viewMode === 'GRID_6' ? '#ffffff' : 'transparent', color: viewMode === 'GRID_6' ? '#00a65a' : '#64748b', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, fontWeight: 600, boxShadow: viewMode === 'GRID_6' ? '0 2px 6px rgba(0,0,0,0.08)' : 'none' }}
+              >
+                <LayoutGrid size={16} /> Lưới 6x2
               </button>
               <button
                 onClick={() => setViewMode('LIST')}
@@ -544,20 +542,20 @@ export function MarketplaceHome({ query = '', group = '', sort = '', view = '' }
             </div>
           </div>
 
-          {/* PRODUCT MATRIX (REQ 10: DEFAULT 6X2 MATRIX) */}
-          <div className={viewMode === 'GRID_6' ? 'products-grid-6' : viewMode === 'GRID_4' ? 'products-grid-4' : 'products-list-container'}>
+          {/* PRODUCT MATRIX (DEFAULT: GRID_4 / LƯỚI 4X3) */}
+          <div className={viewMode === 'GRID_4' ? 'products-grid-4' : viewMode === 'GRID_6' ? 'products-grid-6' : 'products-list-container'}>
             {isLoading ? (
               Array.from({ length: 12 }).map((_, i) => <ProductCardSkeleton key={i} />)
             ) : displayedProducts.length > 0 ? (
               displayedProducts.map(p => <ProductCard key={p.id} product={p} viewMode={viewMode} />)
             ) : (
-              <p style={{ padding: 40, textAlign: 'center', color: '#64748b', gridColumn: 'span 6', background: '#f8fafc', borderRadius: 12, border: '1px dashed #cbd5e1' }}>
+              <p style={{ padding: 40, textAlign: 'center', color: '#64748b', gridColumn: 'span 4', background: '#f8fafc', borderRadius: 12, border: '1px dashed #cbd5e1' }}>
                 Không tìm thấy bài đăng phù hợp tại khu vực <strong>{locationSelection.label}</strong>.
               </p>
             )}
           </div>
 
-          {/* REQ 8: LOAD MORE BUTTON ("XEM THÊM") */}
+          {/* LOAD MORE BUTTON ("XEM THÊM") */}
           {!isLoading && filteredProducts.length > visibleCount && (
             <div style={{ textAlign: 'center', marginTop: 28, paddingTop: 16, borderTop: '1px dashed #e2e8f0' }}>
               <button

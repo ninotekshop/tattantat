@@ -391,7 +391,7 @@ export default function ProductDetailPage() {
           <Link href="/categories" className="view-all">Xem thêm tin tương tự →</Link>
         </div>
 
-        <div className="products-grid-6">
+        <div className="products-grid-4">
           {relatedProducts.map(rel => (
             <article key={rel.id} className="product-card">
               <div className="card-img">

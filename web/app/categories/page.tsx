@@ -42,11 +42,11 @@ function ProductCard({ product }: { product: Product }) {
           <div className="price-row">
             <span className="price">{product.priceMode==='CONTACT' ? 'LIÊN HỆ' : product.priceMode==='FREE' ? 'TẶNG MIỄN PHÍ' : formatVnd(product.price)}</span>
           </div>
-          <div className="location-row">
-            📍 {product.location || 'Quy Nhơn'}
+          <div className="location-row" style={{display:'flex', alignItems:'center', gap:4, color:'#64748b'}}>
+            <MapPin size={13} color="#64748b" /> {product.location || 'Quy Nhơn'}
           </div>
-          <div className="card-seller-name">
-            👤 {product.sellerName}
+          <div className="card-seller-name" style={{fontSize:12, color:'#475569', marginTop:2}}>
+            👤 {product.sellerName} <span className="verified-badge">✓ Đã xác thực</span>
           </div>
         </Link>
       </div>
@@ -222,7 +222,7 @@ function CategoryEngineContent() {
         </div>
       </div>
 
-      {/* TẤT CẢ TIN ĐĂNG THEO DANH MỤC (PRODUCT GRID) */}
+      {/* TẤT CẢ TIN ĐĂNG THEO DANH MỤC (DEFAULT PRODUCT GRID 4X3) */}
       <div className="white-card-box">
         <div className="section-title">
           <h2>
@@ -231,13 +231,13 @@ function CategoryEngineContent() {
           </h2>
         </div>
 
-        <div className="products-grid-6">
+        <div className="products-grid-4">
           {loading ? (
-            <p style={{ padding: 20, color: '#666', gridColumn: 'span 6' }}>Đang tải tin đăng...</p>
+            <p style={{ padding: 20, color: '#666', gridColumn: 'span 4' }}>Đang tải tin đăng...</p>
           ) : products.length > 0 ? (
             products.map(p => <ProductCard key={p.id} product={p} />)
           ) : (
-            <p style={{ padding: 30, textAlign: 'center', color: '#64748b', gridColumn: 'span 6' }}>Chưa có tin đăng trong danh mục này.</p>
+            <p style={{ padding: 30, textAlign: 'center', color: '#64748b', gridColumn: 'span 4' }}>Chưa có tin đăng trong danh mục này.</p>
           )}
         </div>
       </div>
