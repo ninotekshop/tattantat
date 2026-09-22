@@ -16,6 +16,7 @@ body {
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
   color: var(--text-main);
   background-color: var(--gray-bg);
+  font-size: 15px;
   margin: 0;
   padding: 0;
   -webkit-font-smoothing: antialiased;
@@ -34,8 +35,9 @@ body {
   top: 0;
 }
 
+/* MỞ RỘNG CHIỀU RỘNG TRANG ĐỂ PHÙ HỢP ẢNH 180X180PX */
 .shell {
-  max-width: 1200px;
+  max-width: 1280px;
   margin: 0 auto;
   padding: 0 16px;
 }
@@ -62,7 +64,7 @@ body {
 }
 
 .header-logo-img {
-  height: 38px;
+  height: 40px;
   width: auto;
   object-fit: contain;
 }
@@ -80,7 +82,7 @@ body {
   text-decoration: none;
   color: var(--text-muted);
   font-weight: 500;
-  font-size: 15px;
+  font-size: 15.5px;
   transition: color 0.2s;
 }
 
@@ -97,9 +99,9 @@ body {
 .topbar-sell-cta {
   background: var(--brand);
   color: var(--white);
-  padding: 8px 18px;
+  padding: 9px 20px;
   border-radius: 12px;
-  font-size: 14px;
+  font-size: 14.5px;
   font-weight: 700;
   display: inline-flex;
   align-items: center;
@@ -160,14 +162,14 @@ body {
 }
 
 .user-avatar {
-  width: 38px;
-  height: 38px;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
   background-color: var(--brand-light);
   color: var(--brand);
   border: none;
   font-weight: 700;
-  font-size: 14px;
+  font-size: 15px;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -229,9 +231,9 @@ body {
   background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(8px);
   border-radius: 40px;
-  padding: 5px 8px;
+  padding: 6px 12px;
   box-shadow: 0 8px 24px rgba(0,0,0,0.12);
-  width: min(720px, 94%);
+  width: min(760px, 94%);
   margin: 0 auto;
   position: relative;
   z-index: 100;
@@ -248,14 +250,14 @@ body {
 .search-input-group input {
   border: none;
   outline: none;
-  font-size: 14.5px;
+  font-size: 15.5px;
   width: 100%;
   background: transparent;
 }
 
 .search-divider {
   width: 1px;
-  height: 20px;
+  height: 22px;
   background-color: var(--border);
   margin: 0 10px;
 }
@@ -265,7 +267,7 @@ body {
   align-items: center;
   gap: 6px;
   color: var(--text-main);
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 500;
   white-space: nowrap;
 }
@@ -275,8 +277,8 @@ body {
   color: var(--white);
   border: none;
   border-radius: 30px;
-  padding: 9px 22px;
-  font-size: 14.5px;
+  padding: 10px 26px;
+  font-size: 15px;
   font-weight: 700;
   display: flex;
   align-items: center;
@@ -291,14 +293,14 @@ body {
   background-color: var(--brand-dark);
 }
 
-/* CATEGORIES COMPACT (CAO 95PX) */
+/* CATEGORIES COMPACT */
 .categories-section {
   padding: 4px 0;
   position: relative;
 }
 
 .categories-section .white-card-box {
-  height: 95px;
+  height: 98px;
   padding: 4px 16px;
   display: flex;
   align-items: center;
@@ -322,7 +324,7 @@ body {
 .category-scroll::-webkit-scrollbar { display: none; }
 
 .cat-card-clean {
-  flex: 0 0 78px;
+  flex: 0 0 82px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -335,8 +337,8 @@ body {
 }
 
 .cat-icon-wrapper {
-  width: 54px;
-  height: 54px;
+  width: 58px;
+  height: 58px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -346,8 +348,8 @@ body {
 }
 
 .cat-card-clean img {
-  width: 54px;
-  height: 54px;
+  width: 58px;
+  height: 58px;
   object-fit: contain;
   filter: drop-shadow(0 4px 6px rgba(0,0,0,0.08));
   transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
@@ -358,13 +360,13 @@ body {
 }
 
 .cat-card-clean span {
-  font-size: 11.5px;
+  font-size: 12.5px;
   font-weight: 600;
   text-align: center;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 78px;
+  max-width: 82px;
 }
 
 .nav-arrow {
@@ -403,8 +405,8 @@ body {
 
 .white-card-box {
   background: var(--white);
-  border-radius: 16px;
-  padding: 16px 20px;
+  border-radius: 18px;
+  padding: 18px 22px;
   box-shadow: var(--shadow-sm);
   border: 1px solid var(--border);
 }
@@ -413,11 +415,11 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 12px;
+  margin-bottom: 14px;
 }
 
 .section-title h2 {
-  font-size: 17px;
+  font-size: 19px;
   font-weight: 700;
   display: flex;
   align-items: center;
@@ -427,7 +429,7 @@ body {
 }
 
 .view-all {
-  font-size: 13.5px;
+  font-size: 14px;
   font-weight: 600;
   color: var(--brand);
   text-decoration: none;
@@ -440,34 +442,34 @@ body {
   text-decoration: underline;
 }
 
-/* PRODUCTS GRID 6 COLUMNS DESKTOP */
+/* PRODUCTS GRID 6 COLUMNS DESKTOP - CỠ ẢNH 180X180PX */
 .products-grid-6 {
   display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
-  gap: 14px;
+  grid-template-columns: repeat(6, minmax(180px, 1fr));
+  gap: 16px;
 }
 
 @media (max-width: 1400px) {
-  .products-grid-6 { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+  .products-grid-6 { grid-template-columns: repeat(5, minmax(170px, 1fr)); }
 }
 
 @media (max-width: 1100px) {
-  .products-grid-6 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .products-grid-6 { grid-template-columns: repeat(4, minmax(160px, 1fr)); }
 }
 
 @media (max-width: 768px) {
-  .products-grid-6 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .products-grid-6 { grid-template-columns: repeat(3, minmax(150px, 1fr)); }
   .main-nav { display: none; }
 }
 
 @media (max-width: 540px) {
-  .products-grid-6 { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .products-grid-6 { grid-template-columns: repeat(2, minmax(140px, 1fr)); gap: 10px; }
 }
 
-/* PRODUCT CARD MODERN MARKETPLACE */
+/* PRODUCT CARD MODERN MARKETPLACE WITH 180X180PX IMAGE */
 .product-card {
   background: var(--white);
-  border-radius: 14px;
+  border-radius: 16px;
   overflow: hidden;
   border: 1px solid var(--border);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
@@ -478,16 +480,18 @@ body {
 
 .product-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
 }
 
 .card-img {
   position: relative;
   aspect-ratio: 1 / 1;
+  min-width: 180px;
+  min-height: 180px;
   background-color: var(--gray-bg);
   overflow: hidden;
-  border-top-left-radius: 14px;
-  border-top-right-radius: 14px;
+  border-top-left-radius: 16px;
+  border-top-right-radius: 16px;
 }
 
 .card-img img {
@@ -503,18 +507,18 @@ body {
 
 .badges {
   position: absolute;
-  top: 6px;
-  left: 6px;
+  top: 8px;
+  left: 8px;
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 4px;
   z-index: 2;
 }
 
 .badge {
-  font-size: 9.5px;
+  font-size: 10px;
   font-weight: 700;
-  padding: 2px 5px;
+  padding: 3px 7px;
   border-radius: 4px;
   color: white;
 }
@@ -525,13 +529,13 @@ body {
 
 .media-count-badge {
   position: absolute;
-  bottom: 6px;
-  right: 6px;
+  bottom: 8px;
+  right: 8px;
   background: rgba(0, 0, 0, 0.65);
   color: #ffffff;
-  font-size: 10.5px;
+  font-size: 11px;
   font-weight: 600;
-  padding: 2px 6px;
+  padding: 3px 8px;
   border-radius: 8px;
   backdrop-filter: blur(4px);
   z-index: 2;
@@ -539,13 +543,13 @@ body {
 
 .heart-btn {
   position: absolute;
-  top: 6px;
-  right: 6px;
-  background: rgba(255, 255, 255, 0.85);
+  top: 8px;
+  right: 8px;
+  background: rgba(255, 255, 255, 0.88);
   backdrop-filter: blur(4px);
   border: none;
-  width: 30px;
-  height: 30px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -553,7 +557,7 @@ body {
   cursor: pointer;
   z-index: 5;
   color: #64748b;
-  font-size: 15px;
+  font-size: 16px;
   transition: all 0.2s ease;
 }
 
@@ -564,57 +568,57 @@ body {
 }
 
 .card-body {
-  padding: 10px;
+  padding: 12px;
   display: flex;
   flex-direction: column;
   flex: 1;
 }
 
-/* HIỂN THỊ ĐẦY ĐỦ NỘI DUNG TÊN SẢN PHẨM (KHÔNG DÙNG ...) */
+/* CỠ CHỮ TÊN SẢN PHẨM RÕ RÀNG DỄ ĐỌC */
 .card-title-full {
-  font-size: 13px;
+  font-size: 14.5px;
   font-weight: 600;
   color: #0f172a;
-  margin: 0 0 3px 0;
+  margin: 0 0 4px 0;
   line-height: 1.35;
   word-break: break-word;
   white-space: normal;
 }
 
 .card-metadata {
-  font-size: 11px;
+  font-size: 12.5px;
   color: #64748b;
-  margin-bottom: 4px;
+  margin-bottom: 6px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
 .price-row {
-  margin-bottom: 4px;
+  margin-bottom: 6px;
 }
 
 .price {
-  font-size: 15px;
-  font-weight: 700;
+  font-size: 17.5px;
+  font-weight: 800;
   color: #dc2626;
 }
 
 .location-row {
-  font-size: 11px;
+  font-size: 12px;
   color: #64748b;
   margin-bottom: 4px;
 }
 
 .card-seller-name {
-  font-size: 11px;
+  font-size: 12px;
   color: #334155;
   font-weight: 500;
-  margin-bottom: 2px;
+  margin-bottom: 3px;
 }
 
 .card-posted-date {
-  font-size: 11px;
+  font-size: 12px;
   color: #64748b;
   margin-bottom: 6px;
 }
@@ -622,16 +626,16 @@ body {
 .verified-badge {
   color: #059669;
   font-weight: 600;
-  font-size: 11px;
+  font-size: 12px;
 }
 
 .card-footer-flex {
   border-top: 1px dashed #e2e8f0;
-  padding-top: 6px;
+  padding-top: 8px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  font-size: 11px;
+  font-size: 12px;
   color: #64748b;
   margin-top: auto;
 }
@@ -641,7 +645,7 @@ body {
   border: none;
   color: #64748b;
   font-weight: 700;
-  font-size: 16px;
+  font-size: 17px;
   cursor: pointer;
   padding: 2px 6px;
   border-radius: 4px;
@@ -660,16 +664,16 @@ body {
   background: #ffffff;
   border: 1px solid var(--border);
   border-radius: 12px;
-  box-shadow: 0 10px 25px rgba(0,0,0,0.15);
-  width: 155px;
-  z-index: 1000;
+  box-shadow: 0 12px 32px rgba(0,0,0,0.25);
+  width: 160px;
+  z-index: 99999 !important;
   overflow: hidden;
-  padding: 4px 0;
+  padding: 6px 0;
 }
 
 .card-menu-dropdown-bottom div {
-  padding: 8px 12px;
-  font-size: 12px;
+  padding: 8px 14px;
+  font-size: 12.5px;
   font-weight: 500;
   color: #334155;
   cursor: pointer;
@@ -681,22 +685,22 @@ body {
   color: var(--brand);
 }
 
-/* FLOATING SKYSCRAPER BANNERS (CỐ ĐỊNH TRƯỢT 2 BÊN MÉP - PHỦ KÍN KHOẢNG TRỐNG) */
+/* FLOATING SKYSCRAPER BANNERS */
 .floating-banner {
   position: fixed;
   top: 72px;
-  width: calc((100vw - 1240px) / 2 - 20px);
+  width: calc((100vw - 1320px) / 2 - 16px);
   z-index: 90;
   display: block;
   transition: opacity 0.3s ease;
 }
 
 .left-floating-banner {
-  left: 10px;
+  left: 8px;
 }
 
 .right-floating-banner {
-  right: 10px;
+  right: 8px;
 }
 
 .floating-banner img {
@@ -707,7 +711,7 @@ body {
   display: block;
 }
 
-@media (max-width: 1280px) {
+@media (max-width: 1320px) {
   .floating-banner {
     display: none;
   }
@@ -725,8 +729,8 @@ body {
   background: #f1f5f9;
   border: 1px solid #e2e8f0;
   border-radius: 20px;
-  padding: 6px 14px;
-  font-size: 12.5px;
+  padding: 7px 16px;
+  font-size: 13.5px;
   font-weight: 500;
   color: #334155;
   cursor: pointer;
@@ -761,7 +765,7 @@ body {
 
 .location-dropdown-item {
   padding: 10px 16px;
-  font-size: 13px;
+  font-size: 13.5px;
   color: var(--text-main);
   display: flex;
   align-items: center;
@@ -794,7 +798,7 @@ body {
 
 .suggestion-item {
   padding: 10px 18px;
-  font-size: 14px;
+  font-size: 14.5px;
   color: var(--text-main);
   display: flex;
   align-items: center;
@@ -812,14 +816,14 @@ body {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 12.5px;
+  font-size: 13px;
   color: #0f172a;
   flex-wrap: wrap;
   justify-content: center;
   margin-top: 10px;
   background: rgba(255, 255, 255, 0.92);
   backdrop-filter: blur(8px);
-  padding: 6px 16px;
+  padding: 6px 18px;
   border-radius: 999px;
   box-shadow: 0 4px 15px rgba(0,0,0,0.1);
   width: fit-content;
@@ -838,7 +842,7 @@ body {
   border-radius: 999px;
   padding: 3px 12px;
   color: #1e293b;
-  font-size: 12px;
+  font-size: 12.5px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -867,8 +871,8 @@ body {
 .explore-tab-btn {
   background: transparent;
   border: none;
-  padding: 6px 14px;
-  font-size: 13.5px;
+  padding: 7px 16px;
+  font-size: 14px;
   font-weight: 600;
   color: var(--text-muted);
   cursor: pointer;
@@ -888,13 +892,13 @@ body {
   box-shadow: 0 4px 12px rgba(0, 166, 90, 0.25);
 }
 
-/* --- MAIN FOOTER STYLING (FIXED LOGO SIZE & FLEX/GRID ALIGNMENT) --- */
+/* MAIN FOOTER STYLING */
 .main-footer {
   background-color: #ffffff !important;
   border-top: 1px solid var(--border) !important;
   margin-top: 40px !important;
   color: #334155 !important;
-  font-size: 14px !important;
+  font-size: 14.5px !important;
   clear: both !important;
   width: 100% !important;
   position: relative !important;
@@ -933,7 +937,7 @@ body {
 
 .trust-item strong {
   display: block !important;
-  font-size: 14px !important;
+  font-size: 14.5px !important;
   font-weight: 700 !important;
   color: #0f172a !important;
   margin-bottom: 2px !important;
@@ -941,7 +945,7 @@ body {
 
 .trust-item span {
   display: block !important;
-  font-size: 12px !important;
+  font-size: 12.5px !important;
   color: #64748b !important;
 }
 
@@ -985,14 +989,14 @@ body {
 }
 
 .footer-slogan {
-  font-size: 15px !important;
+  font-size: 15.5px !important;
   font-weight: 700 !important;
   color: var(--brand) !important;
   margin: 0 0 8px 0 !important;
 }
 
 .footer-desc {
-  font-size: 13px !important;
+  font-size: 13.5px !important;
   color: #64748b !important;
   line-height: 1.6 !important;
   margin-bottom: 20px !important;
@@ -1024,17 +1028,17 @@ body {
 
 .bocongthuong-badge strong {
   display: block !important;
-  font-size: 11px !important;
+  font-size: 11.5px !important;
   letter-spacing: 0.5px !important;
 }
 
 .bocongthuong-badge span {
-  font-size: 10px !important;
+  font-size: 10.5px !important;
   opacity: 0.85 !important;
 }
 
 .footer-heading {
-  font-size: 15px !important;
+  font-size: 15.5px !important;
   font-weight: 700 !important;
   color: #0f172a !important;
   margin: 0 0 16px 0 !important;
@@ -1052,7 +1056,7 @@ body {
 .footer-links a {
   color: #475569 !important;
   text-decoration: none !important;
-  font-size: 13.5px !important;
+  font-size: 14px !important;
   transition: color 0.2s ease !important;
 }
 
@@ -1066,7 +1070,7 @@ body {
 }
 
 .app-subtitle {
-  font-size: 13px !important;
+  font-size: 13.5px !important;
   color: #64748b !important;
   margin-bottom: 14px !important;
 }
@@ -1114,7 +1118,7 @@ body {
 }
 
 .social-heading {
-  font-size: 13px !important;
+  font-size: 13.5px !important;
   font-weight: 600 !important;
   color: #334155 !important;
   margin: 0 0 10px 0 !important;
@@ -1148,7 +1152,7 @@ body {
   border-top: 1px solid #e2e8f0 !important;
   padding: 16px 0 !important;
   background: #f8fafc !important;
-  font-size: 13px !important;
+  font-size: 13.5px !important;
   color: #64748b !important;
 }
 

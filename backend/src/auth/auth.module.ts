@@ -5,11 +5,13 @@ import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { OptionalJwtAuthGuard } from './optional-jwt-auth.guard';
+import { MailModule } from '../mail/mail.module';
 
 const DEFAULT_JWT_ACCESS = 'tat_tan_tat_jwt_access_secret_key_2026';
 
 @Module({
   imports: [
+    MailModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
