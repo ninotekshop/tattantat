@@ -9,9 +9,16 @@ import {
   Calendar, ExternalLink, Activity, Clock, Image as ImageIcon,
   Edit, Trash2, Plus, Code, Save, RotateCcw, Upload, CheckCircle,
   X, Filter, Eye, RefreshCw, AlertTriangle, ShieldCheck, UserCheck,
-  Check, XCircle, Menu, LogOut, User, Sparkles
+  Check, XCircle, Menu, LogOut, User, Lock, Mail, KeyRound, Sparkles
 } from 'lucide-react';
 import '../admin.css';
+
+interface AdminSession {
+  email: string;
+  fullName: string;
+  role: string;
+  token?: string;
+}
 
 interface DashboardData {
   kpis: {
@@ -101,6 +108,15 @@ function formatVnd(val: string | number) {
 }
 
 export default function AdminDashboardPage() {
+  // ADMIN AUTH SESSION STATE
+  const [adminSession, setAdminSession] = useState<AdminSession | null>(null);
+  const [loginEmail, setLoginEmail] = useState('admin@tattantat.vn');
+  const [loginPassword, setLoginPassword] = useState('Demo@123');
+  const [showPassword, setShowPassword] = useState(false);
+  const [loginError, setLoginError] = useState<string | null>(null);
+  const [loginLoading, setLoginLoading] = useState(false);
+
+  // CONSOLE STATE
   const [activeNav, setActiveNav] = useState('tong-quan');
   const [dateRange, setDateRange] = useState('30 ngày');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -163,9 +179,84 @@ export default function AdminDashboardPage() {
   const [cssCode, setCssCode] = useState('/* Đang tải nội dung CSS... */');
   const [cssLoading, setCssLoading] = useState(false);
 
+  // CHECK SAVED ADMIN SESSION ON MOUNT
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('tattantat_admin_session');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed?.email) {
+          setAdminSession(parsed);
+        }
+      }
+    } catch (e) {}
+  }, []);
+
   const showToast = (msg: string) => {
     setToast(msg);
     setTimeout(() => setToast(null), 3500);
+  };
+
+  // ADMIN LOGIN SUBMIT HANDLER
+  const handleAdminLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoginError(null);
+    setLoginLoading(true);
+
+    fetch('/api/v1/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phoneOrEmail: loginEmail, password: loginPassword }),
+    })
+      .then(r => r.json())
+      .then(res => {
+        if (res.success && res.data) {
+          const sessionData: AdminSession = {
+            email: res.data.email || loginEmail,
+            fullName: res.data.fullName || 'Super Admin',
+            role: res.data.role || 'ADMIN',
+            token: res.data.accessToken
+          };
+          setAdminSession(sessionData);
+          localStorage.setItem('tattantat_admin_session', JSON.stringify(sessionData));
+          showToast('Đăng nhập Quản trị viên thành công!');
+        } else {
+          // Demo fallback check
+          if (loginEmail.trim().toLowerCase() === 'admin@tattantat.vn' && loginPassword === 'Demo@123') {
+            const sessionData: AdminSession = {
+              email: 'admin@tattantat.vn',
+              fullName: 'Super Admin',
+              role: 'SUPER_ADMIN'
+            };
+            setAdminSession(sessionData);
+            localStorage.setItem('tattantat_admin_session', JSON.stringify(sessionData));
+            showToast('Đăng nhập Quản trị viên Demo thành công!');
+          } else {
+            setLoginError(res.message || 'Mật khẩu hoặc email Admin chưa chính xác');
+          }
+        }
+      })
+      .catch(() => {
+        if (loginEmail.trim().toLowerCase() === 'admin@tattantat.vn' && loginPassword === 'Demo@123') {
+          const sessionData: AdminSession = {
+            email: 'admin@tattantat.vn',
+            fullName: 'Super Admin',
+            role: 'SUPER_ADMIN'
+          };
+          setAdminSession(sessionData);
+          localStorage.setItem('tattantat_admin_session', JSON.stringify(sessionData));
+          showToast('Đăng nhập Quản trị viên Demo thành công!');
+        } else {
+          setLoginError('Lỗi kết nối máy chủ xác thực');
+        }
+      })
+      .finally(() => setLoginLoading(false));
+  };
+
+  const handleAdminLogout = () => {
+    setAdminSession(null);
+    localStorage.removeItem('tattantat_admin_session');
+    showToast('Đã đăng xuất khỏi phiên Admin');
   };
 
   // FETCH DASHBOARD DATA
@@ -244,13 +335,14 @@ export default function AdminDashboardPage() {
   }, []);
 
   useEffect(() => {
+    if (!adminSession) return;
     if (activeNav === 'tong-quan') fetchDashboardData();
     else if (activeNav === 'tin-dang') fetchPostsData();
     else if (activeNav === 'nguoi-dung') fetchUsersData();
     else if (activeNav === 'banners') fetchBannersData();
     else if (activeNav === 'don-hang') fetchOrdersData();
     else if (activeNav === 'reports') fetchReportsData();
-  }, [activeNav, fetchDashboardData, fetchPostsData, fetchUsersData, fetchBannersData, fetchOrdersData, fetchReportsData]);
+  }, [adminSession, activeNav, fetchDashboardData, fetchPostsData, fetchUsersData, fetchBannersData, fetchOrdersData, fetchReportsData]);
 
   // GLOBAL SEARCH SHORTCUT & COMMAND PALETTE
   useEffect(() => {
@@ -287,7 +379,7 @@ export default function AdminDashboardPage() {
 
   // CSS EDITOR EFFECTS
   useEffect(() => {
-    if (activeNav === 'css-editor') {
+    if (adminSession && activeNav === 'css-editor') {
       setCssLoading(true);
       fetch(`/api/v1/admin/css?file=${selectedCssFile}`)
         .then(r => r.json())
@@ -297,7 +389,7 @@ export default function AdminDashboardPage() {
         .catch(() => setToast('Không thể đọc file CSS'))
         .finally(() => setCssLoading(false));
     }
-  }, [selectedCssFile, activeNav]);
+  }, [adminSession, selectedCssFile, activeNav]);
 
   const handleSaveCss = () => {
     setCssLoading(true);
@@ -507,6 +599,84 @@ export default function AdminDashboardPage() {
       });
   };
 
+  // RENDER ADMIN LOGIN FORM IF NOT AUTHENTICATED
+  if (!adminSession) {
+    return (
+      <div className="admin-login-wrapper">
+        <div className="admin-login-card">
+          <img src="/assets/logo.png" alt="Tất Tần Tật Admin" className="admin-login-logo" />
+          <span className="admin-login-badge">🛡 BẢO MẬT & QUẢN TRỊ NỘI BỘ</span>
+          <h1 className="admin-login-title">Đăng nhập Admin Console</h1>
+          <p className="admin-login-subtitle">Hệ thống quản trị nền tảng Tất Tần Tật</p>
+
+          {loginError && (
+            <div style={{ background: '#fef2f2', border: '1px solid #fca5a5', color: '#dc2626', padding: '10px 14px', borderRadius: 10, fontSize: 13, fontWeight: 500, marginBottom: 16 }}>
+              ⚠️ {loginError}
+            </div>
+          )}
+
+          <form className="admin-login-form" onSubmit={handleAdminLogin}>
+            <div className="admin-input-group">
+              <label>Tài khoản / Email Quản trị *</label>
+              <div className="admin-input-wrapper">
+                <Mail size={18} className="admin-input-icon" />
+                <input
+                  type="text"
+                  placeholder="admin@tattantat.vn"
+                  value={loginEmail}
+                  onChange={e => setLoginEmail(e.target.value)}
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="admin-input-group">
+              <label>Mật khẩu Khóa *</label>
+              <div className="admin-input-wrapper">
+                <KeyRound size={18} className="admin-input-icon" />
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder="••••••••"
+                  value={loginPassword}
+                  onChange={e => setLoginPassword(e.target.value)}
+                  required
+                />
+                <button
+                  type="button"
+                  className="toggle-pwd-btn"
+                  onClick={() => setShowPassword(!showPassword)}
+                  title={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+                >
+                  {showPassword ? <Eye size={18} /> : <Lock size={18} />}
+                </button>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              className="admin-demo-autofill-btn"
+              onClick={() => {
+                setLoginEmail('admin@tattantat.vn');
+                setLoginPassword('Demo@123');
+              }}
+            >
+              🔑 Tự động điền tài khoản Admin Demo (`admin@tattantat.vn` / `Demo@123`)
+            </button>
+
+            <button type="submit" className="admin-submit-btn" disabled={loginLoading}>
+              {loginLoading ? 'Đang xác thực...' : 'ĐĂNG NHẬP QUẢN TRỊ'}
+            </button>
+          </form>
+
+          <div style={{ marginTop: 24, paddingTop: 16, borderTop: '1px solid #f1f5f9', textAlign: 'center', fontSize: 11.5, color: '#64748b', lineHeight: 1.5 }}>
+            🔒 <b>CẢNH BÁO BẢO MẬT:</b> Trang dành riêng cho Cán bộ Quản trị. Mọi hành vi truy cập trái phép sẽ bị ghi vết địa chỉ IP và xử lý theo quy định pháp luật.
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // RENDER MAIN ADMIN CONSOLE IF AUTHENTICATED
   return (
     <div className={`admin-layout ${sidebarCollapsed ? 'collapsed' : ''}`}>
       {toast && (
@@ -792,7 +962,7 @@ export default function AdminDashboardPage() {
               >
                 <img src="/assets/product-1.jpg" alt="Admin" style={{width:38, height:38, borderRadius:'50%', objectFit:'cover', border:'2px solid #00a65a'}} />
                 <div>
-                  <div style={{fontSize:14, fontWeight:600, color:'#0f172a'}}>Super Admin</div>
+                  <div style={{fontSize:14, fontWeight:600, color:'#0f172a'}}>{adminSession.fullName || 'Super Admin'}</div>
                   <div style={{fontSize:11, color:'#00a65a', fontWeight:700}}>Hệ thống Tất Tần Tật</div>
                 </div>
                 <ChevronDown size={14} color="#64748b" />
@@ -813,7 +983,7 @@ export default function AdminDashboardPage() {
                   overflow: 'hidden'
                 }}>
                   <div style={{ padding: '10px 16px', borderBottom: '1px solid #f1f5f9', fontWeight: 700, fontSize: 13, color: '#0f172a' }}>
-                    Quản trị viên Super Admin
+                    {adminSession.email}
                   </div>
                   <div onClick={() => { showToast('Đang mở hồ sơ Admin'); setProfileDropdownOpen(false); }} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 16px', color: '#334155', fontSize: 13, fontWeight: 500, cursor: 'pointer' }}>
                     <User size={16} /> Hồ sơ của tôi
@@ -826,13 +996,10 @@ export default function AdminDashboardPage() {
                   </Link>
                   <div style={{ borderTop: '1px solid #f1f5f9', margin: '4px 0' }} />
                   <div
-                    onClick={() => {
-                      showToast('Đã đăng xuất phiên Admin');
-                      setProfileDropdownOpen(false);
-                    }}
+                    onClick={handleAdminLogout}
                     style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 16px', color: '#dc2626', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
                   >
-                    <LogOut size={16} /> Đăng xuất
+                    <LogOut size={16} /> Đăng xuất phiên Admin
                   </div>
                 </div>
               )}
