@@ -9,6 +9,35 @@ import { MediaPicker } from './MediaPicker';
 import { LocationMap } from './LocationMap';
 const steps=['Danh mục','Thông tin','Ảnh & video','Giá & vị trí','Liên hệ','Xem trước','Hoàn tất'];
 
+function getTitlePlaceholder(selectedName?: string, groupName?: string): string {
+  const name = (selectedName || groupName || '').toLowerCase();
+  if (name.includes('nhà') || name.includes('đất') || name.includes('căn hộ') || name.includes('phòng trọ') || name.includes('bất động sản') || name.includes('nhà đất')) {
+    return 'Ví dụ: Bán nhà mặt tiền đường Nguyễn Huệ, 3 tầng, sổ hồng chính chủ';
+  }
+  if (name.includes('xe') || name.includes('ô tô') || name.includes('xe máy') || name.includes('xe cộ')) {
+    return 'Ví dụ: Xe máy Honda Vision 2022 chính chủ, máy êm, biển TP.HCM';
+  }
+  if (name.includes('gia dụng') || name.includes('nội thất') || name.includes('sofa') || name.includes('tủ') || name.includes('đồ gia dụng')) {
+    return 'Ví dụ: Tủ lạnh LG Inverter 315 lít còn bảo hành chính hãng';
+  }
+  if (name.includes('thời trang') || name.includes('quần áo') || name.includes('giày')) {
+    return 'Ví dụ: Áo khoác nam da thật size L mới 99%';
+  }
+  if (name.includes('thú cưng')) {
+    return 'Ví dụ: Chó Poodle thuần chủng 2 tháng tuổi đã tiêm phòng đầy đủ';
+  }
+  if (name.includes('dịch vụ')) {
+    return 'Ví dụ: Dịch vụ sửa chữa điện nước, điện lạnh tại nhà 24/7';
+  }
+  if (name.includes('sách') || name.includes('học tập')) {
+    return 'Ví dụ: Sách Lập trình Web fullstack nâng cao nguyên seal';
+  }
+  if (name.includes('thể thao') || name.includes('nhạc cụ') || name.includes('giải trí')) {
+    return 'Ví dụ: Đàn Guitar Acoustic Fender chính hãng kèm bao da';
+  }
+  return 'Ví dụ: Tên sản phẩm, mô tả ngắn gọn, tình trạng và chất lượng';
+}
+
 export function ListingWizard() {
   const [categories,setCategories]=useState<ListingCategory[]>([]), [drafts,setDrafts]=useState<ListingSummary[]>([]);
   const [categoryId,setCategoryId]=useState(''), [template,setTemplate]=useState<Template|null>(null);
@@ -110,7 +139,9 @@ export function ListingWizard() {
   const groupId=ancestors.find(item=>item.isGroup)?.id??'', children=categories.filter(item=>item.parentId===categoryId);
   const previewData=template?publicData(data,template):data, disabled=busy||conflict;
   function fieldError(key:string){return errors[key]?<small className="lf-error">{errors[key]}</small>:null;}
-  function dynamicFields(mediaFields:boolean) {return template?.fields.filter(field=>visible(field,data.values??{},template.fields)&&['image','video'].includes(field.type)===mediaFields).map(field=><DynamicField key={field.key} field={field} value={data.values?.[field.key]} error={errors['values.'+field.key]} media={media.filter(item=>(data[item.kind]??[]).includes(item.id))} onChange={value=>patch({values:{...current.current.values,[field.key]:value}})}/>);}
+  function dynamicFields(mediaFields:boolean) {
+    return template?.fields.filter(field=>visible(field,data.values??{},template.fields)&&['image','video'].includes(field.type)===mediaFields).map(field=><DynamicField key={field.key} field={field} value={data.values?.[field.key]} error={errors['values.'+field.key]} media={media.filter(item=>(data[item.kind]??[]).includes(item.id))} onChange={value=>patch({values:{...current.current.values,[field.key]:value}})}/>);
+  }
 
   return <main id="main-content" className="lf-page"><div className="lf-heading"><div><Link href="/" className="lf-back"><ArrowLeft size={16}/>Trang chủ</Link><p className="lf-eyebrow">TẤT TẦN TẬT · ĐĂNG TIN MIỄN PHÍ</p><h1>Món đồ của bạn, cơ hội mới.</h1><p>Đăng tin rõ ràng, kết nối người mua ở gần bạn.</p></div><span className="lf-security"><ShieldCheck size={18}/>Thông tin được bảo vệ</span></div>
     <nav className="lf-steps" aria-label="Các bước đăng tin">{steps.map((name,index)=><button key={name} disabled={busy||mediaBusy||index>step||step===6} aria-current={step===index?'step':undefined} onClick={()=>setStep(index)}><span>{index<step?<Check size={15}/>:index+1}</span>{name}</button>)}</nav>
@@ -128,7 +159,7 @@ export function ListingWizard() {
         {!listing&&drafts.length>0&&<div className="lf-drafts"><h3>Tiếp tục tin đã lưu</h3>{drafts.map(draft=><button type="button" key={draft.id} onClick={()=>resume(draft.id)}><FileText size={18}/><span><strong>{draft.title||'Tin chưa có tiêu đề'}</strong><small>{draft.status==='PUBLISHED'?'Đã đăng · Chỉnh sửa':'Bản nháp'} · {new Date(draft.updatedAt).toLocaleDateString('vi-VN')}</small></span><ArrowRight size={17}/></button>)}</div>}
       </>}
       {step===1&&template&&<>
-        <div className="lf-field"><label htmlFor="listing-title">Tiêu đề *</label><input id="listing-title" value={data.title??''} maxLength={200} placeholder="Ví dụ: iPhone 14 Pro 128GB, còn đẹp, chính chủ" onChange={event=>patch({title:event.target.value})} aria-invalid={!!errors.title}/><small>{data.title?.length??0}/200 ký tự</small>{fieldError('title')}</div>
+        <div className="lf-field"><label htmlFor="listing-title">Tiêu đề *</label><input id="listing-title" value={data.title??''} maxLength={200} placeholder={getTitlePlaceholder(selected?.name, ancestors[0]?.name)} onChange={event=>patch({title:event.target.value})} aria-invalid={!!errors.title}/><small>{data.title?.length??0}/200 ký tự</small>{fieldError('title')}</div>
         <div className="lf-field"><label htmlFor="listing-condition">Tình trạng *</label><select id="listing-condition" value={data.condition??''} onChange={event=>patch({condition:event.target.value})}><option value="">Chọn tình trạng</option>{Object.entries(conditionLabels).map(([key,label])=><option key={key} value={key}>{label}</option>)}</select>{fieldError('condition')}</div>
         <h3>Thông tin {selected?.name.toLowerCase()}</h3><div className="lf-fields-grid">{dynamicFields(false)}</div>
         <div className="lf-field"><label htmlFor="listing-description">Mô tả chi tiết *</label><textarea id="listing-description" rows={6} value={data.description??''} maxLength={10000} placeholder="Tình trạng thực tế, phụ kiện, lý do bán và lưu ý cho người mua…" onChange={event=>patch({description:event.target.value})}/>{fieldError('description')}</div>

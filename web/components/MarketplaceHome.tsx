@@ -62,14 +62,9 @@ export function MarketplaceHome({ query }: { query: string; group: string; sort:
   const [products, setProducts] = useState<Product[]>([]);
   const [searchQuery, setSearchQuery] = useState(query);
   const [isLoading, setIsLoading] = useState(true);
+  const [selectedLocation, setSelectedLocation] = useState('Đang định vị (Gần bạn)');
+  const [showLocationDropdown, setShowLocationDropdown] = useState(false);
   const categoryScrollRef = useRef<HTMLDivElement>(null);
-
-  const scrollCategories = (direction: 'left' | 'right') => {
-    if (categoryScrollRef.current) {
-      const scrollAmount = direction === 'left' ? -350 : 350;
-      categoryScrollRef.current.scrollBy({ left: scrollAmount, behavior: 'smooth' });
-    }
-  };
 
   useEffect(() => {
     let cancelled = false;
@@ -85,6 +80,48 @@ export function MarketplaceHome({ query }: { query: string; group: string; sort:
     void load();
     return () => { cancelled = true; };
   }, [query]);
+
+  useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        () => setSelectedLocation('Vị trí gần bạn (GPS)'),
+        () => setSelectedLocation('Bình Định'),
+        { timeout: 6000 }
+      );
+    } else {
+      setSelectedLocation('Bình Định');
+    }
+  }, []);
+
+  const provinces = [
+    'Toàn quốc',
+    'Vị trí gần bạn (GPS)',
+    'Bình Định',
+    'TP. Hồ Chí Minh',
+    'Hà Nội',
+    'Đà Nẵng',
+    'Hải Phòng',
+    'Cần Thơ',
+    'Bình Dương',
+    'Đồng Nai',
+    'Khánh Hòa',
+    'Quảng Nam',
+    'Gia Lai',
+    'Đắk Lắk'
+  ];
+
+  const filteredProducts = products.filter(p => {
+    if (selectedLocation === 'Toàn quốc' || selectedLocation.includes('Gần bạn')) return true;
+    if (!p.location) return true;
+    return p.location.toLowerCase().includes(selectedLocation.toLowerCase());
+  });
+
+  const scrollCategories = (direction: 'left' | 'right') => {
+    if (categoryScrollRef.current) {
+      const scrollAmount = direction === 'left' ? -350 : 350;
+      categoryScrollRef.current.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+    }
+  };
 
   function handleSearch(e: React.FormEvent) {
     e.preventDefault();
@@ -119,9 +156,42 @@ export function MarketplaceHome({ query }: { query: string; group: string; sort:
                   <input type="text" placeholder="Tìm trên Tất Tần Tật..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
                 </div>
                 <div className="search-divider"></div>
-                <div className="search-location">
-                  <MapPin size={17} /> Bình Định (Gia Lai mới) ▾
+
+                <div className="search-location-wrapper" style={{ position: 'relative' }}>
+                  <div
+                    className="search-location"
+                    onClick={() => setShowLocationDropdown(!showLocationDropdown)}
+                    style={{ cursor: 'pointer', userSelect: 'none', display: 'flex', alignItems: 'center', gap: 6 }}
+                  >
+                    <MapPin size={17} /> {selectedLocation} ▾
+                  </div>
+
+                  {showLocationDropdown && (
+                    <div className="location-dropdown-menu">
+                      {provinces.map((prov) => (
+                        <div
+                          key={prov}
+                          className={`location-dropdown-item ${selectedLocation === prov ? 'active' : ''}`}
+                          onClick={() => {
+                            setSelectedLocation(prov);
+                            setShowLocationDropdown(false);
+                            if (prov === 'Vị trí gần bạn (GPS)') {
+                              if (navigator.geolocation) {
+                                navigator.geolocation.getCurrentPosition(
+                                  () => setSelectedLocation('Vị trí gần bạn (GPS)'),
+                                  () => alert('Không thể lấy vị trí GPS. Đã chuyển về mặc định.')
+                                );
+                              }
+                            }
+                          }}
+                        >
+                          <MapPin size={14} /> {prov}
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
+
                 <button type="submit" className="search-btn"><Search size={18} /> Tìm kiếm</button>
               </form>
             </div>
@@ -159,19 +229,19 @@ export function MarketplaceHome({ query }: { query: string; group: string; sort:
           {/* KHỐI SẢN PHẨM NỔI BẬT */}
           <div className="white-card-box">
             <div className="section-title">
-              <h2><Flame /> {query ? `Kết quả cho "${query}"` : 'Sản phẩm nổi bật'}</h2>
+              <h2><Flame /> {query ? `Kết quả cho "${query}"` : 'Sản phẩm nổi bật'} {selectedLocation !== 'Toàn quốc' && <span style={{fontSize:13, fontWeight:500, color:'#00a65a'}}>({selectedLocation})</span>}</h2>
               <Link href="/categories" className="view-all">Xem tất cả <ArrowRight size={16} /></Link>
             </div>
 
             <div className="products-grid-6">
               {isLoading ? (
                 <p style={{padding: 20, color: '#666', gridColumn: 'span 6'}}>Đang tải sản phẩm...</p>
-              ) : products.length > 0 ? (
-                products.slice(0, 12).map(product => (
+              ) : filteredProducts.length > 0 ? (
+                filteredProducts.slice(0, 12).map(product => (
                   <ProductCard key={product.id} product={product} />
                 ))
               ) : (
-                <p style={{padding: 20, color: '#666', gridColumn: 'span 6'}}>Chưa có dữ liệu hoặc không tìm thấy sản phẩm nào.</p>
+                <p style={{padding: 20, color: '#666', gridColumn: 'span 6'}}>Chưa có dữ liệu hoặc không tìm thấy sản phẩm nào tại khu vực này.</p>
               )}
             </div>
           </div>
@@ -186,8 +256,8 @@ export function MarketplaceHome({ query }: { query: string; group: string; sort:
               <div className="products-grid-6">
                 {isLoading ? (
                   <p style={{padding: 20, color: '#666', gridColumn: 'span 6'}}>Đang tải tin mới...</p>
-                ) : products.length > 0 ? (
-                  products.slice().reverse().slice(0, 6).map(product => (
+                ) : filteredProducts.length > 0 ? (
+                  filteredProducts.slice().reverse().slice(0, 6).map(product => (
                     <ProductCard key={'new'+product.id} product={product} />
                   ))
                 ) : (

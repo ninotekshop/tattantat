@@ -699,3 +699,40 @@ body {
   transform: translateY(-2px);
   box-shadow: 0 4px 10px rgba(0, 166, 90, 0.15);
 }
+
+/* --- LOCATION DROPDOWN IN SEARCH BOX --- */
+.search-location-wrapper {
+  position: relative;
+}
+
+.location-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 14px);
+  right: 0;
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+  width: 240px;
+  max-height: 320px;
+  overflow-y: auto;
+  z-index: 100;
+  padding: 8px 0;
+}
+
+.location-dropdown-item {
+  padding: 10px 16px;
+  font-size: 13px;
+  color: var(--text-main);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.location-dropdown-item:hover, .location-dropdown-item.active {
+  background: #f0fdf4;
+  color: var(--brand);
+  font-weight: 600;
+}
