@@ -3,7 +3,11 @@
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Search, MapPin, ChevronLeft, ChevronRight, Flame, X, ArrowUp, Sparkles, Clock, Tag, CheckCircle2, Gift } from 'lucide-react';
+import {
+  Search, MapPin, ChevronLeft, ChevronRight, X, ArrowUp, Sparkles,
+  Clock, CheckCircle2, Gift, LayoutGrid, Grid3x3, List, Eye, Crown,
+  User, MessageSquare, ChevronDown
+} from 'lucide-react';
 import { api, type Product } from '../lib/api';
 import { CATEGORY_ENGINE_TAXONOMY } from '../lib/marketplace';
 import { LocationSelectorModal } from './LocationSelectorModal';
@@ -27,7 +31,7 @@ function ProductCardSkeleton() {
   );
 }
 
-function ProductCard({ product }: { product: Product }) {
+function ProductCard({ product, viewMode = 'GRID_6' }: { product: Product; viewMode?: 'GRID_6' | 'GRID_4' | 'LIST' }) {
   const [failedImage, setFailedImage] = useState(false);
   const [isFavorite, setIsFavorite] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -55,13 +59,13 @@ function ProductCard({ product }: { product: Product }) {
 
   return (
     <article
-      className="product-card"
+      className={`product-card ${viewMode === 'LIST' ? 'product-card-list' : ''}`}
       ref={cardRef}
       style={{ zIndex: menuOpen ? 9999 : 1, overflow: menuOpen ? 'visible' : 'hidden', position: 'relative' }}
     >
       <div className="card-img">
         <div className="badges">
-          {isHot && <span className="badge hot">NỔI BẬT</span>}
+          {isHot && <span className="badge hot">👑 VIP</span>}
           {isSale && <span className="badge sale">GIẢM GIÁ</span>}
           {isNew && <span className="badge new">MỚI</span>}
         </div>
@@ -86,7 +90,6 @@ function ProductCard({ product }: { product: Product }) {
             onError={() => setFailedImage(true)}
           />
         </Link>
-        <span className="media-count-badge">📷 1/4</span>
       </div>
 
       <div className="card-body">
@@ -96,20 +99,22 @@ function ProductCard({ product }: { product: Product }) {
           <div className="price-row">
             <span className="price">{product.priceMode === 'CONTACT' ? 'LIÊN HỆ' : product.priceMode === 'FREE' ? 'TẶNG MIỄN PHÍ' : formatVnd(product.price)}</span>
           </div>
-          <div className="location-row">
-            📍 {product.location || 'Quy Nhơn'}
+
+          {/* REQ 9: Simple monochrome icons */}
+          <div className="location-row" style={{ display: 'flex', alignItems: 'center', gap: 5, color: '#64748b' }}>
+            <MapPin size={13} color="#64748b" /> {product.location || 'Quy Nhơn'}
           </div>
-          <div className="card-seller-name">
-            👤 {product.sellerName} <span className="verified-badge">✓ Đã xác thực</span>
+          <div className="card-seller-name" style={{ display: 'flex', alignItems: 'center', gap: 5, color: '#475569' }}>
+            <User size={13} color="#64748b" /> {product.sellerName} <span className="verified-badge">✓ Đã xác thực</span>
           </div>
-          <div className="card-posted-date">
-            🕒 Đăng {new Date(product.postedAt).toLocaleDateString('vi-VN')}
+          <div className="card-posted-date" style={{ display: 'flex', alignItems: 'center', gap: 5, color: '#64748b' }}>
+            <Clock size={13} color="#64748b" /> Đăng {new Date(product.postedAt).toLocaleDateString('vi-VN')}
           </div>
         </Link>
 
         <div className="card-footer-flex">
-          <Link href={'/products/' + product.id} style={{ textDecoration: 'none', color: 'inherit', fontWeight: 600 }}>
-            💬 Nhắn tin
+          <Link href={'/products/' + product.id} style={{ textDecoration: 'none', color: '#334155', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}>
+            <MessageSquare size={14} color="#334155" /> Nhắn tin
           </Link>
 
           <div style={{ position: 'relative' }}>
@@ -155,6 +160,12 @@ export function MarketplaceHome({ query = '', group = '', sort = '', view = '' }
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [showBackToTop, setShowBackToTop] = useState(false);
 
+  // REQ 10: Default display minimum 12 items matrix
+  const [visibleCount, setVisibleCount] = useState(12);
+
+  // REQ 6: View mode switcher state
+  const [viewMode, setViewMode] = useState<'GRID_6' | 'GRID_4' | 'LIST'>('GRID_6');
+
   // Unified Location Engine Selection
   const [locationSelection, setLocationSelection] = useState<LocationSelection>({
     mode: 'nationwide',
@@ -162,7 +173,8 @@ export function MarketplaceHome({ query = '', group = '', sort = '', view = '' }
   });
   const [showLocationModal, setShowLocationModal] = useState(false);
 
-  const [activeTab, setActiveTab] = useState<'FOR_YOU' | 'TODAY_DEALS' | 'NEARBY' | 'GIVEAWAY' | 'VERIFIED'>('FOR_YOU');
+  // REQ 5: Tabs include MOST_VIEWED and VIP
+  const [activeTab, setActiveTab] = useState<'FOR_YOU' | 'MOST_VIEWED' | 'VIP' | 'NEARBY' | 'TODAY_DEALS' | 'VERIFIED' | 'GIVEAWAY'>('FOR_YOU');
 
   const [activeBanners, setActiveBanners] = useState<{
     leftBanner?: string;
@@ -237,12 +249,17 @@ export function MarketplaceHome({ query = '', group = '', sort = '', view = '' }
     if (activeTab === 'GIVEAWAY') {
       if (p.priceMode !== 'FREE' && p.price !== '0') return false;
     }
+    if (activeTab === 'VIP') {
+      if (p.status !== 'PROMOTED') return false;
+    }
     if (locationSelection.mode === 'nationwide' || locationSelection.label === 'Toàn quốc') return true;
     if (!p.location) return true;
     const prodLocNorm = removeAccents(p.location);
     const targetLocNorm = removeAccents(locationSelection.label.replace(/.*\(|\).*/g, ''));
     return prodLocNorm.includes(targetLocNorm);
   });
+
+  const displayedProducts = filteredProducts.slice(0, visibleCount);
 
   const scrollCategories = (direction: 'left' | 'right') => {
     if (categoryScrollRef.current) {
@@ -317,21 +334,22 @@ export function MarketplaceHome({ query = '', group = '', sort = '', view = '' }
         </div>
       )}
 
-      {/* HERO BANNER & SEARCH BAR */}
-      <section className="hero" style={{ paddingTop: 8 }}>
-        <div className="shell">
+      {/* HERO BANNER & SEARCH BAR - REQ 1 & 3: Flush to top menu, narrower search box */}
+      <section className="hero" style={{ paddingTop: 0 }}>
+        <div className="shell" style={{ padding: '0 8px' }}>
           <div
-            className="hero-banner-container"
+            className="hero-banner-container hero-flush-top"
             style={activeBanners.heroBanner ? { backgroundImage: `url(${activeBanners.heroBanner})` } : { backgroundImage: 'none' }}
           >
             <div className="hero-banner-bg" />
-            <div className="hero-banner-overlay">
-              <div style={{ textAlign: 'center', marginBottom: 16 }}>
-                <h1 style={{ fontSize: 24, fontWeight: 800, color: '#ffffff', margin: '0 0 4px 0', letterSpacing: '0.2px' }}>
-                  Mua bán mọi thứ, gần bạn!
+            <div className="hero-banner-overlay" style={{ maxWidth: 660 }}>
+              {/* REQ 3: Updated slogan */}
+              <div style={{ textAlign: 'center', marginBottom: 14 }}>
+                <h1 style={{ fontSize: 25, fontWeight: 800, color: '#ffffff', margin: '0 0 4px 0', letterSpacing: '0.2px', textShadow: '0 2px 8px rgba(0,0,0,0.3)' }}>
+                  Mua bán dễ dàng - Kết nối mọi người
                 </h1>
-                <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.9)', margin: 0, fontWeight: 500 }}>
-                  Hàng ngàn tin đăng mới mỗi ngày · Kết nối trực tiếp người mua & người bán
+                <p style={{ fontSize: 13.5, color: 'rgba(255,255,255,0.95)', margin: 0, fontWeight: 500, textShadow: '0 1px 4px rgba(0,0,0,0.3)' }}>
+                  Hàng ngàn tin đăng mới mỗi ngày · Mua bán trực tiếp tại khu vực của bạn
                 </p>
               </div>
 
@@ -386,9 +404,9 @@ export function MarketplaceHome({ query = '', group = '', sort = '', view = '' }
                 )}
               </form>
 
-              {/* CHIP TỪ KHÓA TÌM KIẾM HOT */}
-              <div className="hero-quick-keywords">
-                <span>🔥 Từ khóa HOT:</span>
+              {/* REQ 2: CENTER-ALIGNED HOT KEYWORDS WITH HIGH CONTRAST */}
+              <div className="hero-quick-keywords" style={{ justifyContent: 'center', textAlign: 'center', width: '100%', marginTop: 14 }}>
+                <span style={{ fontWeight: 700, color: '#ffffff', textShadow: '0 1px 4px rgba(0,0,0,0.5)' }}>🔥 Từ khóa HOT:</span>
                 <button onClick={() => { setSearchQuery('iPhone 15'); router.push('/?q=iPhone+15'); }}>iPhone 15</button>
                 <button onClick={() => { setSearchQuery('Honda Vision'); router.push('/?q=Honda+Vision'); }}>Vision cũ</button>
                 <button onClick={() => { setSearchQuery('Chung cư Quy Nhơn'); router.push('/?q=Chung+cư+Quy+Nhơn'); }}>Chung cư Quy Nhơn</button>
@@ -399,14 +417,9 @@ export function MarketplaceHome({ query = '', group = '', sort = '', view = '' }
         </div>
       </section>
 
-      {/* 3D CATEGORIES CAROUSEL */}
+      {/* 3D CATEGORIES CAROUSEL - REQ 4: Double icon size, no border, no section title */}
       <section className="shell" style={{ marginBottom: 16 }}>
-        <div className="white-card-box" style={{ padding: '16px 20px', position: 'relative' }}>
-          <div className="section-title" style={{ marginBottom: 12 }}>
-            <h2><Flame color="#00a65a" size={22} /> Khám phá danh mục nổi bật</h2>
-            <Link href="/categories" className="view-all">Xem tất cả danh mục →</Link>
-          </div>
-
+        <div className="white-card-box" style={{ padding: '16px 20px', position: 'relative', border: 'none', background: 'transparent', boxShadow: 'none' }}>
           <div className="category-carousel-wrapper">
             <button
               className="cat-scroll-arrow left"
@@ -421,10 +434,10 @@ export function MarketplaceHome({ query = '', group = '', sort = '', view = '' }
                 <Link
                   key={cat.slug}
                   href={cat.slug === 'all' ? '/categories' : `/categories?cat=${cat.slug}`}
-                  className="category-card-3d"
+                  className="category-card-3d-large"
                 >
-                  <img src={cat.img} alt={cat.name} className="cat-3d-img" />
-                  <span className="cat-title">{cat.name}</span>
+                  <img src={cat.img} alt={cat.name} className="cat-3d-img-large" />
+                  <span className="cat-title-large">{cat.name}</span>
                 </Link>
               ))}
             </div>
@@ -440,61 +453,138 @@ export function MarketplaceHome({ query = '', group = '', sort = '', view = '' }
         </div>
       </section>
 
-      {/* TABBED EXPLORE PRODUCTS SECTION WITH QUICK FILTER CHIPS */}
+      {/* TABBED EXPLORE PRODUCTS SECTION */}
       <section className="shell" style={{ marginBottom: 40 }}>
         <div className="white-card-box" style={{ padding: '20px' }}>
-          <div className="tabbed-header" style={{ marginBottom: 16, display: 'flex', gap: 10, overflowX: 'auto', scrollbarWidth: 'none' }}>
-            <button
-              className={`explore-tab-btn ${activeTab === 'FOR_YOU' ? 'active' : ''}`}
-              onClick={() => setActiveTab('FOR_YOU')}
-              style={{ display: 'flex', alignItems: 'center', gap: 6 }}
-            >
-              <Sparkles size={16} color="#00a65a" /> Dành cho bạn
-            </button>
-            <button
-              className={`explore-tab-btn ${activeTab === 'NEARBY' ? 'active' : ''}`}
-              onClick={() => {
-                setActiveTab('NEARBY');
-                setShowLocationModal(true);
-              }}
-              style={{ display: 'flex', alignItems: 'center', gap: 6 }}
-            >
-              <MapPin size={16} color="#00a65a" /> Gần bạn: {locationSelection.label}
-            </button>
-            <button
-              className={`explore-tab-btn ${activeTab === 'TODAY_DEALS' ? 'active' : ''}`}
-              onClick={() => setActiveTab('TODAY_DEALS')}
-              style={{ display: 'flex', alignItems: 'center', gap: 6 }}
-            >
-              <Clock size={16} color="#f59e0b" /> Mới đăng hôm nay
-            </button>
-            <button
-              className={`explore-tab-btn ${activeTab === 'VERIFIED' ? 'active' : ''}`}
-              onClick={() => setActiveTab('VERIFIED')}
-              style={{ display: 'flex', alignItems: 'center', gap: 6 }}
-            >
-              <CheckCircle2 size={16} color="#059669" /> Đã xác thực
-            </button>
-            <button
-              className={`explore-tab-btn ${activeTab === 'GIVEAWAY' ? 'active' : ''}`}
-              onClick={() => setActiveTab('GIVEAWAY')}
-              style={{ display: 'flex', alignItems: 'center', gap: 6 }}
-            >
-              <Gift size={16} color="#ef4444" /> Tặng miễn phí (0đ)
-            </button>
+          {/* HEADER ROW WITH CENTERED TABS & VIEW MODE SWITCHER ON THE RIGHT (REQ 5 & REQ 6) */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, marginBottom: 20, borderBottom: '1px solid #f1f5f9', paddingBottom: 14 }}>
+            <div style={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
+              <div className="tabbed-header-centered" style={{ display: 'flex', gap: 8, overflowX: 'auto', scrollbarWidth: 'none', padding: '2px 0' }}>
+                <button
+                  className={`explore-tab-btn ${activeTab === 'FOR_YOU' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('FOR_YOU')}
+                  style={{ display: 'flex', alignItems: 'center', gap: 6 }}
+                >
+                  <Sparkles size={15} /> Dành cho bạn
+                </button>
+                <button
+                  className={`explore-tab-btn ${activeTab === 'MOST_VIEWED' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('MOST_VIEWED')}
+                  style={{ display: 'flex', alignItems: 'center', gap: 6 }}
+                >
+                  <Eye size={15} /> Xem nhiều nhất
+                </button>
+                <button
+                  className={`explore-tab-btn ${activeTab === 'VIP' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('VIP')}
+                  style={{ display: 'flex', alignItems: 'center', gap: 6 }}
+                >
+                  <Crown size={15} /> Tin đăng VIP
+                </button>
+                <button
+                  className={`explore-tab-btn ${activeTab === 'NEARBY' ? 'active' : ''}`}
+                  onClick={() => {
+                    setActiveTab('NEARBY');
+                    setShowLocationModal(true);
+                  }}
+                  style={{ display: 'flex', alignItems: 'center', gap: 6 }}
+                >
+                  <MapPin size={15} /> Gần bạn
+                </button>
+                <button
+                  className={`explore-tab-btn ${activeTab === 'TODAY_DEALS' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('TODAY_DEALS')}
+                  style={{ display: 'flex', alignItems: 'center', gap: 6 }}
+                >
+                  <Clock size={15} /> Mới đăng hôm nay
+                </button>
+                <button
+                  className={`explore-tab-btn ${activeTab === 'VERIFIED' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('VERIFIED')}
+                  style={{ display: 'flex', alignItems: 'center', gap: 6 }}
+                >
+                  <CheckCircle2 size={15} /> Đã xác thực
+                </button>
+                <button
+                  className={`explore-tab-btn ${activeTab === 'GIVEAWAY' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('GIVEAWAY')}
+                  style={{ display: 'flex', alignItems: 'center', gap: 6 }}
+                >
+                  <Gift size={15} /> Tặng miễn phí (0đ)
+                </button>
+              </div>
+            </div>
+
+            {/* REQ 6: VIEW MODE SWITCHER ON THE RIGHT */}
+            <div className="view-mode-switcher" style={{ display: 'flex', alignItems: 'center', gap: 4, background: '#f8fafc', padding: 4, borderRadius: 10, border: '1px solid #e2e8f0' }}>
+              <button
+                onClick={() => setViewMode('GRID_6')}
+                className={`view-mode-btn ${viewMode === 'GRID_6' ? 'active' : ''}`}
+                title="Lưới 6 cột (Mặc định)"
+                style={{ padding: '6px 10px', borderRadius: 8, border: 'none', background: viewMode === 'GRID_6' ? '#ffffff' : 'transparent', color: viewMode === 'GRID_6' ? '#00a65a' : '#64748b', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, fontWeight: 600, boxShadow: viewMode === 'GRID_6' ? '0 2px 6px rgba(0,0,0,0.08)' : 'none' }}
+              >
+                <LayoutGrid size={16} /> Lưới 6x2
+              </button>
+              <button
+                onClick={() => setViewMode('GRID_4')}
+                className={`view-mode-btn ${viewMode === 'GRID_4' ? 'active' : ''}`}
+                title="Lưới 4 cột lớn"
+                style={{ padding: '6px 10px', borderRadius: 8, border: 'none', background: viewMode === 'GRID_4' ? '#ffffff' : 'transparent', color: viewMode === 'GRID_4' ? '#00a65a' : '#64748b', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, fontWeight: 600, boxShadow: viewMode === 'GRID_4' ? '0 2px 6px rgba(0,0,0,0.08)' : 'none' }}
+              >
+                <Grid3x3 size={16} /> Lưới 4x3
+              </button>
+              <button
+                onClick={() => setViewMode('LIST')}
+                className={`view-mode-btn ${viewMode === 'LIST' ? 'active' : ''}`}
+                title="Hiển thị dạng Danh sách"
+                style={{ padding: '6px 10px', borderRadius: 8, border: 'none', background: viewMode === 'LIST' ? '#ffffff' : 'transparent', color: viewMode === 'LIST' ? '#00a65a' : '#64748b', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, fontWeight: 600, boxShadow: viewMode === 'LIST' ? '0 2px 6px rgba(0,0,0,0.08)' : 'none' }}
+              >
+                <List size={16} /> Danh sách
+              </button>
+            </div>
           </div>
 
-          <div className="products-grid-6">
+          {/* PRODUCT MATRIX (REQ 10: DEFAULT 6X2 MATRIX) */}
+          <div className={viewMode === 'GRID_6' ? 'products-grid-6' : viewMode === 'GRID_4' ? 'products-grid-4' : 'products-list-container'}>
             {isLoading ? (
               Array.from({ length: 12 }).map((_, i) => <ProductCardSkeleton key={i} />)
-            ) : filteredProducts.length > 0 ? (
-              filteredProducts.map(p => <ProductCard key={p.id} product={p} />)
+            ) : displayedProducts.length > 0 ? (
+              displayedProducts.map(p => <ProductCard key={p.id} product={p} viewMode={viewMode} />)
             ) : (
               <p style={{ padding: 40, textAlign: 'center', color: '#64748b', gridColumn: 'span 6', background: '#f8fafc', borderRadius: 12, border: '1px dashed #cbd5e1' }}>
                 Không tìm thấy bài đăng phù hợp tại khu vực <strong>{locationSelection.label}</strong>.
               </p>
             )}
           </div>
+
+          {/* REQ 8: LOAD MORE BUTTON ("XEM THÊM") */}
+          {!isLoading && filteredProducts.length > visibleCount && (
+            <div style={{ textAlign: 'center', marginTop: 28, paddingTop: 16, borderTop: '1px dashed #e2e8f0' }}>
+              <button
+                onClick={() => setVisibleCount(prev => prev + 12)}
+                style={{
+                  background: 'linear-gradient(135deg, #00a65a 0%, #008247 100%)',
+                  color: '#ffffff',
+                  border: 'none',
+                  padding: '12px 32px',
+                  borderRadius: 999,
+                  fontSize: 14.5,
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  boxShadow: '0 4px 14px rgba(0, 166, 90, 0.3)',
+                  transition: 'all 0.2s ease',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 8
+                }}
+              >
+                Xem thêm tin đăng khác <ChevronDown size={18} />
+              </button>
+              <div style={{ fontSize: 12.5, color: '#64748b', marginTop: 8 }}>
+                Đang hiển thị {displayedProducts.length} / {filteredProducts.length} tin đăng
+              </div>
+            </div>
+          )}
         </div>
       </section>
     </main>
