@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Search, MapPin, ChevronLeft, ChevronRight, Flame, ArrowRight, ArrowRightCircle, MessageSquare } from 'lucide-react';
+import { Search, MapPin, ChevronLeft, ChevronRight, Flame, ArrowRight, ArrowRightCircle, MessageSquare, X } from 'lucide-react';
 import { api, type Product } from '../lib/api';
 
 function formatVnd(val: string) {
@@ -12,48 +12,118 @@ function formatVnd(val: string) {
 
 function ProductCard({ product }: { product: Product }) {
   const [failedImage, setFailedImage] = useState(false);
+  const [isFavorite, setIsFavorite] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const cardRef = useRef<HTMLDivElement>(null);
 
   const isHot = product.status === 'PROMOTED';
   const isSale = product.priceMode === 'CONTACT';
   const isNew = !isHot && !isSale && new Date(product.postedAt).getTime() > Date.now() - 86400000;
 
+  const metadataText = product.title.includes('iPhone') ? '256GB · Chính chủ'
+    : product.title.includes('Nhà') ? '80m² · 3 tầng'
+    : product.title.includes('Xe') ? 'Honda · 12.000 km'
+    : 'Chất lượng cao · Hàng đẹp';
+
+  // Click outside listener for menu dropdown
+  useEffect(() => {
+    if (!menuOpen) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (cardRef.current && !cardRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [menuOpen]);
+
   return (
-    <article className="product-card">
+    <article
+      className="product-card"
+      ref={cardRef}
+      style={{ zIndex: menuOpen ? 9999 : 1, overflow: menuOpen ? 'visible' : 'hidden', position: 'relative' }}
+    >
       <div className="card-img">
         <div className="badges">
-          {isHot && <span className="badge hot">Nổi bật</span>}
-          {isSale && <span className="badge sale">Giảm giá</span>}
-          {isNew && <span className="badge new">Mới</span>}
+          {isHot && <span className="badge hot">NỔI BẬT</span>}
+          {isSale && <span className="badge sale">GIẢM GIÁ</span>}
+          {isNew && <span className="badge new">MỚI</span>}
         </div>
-        <button className="heart-btn" aria-label="Yêu thích"><HeartIcon /></button>
+
+        <button
+          className={`heart-btn ${isFavorite ? 'active' : ''}`}
+          aria-label="Yêu thích"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setIsFavorite(!isFavorite);
+          }}
+        >
+          {isFavorite ? '♥' : '♡'}
+        </button>
+
+        <span className="media-count-badge">🖼 6</span>
+
         <Link href={'/products/' + product.id}>
-          <img src={product.imageUrl && !failedImage ? product.imageUrl : '/assets/product-1.jpg'} alt={product.title} onError={() => setFailedImage(true)} />
+          <img
+            src={product.imageUrl && !failedImage ? product.imageUrl : '/assets/product-1.jpg'}
+            alt={product.title}
+            loading="lazy"
+            onError={() => setFailedImage(true)}
+          />
         </Link>
       </div>
+
       <div className="card-body">
         <Link href={'/products/' + product.id} style={{textDecoration:'none', color:'inherit'}}>
-          <h3>{product.title}</h3>
+          {/* NỘI DUNG TIN ĐĂNG HIỂN THỊ ĐẦY ĐỦ (KHÔNG ĐỂ ...) */}
+          <h3 className="card-title-full">{product.title}</h3>
+          <div className="card-metadata">{metadataText}</div>
           <div className="price-row">
-            <span className="price">{product.priceMode==='CONTACT' ? 'Liên hệ' : product.priceMode==='FREE' ? 'Miễn phí' : formatVnd(product.price)}</span>
-            {product.priceMode !== 'CONTACT' && product.priceMode !== 'FREE' && <span className="nego">Có thể thương lượng</span>}
+            <span className="price">{product.priceMode==='CONTACT' ? 'LIÊN HỆ' : product.priceMode==='FREE' ? 'TẶNG MIỄN PHÍ' : formatVnd(product.price)}</span>
           </div>
           <div className="location-row">
-            <MapPin size={13} /> {product.location || 'Quy Nhơn'} · <span className="verified-badge">✓ Đã xác thực</span>
+            📍 {product.location || 'Quy Nhơn'}
           </div>
-          <div className="seller-row">
-            <div className="seller-info">
-              <span>{product.sellerName}</span>
-            </div>
-            <span>{new Date(product.postedAt).toLocaleDateString('vi-VN')}</span>
+          {/* HIỂN THỊ TÊN NGƯỜI ĐĂNG VÀ NGÀY ĐĂNG TRÊN TỪNG DÒNG RIÊNG */}
+          <div className="card-seller-name">
+            👤 {product.sellerName}
+          </div>
+          <div className="card-posted-date">
+            🕒 {new Date(product.postedAt).toLocaleDateString('vi-VN')}
           </div>
         </Link>
+
+        <div className="card-footer-flex" style={{ marginTop: 8 }}>
+          <span className="verified-badge">✓ Đã xác thực</span>
+          <div style={{ position: 'relative' }}>
+            <button
+              className="card-more-btn"
+              aria-label="Tùy chọn thêm"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setMenuOpen(!menuOpen);
+              }}
+            >
+              ⋮
+            </button>
+            {/* NÚT 3 CHẤM MENU HIỂN THỊ BÊN DƯỚI KHÔNG CHE KHUẤT NỘI DUNG, CLICK NGOÀI TỰ TẮT */}
+            {menuOpen && (
+              <div className="card-menu-dropdown-bottom">
+                <div onClick={(e) => { e.stopPropagation(); alert('Đã lưu tin!'); setMenuOpen(false); }}>Thích / Lưu tin</div>
+                <div onClick={(e) => { e.stopPropagation(); alert('Đã ẩn tin này (Không quan tâm)'); setMenuOpen(false); }}>Không quan tâm</div>
+                <div onClick={(e) => { e.stopPropagation(); alert('Sẽ không hiển thị tin tương tự'); setMenuOpen(false); }}>Không hiện nữa</div>
+                <div onClick={(e) => { e.stopPropagation(); alert('Đã ghi nhận phản hồi vị trí'); setMenuOpen(false); }}>Xa chỗ tôi quá</div>
+                <div onClick={(e) => { e.stopPropagation(); alert('Đã sao chép liên kết!'); setMenuOpen(false); }}>Chia sẻ</div>
+                <div onClick={(e) => { e.stopPropagation(); alert('Đã gửi báo cáo vi phạm!'); setMenuOpen(false); }}>Báo cáo vi phạm</div>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
     </article>
   );
-}
-
-function HeartIcon() {
-  return <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>;
 }
 
 export function MarketplaceHome({ query }: { query: string; group: string; sort: string; view: string }) {
@@ -61,9 +131,10 @@ export function MarketplaceHome({ query }: { query: string; group: string; sort:
   const [products, setProducts] = useState<Product[]>([]);
   const [searchQuery, setSearchQuery] = useState(query);
   const [isLoading, setIsLoading] = useState(true);
-  const [selectedLocation, setSelectedLocation] = useState('Đang định vị (Gần bạn)');
+  const [selectedLocation, setSelectedLocation] = useState('Toàn quốc');
   const [showLocationDropdown, setShowLocationDropdown] = useState(false);
   const [activeTab, setActiveTab] = useState('Khám phá');
+  const [showSuggestions, setShowSuggestions] = useState(false);
   const categoryScrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -80,18 +151,6 @@ export function MarketplaceHome({ query }: { query: string; group: string; sort:
     void load();
     return () => { cancelled = true; };
   }, [query]);
-
-  useEffect(() => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        () => setSelectedLocation('Vị trí gần bạn (GPS)'),
-        () => setSelectedLocation('Bình Định'),
-        { timeout: 6000 }
-      );
-    } else {
-      setSelectedLocation('Bình Định');
-    }
-  }, []);
 
   const provinces = [
     'Toàn quốc',
@@ -110,6 +169,15 @@ export function MarketplaceHome({ query }: { query: string; group: string; sort:
     'Đắk Lắk'
   ];
 
+  const searchSuggestions = [
+    'iPhone 15 Pro Max',
+    'Xe máy Honda Vision cũ',
+    'Laptop Dell Core i7',
+    'Nhà mặt tiền Quy Nhơn',
+    'Tủ lạnh Inverter',
+    'Việc làm bán thời gian'
+  ].filter(s => searchQuery && s.toLowerCase().includes(searchQuery.toLowerCase()));
+
   const filteredProducts = products.filter(p => {
     if (selectedLocation === 'Toàn quốc' || selectedLocation.includes('Gần bạn')) return true;
     if (!p.location) return true;
@@ -125,37 +193,62 @@ export function MarketplaceHome({ query }: { query: string; group: string; sort:
 
   function handleSearch(e: React.FormEvent) {
     e.preventDefault();
+    setShowSuggestions(false);
     router.push('/?q=' + encodeURIComponent(searchQuery));
   }
 
   const cats = [
-    { name: 'Nhà đất', img: '/assets/03-nha-dat.png', slug: 'property' },
-    { name: 'Xe cộ', img: '/assets/02-xe-co.png', slug: 'vehicles' },
-    { name: 'Đồ công nghệ', img: '/assets/01-do-cong-nghe.png', slug: 'electronics' },
-    { name: 'Việc làm', img: '/assets/12-dich-vu.png', slug: 'jobs' },
-    { name: 'Thực phẩm', img: '/assets/04-do-gia-dung.png', slug: 'food' },
-    { name: 'Tặng miễn phí', img: '/assets/09-do-suu-tam.png', slug: 'free' },
-    { name: 'Đồ gia dụng', img: '/assets/04-do-gia-dung.png', slug: 'home-appliances' },
-    { name: 'Thời trang', img: '/assets/05-thoi-trang.png', slug: 'fashion' },
-    { name: 'Nhạc cụ', img: '/assets/06-the-thao-giai-tri.png', slug: 'instruments' },
-    { name: 'Thú cưng', img: '/assets/10-thu-cung.png', slug: 'pets' },
-    { name: 'Sách & học tập', img: '/assets/07-sach-hoc-tap.png', slug: 'books' },
-    { name: 'Dịch vụ', img: '/assets/12-dich-vu.png', slug: 'services' },
-    { name: 'Hàng hóa khác', img: '/assets/11-hang-hoa-khac.png', slug: 'others' },
+    { name: 'Nhà đất', img: '/assets/property.png', slug: 'property' },
+    { name: 'Xe cộ', img: '/assets/vehicles.png', slug: 'vehicles' },
+    { name: 'Đồ công nghệ', img: '/assets/electronics.png', slug: 'electronics' },
+    { name: 'Việc làm', img: '/assets/jobs.png', slug: 'jobs' },
+    { name: 'Thực phẩm', img: '/assets/food.png', slug: 'food' },
+    { name: 'Tặng miễn phí', img: '/assets/free.png', slug: 'free' },
+    { name: 'Đồ gia dụng', img: '/assets/home-appliances.png', slug: 'home-appliances' },
+    { name: 'Thời trang', img: '/assets/fashion.png', slug: 'fashion' },
+    { name: 'Nhạc cụ', img: '/assets/instruments.png', slug: 'instruments' },
+    { name: 'Thú cưng', img: '/assets/pets.png', slug: 'pets' },
+    { name: 'Sách & học tập', img: '/assets/books.png', slug: 'books' },
+    { name: 'Dịch vụ', img: '/assets/services.png', slug: 'services' },
+    { name: 'Hàng hóa khác', img: '/assets/others.png', slug: 'others' },
     { name: 'Tất cả tin đăng', img: '/assets/logo.png', slug: 'all' },
   ];
 
   return (
     <main id="home">
+      {/* BANNER QUẢNG CÁO NẰM NGOÀI PHẠM VI TRANG (TRƯỢT THEO KHI CUỘN) */}
+      <div className="floating-banner left-floating-banner">
+        <Link href="/sell">
+          <img src="/assets/banner_right.png" alt="Quảng cáo Tất Tần Tật" />
+        </Link>
+      </div>
+      <div className="floating-banner right-floating-banner">
+        <Link href="/sell">
+          <img src="/assets/banner_right.png" alt="Quảng cáo Tất Tần Tật" />
+        </Link>
+      </div>
+
+      {/* HERO BANNER SÁT MÉP TRÊN */}
       <section className="hero">
         <div className="shell">
           <div className="hero-banner-container">
             <div className="hero-banner-bg" />
             <div className="hero-banner-overlay">
-              <form className="search-box" onSubmit={handleSearch}>
+              <form className="search-box" onSubmit={handleSearch} style={{ position: 'relative' }}>
                 <div className="search-input-group">
                   <Search color="#888" size={19} />
-                  <input type="text" placeholder="Tìm trên Tất Tần Tật..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
+                  <input
+                    type="text"
+                    placeholder="Bạn đang tìm gì?"
+                    value={searchQuery}
+                    onChange={e => { setSearchQuery(e.target.value); setShowSuggestions(true); }}
+                    onFocus={() => setShowSuggestions(true)}
+                  />
+                  {searchQuery && (
+                    <button type="button" onClick={() => setSearchQuery('')} style={{ background: 'transparent', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
+                      <X size={16} color="#888" />
+                    </button>
+                  )}
                 </div>
                 <div className="search-divider"></div>
 
@@ -195,13 +288,54 @@ export function MarketplaceHome({ query }: { query: string; group: string; sort:
                 </div>
 
                 <button type="submit" className="search-btn"><Search size={18} /> Tìm kiếm</button>
+
+                {showSuggestions && searchSuggestions.length > 0 && (
+                  <div className="search-suggestions-dropdown">
+                    {searchSuggestions.map((sug, idx) => (
+                      <div
+                        key={idx}
+                        className="suggestion-item"
+                        onClick={() => {
+                          setSearchQuery(sug);
+                          setShowSuggestions(false);
+                          router.push('/?q=' + encodeURIComponent(sug));
+                        }}
+                      >
+                        <Search size={14} color="#888" /> {sug}
+                      </div>
+                    ))}
+                  </div>
+                )}
               </form>
+
+              {/* TỪ KHÓA TÌM KIẾM PHỔ BIẾN NGAY DƯỚI FORM */}
+              <div className="hero-quick-keywords">
+                <span>Tìm kiếm phổ biến:</span>
+                {[
+                  { label: 'iPhone', q: 'iPhone' },
+                  { label: 'Xe máy', q: 'Xe máy' },
+                  { label: 'Máy ảnh', q: 'Máy ảnh' },
+                  { label: 'Việc làm', q: 'Việc làm' },
+                  { label: 'Nhà đất', q: 'Nhà đất' },
+                ].map((item, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => {
+                      setSearchQuery(item.q);
+                      router.push('/?q=' + encodeURIComponent(item.q));
+                    }}
+                  >
+                    {item.label}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* VÙNG MÀU TRẮNG BO TRÒN 4 GÓC BAO BỌC LOGO DANH MỤC */}
+      {/* DANH MỤC COMPACT */}
       <section className="categories-section">
         <div className="shell">
           <div className="white-card-box">
@@ -225,9 +359,9 @@ export function MarketplaceHome({ query }: { query: string; group: string; sort:
         </div>
       </section>
 
-      {/* MENU DƯỚI FORM TÌM KIẾM THIẾT KẾ LẠI DẠNG KHỐI TAB LỰA CHỌN */}
-      <section className="shell tabbed-explore-section" style={{ marginBottom: 20 }}>
-        <div className="white-card-box" style={{ padding: '16px 24px' }}>
+      {/* KHỐI TAB KHÁM PHÁ COMPACT */}
+      <section className="shell tabbed-explore-section" style={{ marginBottom: 12 }}>
+        <div className="white-card-box" style={{ padding: '12px 16px' }}>
           <div className="tabbed-header">
             {['Khám phá', 'Dành cho bạn', 'Gần bạn', 'Mới đăng', 'Giá tốt', 'Đã xác thực', 'Đồ công nghệ', 'Xe cộ', 'Nhà đất'].map((tab) => (
               <button
@@ -250,14 +384,13 @@ export function MarketplaceHome({ query }: { query: string; group: string; sort:
         </div>
       </section>
 
-      {/* BỌC NỘI DUNG VÀ KHỐI BÊN DƯỚI TRONG KHUNG TRẮNG BO TRÒN */}
+      {/* SẢN PHẨM NỔI BẬT KHÔNG CẦN CỘT BÊN PHẢI */}
       <section className="shell main-grid">
-        <div className="main-content" style={{display:'flex', flexDirection:'column', gap: 24}}>
-          {/* KHỐI SẢN PHẨM NỔI BẬT */}
+        <div className="main-content" style={{display:'flex', flexDirection:'column', gap: 16, width: '100%'}}>
           <div className="white-card-box">
             <div className="section-title">
-              <h2><Flame /> {query ? `Kết quả cho "${query}"` : 'Sản phẩm nổi bật'} {selectedLocation !== 'Toàn quốc' && <span style={{fontSize:13, fontWeight:500, color:'#00a65a'}}>({selectedLocation})</span>}</h2>
-              <Link href="/categories" className="view-all">Xem tất cả <ArrowRight size={16} /></Link>
+              <h2><Flame /> {query ? `Kết quả cho "${query}"` : 'Sản phẩm mới dành cho bạn'} {selectedLocation !== 'Toàn quốc' && <span style={{fontSize:13, fontWeight:500, color:'#00a65a'}}>({selectedLocation})</span>}</h2>
+              <Link href="/categories" className="view-all">Xem tất cả →</Link>
             </div>
 
             <div className="products-grid-6">
@@ -268,17 +401,20 @@ export function MarketplaceHome({ query }: { query: string; group: string; sort:
                   <ProductCard key={product.id} product={product} />
                 ))
               ) : (
-                <p style={{padding: 20, color: '#666', gridColumn: 'span 6'}}>Chưa có dữ liệu hoặc không tìm thấy sản phẩm nào tại khu vực này.</p>
+                <div style={{padding: 30, textAlign:'center', gridColumn: 'span 6', color: '#64748b'}}>
+                  <p style={{fontSize:15, fontWeight:600, color:'#1e293b', marginBottom:6}}>Không tìm thấy sản phẩm phù hợp.</p>
+                  <p style={{fontSize:13, marginBottom:12}}>Thử thay đổi từ khóa, khu vực hoặc bộ lọc của bạn.</p>
+                  <button onClick={() => setSelectedLocation('Toàn quốc')} style={{background:'#00a65a', color:'#fff', border:'none', padding:'8px 18px', borderRadius:999, fontWeight:600, cursor:'pointer'}}>Đặt lại bộ lọc</button>
+                </div>
               )}
             </div>
           </div>
 
-          {/* KHỐI TIN MỚI ĐĂNG */}
           {!query && (
             <div className="white-card-box">
               <div className="section-title">
                 <h2><MessageSquare /> Tin mới đăng</h2>
-                <Link href="/categories" className="view-all">Xem tất cả <ArrowRight size={16} /></Link>
+                <Link href="/categories" className="view-all">Xem tất cả →</Link>
               </div>
               <div className="products-grid-6">
                 {isLoading ? (
@@ -294,20 +430,12 @@ export function MarketplaceHome({ query }: { query: string; group: string; sort:
             </div>
           )}
         </div>
-
-        <aside className="sidebar" style={{ width: 280, display: 'flex', flexDirection: 'column', gap: 16 }}>
-          <div className="sidebar-banner-card" style={{ borderRadius: 16, overflow: 'hidden', boxShadow: '0 4px 20px rgba(0,0,0,0.06)' }}>
-            <Link href="/sell">
-              <img src="/assets/banner_right.png" alt="Đăng tin miễn phí - Mua bán nhanh chóng" style={{ width: '100%', height: 'auto', display: 'block', borderRadius: 16 }} />
-            </Link>
-          </div>
-        </aside>
       </section>
 
-      {/* KHỐI TỪ KHÓA TÌM KIẾM NHIỀU NHẤT (TƯƠNG TỰ CHỢ TỐT) */}
-      <section className="shell" style={{ marginTop: 20, marginBottom: 32 }}>
+      {/* KHỐI TỪ KHÓA TÌM KIẾM NHIỀU NHẤT */}
+      <section className="shell" style={{ marginTop: 16, marginBottom: 24 }}>
         <div className="white-card-box">
-          <div className="section-title" style={{ marginBottom: 16 }}>
+          <div className="section-title" style={{ marginBottom: 12 }}>
             <h2><Search size={19} color="#00a65a" /> Từ khóa tìm kiếm nhiều nhất</h2>
           </div>
           <div className="popular-keywords-grid">

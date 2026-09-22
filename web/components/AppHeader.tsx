@@ -32,7 +32,7 @@ export function AppHeader() {
 
         <div className="top-actions">
           <Link href="/sell" className="topbar-sell-cta">
-            <PlusCircle size={17} /> ĐĂNG TIN MIỄN PHÍ
+            <PlusCircle size={17} className="topbar-sell-icon" /> ĐĂNG TIN MIỄN PHÍ
           </Link>
 
           <button className="bell-btn" onClick={() => router.push('/account')}>
