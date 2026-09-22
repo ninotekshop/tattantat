@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#063d31">
+  <meta name="description" content="Tất Tần Tật – Mua bán mọi thứ, gần bạn.">
+  <title>Tất Tần Tật – Mua bán mọi thứ, gần bạn</title>
+  <link rel="icon" href="assets/logo.png">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="shell topbar-inner">
+      <button class="icon-btn mobile-menu" id="mobileMenu" aria-label="Mở menu">☰</button>
+      <a class="brand" href="#">
+        <img src="assets/logo.png" alt="Tất Tần Tật">
+      </a>
+      <nav class="main-nav" id="mainNav">
+        <a class="active" href="#home">Trang chủ</a>
+        <a href="#categories">Danh mục</a>
+        <a href="#new">Tin mới</a>
+        <a href="#selling">Đăng tin</a>
+        <a href="#messages">Tin nhắn</a>
+      </nav>
+      <div class="top-actions">
+        <button class="ghost-btn" id="favoriteBtn">♡ <span>Yêu thích</span></button>
+        <button class="ghost-btn">♙ <span>Tài khoản</span></button>
+        <button class="primary-btn" onclick="openSellModal()">＋ Đăng tin</button>
+        <button class="avatar">TT</button>
+      </div>
+    </div>
+  </header>
+
+  <main id="home">
+    <section class="hero">
+      <div class="hero-bg"></div>
+      <div class="shell hero-content">
+        <div class="hero-copy">
+          <div class="eyebrow">Tất Tần Tật Marketplace</div>
+          <h1>Mua bán mọi thứ,<br><strong>gần bạn!</strong></h1>
+          <p>An toàn · Nhanh chóng · Kết nối dễ dàng</p>
+        </div>
+        <div class="search-card">
+          <div class="search-row">
+            <span class="search-icon">⌕</span>
+            <input id="searchInput" type="search" placeholder="Tìm sản phẩm, dịch vụ..." autocomplete="off">
+            <button class="location">⌖ Bình Định (Gia Lai mới) ▾</button>
+            <button class="search-btn" id="searchBtn">Tìm kiếm</button>
+          </div>
+          <div class="quick-searches">
+            <button>iPhone 15</button><button>Xe máy</button><button>Nhà đất</button>
+            <button>Laptop</button><button>Sofa</button><button>Máy ảnh</button><button>Dịch vụ sửa chữa</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="shell category-strip" id="categories">
+      <div class="section-head compact">
+        <h2>Danh mục</h2>
+        <div class="arrows"><button>‹</button><button>›</button></div>
+      </div>
+      <div class="category-grid">
+        <button class="category-card" data-category="Đồ công nghệ"><img src="assets/cat-tech.jpg"><span>Đồ công nghệ</span></button>
+        <button class="category-card" data-category="Xe cộ"><img src="assets/cat-car.jpg"><span>Xe cộ</span></button>
+        <button class="category-card" data-category="Nhà đất"><img src="assets/cat-home.jpg"><span>Nhà đất</span></button>
+        <button class="category-card" data-category="Đồ gia dụng"><img src="assets/cat-furniture.jpg"><span>Đồ gia dụng</span></button>
+        <button class="category-card" data-category="Thời trang"><img src="assets/cat-fashion.jpg"><span>Thời trang</span></button>
+        <button class="category-card" data-category="Thể thao"><img src="assets/cat-sport.jpg"><span>Thể thao & giải trí</span></button>
+        <button class="category-card" data-category="Sách"><img src="assets/cat-books.jpg"><span>Sách & học tập</span></button>
+        <button class="category-card" data-category="Máy móc"><img src="assets/cat-tools.jpg"><span>Máy móc & công cụ</span></button>
+        <button class="category-card" data-category="Đồ sưu tầm"><img src="assets/cat-collect.jpg"><span>Đồ sưu tầm</span></button>
+        <button class="category-card" data-category="Thú cưng"><img src="assets/cat-pets.jpg"><span>Thú cưng</span></button>
+        <button class="category-card" data-category="Hàng hóa khác"><img src="assets/cat-other.jpg"><span>Hàng hóa khác</span></button>
+        <button class="category-card" data-category="Dịch vụ"><img src="assets/cat-service.jpg"><span>Dịch vụ</span></button>
+      </div>
+    </section>
+
+    <section class="shell content-layout">
+      <div class="products-column">
+        <div class="section-head" id="new">
+          <div><span class="section-kicker">Mua bán nổi bật</span><h2>Sản phẩm nổi bật</h2></div>
+          <a href="#">Xem tất cả →</a>
+        </div>
+        <div class="product-grid" id="productGrid">
+          <article class="product-card" data-search="iphone 15 pro max 256gb công nghệ">
+            <button class="heart">♡</button><span class="badge hot">Nổi bật</span>
+            <img src="assets/product-1.jpg" alt="iPhone">
+            <div class="product-body"><h3>iPhone 15 Pro Max 256GB</h3><strong>28.990.000đ</strong><small>⌖ Quy Nhơn, Bình Định</small><div class="seller">Nguyễn Văn A <span>3 giờ trước</span></div></div>
+          </article>
+          <article class="product-card" data-search="honda air blade 160 abs xe máy">
+            <button class="heart">♡</button><span class="badge sale">Giảm giá</span>
+            <img src="assets/product-2.jpg" alt="Xe máy">
+            <div class="product-body"><h3>Honda Air Blade 160 ABS</h3><strong>56.000.000đ</strong><small>⌖ Quy Nhơn, Bình Định</small><div class="seller">Trần Minh Đức <span>5 giờ trước</span></div></div>
+          </article>
+          <article class="product-card" data-search="bán nhà 2 tầng 80m2 nhà đất">
+            <button class="heart">♡</button><span class="badge new">Mới</span>
+            <img src="assets/product-3.jpg" alt="Nhà đất">
+            <div class="product-body"><h3>Bán nhà 2 tầng, 80m²</h3><strong>2.850.000.000đ</strong><small>⌖ Quy Nhơn, Bình Định</small><div class="seller">Lê Thị Mai <span>7 giờ trước</span></div></div>
+          </article>
+          <article class="product-card" data-search="macbook air m2 laptop">
+            <button class="heart">♡</button>
+            <img src="assets/product-4.jpg" alt="Laptop">
+            <div class="product-body"><h3>MacBook Air M2 13 inch</h3><strong>18.500.000đ</strong><small>⌖ Quy Nhơn, Bình Định</small><div class="seller">Hoàng Văn Nam <span>8 giờ trước</span></div></div>
+          </article>
+          <article class="product-card" data-search="sofa phòng khách đồ gia dụng">
+            <button class="heart">♡</button>
+            <img src="assets/product-5.jpg" alt="Sofa">
+            <div class="product-body"><h3>Sofa phòng khách cao cấp</h3><strong>7.900.000đ</strong><small>⌖ Quy Nhơn, Bình Định</small><div class="seller">Ngô Thanh Tùng <span>10 giờ trước</span></div></div>
+          </article>
+          <article class="product-card" data-search="playstation 5 slim game">
+            <button class="heart">♡</button><span class="badge hot">Nổi bật</span>
+            <img src="assets/product-6.jpg" alt="PlayStation">
+            <div class="product-body"><h3>PlayStation 5 Slim</h3><strong>12.000.000đ</strong><small>⌖ Quy Nhơn, Bình Định</small><div class="seller">Phạm Tuấn Anh <span>11 giờ trước</span></div></div>
+          </article>
+        </div>
+
+        <div class="section-head" id="selling">
+          <div><span class="section-kicker">Mới nhất</span><h2>Tin mới đăng</h2></div>
+          <a href="#">Xem tất cả →</a>
+        </div>
+        <div class="mini-list">
+          <div><span>Mới</span> iPhone 14 Pro Max 256GB <b>18.500.000đ</b></div>
+          <div><span>Mới</span> Xe máy Honda Vision 2024 <b>31.500.000đ</b></div>
+          <div><span>Mới</span> Máy ảnh Canon EOS R50 <b>15.900.000đ</b></div>
+          <div><span>Mới</span> Bàn làm việc gỗ tự nhiên <b>2.900.000đ</b></div>
+        </div>
+      </div>
+
+      <aside class="right-rail">
+        <div class="ad-card green-ad">
+          <div><small>Đăng tin miễn phí</small><h3>Bán nhanh<br>chốt dễ dàng</h3><button onclick="openSellModal()">Đăng tin ngay →</button></div>
+          <div class="ad-symbol">＋</div>
+        </div>
+        <div class="ad-card yellow-ad">
+          <div><small>Mua bán xe cộ</small><h3>Uy tín · An toàn</h3><button>Xem ngay →</button></div>
+        </div>
+        <div class="ad-card dark-ad">
+          <div><small>Đồ công nghệ</small><h3>Chính hãng · Giá tốt</h3><button>Khám phá →</button></div>
+        </div>
+      </aside>
+    </section>
+  </main>
+
+  <footer>
+    <div class="shell footer-grid">
+      <div><img src="assets/logo.png" alt="Tất Tần Tật"><p>Mua bán mọi thứ, gần bạn.</p></div>
+      <div><h4>Mua bán</h4><a href="#">Danh mục</a><a href="#">Tin mới</a><a href="#">Yêu thích</a></div>
+      <div><h4>Hỗ trợ</h4><a href="#">Trung tâm trợ giúp</a><a href="#">An toàn giao dịch</a><a href="#">Báo cáo</a></div>
+      <div><h4>Tất Tần Tật</h4><a href="#">Giới thiệu</a><a href="#">Điều khoản</a><a href="#">Chính sách bảo mật</a></div>
+    </div>
+    <div class="shell copyright">© 2026 Tất Tần Tật. Mua bán mọi thứ, gần bạn.</div>
+  </footer>
+
+  <div class="modal" id="sellModal" aria-hidden="true">
+    <div class="modal-card">
+      <button class="modal-close" onclick="closeSellModal()">×</button>
+      <h2>Đăng tin bán</h2>
+      <p>Bắt đầu đăng sản phẩm của bạn trên Tất Tần Tật.</p>
+      <label>Tiêu đề sản phẩm<input placeholder="Ví dụ: iPhone 15 Pro Max 256GB"></label>
+      <label>Danh mục<select><option>Đồ công nghệ</option><option>Xe cộ</option><option>Nhà đất</option><option>Đồ gia dụng</option><option>Khác</option></select></label>
+      <label>Giá bán<input placeholder="Nhập giá bán"></label>
+      <button class="primary-btn full" onclick="closeSellModal(); alert('Demo: form đăng tin đã sẵn sàng kết nối API.')">Tiếp tục đăng tin →</button>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

@@ -6,6 +6,7 @@ import android.widget.VideoView
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -14,8 +15,10 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -23,6 +26,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.tattantat.app.data.remote.listing.*
+import com.tattantat.app.domain.category.CategoryIcons
 
 private val steps=listOf("Danh mục","Thông tin","Ảnh & video","Giá & vị trí","Liên hệ","Xem trước","Hoàn tất")
 
@@ -58,10 +62,26 @@ fun DynamicListingScreen(onMyListings:()->Unit,initialDraftId:String?=null,vm:Dy
                         if(s.draft!=null){Text("Danh mục: ${s.categories.find{it.id==s.categoryId}?.name.orEmpty()}");Text("Danh mục của bản nháp được giữ cố định để bảo toàn dữ liệu.");OutlinedButton(onClick={newDialog=true},enabled=enabled){Text("Tạo tin mới, giữ bản nháp này")}}
                         else{
                             Text("Bạn muốn đăng gì?",style=MaterialTheme.typography.titleMedium)
-                            s.categories.filter{it.isGroup}.forEach{category->OutlinedButton(onClick={vm.category(category.id)},enabled=enabled,modifier=Modifier.fillMaxWidth()){Text(category.name)}}
+                            s.categories.filter{it.isGroup}.forEach{category->
+                                val iconRes = CategoryIcons.getDrawableRes(category.slug.ifBlank{category.id})
+                                OutlinedButton(onClick={vm.category(category.id)},enabled=enabled,modifier=Modifier.fillMaxWidth()){
+                                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
+                                        Image(painter = painterResource(id = iconRes), contentDescription = null, modifier = Modifier.size(28.dp), contentScale = ContentScale.Fit)
+                                        Text(category.name)
+                                    }
+                                }
+                            }
                             val selected=s.categories.find{it.id==s.categoryId}
                             selected?.let{Text("Đang chọn: ${it.name}",color=MaterialTheme.colorScheme.primary);it.parentId?.let{parent->TextButton(onClick={vm.category(parent)},enabled=enabled){Text("↑ Danh mục cha")}}}
-                            s.categories.filter{it.parentId==s.categoryId}.forEach{category->OutlinedButton(onClick={vm.category(category.id)},enabled=enabled,modifier=Modifier.fillMaxWidth()){Text(category.name)}}
+                            s.categories.filter{it.parentId==s.categoryId}.forEach{category->
+                                val iconRes = CategoryIcons.getDrawableRes(category.slug.ifBlank{category.id})
+                                OutlinedButton(onClick={vm.category(category.id)},enabled=enabled,modifier=Modifier.fillMaxWidth()){
+                                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
+                                        Image(painter = painterResource(id = iconRes), contentDescription = null, modifier = Modifier.size(28.dp), contentScale = ContentScale.Fit)
+                                        Text(category.name)
+                                    }
+                                }
+                            }
                             s.template?.let{Text("Biểu mẫu ${it.name} · phiên bản ${it.version}",style=MaterialTheme.typography.bodySmall)}
                             if(s.drafts.isNotEmpty()){HorizontalDivider();Text("Tiếp tục tin đã lưu",style=MaterialTheme.typography.titleMedium)}
                             s.drafts.forEach{draft->OutlinedButton(onClick={vm.resume(draft.id)},enabled=enabled,modifier=Modifier.fillMaxWidth()){Column{Text(draft.title?.takeIf{it.isNotBlank()}?:"Tin chưa có tiêu đề");Text(if(draft.status=="PUBLISHED")"Đã đăng · chỉnh sửa" else "Bản nháp",style=MaterialTheme.typography.bodySmall)}}}

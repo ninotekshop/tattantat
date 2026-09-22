@@ -1,5 +1,6 @@
 package com.tattantat.app.presentation.home
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -40,12 +41,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.tattantat.app.domain.category.Category
+import com.tattantat.app.domain.category.CategoryIcons
 import com.tattantat.app.domain.product.Product
 import com.tattantat.app.presentation.product.ProductViewModel
 
@@ -100,7 +103,15 @@ fun HomeScreen(onProduct: (String) -> Unit = {}, onNotifications: () -> Unit = {
 }
 
 @Composable fun CategoryItem(category: Category, onClick: () -> Unit = {}) = Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.width(72.dp).clickable(onClick = onClick)) {
-    Box(Modifier.size(56.dp).clip(RoundedCornerShape(16.dp)).background(MaterialTheme.colorScheme.primaryContainer), contentAlignment = Alignment.Center) { Text(category.emoji, style = MaterialTheme.typography.headlineSmall) }
+    Box(Modifier.size(56.dp).clip(RoundedCornerShape(16.dp)).background(MaterialTheme.colorScheme.primaryContainer), contentAlignment = Alignment.Center) {
+        val iconRes = category.iconRes ?: CategoryIcons.getDrawableRes(category.slug.ifBlank { category.id })
+        Image(
+            painter = painterResource(id = iconRes),
+            contentDescription = category.name,
+            modifier = Modifier.size(42.dp),
+            contentScale = ContentScale.Fit
+        )
+    }
     Text(category.name, Modifier.padding(top = 6.dp), maxLines = 1, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.labelSmall)
 }
 
