@@ -25,7 +25,7 @@ function ProductCard({ product }: { product: Product }) {
           {isSale && <span className="badge sale">Giảm giá</span>}
           {isNew && <span className="badge new">Mới</span>}
         </div>
-        <button className="heart-btn"><HeartIcon /></button>
+        <button className="heart-btn" aria-label="Yêu thích"><HeartIcon /></button>
         <Link href={'/products/' + product.id}>
           <img src={product.imageUrl && !failedImage ? product.imageUrl : '/assets/product-1.jpg'} alt={product.title} onError={() => setFailedImage(true)} />
         </Link>
@@ -38,11 +38,10 @@ function ProductCard({ product }: { product: Product }) {
             {product.priceMode !== 'CONTACT' && product.priceMode !== 'FREE' && <span className="nego">Có thể thương lượng</span>}
           </div>
           <div className="location-row">
-            <MapPin size={13} /> {product.location || 'Chưa cập nhật'}
+            <MapPin size={13} /> {product.location || 'Quy Nhơn'} · <span className="verified-badge">✓ Đã xác thực</span>
           </div>
           <div className="seller-row">
             <div className="seller-info">
-              <div className="seller-avatar" />
               <span>{product.sellerName}</span>
             </div>
             <span>{new Date(product.postedAt).toLocaleDateString('vi-VN')}</span>
@@ -64,6 +63,7 @@ export function MarketplaceHome({ query }: { query: string; group: string; sort:
   const [isLoading, setIsLoading] = useState(true);
   const [selectedLocation, setSelectedLocation] = useState('Đang định vị (Gần bạn)');
   const [showLocationDropdown, setShowLocationDropdown] = useState(false);
+  const [activeTab, setActiveTab] = useState('Khám phá');
   const categoryScrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -129,18 +129,20 @@ export function MarketplaceHome({ query }: { query: string; group: string; sort:
   }
 
   const cats = [
-    { name: 'Đồ công nghệ', img: '/assets/01-do-cong-nghe.png', slug: 'electronics' },
-    { name: 'Xe cộ', img: '/assets/02-xe-co.png', slug: 'vehicles' },
     { name: 'Nhà đất', img: '/assets/03-nha-dat.png', slug: 'property' },
+    { name: 'Xe cộ', img: '/assets/02-xe-co.png', slug: 'vehicles' },
+    { name: 'Đồ công nghệ', img: '/assets/01-do-cong-nghe.png', slug: 'electronics' },
+    { name: 'Việc làm', img: '/assets/12-dich-vu.png', slug: 'jobs' },
+    { name: 'Thực phẩm', img: '/assets/04-do-gia-dung.png', slug: 'food' },
+    { name: 'Tặng miễn phí', img: '/assets/09-do-suu-tam.png', slug: 'free' },
     { name: 'Đồ gia dụng', img: '/assets/04-do-gia-dung.png', slug: 'home-appliances' },
     { name: 'Thời trang', img: '/assets/05-thoi-trang.png', slug: 'fashion' },
-    { name: 'Thể thao & giải trí', img: '/assets/06-the-thao-giai-tri.png', slug: 'sports' },
-    { name: 'Sách & học tập', img: '/assets/07-sach-hoc-tap.png', slug: 'books' },
-    { name: 'Máy móc & công cụ', img: '/assets/08-may-moc-cong-cu.png', slug: 'tools' },
-    { name: 'Đồ sưu tầm', img: '/assets/09-do-suu-tam.png', slug: 'collectibles' },
+    { name: 'Nhạc cụ', img: '/assets/06-the-thao-giai-tri.png', slug: 'instruments' },
     { name: 'Thú cưng', img: '/assets/10-thu-cung.png', slug: 'pets' },
-    { name: 'Hàng hóa khác', img: '/assets/11-hang-hoa-khac.png', slug: 'others' },
+    { name: 'Sách & học tập', img: '/assets/07-sach-hoc-tap.png', slug: 'books' },
     { name: 'Dịch vụ', img: '/assets/12-dich-vu.png', slug: 'services' },
+    { name: 'Hàng hóa khác', img: '/assets/11-hang-hoa-khac.png', slug: 'others' },
+    { name: 'Tất cả tin đăng', img: '/assets/logo.png', slug: 'all' },
   ];
 
   return (
@@ -208,7 +210,7 @@ export function MarketplaceHome({ query }: { query: string; group: string; sort:
             </button>
             <div className="category-scroll" ref={categoryScrollRef}>
               {cats.map((c, i) => (
-                <Link href={'/categories'} key={i} className="cat-card-clean">
+                <Link href={`/categories?cat=${c.slug}`} key={i} className="cat-card-clean">
                   <div className="cat-icon-wrapper">
                     <img src={c.img} alt={c.name} />
                   </div>
@@ -219,6 +221,31 @@ export function MarketplaceHome({ query }: { query: string; group: string; sort:
             <button type="button" className="nav-arrow right" onClick={() => scrollCategories('right')} aria-label="Cuộn sang phải">
               <ChevronRight size={20} color="#555" />
             </button>
+          </div>
+        </div>
+      </section>
+
+      {/* MENU DƯỚI FORM TÌM KIẾM THIẾT KẾ LẠI DẠNG KHỐI TAB LỰA CHỌN */}
+      <section className="shell tabbed-explore-section" style={{ marginBottom: 20 }}>
+        <div className="white-card-box" style={{ padding: '16px 24px' }}>
+          <div className="tabbed-header">
+            {['Khám phá', 'Dành cho bạn', 'Gần bạn', 'Mới đăng', 'Giá tốt', 'Đã xác thực', 'Đồ công nghệ', 'Xe cộ', 'Nhà đất'].map((tab) => (
+              <button
+                key={tab}
+                type="button"
+                className={`explore-tab-btn ${activeTab === tab ? 'active' : ''}`}
+                onClick={() => setActiveTab(tab)}
+              >
+                {tab === 'Gần bạn' ? '📍 ' : tab === 'Đã xác thực' ? '✓ ' : tab === 'Khám phá' ? '🔥 ' : ''}{tab}
+              </button>
+            ))}
+          </div>
+          <div className="explore-tab-content">
+            <div className="products-grid-6">
+              {filteredProducts.slice(0, 6).map(product => (
+                <ProductCard key={'tab'+product.id} product={product} />
+              ))}
+            </div>
           </div>
         </div>
       </section>
@@ -268,29 +295,11 @@ export function MarketplaceHome({ query }: { query: string; group: string; sort:
           )}
         </div>
 
-        <aside className="sidebar">
-          <div className="ad-card ad-post">
-            <div className="ad-content">
-              <h3>Đăng tin miễn phí</h3>
-              <p>Nhanh chóng - Hiệu quả</p>
-              <Link href="/sell" style={{textDecoration:'none'}}><button className="ad-btn">Đăng tin ngay <ArrowRightCircle size={14}/></button></Link>
-            </div>
-          </div>
-
-          <div className="ad-card ad-vehicle">
-            <div className="ad-content">
-              <h3>Mua bán xe cộ</h3>
-              <p>Uy tín - An toàn</p>
-              <Link href="/categories" style={{textDecoration:'none'}}><button className="ad-btn">Xem ngay <ArrowRightCircle size={14}/></button></Link>
-            </div>
-          </div>
-
-          <div className="ad-card ad-tech">
-            <div className="ad-content">
-              <h3>Đồ công nghệ</h3>
-              <p>Chính hãng - Giá tốt</p>
-              <Link href="/categories" style={{textDecoration:'none'}}><button className="ad-btn">Khám phá <ArrowRightCircle size={14}/></button></Link>
-            </div>
+        <aside className="sidebar" style={{ width: 280, display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <div className="sidebar-banner-card" style={{ borderRadius: 16, overflow: 'hidden', boxShadow: '0 4px 20px rgba(0,0,0,0.06)' }}>
+            <Link href="/sell">
+              <img src="/assets/banner_right.png" alt="Đăng tin miễn phí - Mua bán nhanh chóng" style={{ width: '100%', height: 'auto', display: 'block', borderRadius: 16 }} />
+            </Link>
           </div>
         </aside>
       </section>

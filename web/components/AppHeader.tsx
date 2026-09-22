@@ -25,13 +25,16 @@ export function AppHeader() {
 
         <nav className="main-nav">
           <Link className="nav-link active" href="/"><Home size={18} /><span>Trang chủ</span></Link>
-          <Link className="nav-link" href="/sell"><PlusCircle size={18} /><span>Đăng tin</span></Link>
           <Link className="nav-link" href="/favorites"><Heart size={18} /><span>Yêu thích</span></Link>
           <Link className="nav-link" href="/messages"><MessageSquare size={18} /><span>Tin nhắn</span></Link>
           <Link className="nav-link" href={name ? "/account" : "/login"}><User size={18} /><span>Tài khoản</span></Link>
         </nav>
 
         <div className="top-actions">
+          <Link href="/sell" className="topbar-sell-cta">
+            <PlusCircle size={17} /> ĐĂNG TIN MIỄN PHÍ
+          </Link>
+
           <button className="bell-btn" onClick={() => router.push('/account')}>
             <Bell size={20} />
             <span className="bell-badge">3</span>

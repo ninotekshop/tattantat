@@ -3,9 +3,7 @@ import './globals.css';
 import './marketplace.css';
 import './member.css';
 import './dog-theme.css';
-import { AppHeader } from '../components/AppHeader';
-import { SubNav } from '../components/SubNav';
-import { Footer } from '../components/Footer';
+import { ClientLayout } from '../components/ClientLayout';
 
 export const metadata: Metadata = {
   title: 'Tất Tần Tật - Mua bán mọi thứ, gần bạn',
@@ -16,10 +14,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="vi">
       <body>
-        <a className="skip-link" href="#home">Đến nội dung chính</a>
-        <AppHeader />
-        {children}
-        <Footer />
+        <ClientLayout>{children}</ClientLayout>
       </body>
     </html>
   );
