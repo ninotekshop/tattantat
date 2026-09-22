@@ -2,7 +2,7 @@ export const fieldTypes = ['text','textarea','number','currency','select','multi
 export type FieldType = typeof fieldTypes[number];
 export type Field = {
   key: string; label: string; type: FieldType; required: boolean; enabled: boolean;
-  options: { value: string; label: string }[];
+  options: { value: string; label: string; parentOptionId?: string }[];
   config: { min?: number; max?: number; minLength?: number; maxLength?: number; unit?: string; placeholder?: string; help?: string;
     visibleWhen?: { field: string; operator: 'eq' | 'ne' | 'in'; value: unknown } };
 };
@@ -136,7 +136,10 @@ export function validateListing(data: unknown, template: Template, publish: bool
 
 export function publicData(data: ListingData, template: Template): ListingData {
   const clean = structuredClone(data);
-  if (clean.contact) delete clean.contact.email;
+  if (clean.contact) {
+    delete clean.contact.email;
+    delete clean.contact.phone;
+  }
   if (clean.location && clean.location.hideExact!==false) { delete clean.location.address; delete clean.location.latitude; delete clean.location.longitude; }
   clean.values = Object.fromEntries(template.fields.filter(field=>visible(field,data.values??{},template.fields)).map(field=>[field.key,data.values?.[field.key]]).filter(([,value])=>value!==undefined));
   return clean;

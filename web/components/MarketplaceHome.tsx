@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Search, MapPin, ChevronLeft, ChevronRight, Flame, ArrowRight, ArrowRightCircle, MessageSquare, X } from 'lucide-react';
 import { api, type Product } from '../lib/api';
+import { CATEGORY_ENGINE_TAXONOMY } from '../lib/marketplace';
 
 function formatVnd(val: string) {
   return parseInt(val || '0').toLocaleString('vi-VN') + 'đ';
@@ -231,22 +232,11 @@ export function MarketplaceHome({ query }: { query: string; group: string; sort:
     router.push('/?q=' + encodeURIComponent(searchQuery));
   }
 
-  const cats = [
-    { name: 'Nhà đất', img: '/assets/property.png', slug: 'property' },
-    { name: 'Xe cộ', img: '/assets/vehicles.png', slug: 'vehicles' },
-    { name: 'Đồ công nghệ', img: '/assets/electronics.png', slug: 'electronics' },
-    { name: 'Việc làm', img: '/assets/jobs.png', slug: 'jobs' },
-    { name: 'Thực phẩm', img: '/assets/food.png', slug: 'food' },
-    { name: 'Tặng miễn phí', img: '/assets/free.png', slug: 'free' },
-    { name: 'Đồ gia dụng', img: '/assets/home-appliances.png', slug: 'home-appliances' },
-    { name: 'Thời trang', img: '/assets/fashion.png', slug: 'fashion' },
-    { name: 'Nhạc cụ', img: '/assets/instruments.png', slug: 'instruments' },
-    { name: 'Thú cưng', img: '/assets/pets.png', slug: 'pets' },
-    { name: 'Sách & học tập', img: '/assets/books.png', slug: 'books' },
-    { name: 'Dịch vụ', img: '/assets/services.png', slug: 'services' },
-    { name: 'Hàng hóa khác', img: '/assets/others.png', slug: 'others' },
-    { name: 'Tất cả tin đăng', img: '/assets/logo.png', slug: 'all' },
-  ];
+  const cats = CATEGORY_ENGINE_TAXONOMY.map(cat => ({
+    name: cat.label,
+    img: cat.icon,
+    slug: cat.key
+  }));
 
   return (
     <main id="home">

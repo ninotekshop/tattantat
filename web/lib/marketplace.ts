@@ -1,20 +1,297 @@
-// Display groups are presentation only; category IDs always come from the API.
-export const categoryGroups = [
-  { key: 'technology', label: 'Điện thoại - Máy tính', short: 'Điện thoại\nMáy tính', slugs: ['dien-thoai', 'laptop', 'iphone', 'samsung', 'xiaomi', 'oppo', 'macbook', 'dell', 'hp', 'lenovo', 'asus'], icon: 'phone', tone: 'violet' },
-  { key: 'electronics', label: 'Điện tử - Điện gia dụng', short: 'Điện tử\nGia dụng', slugs: ['do-dien-tu'], icon: 'monitor', tone: 'blue' },
-  { key: 'fashion', label: 'Thời trang - Làm đẹp', short: 'Thời trang\nLàm đẹp', slugs: ['thoi-trang'], icon: 'shirt', tone: 'amber' },
-  { key: 'vehicles', label: 'Xe cộ', short: 'Xe cộ', slugs: ['xe-co', 'xe-may', 'o-to', 'xe-dap'], icon: 'car', tone: 'purple' },
-  { key: 'property', label: 'Nhà đất - Bất động sản', short: 'Nhà đất\nBĐS', slugs: ['bat-dong-san'], icon: 'house', tone: 'coral' },
-  { key: 'services', label: 'Dịch vụ', short: 'Dịch vụ', slugs: ['dich-vu'], icon: 'tools', tone: 'cyan' },
-  { key: 'home', label: 'Đồ dùng gia đình', short: 'Đồ gia đình', slugs: ['do-gia-dung'], icon: 'sofa', tone: 'amber' },
-  { key: 'leisure', label: 'Thể thao - Giải trí', short: 'Thể thao\nGiải trí', slugs: ['the-thao', 'do-choi'], icon: 'game', tone: 'purple' },
-  { key: 'books', label: 'Sách - Đồ dùng học tập', short: 'Sách\nHọc tập', slugs: ['sach-van-phong-pham'], icon: 'book', tone: 'blue' },
-  { key: 'other', label: 'Khác', short: 'Khác', slugs: ['khac', 'me-va-be'], icon: 'more', tone: 'violet' },
+export interface SubCategorySpec {
+  slug: string;
+  name: string;
+  icon: string;
+}
+
+export interface ParentCategorySpec {
+  key: string;
+  slug: string;
+  label: string;
+  short: string;
+  icon: string;
+  tone: string;
+  subCategories: SubCategorySpec[];
+}
+
+export const LISTING_INTENTS = [
+  { code: 'sell', name: 'Cần bán', description: 'Đăng bán sản phẩm, hàng hóa' },
+  { code: 'rent', name: 'Cho thuê', description: 'Bất động sản, xe cộ, thiết bị cho thuê' },
+  { code: 'giveaway', name: 'Tặng miễn phí', description: 'Đồ thừa, món quà cho cộng đồng (Giá = 0đ)' },
+  { code: 'wanted_buy', name: 'Cần mua', description: 'Tìm mua sản phẩm, thiết bị mong muốn' },
+  { code: 'wanted_rent', name: 'Cần thuê', description: 'Tìm thuê nhà, xe, thiết bị' },
+  { code: 'service_offer', name: 'Cung cấp dịch vụ', description: 'Quảng bá dịch vụ sửa chữa, vận chuyển, v.v.' },
+  { code: 'job_offer', name: 'Tuyển dụng / Việc làm', description: 'Đăng tin tuyển nhân sự, công việc' },
 ] as const;
 
-export const categoryHref = (key: string) => '/?category=' + encodeURIComponent(key) + '#products';
+export const CATEGORY_ENGINE_TAXONOMY: ParentCategorySpec[] = [
+  {
+    key: 'property',
+    slug: 'nha-dat',
+    label: 'Nhà đất',
+    short: 'Nhà đất',
+    icon: '/assets/property.png',
+    tone: 'coral',
+    subCategories: [
+      { slug: 'can-ho-chung-cu', name: 'Căn hộ / Chung cư', icon: '/assets/property.png' },
+      { slug: 'nha-o', name: 'Nhà ở', icon: '/assets/property.png' },
+      { slug: 'dat', name: 'Đất', icon: '/assets/property.png' },
+      { slug: 'phong-tro', name: 'Phòng trọ', icon: '/assets/property.png' },
+      { slug: 'van-phong', name: 'Văn phòng', icon: '/assets/property.png' },
+      { slug: 'mat-bang-kinh-doanh', name: 'Mặt bằng kinh doanh', icon: '/assets/property.png' },
+      { slug: 'kho-xuang', name: 'Kho / Xưởng', icon: '/assets/property.png' },
+      { slug: 'bds-khac', name: 'BĐS khác', icon: '/assets/property.png' },
+    ]
+  },
+  {
+    key: 'vehicles',
+    slug: 'xe-co',
+    label: 'Xe cộ',
+    short: 'Xe cộ',
+    icon: '/assets/vehicles.png',
+    tone: 'purple',
+    subCategories: [
+      { slug: 'o-to', name: 'Ô tô', icon: '/assets/vehicles.png' },
+      { slug: 'xe-may', name: 'Xe máy', icon: '/assets/vehicles.png' },
+      { slug: 'xe-dap', name: 'Xe đạp', icon: '/assets/vehicles.png' },
+      { slug: 'xe-tai-chuyen-dung', name: 'Xe tải & Xe chuyên dụng', icon: '/assets/vehicles.png' },
+      { slug: 'phu-tung-phu-kien-xe', name: 'Phụ tùng & Phụ kiện xe', icon: '/assets/vehicles.png' },
+      { slug: 'phuong-tien-khac', name: 'Phương tiện khác', icon: '/assets/vehicles.png' },
+    ]
+  },
+  {
+    key: 'technology',
+    slug: 'do-cong-nghe',
+    label: 'Đồ công nghệ',
+    short: 'Công nghệ',
+    icon: '/assets/electronics.png',
+    tone: 'violet',
+    subCategories: [
+      { slug: 'dien-thoai', name: 'Điện thoại', icon: '/assets/electronics.png' },
+      { slug: 'may-tinh-bang', name: 'Máy tính bảng', icon: '/assets/electronics.png' },
+      { slug: 'laptop', name: 'Laptop', icon: '/assets/electronics.png' },
+      { slug: 'may-tinh-de-ban', name: 'Máy tính để bàn', icon: '/assets/electronics.png' },
+      { slug: 'may-anh-may-quay', name: 'Máy ảnh & Máy quay', icon: '/assets/electronics.png' },
+      { slug: 'tv-am-thanh', name: 'TV & Âm thanh', icon: '/assets/electronics.png' },
+      { slug: 'thiet-bi-choi-game', name: 'Thiết bị chơi game', icon: '/assets/electronics.png' },
+      { slug: 'thiet-bi-deo-thong-minh', name: 'Thiết bị đeo thông minh', icon: '/assets/electronics.png' },
+      { slug: 'phu-kien-tech', name: 'Phụ kiện', icon: '/assets/electronics.png' },
+      { slug: 'linh-kien-tech', name: 'Linh kiện', icon: '/assets/electronics.png' },
+    ]
+  },
+  {
+    key: 'home',
+    slug: 'nha-cua-doi-song',
+    label: 'Nhà cửa & Đời sống',
+    short: 'Nhà cửa',
+    icon: '/assets/home-appliances.png',
+    tone: 'amber',
+    subCategories: [
+      { slug: 'dien-lanh', name: 'Điện lạnh', icon: '/assets/home-appliances.png' },
+      { slug: 'bep-dien-nha-bep', name: 'Bếp & Đồ điện nhà bếp', icon: '/assets/home-appliances.png' },
+      { slug: 'dung-cu-nha-bep', name: 'Dụng cụ nhà bếp', icon: '/assets/home-appliances.png' },
+      { slug: 'noi-that', name: 'Nội thất', icon: '/assets/home-appliances.png' },
+      { slug: 'giuong-nem', name: 'Giường / Chăn / Ga / Gối / Nệm', icon: '/assets/home-appliances.png' },
+      { slug: 'thiet-bi-ve-sinh-nha-tam', name: 'Thiết bị vệ sinh & Nhà tắm', icon: '/assets/home-appliances.png' },
+      { slug: 'quat-thiet-bi-khong-khi', name: 'Quạt & Thiết bị không khí', icon: '/assets/home-appliances.png' },
+      { slug: 'den-chieu-sang', name: 'Đèn', icon: '/assets/home-appliances.png' },
+      { slug: 'trang-tri-nha-cua', name: 'Trang trí nhà cửa', icon: '/assets/home-appliances.png' },
+      { slug: 'cay-canh-san-vuon', name: 'Cây cảnh & Sân vườn', icon: '/assets/home-appliances.png' },
+      { slug: 'do-gia-dung-khac', name: 'Đồ gia dụng khác', icon: '/assets/home-appliances.png' },
+    ]
+  },
+  {
+    key: 'fashion',
+    slug: 'thoi-trang-ca-nhan',
+    label: 'Thời trang & Cá nhân',
+    short: 'Thời trang',
+    icon: '/assets/fashion.png',
+    tone: 'amber',
+    subCategories: [
+      { slug: 'quan-ao-nam', name: 'Quần áo nam', icon: '/assets/fashion.png' },
+      { slug: 'quan-ao-nu', name: 'Quần áo nữ', icon: '/assets/fashion.png' },
+      { slug: 'giay-dep', name: 'Giày dép', icon: '/assets/fashion.png' },
+      { slug: 'tui-xach-balo-vali', name: 'Túi xách / Balo / Vali', icon: '/assets/fashion.png' },
+      { slug: 'dong-ho', name: 'Đồng hồ', icon: '/assets/fashion.png' },
+      { slug: 'trang-suc', name: 'Trang sức', icon: '/assets/fashion.png' },
+      { slug: 'nuoc-hoa', name: 'Nước hoa', icon: '/assets/fashion.png' },
+      { slug: 'my-pham', name: 'Mỹ phẩm', icon: '/assets/fashion.png' },
+      { slug: 'phu-kien-thoi-trang', name: 'Phụ kiện thời trang', icon: '/assets/fashion.png' },
+    ]
+  },
+  {
+    key: 'mother_baby',
+    slug: 'me-va-be',
+    label: 'Mẹ & Bé',
+    short: 'Mẹ & Bé',
+    icon: '/assets/free.png',
+    tone: 'coral',
+    subCategories: [
+      { slug: 'do-cho-be', name: 'Đồ cho bé', icon: '/assets/free.png' },
+      { slug: 'do-cho-me', name: 'Đồ cho mẹ', icon: '/assets/free.png' },
+      { slug: 'xe-day-ghe-noi-cui', name: 'Xe đẩy / Ghế / Nôi / Cũi', icon: '/assets/free.png' },
+      { slug: 'do-choi-tre-em', name: 'Đồ chơi', icon: '/assets/free.png' },
+      { slug: 'quan-ao-tre-em', name: 'Quần áo trẻ em', icon: '/assets/free.png' },
+      { slug: 'sua-do-an-cho-be', name: 'Sữa & Đồ ăn cho bé', icon: '/assets/free.png' },
+      { slug: 'me-be-khac', name: 'Khác', icon: '/assets/free.png' },
+    ]
+  },
+  {
+    key: 'sports',
+    slug: 'the-thao-giai-tri',
+    label: 'Thể thao & Giải trí',
+    short: 'Thể thao',
+    icon: '/assets/instruments.png',
+    tone: 'purple',
+    subCategories: [
+      { slug: 'the-thao', name: 'Thể thao', icon: '/assets/instruments.png' },
+      { slug: 'da-ngoai', name: 'Dã ngoại', icon: '/assets/instruments.png' },
+      { slug: 'nhac-cu', name: 'Nhạc cụ', icon: '/assets/instruments.png' },
+      { slug: 'sach-truyen-tap-chi', name: 'Sách / Truyện / Tạp chí', icon: '/assets/books.png' },
+      { slug: 'do-suu-tam', name: 'Đồ sưu tầm', icon: '/assets/instruments.png' },
+      { slug: 'game-phu-kien', name: 'Game & Phụ kiện', icon: '/assets/electronics.png' },
+      { slug: 've-xem-phim-sukiens', name: 'Vé', icon: '/assets/instruments.png' },
+      { slug: 'so-thich-khac', name: 'Sở thích khác', icon: '/assets/instruments.png' },
+    ]
+  },
+  {
+    key: 'pets',
+    slug: 'thu-cung',
+    label: 'Thú cưng',
+    short: 'Thú cưng',
+    icon: '/assets/pets.png',
+    tone: 'coral',
+    subCategories: [
+      { slug: 'cho', name: 'Chó', icon: '/assets/pets.png' },
+      { slug: 'meo', name: 'Mèo', icon: '/assets/pets.png' },
+      { slug: 'chim', name: 'Chim', icon: '/assets/pets.png' },
+      { slug: 'ca-canh', name: 'Cá cảnh', icon: '/assets/pets.png' },
+      { slug: 'thu-cung-khac', name: 'Thú cưng khác', icon: '/assets/pets.png' },
+      { slug: 'thuc-an-thu-cung', name: 'Thức ăn', icon: '/assets/pets.png' },
+      { slug: 'phu-kien-thu-cung', name: 'Phụ kiện', icon: '/assets/pets.png' },
+      { slug: 'dich-vu-thu-cung', name: 'Dịch vụ thú cưng', icon: '/assets/pets.png' },
+    ]
+  },
+  {
+    key: 'jobs',
+    slug: 'viec-lam',
+    label: 'Việc làm',
+    short: 'Việc làm',
+    icon: '/assets/jobs.png',
+    tone: 'blue',
+    subCategories: [
+      { slug: 'ban-hang-viec', name: 'Bán hàng', icon: '/assets/jobs.png' },
+      { slug: 'kinh-doanh-viec', name: 'Kinh doanh', icon: '/assets/jobs.png' },
+      { slug: 'van-phong-viec', name: 'Văn phòng', icon: '/assets/jobs.png' },
+      { slug: 'ke-toan-viec', name: 'Kế toán', icon: '/assets/jobs.png' },
+      { slug: 'it-cong-nghe-viec', name: 'IT / Công nghệ', icon: '/assets/jobs.png' },
+      { slug: 'marketing-viec', name: 'Marketing', icon: '/assets/jobs.png' },
+      { slug: 'thiet-ke-viec', name: 'Thiết kế', icon: '/assets/jobs.png' },
+      { slug: 'nha-hang-khach-san-viec', name: 'Nhà hàng / Khách sạn', icon: '/assets/jobs.png' },
+      { slug: 'giao-hang-tai-xe-viec', name: 'Giao hàng / Tài xế', icon: '/assets/jobs.png' },
+      { slug: 'lao-dong-pho-thong-viec', name: 'Lao động phổ thông', icon: '/assets/jobs.png' },
+      { slug: 'ky-thuat-viec', name: 'Kỹ thuật', icon: '/assets/jobs.png' },
+      { slug: 'viec-lam-khac', name: 'Việc làm khác', icon: '/assets/jobs.png' },
+    ]
+  },
+  {
+    key: 'services',
+    slug: 'dich-vu',
+    label: 'Dịch vụ',
+    short: 'Dịch vụ',
+    icon: '/assets/services.png',
+    tone: 'cyan',
+    subCategories: [
+      { slug: 'sua-chua-dich-vu', name: 'Sửa chữa', icon: '/assets/services.png' },
+      { slug: 'van-chuyen-dich-vu', name: 'Vận chuyển', icon: '/assets/services.png' },
+      { slug: 'thue-xe-dich-vu', name: 'Thuê xe', icon: '/assets/services.png' },
+      { slug: 'du-lich-dich-vu', name: 'Du lịch', icon: '/assets/services.png' },
+      { slug: 'luu-tru-dich-vu', name: 'Lưu trú', icon: '/assets/services.png' },
+      { slug: 'gia-dinh-dich-vu', name: 'Gia đình', icon: '/assets/services.png' },
+      { slug: 've-sinh-dich-vu', name: 'Vệ sinh', icon: '/assets/services.png' },
+      { slug: 'lam-dep-dich-vu', name: 'Làm đẹp', icon: '/assets/services.png' },
+      { slug: 'chup-anh-video-dich-vu', name: 'Chụp ảnh / Video', icon: '/assets/services.png' },
+      { slug: 'thiet-ke-cong-nghe-dich-vu', name: 'Thiết kế / Công nghệ', icon: '/assets/services.png' },
+      { slug: 'giao-duc-dich-vu', name: 'Giáo dục', icon: '/assets/services.png' },
+      { slug: 'to-chuc-su-kien-dich-vu', name: 'Tổ chức sự kiện', icon: '/assets/services.png' },
+      { slug: 'dich-vu-khac', name: 'Dịch vụ khác', icon: '/assets/services.png' },
+    ]
+  },
+  {
+    key: 'food',
+    slug: 'thuc-pham',
+    label: 'Thực phẩm',
+    short: 'Thực phẩm',
+    icon: '/assets/food.png',
+    tone: 'amber',
+    subCategories: [
+      { slug: 'do-an', name: 'Đồ ăn', icon: '/assets/food.png' },
+      { slug: 'do-uong', name: 'Đồ uống', icon: '/assets/food.png' },
+      { slug: 'dac-san', name: 'Đặc sản', icon: '/assets/food.png' },
+      { slug: 'rau-cu-trai-cay', name: 'Rau củ / Trái cây', icon: '/assets/food.png' },
+      { slug: 'thuc-pham-tuoi-song', name: 'Thực phẩm tươi sống', icon: '/assets/food.png' },
+      { slug: 'thuc-pham-kho', name: 'Thực phẩm khô', icon: '/assets/food.png' },
+      { slug: 'do-handmade', name: 'Đồ handmade', icon: '/assets/food.png' },
+      { slug: 'thuc-pham-khac', name: 'Khác', icon: '/assets/food.png' },
+    ]
+  },
+  {
+    key: 'machinery',
+    slug: 'may-moc-cong-nghiep',
+    label: 'Máy móc & Công nghiệp',
+    short: 'Máy móc',
+    icon: '/assets/tools.png',
+    tone: 'blue',
+    subCategories: [
+      { slug: 'may-moc-cong-nghiep', name: 'Máy móc công nghiệp', icon: '/assets/tools.png' },
+      { slug: 'may-moc-nong-nghiep', name: 'Máy móc nông nghiệp', icon: '/assets/tools.png' },
+      { slug: 'thiet-bi-xay-dung', name: 'Thiết bị xây dựng', icon: '/assets/tools.png' },
+      { slug: 'dung-cu-co-khi', name: 'Dụng cụ cơ khí', icon: '/assets/tools.png' },
+      { slug: 'thiet-bi-nha-hang', name: 'Thiết bị nhà hàng', icon: '/assets/tools.png' },
+      { slug: 'thiet-bi-cua-hang', name: 'Thiết bị cửa hàng', icon: '/assets/tools.png' },
+      { slug: 'thiet-bi-van-phong', name: 'Thiết bị văn phòng', icon: '/assets/tools.png' },
+      { slug: 'nguyen-vat-lieu', name: 'Nguyên vật liệu', icon: '/assets/tools.png' },
+      { slug: 'giong-cay-trong', name: 'Giống cây trồng', icon: '/assets/tools.png' },
+      { slug: 'may-moc-khac', name: 'Khác', icon: '/assets/tools.png' },
+    ]
+  },
+  {
+    key: 'giveaway',
+    slug: 'tang-mien-phi',
+    label: 'Tặng miễn phí',
+    short: 'Tặng miễn phí',
+    icon: '/assets/free.png',
+    tone: 'coral',
+    subCategories: [
+      { slug: 'do-gia-dung-tang', name: 'Đồ gia dụng tặng', icon: '/assets/free.png' },
+      { slug: 'sach-quan-ao-tang', name: 'Sách & Quần áo tặng', icon: '/assets/free.png' },
+      { slug: 'thu-cung-cho-nuoi', name: 'Thú cưng tặng nuôi', icon: '/assets/free.png' },
+    ]
+  },
+  {
+    key: 'other',
+    slug: 'khac',
+    label: 'Khác',
+    short: 'Khác',
+    icon: '/assets/others.png',
+    tone: 'violet',
+    subCategories: [
+      { slug: 'san-pham-khac', name: 'Sản phẩm khác', icon: '/assets/others.png' },
+    ]
+  }
+];
 
-// PostgreSQL returns money as strings. Do not lose precision by coercing BIGINT to Number.
+export const categoryGroups = CATEGORY_ENGINE_TAXONOMY.map(cat => ({
+  key: cat.key,
+  label: cat.label,
+  short: cat.short,
+  slugs: [cat.slug, ...cat.subCategories.map(s => s.slug)],
+  icon: cat.icon,
+  tone: cat.tone
+}));
+
+export const categoryHref = (key: string) => '/categories?cat=' + encodeURIComponent(key);
+
 export function formatVnd(value: string) {
   const match = /^(\d+)(?:\.0+)?$/.exec(value);
   return match ? new Intl.NumberFormat('vi-VN').format(BigInt(match[1])) + 'đ' : 'Giá đang cập nhật';
