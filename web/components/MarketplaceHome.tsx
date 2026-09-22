@@ -3,9 +3,11 @@
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Search, MapPin, ChevronLeft, ChevronRight, Flame, ArrowRight, ArrowRightCircle, MessageSquare, X } from 'lucide-react';
+import { Search, MapPin, ChevronLeft, ChevronRight, Flame, X } from 'lucide-react';
 import { api, type Product } from '../lib/api';
 import { CATEGORY_ENGINE_TAXONOMY } from '../lib/marketplace';
+import { LocationSelectorModal } from './LocationSelectorModal';
+import { LocationSelection, removeAccents } from '../lib/locations';
 
 function formatVnd(val: string) {
   return parseInt(val || '0').toLocaleString('vi-VN') + 'đ';
@@ -26,7 +28,6 @@ function ProductCard({ product }: { product: Product }) {
     : product.title.includes('Xe') ? 'Honda · 12.000 km'
     : 'Chất lượng cao · Hàng đẹp';
 
-  // Click outside listener for menu dropdown
   useEffect(() => {
     if (!menuOpen) return;
     const handleClickOutside = (e: MouseEvent) => {
@@ -63,8 +64,6 @@ function ProductCard({ product }: { product: Product }) {
           {isFavorite ? '♥' : '♡'}
         </button>
 
-        <span className="media-count-badge">🖼 6</span>
-
         <Link href={'/products/' + product.id}>
           <img
             src={product.imageUrl && !failedImage ? product.imageUrl : '/assets/product-1.jpg'}
@@ -73,51 +72,56 @@ function ProductCard({ product }: { product: Product }) {
             onError={() => setFailedImage(true)}
           />
         </Link>
+        <span className="media-count-badge">📷 1/4</span>
       </div>
 
       <div className="card-body">
-        <Link href={'/products/' + product.id} style={{textDecoration:'none', color:'inherit'}}>
-          {/* NỘI DUNG TIN ĐĂNG HIỂN THỊ ĐẦY ĐỦ (KHÔNG ĐỂ ...) */}
+        <Link href={'/products/' + product.id} style={{ textDecoration: 'none', color: 'inherit' }}>
           <h3 className="card-title-full">{product.title}</h3>
           <div className="card-metadata">{metadataText}</div>
           <div className="price-row">
-            <span className="price">{product.priceMode==='CONTACT' ? 'LIÊN HỆ' : product.priceMode==='FREE' ? 'TẶNG MIỄN PHÍ' : formatVnd(product.price)}</span>
+            <span className="price">{product.priceMode === 'CONTACT' ? 'LIÊN HỆ' : product.priceMode === 'FREE' ? 'TẶNG MIỄN PHÍ' : formatVnd(product.price)}</span>
           </div>
           <div className="location-row">
             📍 {product.location || 'Quy Nhơn'}
           </div>
-          {/* HIỂN THỊ TÊN NGƯỜI ĐĂNG VÀ NGÀY ĐĂNG TRÊN TỪNG DÒNG RIÊNG */}
           <div className="card-seller-name">
-            👤 {product.sellerName}
+            👤 {product.sellerName} <span className="verified-badge">✓ Đã xác thực</span>
           </div>
           <div className="card-posted-date">
-            🕒 {new Date(product.postedAt).toLocaleDateString('vi-VN')}
+            🕒 Đăng {new Date(product.postedAt).toLocaleDateString('vi-VN')}
           </div>
         </Link>
 
-        <div className="card-footer-flex" style={{ marginTop: 8 }}>
-          <span className="verified-badge">✓ Đã xác thực</span>
+        <div className="card-footer-flex">
+          <Link href={'/products/' + product.id} style={{ textDecoration: 'none', color: 'inherit', fontWeight: 600 }}>
+            💬 Nhắn tin
+          </Link>
+
           <div style={{ position: 'relative' }}>
             <button
               className="card-more-btn"
-              aria-label="Tùy chọn thêm"
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
                 setMenuOpen(!menuOpen);
               }}
+              title="Tùy chọn"
             >
-              ⋮
+              •••
             </button>
-            {/* NÚT 3 CHẤM MENU HIỂN THỊ BÊN DƯỚI KHÔNG CHE KHUẤT NỘI DUNG, CLICK NGOÀI TỰ TẮT */}
+
             {menuOpen && (
               <div className="card-menu-dropdown-bottom">
-                <div onClick={(e) => { e.stopPropagation(); alert('Đã lưu tin!'); setMenuOpen(false); }}>Thích / Lưu tin</div>
-                <div onClick={(e) => { e.stopPropagation(); alert('Đã ẩn tin này (Không quan tâm)'); setMenuOpen(false); }}>Không quan tâm</div>
-                <div onClick={(e) => { e.stopPropagation(); alert('Sẽ không hiển thị tin tương tự'); setMenuOpen(false); }}>Không hiện nữa</div>
-                <div onClick={(e) => { e.stopPropagation(); alert('Đã ghi nhận phản hồi vị trí'); setMenuOpen(false); }}>Xa chỗ tôi quá</div>
-                <div onClick={(e) => { e.stopPropagation(); alert('Đã sao chép liên kết!'); setMenuOpen(false); }}>Chia sẻ</div>
-                <div onClick={(e) => { e.stopPropagation(); alert('Đã gửi báo cáo vi phạm!'); setMenuOpen(false); }}>Báo cáo vi phạm</div>
+                <div onClick={() => { setIsFavorite(!isFavorite); setMenuOpen(false); }}>
+                  {isFavorite ? '♡ Bỏ lưu tin' : '♥ Lưu tin đăng'}
+                </div>
+                <div onClick={() => { navigator.clipboard?.writeText(window.location.origin + '/products/' + product.id); alert('Đã sao chép liên kết tin đăng!'); setMenuOpen(false); }}>
+                  🔗 Chia sẻ tin
+                </div>
+                <div onClick={() => { alert('Đã gửi báo cáo vi phạm!'); setMenuOpen(false); }}>
+                  🚩 Báo cáo vi phạm
+                </div>
               </div>
             )}
           </div>
@@ -127,23 +131,29 @@ function ProductCard({ product }: { product: Product }) {
   );
 }
 
-export function MarketplaceHome({ query }: { query: string; group: string; sort: string; view: string }) {
+export function MarketplaceHome({ query = '', group = '', sort = '', view = '' }: { query?: string; group?: string; sort?: string; view?: string }) {
   const router = useRouter();
-  const [products, setProducts] = useState<Product[]>([]);
-  const [searchQuery, setSearchQuery] = useState(query);
-  const [isLoading, setIsLoading] = useState(true);
-  const [selectedLocation, setSelectedLocation] = useState('Toàn quốc');
-  const [showLocationDropdown, setShowLocationDropdown] = useState(false);
-  const [activeTab, setActiveTab] = useState('Khám phá');
-  const [showSuggestions, setShowSuggestions] = useState(false);
   const categoryScrollRef = useRef<HTMLDivElement>(null);
 
-  // DYNAMIC BANNERS STATE LOADED FROM ADMIN CONSOLE
-  const [activeBanners, setActiveBanners] = useState<{ leftBanner?: string; rightBanner?: string; heroBanner?: string }>({
-    leftBanner: '/assets/banner_right.png',
-    rightBanner: '/assets/banner_right.png',
-    heroBanner: '/assets/hero-dog-banner.png'
+  const [products, setProducts] = useState<Product[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState(query);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+
+  // Unified Location Engine Selection
+  const [locationSelection, setLocationSelection] = useState<LocationSelection>({
+    mode: 'nationwide',
+    label: 'Toàn quốc'
   });
+  const [showLocationModal, setShowLocationModal] = useState(false);
+
+  const [activeTab, setActiveTab] = useState<'FOR_YOU' | 'TODAY_DEALS' | 'NEARBY' | 'GIVEAWAY'>('FOR_YOU');
+
+  const [activeBanners, setActiveBanners] = useState<{
+    leftBanner?: string;
+    rightBanner?: string;
+    heroBanner?: string;
+  }>({});
 
   useEffect(() => {
     const loadBanners = () => {
@@ -187,23 +197,6 @@ export function MarketplaceHome({ query }: { query: string; group: string; sort:
     return () => { cancelled = true; };
   }, [query]);
 
-  const provinces = [
-    'Toàn quốc',
-    'Vị trí gần bạn (GPS)',
-    'Bình Định',
-    'TP. Hồ Chí Minh',
-    'Hà Nội',
-    'Đà Nẵng',
-    'Hải Phòng',
-    'Cần Thơ',
-    'Bình Dương',
-    'Đồng Nai',
-    'Khánh Hòa',
-    'Quảng Nam',
-    'Gia Lai',
-    'Đắk Lắk'
-  ];
-
   const searchSuggestions = [
     'iPhone 15 Pro Max',
     'Xe máy Honda Vision cũ',
@@ -211,12 +204,17 @@ export function MarketplaceHome({ query }: { query: string; group: string; sort:
     'Nhà mặt tiền Quy Nhơn',
     'Tủ lạnh Inverter',
     'Việc làm bán thời gian'
-  ].filter(s => searchQuery && s.toLowerCase().includes(searchQuery.toLowerCase()));
+  ].filter(s => searchQuery && removeAccents(s).includes(removeAccents(searchQuery)));
 
   const filteredProducts = products.filter(p => {
-    if (selectedLocation === 'Toàn quốc' || selectedLocation.includes('Gần bạn')) return true;
+    if (activeTab === 'GIVEAWAY') {
+      if (p.priceMode !== 'FREE' && p.price !== '0') return false;
+    }
+    if (locationSelection.mode === 'nationwide' || locationSelection.label === 'Toàn quốc') return true;
     if (!p.location) return true;
-    return p.location.toLowerCase().includes(selectedLocation.toLowerCase());
+    const prodLocNorm = removeAccents(p.location);
+    const targetLocNorm = removeAccents(locationSelection.label.replace(/.*\(|\).*/g, ''));
+    return prodLocNorm.includes(targetLocNorm);
   });
 
   const scrollCategories = (direction: 'left' | 'right') => {
@@ -240,7 +238,15 @@ export function MarketplaceHome({ query }: { query: string; group: string; sort:
 
   return (
     <main id="home">
-      {/* BANNER QUẢNG CÁO TRƯỢT 2 BÊN MÉP (TỰ ĐỘNG ĐỒNG BỘ TỪ ADMIN CONSOLE) */}
+      {/* LOCATION SELECTOR MODAL */}
+      <LocationSelectorModal
+        isOpen={showLocationModal}
+        onClose={() => setShowLocationModal(false)}
+        onSelect={(selection) => setLocationSelection(selection)}
+        currentSelection={locationSelection}
+      />
+
+      {/* FLOATING BANNERS */}
       {activeBanners.leftBanner && (
         <div className="floating-banner left-floating-banner">
           <Link href="/sell">
@@ -256,7 +262,7 @@ export function MarketplaceHome({ query }: { query: string; group: string; sort:
         </div>
       )}
 
-      {/* HERO BANNER SÁT MÉP TRÊN (TỰ ĐỘNG ẨN KHI XÓA TRONG ADMIN) */}
+      {/* HERO BANNER */}
       <section className="hero">
         <div className="shell">
           <div
@@ -270,7 +276,7 @@ export function MarketplaceHome({ query }: { query: string; group: string; sort:
                   <Search color="#888" size={19} />
                   <input
                     type="text"
-                    placeholder="Bạn đang tìm gì?"
+                    placeholder="Bạn đang tìm gì trên Tất Tần Tật?"
                     value={searchQuery}
                     onChange={e => { setSearchQuery(e.target.value); setShowSuggestions(true); }}
                     onFocus={() => setShowSuggestions(true)}
@@ -283,48 +289,25 @@ export function MarketplaceHome({ query }: { query: string; group: string; sort:
                 </div>
                 <div className="search-divider"></div>
 
-                <div className="search-location-wrapper" style={{ position: 'relative' }}>
+                {/* LOCATION SELECTOR TRIGGER */}
+                <div className="search-location-wrapper">
                   <div
                     className="search-location"
-                    onClick={() => setShowLocationDropdown(!showLocationDropdown)}
-                    style={{ cursor: 'pointer', userSelect: 'none', display: 'flex', alignItems: 'center', gap: 6 }}
+                    onClick={() => setShowLocationModal(true)}
+                    style={{ cursor: 'pointer', userSelect: 'none', display: 'flex', alignItems: 'center', gap: 6, fontWeight: 600, color: '#0f172a' }}
                   >
-                    <MapPin size={17} /> {selectedLocation} ▾
+                    <MapPin size={17} color="#00a65a" /> {locationSelection.label} ▾
                   </div>
-
-                  {showLocationDropdown && (
-                    <div className="location-dropdown-menu">
-                      {provinces.map((prov) => (
-                        <div
-                          key={prov}
-                          className={`location-dropdown-item ${selectedLocation === prov ? 'active' : ''}`}
-                          onClick={() => {
-                            setSelectedLocation(prov);
-                            setShowLocationDropdown(false);
-                            if (prov === 'Vị trí gần bạn (GPS)') {
-                              if (navigator.geolocation) {
-                                navigator.geolocation.getCurrentPosition(
-                                  () => setSelectedLocation('Vị trí gần bạn (GPS)'),
-                                  () => alert('Không thể lấy vị trí GPS. Đã chuyển về mặc định.')
-                                );
-                              }
-                            }
-                          }}
-                        >
-                          <MapPin size={14} /> {prov}
-                        </div>
-                      ))}
-                    </div>
-                  )}
                 </div>
 
-                <button type="submit" className="search-btn"><Search size={18} /> Tìm kiếm</button>
+                <button type="submit" className="search-submit-btn">Tìm kiếm</button>
 
+                {/* AUTOCOMPLETE SUGGESTIONS */}
                 {showSuggestions && searchSuggestions.length > 0 && (
                   <div className="search-suggestions-dropdown">
-                    {searchSuggestions.map((sug, idx) => (
+                    {searchSuggestions.map((sug) => (
                       <div
-                        key={idx}
+                        key={sug}
                         className="suggestion-item"
                         onClick={() => {
                           setSearchQuery(sug);
@@ -332,171 +315,110 @@ export function MarketplaceHome({ query }: { query: string; group: string; sort:
                           router.push('/?q=' + encodeURIComponent(sug));
                         }}
                       >
-                        <Search size={14} color="#888" /> {sug}
+                        <Search size={15} color="#00a65a" /> {sug}
                       </div>
                     ))}
                   </div>
                 )}
               </form>
 
-              {/* TỪ KHÓA TÌM KIẾM PHỔ BIẾN NGAY DƯỚI FORM */}
+              {/* CHIP TỪ KHÓA TÌM KIẾM HOT */}
               <div className="hero-quick-keywords">
-                <span>Tìm kiếm phổ biến:</span>
-                {[
-                  { label: 'iPhone', q: 'iPhone' },
-                  { label: 'Xe máy', q: 'Xe máy' },
-                  { label: 'Máy ảnh', q: 'Máy ảnh' },
-                  { label: 'Việc làm', q: 'Việc làm' },
-                  { label: 'Nhà đất', q: 'Nhà đất' },
-                ].map((item, idx) => (
-                  <button
-                    key={idx}
-                    type="button"
-                    onClick={() => {
-                      setSearchQuery(item.q);
-                      router.push('/?q=' + encodeURIComponent(item.q));
-                    }}
-                  >
-                    {item.label}
-                  </button>
-                ))}
+                <span>🔥 Từ khóa HOT:</span>
+                <button onClick={() => { setSearchQuery('iPhone 15'); router.push('/?q=iPhone+15'); }}>iPhone 15</button>
+                <button onClick={() => { setSearchQuery('Honda Vision'); router.push('/?q=Honda+Vision'); }}>Vision cũ</button>
+                <button onClick={() => { setSearchQuery('Chung cư Quy Nhơn'); router.push('/?q=Chung+cư+Quy+Nhơn'); }}>Chung cư Quy Nhơn</button>
+                <button onClick={() => { setSearchQuery('Tủ lạnh'); router.push('/?q=Tủ+lạnh'); }}>Tủ lạnh Inverter</button>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* DANH MỤC COMPACT */}
-      <section className="categories-section">
-        <div className="shell">
-          <div className="white-card-box">
-            <button type="button" className="nav-arrow left" onClick={() => scrollCategories('left')} aria-label="Cuộn sang trái">
-              <ChevronLeft size={20} color="#555" />
+      {/* 3D CATEGORIES CAROUSEL */}
+      <section className="shell">
+        <div className="white-card-box" style={{ marginBottom: 24, padding: '20px 24px', position: 'relative' }}>
+          <div className="section-title">
+            <h2><Flame color="#00a65a" size={22} /> Khám phá danh mục nổi bật</h2>
+            <Link href="/categories" className="view-all">Xem tất cả danh mục →</Link>
+          </div>
+
+          <div className="category-carousel-wrapper">
+            <button
+              className="cat-scroll-arrow left"
+              onClick={() => scrollCategories('left')}
+              title="Cuộn sang trái"
+            >
+              <ChevronLeft size={20} color="#0f172a" />
             </button>
-            <div className="category-scroll" ref={categoryScrollRef}>
-              {cats.map((c, i) => (
-                <Link href={`/categories?cat=${c.slug}`} key={i} className="cat-card-clean">
-                  <div className="cat-icon-wrapper">
-                    <img src={c.img} alt={c.name} />
-                  </div>
-                  <span>{c.name}</span>
+
+            <div className="category-grid-scroll" ref={categoryScrollRef}>
+              {cats.map((cat) => (
+                <Link
+                  key={cat.slug}
+                  href={cat.slug === 'all' ? '/categories' : `/categories?cat=${cat.slug}`}
+                  className="category-card-3d"
+                >
+                  <img src={cat.img} alt={cat.name} className="cat-3d-img" />
+                  <span className="cat-title">{cat.name}</span>
                 </Link>
               ))}
             </div>
-            <button type="button" className="nav-arrow right" onClick={() => scrollCategories('right')} aria-label="Cuộn sang phải">
-              <ChevronRight size={20} color="#555" />
+
+            <button
+              className="cat-scroll-arrow right"
+              onClick={() => scrollCategories('right')}
+              title="Cuộn sang phải"
+            >
+              <ChevronRight size={20} color="#0f172a" />
             </button>
           </div>
         </div>
       </section>
 
-      {/* KHỐI TAB KHÁM PHÁ COMPACT */}
-      <section className="shell tabbed-explore-section" style={{ marginBottom: 12 }}>
-        <div className="white-card-box" style={{ padding: '12px 16px' }}>
-          <div className="tabbed-header">
-            {['Khám phá', 'Dành cho bạn', 'Gần bạn', 'Mới đăng', 'Giá tốt', 'Đã xác thực', 'Đồ công nghệ', 'Xe cộ', 'Nhà đất'].map((tab) => (
-              <button
-                key={tab}
-                type="button"
-                className={`explore-tab-btn ${activeTab === tab ? 'active' : ''}`}
-                onClick={() => setActiveTab(tab)}
-              >
-                {tab === 'Gần bạn' ? '📍 ' : tab === 'Đã xác thực' ? '✓ ' : tab === 'Khám phá' ? '🔥 ' : ''}{tab}
-              </button>
-            ))}
-          </div>
-          <div className="explore-tab-content">
-            <div className="products-grid-6">
-              {filteredProducts.slice(0, 6).map(product => (
-                <ProductCard key={'tab'+product.id} product={product} />
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* SẢN PHẨM NỔI BẬT */}
-      <section className="shell main-grid">
-        <div className="main-content" style={{display:'flex', flexDirection:'column', gap: 16, width: '100%'}}>
-          <div className="white-card-box">
-            <div className="section-title">
-              <h2><Flame /> {query ? `Kết quả cho "${query}"` : 'Sản phẩm mới dành cho bạn'} {selectedLocation !== 'Toàn quốc' && <span style={{fontSize:13, fontWeight:500, color:'#00a65a'}}>({selectedLocation})</span>}</h2>
-              <Link href="/categories" className="view-all">Xem tất cả →</Link>
-            </div>
-
-            <div className="products-grid-6">
-              {isLoading ? (
-                <p style={{padding: 20, color: '#666', gridColumn: 'span 6'}}>Đang tải sản phẩm...</p>
-              ) : filteredProducts.length > 0 ? (
-                filteredProducts.slice(0, 12).map(product => (
-                  <ProductCard key={product.id} product={product} />
-                ))
-              ) : (
-                <div style={{padding: 30, textAlign:'center', gridColumn: 'span 6', color: '#64748b'}}>
-                  <p style={{fontSize:15, fontWeight:600, color:'#1e293b', marginBottom:6}}>Không tìm thấy sản phẩm phù hợp.</p>
-                  <p style={{fontSize:13, marginBottom:12}}>Thử thay đổi từ khóa, khu vực hoặc bộ lọc của bạn.</p>
-                  <button onClick={() => setSelectedLocation('Toàn quốc')} style={{background:'#00a65a', color:'#fff', border:'none', padding:'8px 18px', borderRadius:999, fontWeight:600, cursor:'pointer'}}>Đặt lại bộ lọc</button>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {!query && (
-            <div className="white-card-box">
-              <div className="section-title">
-                <h2><MessageSquare /> Tin mới đăng</h2>
-                <Link href="/categories" className="view-all">Xem tất cả →</Link>
-              </div>
-              <div className="products-grid-6">
-                {isLoading ? (
-                  <p style={{padding: 20, color: '#666', gridColumn: 'span 6'}}>Đang tải tin mới...</p>
-                ) : filteredProducts.length > 0 ? (
-                  filteredProducts.slice().reverse().slice(0, 6).map(product => (
-                    <ProductCard key={'new'+product.id} product={product} />
-                  ))
-                ) : (
-                  <p style={{padding: 20, color: '#666', gridColumn: 'span 6'}}>Chưa có tin mới đăng.</p>
-                )}
-              </div>
-            </div>
-          )}
-        </div>
-      </section>
-
-      {/* KHỐI TỪ KHÓA TÌM KIẾM NHIỀU NHẤT */}
-      <section className="shell" style={{ marginTop: 16, marginBottom: 24 }}>
+      {/* TABBED EXPLORE PRODUCTS SECTION */}
+      <section className="shell" style={{ marginBottom: 40 }}>
         <div className="white-card-box">
-          <div className="section-title" style={{ marginBottom: 12 }}>
-            <h2><Search size={19} color="#00a65a" /> Từ khóa tìm kiếm nhiều nhất</h2>
+          <div className="tabbed-header">
+            <button
+              className={`explore-tab-btn ${activeTab === 'FOR_YOU' ? 'active' : ''}`}
+              onClick={() => setActiveTab('FOR_YOU')}
+            >
+              ✨ Dành cho bạn
+            </button>
+            <button
+              className={`explore-tab-btn ${activeTab === 'TODAY_DEALS' ? 'active' : ''}`}
+              onClick={() => setActiveTab('TODAY_DEALS')}
+            >
+              🔥 Tin mới trong ngày
+            </button>
+            <button
+              className={`explore-tab-btn ${activeTab === 'NEARBY' ? 'active' : ''}`}
+              onClick={() => {
+                setActiveTab('NEARBY');
+                setShowLocationModal(true);
+              }}
+            >
+              📍 Khu vực: {locationSelection.label}
+            </button>
+            <button
+              className={`explore-tab-btn ${activeTab === 'GIVEAWAY' ? 'active' : ''}`}
+              onClick={() => setActiveTab('GIVEAWAY')}
+            >
+              🎁 Tặng miễn phí (0đ)
+            </button>
           </div>
-          <div className="popular-keywords-grid">
-            {[
-              { label: 'Xe máy giá rẻ', query: 'Xe máy' },
-              { label: 'iPhone 15 Pro Max', query: 'iPhone 15' },
-              { label: 'Nhà đất Bình Định', query: 'Nhà đất' },
-              { label: 'Laptop văn phòng', query: 'Laptop' },
-              { label: 'Tủ lạnh LG', query: 'Tủ lạnh' },
-              { label: 'Chung cư giá rẻ', query: 'Chung cư' },
-              { label: 'Máy giặt Toshiba', query: 'Máy giặt' },
-              { label: 'Sofa phòng khách', query: 'Sofa' },
-              { label: 'Mèo cảnh / Thú cưng', query: 'Thú cưng' },
-              { label: 'Thời trang nam nữ', query: 'Thời trang' },
-              { label: 'Tivi Samsung 4K', query: 'Tivi' },
-              { label: 'Dịch vụ sửa chữa tại nhà', query: 'Dịch vụ' },
-              { label: 'Xe Honda Wave Alpha', query: 'Wave' },
-              { label: 'Điện thoại cũ giá rẻ', query: 'Điện thoại' },
-              { label: 'Bàn ghế gỗ tự nhiên', query: 'Bàn ghế' },
-              { label: 'Đồng hồ thông minh', query: 'Đồng hồ' },
-            ].map((kw, i) => (
-              <button
-                key={i}
-                type="button"
-                className="popular-keyword-chip"
-                onClick={() => router.push('/?q=' + encodeURIComponent(kw.query))}
-              >
-                {kw.label}
-              </button>
-            ))}
+
+          <div className="products-grid-6">
+            {isLoading ? (
+              <p style={{ padding: 20, color: '#666', gridColumn: 'span 6' }}>Đang tải tin đăng mới nhất...</p>
+            ) : filteredProducts.length > 0 ? (
+              filteredProducts.map(p => <ProductCard key={p.id} product={p} />)
+            ) : (
+              <p style={{ padding: 30, textAlign: 'center', color: '#64748b', gridColumn: 'span 6' }}>
+                Không tìm thấy bài đăng phù hợp tại khu vực <strong>{locationSelection.label}</strong>.
+              </p>
+            )}
           </div>
         </div>
       </section>
