@@ -1,9 +1,16 @@
 import { ProductsService } from './products.service';
+import { ModerationService } from '../admin/moderation.service';
 
 describe('ProductsService safety isolation', () => {
+  let moderation: ModerationService;
+
+  beforeEach(() => {
+    moderation = new ModerationService();
+  });
+
   it('passes the authenticated viewer to the blocked-seller filter for product lists', async () => {
     const db = { query: jest.fn().mockResolvedValue({ rows: [] }) };
-    const service = new ProductsService(db as never);
+    const service = new ProductsService(db as never, moderation);
 
     await expect(service.list('laptop', undefined, 'viewer-1')).resolves.toMatchObject({ data: [] });
 
@@ -13,7 +20,7 @@ describe('ProductsService safety isolation', () => {
 
   it('keeps anonymous browsing supported without applying a viewer filter', async () => {
     const db = { query: jest.fn().mockResolvedValue({ rows: [] }) };
-    const service = new ProductsService(db as never);
+    const service = new ProductsService(db as never, moderation);
 
     await expect(service.detail('product-1')).rejects.toThrow('Không tìm thấy sản phẩm');
 

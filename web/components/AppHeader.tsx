@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useState, useSyncExternalStore } from 'react';
 import { useRouter } from 'next/navigation';
 import { clearSession, readSessionSnapshot } from '../lib/auth';
-import { Home, PlusCircle, Heart, MessageSquare, User, Bell, ChevronDown, LogOut, FileText, Settings } from 'lucide-react';
+import { Home, PlusCircle, Heart, MessageSquare, User, Bell, LogOut, FileText } from 'lucide-react';
 import { AuthModal } from './AuthModal';
 
 function subscribeSession(listener: () => void) {
@@ -45,7 +45,7 @@ export function AppHeader() {
 
       <header className="topbar">
         <div className="shell topbar-inner">
-          <Link className="brand" href="/">
+          <Link className="brand" href="/" title="Tất Tần Tật - Mua bán mọi thứ, gần bạn">
             <img src="/assets/logo.png" alt="Tất Tần Tật - Mua bán mọi thứ, gần bạn" className="header-logo-img" />
           </Link>
 
@@ -64,10 +64,10 @@ export function AppHeader() {
 
           <div className="top-actions">
             <button onClick={() => requireAuth('/sell')} className="topbar-sell-cta" style={{ cursor: 'pointer', border: 'none' }}>
-              <PlusCircle size={17} className="topbar-sell-icon" /> ĐĂNG TIN MIỄN PHÍ
+              <PlusCircle size={18} className="topbar-sell-icon" /> ĐĂNG TIN MIỄN PHÍ
             </button>
 
-            <button className="bell-btn" onClick={() => requireAuth('/account')}>
+            <button className="bell-btn" onClick={() => requireAuth('/account')} title="Thông báo">
               <Bell size={20} />
               <span className="bell-badge">3</span>
             </button>
@@ -77,7 +77,7 @@ export function AppHeader() {
                 <button
                   className="user-avatar"
                   onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
-                  title="Tài khoản"
+                  title="Tài khoản cá nhân"
                 >
                   {name.substring(0, 2).toUpperCase()}
                 </button>

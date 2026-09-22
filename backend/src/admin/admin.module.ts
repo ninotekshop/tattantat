@@ -14,6 +14,42 @@ import { RevenueProjectionService } from './revenue-projection.service';
 import { CommercialLifecycleMaintenanceService } from './commercial-lifecycle-maintenance.service';
 import { CommercialQueueController } from './commercial-queue.controller';
 import { ModerationController } from './moderation.controller';
+import { ModerationService } from './moderation.service';
+import { AdminAuditLogService } from './admin-audit-log.service';
+import { AdminDashboardController } from './admin-dashboard.controller';
+import { AdminPostsController } from './admin-posts.controller';
+import { AdminUsersController } from './admin-users.controller';
+import { AdminBannersController } from './admin-banners.controller';
+import { AdminOrdersController } from './admin-orders.controller';
+import { AdminSearchController } from './admin-search.controller';
 
-@Module({ imports: [AuthModule, FinanceModule], controllers: [AdminRevenueController, ReconciliationController, ShippingSettlementController, PricingAdminController, WalletReleaseController, FinancialAuditController, PromotionExpiryController, ServicePricingAdminController, CommercialQueueController, ModerationController], providers: [PromotionMaintenanceService, RevenueProjectionService, CommercialLifecycleMaintenanceService] })
+@Module({
+  imports: [AuthModule, FinanceModule],
+  controllers: [
+    AdminRevenueController,
+    AdminDashboardController,
+    AdminPostsController,
+    AdminUsersController,
+    AdminBannersController,
+    AdminOrdersController,
+    AdminSearchController,
+    ReconciliationController,
+    ShippingSettlementController,
+    PricingAdminController,
+    WalletReleaseController,
+    FinancialAuditController,
+    PromotionExpiryController,
+    ServicePricingAdminController,
+    CommercialQueueController,
+    ModerationController,
+  ],
+  providers: [
+    AdminAuditLogService,
+    ModerationService,
+    PromotionMaintenanceService,
+    RevenueProjectionService,
+    CommercialLifecycleMaintenanceService,
+  ],
+  exports: [AdminAuditLogService, ModerationService],
+})
 export class AdminModule {}

@@ -3,14 +3,28 @@
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Search, MapPin, ChevronLeft, ChevronRight, Flame, X } from 'lucide-react';
+import { Search, MapPin, ChevronLeft, ChevronRight, Flame, X, ArrowUp, Sparkles, Clock, Tag, CheckCircle2, Gift } from 'lucide-react';
 import { api, type Product } from '../lib/api';
 import { CATEGORY_ENGINE_TAXONOMY } from '../lib/marketplace';
 import { LocationSelectorModal } from './LocationSelectorModal';
 import { LocationSelection, removeAccents } from '../lib/locations';
 
 function formatVnd(val: string) {
-  return parseInt(val || '0').toLocaleString('vi-VN') + 'đ';
+  return parseInt(val || '0', 10).toLocaleString('vi-VN') + 'đ';
+}
+
+function ProductCardSkeleton() {
+  return (
+    <div className="product-card skeleton-card" style={{ opacity: 0.7, pointerEvents: 'none' }}>
+      <div className="card-img skeleton-box" style={{ background: '#e2e8f0', height: 180 }} />
+      <div className="card-body" style={{ gap: 8 }}>
+        <div className="skeleton-box" style={{ height: 16, width: '85%', background: '#e2e8f0', borderRadius: 4 }} />
+        <div className="skeleton-box" style={{ height: 12, width: '50%', background: '#f1f5f9', borderRadius: 4 }} />
+        <div className="skeleton-box" style={{ height: 20, width: '60%', background: '#cbd5e1', borderRadius: 4, marginTop: 4 }} />
+        <div className="skeleton-box" style={{ height: 12, width: '40%', background: '#f1f5f9', borderRadius: 4 }} />
+      </div>
+    </div>
+  );
 }
 
 function ProductCard({ product }: { product: Product }) {
@@ -139,6 +153,7 @@ export function MarketplaceHome({ query = '', group = '', sort = '', view = '' }
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState(query);
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [showBackToTop, setShowBackToTop] = useState(false);
 
   // Unified Location Engine Selection
   const [locationSelection, setLocationSelection] = useState<LocationSelection>({
@@ -147,13 +162,25 @@ export function MarketplaceHome({ query = '', group = '', sort = '', view = '' }
   });
   const [showLocationModal, setShowLocationModal] = useState(false);
 
-  const [activeTab, setActiveTab] = useState<'FOR_YOU' | 'TODAY_DEALS' | 'NEARBY' | 'GIVEAWAY'>('FOR_YOU');
+  const [activeTab, setActiveTab] = useState<'FOR_YOU' | 'TODAY_DEALS' | 'NEARBY' | 'GIVEAWAY' | 'VERIFIED'>('FOR_YOU');
 
   const [activeBanners, setActiveBanners] = useState<{
     leftBanner?: string;
     rightBanner?: string;
     heroBanner?: string;
   }>({});
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setShowBackToTop(window.scrollY > 400);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   useEffect(() => {
     const loadBanners = () => {
@@ -246,6 +273,34 @@ export function MarketplaceHome({ query = '', group = '', sort = '', view = '' }
         currentSelection={locationSelection}
       />
 
+      {/* BACK TO TOP FLOATING BUTTON */}
+      {showBackToTop && (
+        <button
+          onClick={scrollToTop}
+          title="Quay lại đầu trang"
+          style={{
+            position: 'fixed',
+            bottom: 32,
+            right: 28,
+            width: 46,
+            height: 46,
+            borderRadius: '50%',
+            background: '#00a65a',
+            color: '#ffffff',
+            border: 'none',
+            boxShadow: '0 8px 20px rgba(0, 166, 90, 0.4)',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 9999,
+            transition: 'all 0.25s ease'
+          }}
+        >
+          <ArrowUp size={22} />
+        </button>
+      )}
+
       {/* FLOATING BANNERS */}
       {activeBanners.leftBanner && (
         <div className="floating-banner left-floating-banner">
@@ -262,8 +317,8 @@ export function MarketplaceHome({ query = '', group = '', sort = '', view = '' }
         </div>
       )}
 
-      {/* HERO BANNER */}
-      <section className="hero">
+      {/* HERO BANNER & SEARCH BAR */}
+      <section className="hero" style={{ paddingTop: 8 }}>
         <div className="shell">
           <div
             className="hero-banner-container"
@@ -271,12 +326,21 @@ export function MarketplaceHome({ query = '', group = '', sort = '', view = '' }
           >
             <div className="hero-banner-bg" />
             <div className="hero-banner-overlay">
+              <div style={{ textAlign: 'center', marginBottom: 16 }}>
+                <h1 style={{ fontSize: 24, fontWeight: 800, color: '#ffffff', margin: '0 0 4px 0', letterSpacing: '0.2px' }}>
+                  Mua bán mọi thứ, gần bạn!
+                </h1>
+                <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.9)', margin: 0, fontWeight: 500 }}>
+                  Hàng ngàn tin đăng mới mỗi ngày · Kết nối trực tiếp người mua & người bán
+                </p>
+              </div>
+
               <form className="search-box" onSubmit={handleSearch} style={{ position: 'relative' }}>
                 <div className="search-input-group">
-                  <Search color="#888" size={19} />
+                  <Search color="#00a65a" size={20} />
                   <input
                     type="text"
-                    placeholder="Bạn đang tìm gì trên Tất Tần Tật?"
+                    placeholder="Bạn muốn mua gì?"
                     value={searchQuery}
                     onChange={e => { setSearchQuery(e.target.value); setShowSuggestions(true); }}
                     onFocus={() => setShowSuggestions(true)}
@@ -336,9 +400,9 @@ export function MarketplaceHome({ query = '', group = '', sort = '', view = '' }
       </section>
 
       {/* 3D CATEGORIES CAROUSEL */}
-      <section className="shell">
-        <div className="white-card-box" style={{ marginBottom: 24, padding: '20px 24px', position: 'relative' }}>
-          <div className="section-title">
+      <section className="shell" style={{ marginBottom: 16 }}>
+        <div className="white-card-box" style={{ padding: '16px 20px', position: 'relative' }}>
+          <div className="section-title" style={{ marginBottom: 12 }}>
             <h2><Flame color="#00a65a" size={22} /> Khám phá danh mục nổi bật</h2>
             <Link href="/categories" className="view-all">Xem tất cả danh mục →</Link>
           </div>
@@ -376,21 +440,16 @@ export function MarketplaceHome({ query = '', group = '', sort = '', view = '' }
         </div>
       </section>
 
-      {/* TABBED EXPLORE PRODUCTS SECTION */}
+      {/* TABBED EXPLORE PRODUCTS SECTION WITH QUICK FILTER CHIPS */}
       <section className="shell" style={{ marginBottom: 40 }}>
-        <div className="white-card-box">
-          <div className="tabbed-header">
+        <div className="white-card-box" style={{ padding: '20px' }}>
+          <div className="tabbed-header" style={{ marginBottom: 16, display: 'flex', gap: 10, overflowX: 'auto', scrollbarWidth: 'none' }}>
             <button
               className={`explore-tab-btn ${activeTab === 'FOR_YOU' ? 'active' : ''}`}
               onClick={() => setActiveTab('FOR_YOU')}
+              style={{ display: 'flex', alignItems: 'center', gap: 6 }}
             >
-              ✨ Dành cho bạn
-            </button>
-            <button
-              className={`explore-tab-btn ${activeTab === 'TODAY_DEALS' ? 'active' : ''}`}
-              onClick={() => setActiveTab('TODAY_DEALS')}
-            >
-              🔥 Tin mới trong ngày
+              <Sparkles size={16} color="#00a65a" /> Dành cho bạn
             </button>
             <button
               className={`explore-tab-btn ${activeTab === 'NEARBY' ? 'active' : ''}`}
@@ -398,24 +457,40 @@ export function MarketplaceHome({ query = '', group = '', sort = '', view = '' }
                 setActiveTab('NEARBY');
                 setShowLocationModal(true);
               }}
+              style={{ display: 'flex', alignItems: 'center', gap: 6 }}
             >
-              📍 Khu vực: {locationSelection.label}
+              <MapPin size={16} color="#00a65a" /> Gần bạn: {locationSelection.label}
+            </button>
+            <button
+              className={`explore-tab-btn ${activeTab === 'TODAY_DEALS' ? 'active' : ''}`}
+              onClick={() => setActiveTab('TODAY_DEALS')}
+              style={{ display: 'flex', alignItems: 'center', gap: 6 }}
+            >
+              <Clock size={16} color="#f59e0b" /> Mới đăng hôm nay
+            </button>
+            <button
+              className={`explore-tab-btn ${activeTab === 'VERIFIED' ? 'active' : ''}`}
+              onClick={() => setActiveTab('VERIFIED')}
+              style={{ display: 'flex', alignItems: 'center', gap: 6 }}
+            >
+              <CheckCircle2 size={16} color="#059669" /> Đã xác thực
             </button>
             <button
               className={`explore-tab-btn ${activeTab === 'GIVEAWAY' ? 'active' : ''}`}
               onClick={() => setActiveTab('GIVEAWAY')}
+              style={{ display: 'flex', alignItems: 'center', gap: 6 }}
             >
-              🎁 Tặng miễn phí (0đ)
+              <Gift size={16} color="#ef4444" /> Tặng miễn phí (0đ)
             </button>
           </div>
 
           <div className="products-grid-6">
             {isLoading ? (
-              <p style={{ padding: 20, color: '#666', gridColumn: 'span 6' }}>Đang tải tin đăng mới nhất...</p>
+              Array.from({ length: 12 }).map((_, i) => <ProductCardSkeleton key={i} />)
             ) : filteredProducts.length > 0 ? (
               filteredProducts.map(p => <ProductCard key={p.id} product={p} />)
             ) : (
-              <p style={{ padding: 30, textAlign: 'center', color: '#64748b', gridColumn: 'span 6' }}>
+              <p style={{ padding: 40, textAlign: 'center', color: '#64748b', gridColumn: 'span 6', background: '#f8fafc', borderRadius: 12, border: '1px dashed #cbd5e1' }}>
                 Không tìm thấy bài đăng phù hợp tại khu vực <strong>{locationSelection.label}</strong>.
               </p>
             )}

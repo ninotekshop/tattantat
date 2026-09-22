@@ -27,7 +27,7 @@ tổng thể. Mục tiêu là refinement UI/UX: hiện đại hơn, chuyên nghi
     -   Tài khoản
     -   Thông báo
 -   Làm nổi bật hành động **Đăng tin** hơn các navigation item khác.
--   Có thể chuyển thành CTA: **+ ĐĂNG TIN MIỄN PHÍ**
+-   Có thể chuyển thành CTA: **ĐĂNG TIN MIỄN PHÍ**
 -   CTA cần tương phản tốt với nền xanh nhưng vẫn đồng bộ thương hiệu.
 -   Trạng thái menu đang được chọn phải rõ ràng nhưng tinh tế.
 
@@ -76,20 +76,7 @@ Yêu cầu:
 
 ## 4. Danh mục sản phẩm
 
-Giữ các danh mục hiện tại như:
-
--   Đồ công nghệ
--   Xe cộ
--   Nhà đất
--   Đồ gia dụng
--   Thời trang
--   Thể thao & giải trí
--   Sách & học tập
--   Máy móc & công cụ
--   Đồ sưu tầm
--   Thú cưng
--   Hàng hóa khác
--   Dịch vụ
+Giữ các danh mục hiện tại.
 
 Cải thiện:
 
@@ -119,47 +106,10 @@ Yêu cầu:
 
 ------------------------------------------------------------------------
 
-## 6. Khu vực Sản phẩm nổi bật
-
-Giữ tiêu đề:
-
-**🔥 Sản phẩm nổi bật**
-
-và link:
-
-**Xem tất cả →**
-
-Tối ưu layout desktop để hiển thị nhiều sản phẩm hơn.
-
-Ưu tiên:
-
--   5--6 sản phẩm/hàng trên màn hình desktop lớn.
--   Khoảng cách giữa các card đều nhau.
--   Grid responsive.
--   Giảm diện tích sidebar nếu sidebar làm ảnh hưởng đến không gian sản
-    phẩm.
-
-------------------------------------------------------------------------
-
-## 7. Thiết kế Product Card mới
-
-Product Card cần cung cấp đủ thông tin để người mua đánh giá nhanh mà
-không cần mở chi tiết.
-
-Cấu trúc đề xuất:
-
-**\[Ảnh sản phẩm\]**\
-♡ Yêu thích
-
-**Canon EOS R50 + Kit 18-45mm**\
-**12.500.000 ₫**\
-📍 Quy Nhơn\
-🕒 2 giờ trước\
-✓ Đã xác thực
-
 Yêu cầu:
 
 -   Ảnh chuẩn tỷ lệ thống nhất: ưu tiên **1:1 hoặc 4:3**.
+-   Kích thước ảnh hiển thị 180x180px.
 -   `object-fit: cover`.
 -   Tên sản phẩm tối đa 2 dòng.
 -   Giá phải nổi bật.
@@ -173,29 +123,7 @@ Yêu cầu:
 
 ------------------------------------------------------------------------
 
-## 8. Sidebar bên phải
-
-Sidebar hiện tại đang chiếm khá nhiều chiều ngang.
-
-Hãy:
-
--   Giảm chiều rộng xuống khoảng **220--240px** trên desktop nếu vẫn giữ
-    sidebar.
--   Hoặc chuyển một số nội dung sidebar thành các shortcut/card ngang để
-    dành thêm diện tích cho sản phẩm.
-
-Các CTA như:
-
--   Đăng tin miễn phí
--   Mua bán xe cộ
--   Các dịch vụ nổi bật
-
-cần có thiết kế đồng nhất, tránh cảm giác giống banner quảng cáo rời
-rạc.
-
-------------------------------------------------------------------------
-
-## 9. Design System
+## 6. Design System
 
 Giữ màu xanh thương hiệu hiện tại làm primary.
 
@@ -229,7 +157,7 @@ Chuẩn hóa:
 
 ------------------------------------------------------------------------
 
-## 10. Typography
+## 7. Typography
 
 Sử dụng font sans-serif hiện đại, dễ đọc tiếng Việt.
 
@@ -251,7 +179,7 @@ Không sử dụng quá nhiều font-weight khác nhau.
 
 ------------------------------------------------------------------------
 
-## 11. Khoảng cách và mật độ thông tin
+## 8. Khoảng cách và mật độ thông tin
 
 Giao diện hiện tại có một số vùng hơi nhiều khoảng trắng.
 
@@ -266,7 +194,7 @@ Cần:
 
 ------------------------------------------------------------------------
 
-## 12. UX Marketplace
+## 9. UX Marketplace
 
 Bổ sung các trải nghiệm cần thiết:
 
@@ -290,7 +218,7 @@ Không làm trang chủ trở nên phức tạp vì các tính năng bổ sung.
 
 ------------------------------------------------------------------------
 
-## 13. Responsive
+## 10. Responsive
 
 Thiết kế đầy đủ cho:
 
@@ -318,7 +246,7 @@ Thiết kế đầy đủ cho:
 
 ------------------------------------------------------------------------
 
-## 14. Accessibility
+## 11. Accessibility
 
 -   Contrast màu chữ đạt mức dễ đọc.
 -   Không dùng màu sắc làm tín hiệu duy nhất.
@@ -329,7 +257,7 @@ Thiết kế đầy đủ cho:
 
 ------------------------------------------------------------------------
 
-## 15. Nguyên tắc thiết kế
+## 12. Nguyên tắc thiết kế
 
 Phong cách mong muốn:
 
@@ -348,7 +276,7 @@ Tất Tần Tật phải giữ được nhận diện riêng thông qua:
 
 ------------------------------------------------------------------------
 
-## 16. Yêu cầu triển khai
+## 13. Yêu cầu triển khai
 
 Khi chỉnh sửa source code hiện tại:
 

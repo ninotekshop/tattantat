@@ -55,7 +55,7 @@ export function Footer() {
           {/* COL 1: BRAND */}
           <div className="footer-col brand-col">
             <Link href="/" className="footer-logo-link">
-              <img src="/assets/logo.png" alt="Tất Tần Tật" className="footer-logo" />
+              <img src="/assets/logo.png" alt="Tất Tần Tật - Mua bán mọi thứ, gần bạn" className="footer-logo" />
             </Link>
             <p className="footer-slogan">Mua bán mọi thứ, gần bạn.</p>
             <p className="footer-desc">
@@ -63,13 +63,13 @@ export function Footer() {
             </p>
 
             {/* BỘ CÔNG THƯƠNG BADGE */}
-            <div className="bocongthuong-badge">
+            <Link href="/regulations" className="bocongthuong-badge" style={{ textDecoration: 'none' }}>
               <div className="bct-icon">✓</div>
               <div>
                 <strong>ĐÃ THÔNG BÁO</strong>
                 <span>BỘ CÔNG THƯƠNG</span>
               </div>
-            </div>
+            </Link>
           </div>
 
           {/* COL 2: MUA BÁN */}
@@ -77,9 +77,9 @@ export function Footer() {
             <h4 className="footer-heading">Mua bán</h4>
             <ul className="footer-links">
               <li><Link href="/categories">Danh mục sản phẩm</Link></li>
-              <li><Link href="/">Tin mới đăng</Link></li>
-              <li><Link href="/">Sản phẩm nổi bật</Link></li>
-              <li><Link href="/">Gần bạn (GPS)</Link></li>
+              <li><Link href="/?sort=newest">Tin mới đăng</Link></li>
+              <li><Link href="/?sort=popular">Sản phẩm nổi bật</Link></li>
+              <li><Link href="/?sort=nearby">Gần bạn (GPS)</Link></li>
               <li><Link href="/favorites">Yêu thích</Link></li>
               <li><Link href="/sell" className="highlight-link">Đăng tin miễn phí</Link></li>
             </ul>
@@ -89,12 +89,12 @@ export function Footer() {
           <div className="footer-col">
             <h4 className="footer-heading">Hỗ trợ</h4>
             <ul className="footer-links">
-              <li><Link href="/account">Trung tâm trợ giúp</Link></li>
-              <li><Link href="/sell">Hướng dẫn đăng tin</Link></li>
-              <li><Link href="/">An toàn giao dịch</Link></li>
-              <li><Link href="/">Quy định đăng tin</Link></li>
-              <li><Link href="/">Báo cáo vi phạm</Link></li>
-              <li><Link href="/account">Liên hệ hỗ trợ</Link></li>
+              <li><Link href="/about">Trung tâm trợ giúp</Link></li>
+              <li><Link href="/posting-rules">Hướng dẫn đăng tin</Link></li>
+              <li><Link href="/safety-guide">An toàn giao dịch</Link></li>
+              <li><Link href="/posting-rules">Quy định đăng tin</Link></li>
+              <li><Link href="/dispute-resolution">Báo cáo vi phạm</Link></li>
+              <li><Link href="/about">Liên hệ hỗ trợ</Link></li>
             </ul>
           </div>
 
@@ -102,11 +102,11 @@ export function Footer() {
           <div className="footer-col">
             <h4 className="footer-heading">Về Tất Tần Tật</h4>
             <ul className="footer-links">
-              <li><Link href="/">Giới thiệu</Link></li>
-              <li><Link href="/">Điều khoản sử dụng</Link></li>
-              <li><Link href="/">Chính sách bảo mật</Link></li>
-              <li><Link href="/">Quy chế hoạt động</Link></li>
-              <li><Link href="/">Giải quyết khiếu nại</Link></li>
+              <li><Link href="/about">Giới thiệu</Link></li>
+              <li><Link href="/terms">Điều khoản sử dụng</Link></li>
+              <li><Link href="/privacy">Chính sách bảo mật</Link></li>
+              <li><Link href="/regulations">Quy chế hoạt động</Link></li>
+              <li><Link href="/dispute-resolution">Giải quyết khiếu nại</Link></li>
             </ul>
           </div>
 
@@ -135,10 +135,10 @@ export function Footer() {
             <div className="footer-socials">
               <h5 className="social-heading">Kết nối với chúng tôi</h5>
               <div className="social-icons">
-                <a href="#" aria-label="Facebook" className="social-btn"><FacebookIcon /></a>
-                <a href="#" aria-label="YouTube" className="social-btn"><YoutubeIcon /></a>
-                <a href="#" aria-label="TikTok" className="social-btn"><TiktokIcon /></a>
-                <a href="#" aria-label="Zalo" className="social-btn"><ZaloIcon /></a>
+                <a href="https://facebook.com" target="_blank" rel="noopener noreferrer" aria-label="Facebook" className="social-btn"><FacebookIcon /></a>
+                <a href="https://youtube.com" target="_blank" rel="noopener noreferrer" aria-label="YouTube" className="social-btn"><YoutubeIcon /></a>
+                <a href="https://tiktok.com" target="_blank" rel="noopener noreferrer" aria-label="TikTok" className="social-btn"><TiktokIcon /></a>
+                <a href="https://zalo.me" target="_blank" rel="noopener noreferrer" aria-label="Zalo" className="social-btn"><ZaloIcon /></a>
               </div>
             </div>
           </div>

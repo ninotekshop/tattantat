@@ -1,4 +1,4 @@
-import { Injectable, OnModuleDestroy } from '@nestjs/common';
+import { Injectable, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Pool, PoolClient, QueryResultRow } from 'pg';
 
@@ -6,7 +6,7 @@ const DEFAULT_DATABASE_URL =
   'postgresql://postgres.brabreqaarmuowymfnkl:Zf3Vqufu5lHZycg0@aws-0-ap-southeast-2.pooler.supabase.com:5432/postgres';
 
 @Injectable()
-export class DatabaseService implements OnModuleDestroy {
+export class DatabaseService implements OnModuleInit, OnModuleDestroy {
   private readonly pool: Pool;
 
   constructor(config: ConfigService) {
@@ -31,6 +31,63 @@ export class DatabaseService implements OnModuleDestroy {
     );
 
     this.pool = new Pool({ connectionString, ssl: { rejectUnauthorized: false } });
+  }
+
+  async onModuleInit() {
+    try {
+      await this.query(`
+        CREATE TABLE IF NOT EXISTS banners (
+          id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+          code VARCHAR(50) UNIQUE DEFAULT gen_random_uuid()::text,
+          title VARCHAR(255) NOT NULL,
+          image_url TEXT NOT NULL,
+          position VARCHAR(100) NOT NULL,
+          target_url TEXT NOT NULL DEFAULT '/',
+          expiry_date VARCHAR(50) NOT NULL DEFAULT '2026-12-31',
+          status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
+          created_at TIMESTAMPTZ DEFAULT NOW(),
+          updated_at TIMESTAMPTZ DEFAULT NOW()
+        );
+
+        CREATE TABLE IF NOT EXISTS admin_audit_logs (
+          id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+          actor_id UUID,
+          actor_name VARCHAR(150),
+          action VARCHAR(100) NOT NULL,
+          entity_type VARCHAR(50) NOT NULL,
+          entity_id VARCHAR(100),
+          metadata JSONB,
+          created_at TIMESTAMPTZ DEFAULT NOW()
+        );
+
+        CREATE TABLE IF NOT EXISTS content_reports (
+          id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+          reporter_id UUID NOT NULL,
+          reported_user_id UUID,
+          product_id UUID,
+          reason VARCHAR(80) NOT NULL,
+          details VARCHAR(1000),
+          status VARCHAR(20) DEFAULT 'OPEN',
+          reviewed_by UUID,
+          reviewed_at TIMESTAMPTZ,
+          resolution_note VARCHAR(1000),
+          created_at TIMESTAMPTZ DEFAULT NOW()
+        );
+
+        CREATE TABLE IF NOT EXISTS moderation_audit_logs (
+          id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+          report_id UUID NOT NULL,
+          actor_id UUID NOT NULL,
+          old_status VARCHAR(20) NOT NULL,
+          new_status VARCHAR(20) NOT NULL,
+          note VARCHAR(1000),
+          created_at TIMESTAMPTZ DEFAULT NOW()
+        );
+      `);
+      console.log('[DatabaseService] Admin tables initialized successfully');
+    } catch (err: unknown) {
+      console.warn('[DatabaseService] Table init warning:', err instanceof Error ? err.message : String(err));
+    }
   }
 
   query<T extends QueryResultRow>(text: string, values: unknown[] = []) {
