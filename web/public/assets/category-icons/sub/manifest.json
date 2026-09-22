@@ -1,0 +1,1142 @@
+[
+  {
+    "parent": "Nhà đất",
+    "parent_slug": "nha-dat",
+    "name": "Căn hộ / Chung cư",
+    "slug": "can-ho-chung-cu",
+    "file": "nha-dat/can-ho-chung-cu.png",
+    "semantic_icon": "building",
+    "size": "512x512",
+    "background": "transparent"
+  },
+  {
+    "parent": "Nhà đất",
+    "parent_slug": "nha-dat",
+    "name": "Nhà ở",
+    "slug": "nha-o",
+    "file": "nha-dat/nha-o.png",
+    "semantic_icon": "home",
+    "size": "512x512",
+    "background": "transparent"
+  },
+  {
+    "parent": "Nhà đất",
+    "parent_slug": "nha-dat",
+    "name": "Đất",
+    "slug": "dat",
+    "file": "nha-dat/dat.png",
+    "semantic_icon": "map-marker",
+    "size": "512x512",
+    "background": "transparent"
+  },
+  {
+    "parent": "Nhà đất",
+    "parent_slug": "nha-dat",
+    "name": "Phòng trọ",
+    "slug": "phong-tro",
+    "file": "nha-dat/phong-tro.png",
+    "semantic_icon": "bed",
+    "size": "512x512",
+    "background": "transparent"
+  },
+  {
+    "parent": "Nhà đất",
+    "parent_slug": "nha-dat",
+    "name": "Văn phòng",
+    "slug": "van-phong",
+    "file": "nha-dat/van-phong.png",
+    "semantic_icon": "building-o",
+    "size": "512x512",
+    "background": "transparent"
+  },
+  {
+    "parent": "Nhà đất",
+    "parent_slug": "nha-dat",
+    "name": "Mặt bằng kinh doanh",
+    "slug": "mat-bang-kinh-doanh",
+    "file": "nha-dat/mat-bang-kinh-doanh.png",
+    "semantic_icon": "shopping-bag",
+    "size": "512x512",
+    "background": "transparent"
+  },
+  {
+    "parent": "Nhà đất",
+    "parent_slug": "nha-dat",
+    "name": "Kho / Xưởng",
+    "slug": "kho-xuang",
+    "file": "nha-dat/kho-xuang.png",
+    "semantic_icon": "archive",
+    "size": "512x512",
+    "background": "transparent"
+  },
+  {
+    "parent": "Nhà đất",
+    "parent_slug": "nha-dat",
+    "name": "BĐS khác",
+    "slug": "bds-khac",
+    "file": "nha-dat/bds-khac.png",
+    "semantic_icon": "map",
+    "size": "512x512",
+    "background": "transparent"
+  },
+  {
+    "parent": "Xe cộ",
+    "parent_slug": "xe-co",
+    "name": "Ô tô",
+    "slug": "o-to",
+    "file": "xe-co/o-to.png",
+    "semantic_icon": "car",
+    "size": "512x512",
+    "background": "transparent"
+  },
+  {
+    "parent": "Xe cộ",
+    "parent_slug": "xe-co",
+    "name": "Xe máy",
+    "slug": "xe-may",
+    "file": "xe-co/xe-may.png",
+    "semantic_icon": "motorcycle",
+    "size": "512x512",
+    "background": "transparent"
+  },
+  {
+    "parent": "Xe cộ",
+    "parent_slug": "xe-co",
+    "name": "Xe đạp",
+    "slug": "xe-dap",
+    "file": "xe-co/xe-dap.png",
+    "semantic_icon": "bicycle",
+    "size": "512x512",
+    "background": "transparent"
+  },
+  {
+    "parent": "Xe cộ",
+    "parent_slug": "xe-co",
+    "name": "Xe tải & Xe chuyên dụng",
+    "slug": "xe-tai-chuyen-dung",
+    "file": "xe-co/xe-tai-chuyen-dung.png",
+    "semantic_icon": "truck",
+    "size": "512x512",
+    "background": "transparent"
+  },
+  {
+    "parent": "Xe cộ",
+    "parent_slug": "xe-co",
+    "name": "Phụ tùng & Phụ kiện xe",
+    "slug": "phu-tung-phu-kien-xe",
+    "file": "xe-co/phu-tung-phu-kien-xe.png",
+    "semantic_icon": "cogs",
+    "size": "512x512",
+    "background": "transparent"
+  },
+  {
+    "parent": "Xe cộ",
+    "parent_slug": "xe-co",
+    "name": "Phương tiện khác",
+    "slug": "phuong-tien-khac",
+    "file": "xe-co/phuong-tien-khac.png",
+    "semantic_icon": "taxi",
+    "size": "512x512",
+    "background": "transparent"
+  },
+  {
+    "parent": "Đồ công nghệ",
+    "parent_slug": "do-cong-nghe",
+    "name": "Điện thoại",
+    "slug": "dien-thoai",
+    "file": "do-cong-nghe/dien-thoai.png",
+    "semantic_icon": "mobile",
+    "size": "512x512",
+    "background": "transparent"
+  },
+  {
+    "parent": "Đồ công nghệ",
+    "parent_slug": "do-cong-nghe",
+    "name": "Máy tính bảng",
+    "slug": "may-tinh-bang",
+    "file": "do-cong-nghe/may-tinh-bang.png",
+    "semantic_icon": "tablet",
+    "size": "512x512",
+    "background": "transparent"
+  },
+  {
+    "parent": "Đồ công nghệ",
+    "parent_slug": "do-cong-nghe",
+    "name": "Laptop",
+    "slug": "laptop",
+    "file": "do-cong-nghe/laptop.png",
+    "semantic_icon": "laptop",
+    "size": "512x512",
+    "background": "transparent"
+  },
+  {
+    "parent": "Đồ công nghệ",
+    "parent_slug": "do-cong-nghe",
+    "name": "Máy tính để bàn",
+    "slug": "may-tinh-de-ban",
+    "file": "do-cong-nghe/may-tinh-de-ban.png",
+    "semantic_icon": "desktop",
+    "size": "512x512",
+    "background": "transparent"
+  },
+  {
+    "parent": "Đồ công nghệ",
+    "parent_slug": "do-cong-nghe",
+    "name": "Máy ảnh & Máy quay",
+    "slug": "may-anh-may-quay",
+    "file": "do-cong-nghe/may-anh-may-quay.png",
+    "semantic_icon": "camera",
+    "size": "512x512",
+    "background": "transparent"
+  },
+  {
+    "parent": "Đồ công nghệ",
+    "parent_slug": "do-cong-nghe",
+    "name": "TV & Âm thanh",
+    "slug": "tv-am-thanh",
+    "file": "do-cong-nghe/tv-am-thanh.png",
+    "semantic_icon": "television",
+    "size": "512x512",
+    "background": "transparent"
+  },
+  {
+    "parent": "Đồ công nghệ",
+    "parent_slug": "do-cong-nghe",
+    "name": "Thiết bị chơi game",
+    "slug": "thiet-bi-choi-game",
+    "file": "do-cong-nghe/thiet-bi-choi-game.png",
+    "semantic_icon": "gamepad",
+    "size": "512x512",
+    "background": "transparent"
+  },
+  {
+    "parent": "Đồ công nghệ",
+    "parent_slug": "do-cong-nghe",
+    "name": "Thiết bị đeo thông minh",
+    "slug": "thiet-bi-deo-thong-minh",
+    "file": "do-cong-nghe/thiet-bi-deo-thong-minh.png",
+    "semantic_icon": "clock-o",
+    "size": "512x512",
+    "background": "transparent"
+  },
+  {
+    "parent": "Đồ công nghệ",
+    "parent_slug": "do-cong-nghe",
+    "name": "Phụ kiện",
+    "slug": "phu-kien-tech",
+    "file": "do-cong-nghe/phu-kien-tech.png",
+    "semantic_icon": "headphones",
+    "size": "512x512",
+    "background": "transparent"
+  },
+  {
+    "parent": "Đồ công nghệ",
+    "parent_slug": "do-cong-nghe",
+    "name": "Linh kiện",
+    "slug": "linh-kien-tech",
+    "file": "do-cong-nghe/linh-kien-tech.png",
+    "semantic_icon": "microchip",
+    "size": "512x512",
+    "background": "transparent"
+  },
+  {
+    "parent": "Nhà cửa & Đời sống",
+    "parent_slug": "nha-cua-doi-song",
+    "name": "Điện lạnh",
+    "slug": "dien-lanh",
+    "file": "nha-cua-doi-song/dien-lanh.png",
+    "semantic_icon": "snowflake-o",
+    "size": "512x512",
+    "background": "transparent"
+  },
+  {
+    "parent": "Nhà cửa & Đời sống",
+    "parent_slug": "nha-cua-doi-song",
+    "name": "Bếp & Đồ điện nhà bếp",
+    "slug": "bep-dien-nha-bep",
+    "file": "nha-cua-doi-song/bep-dien-nha-bep.png",
+    "semantic_icon": "fire",
+    "size": "512x512",
+    "background": "transparent"
+  },
+  {
+    "parent": "Nhà cửa & Đời sống",
+    "parent_slug": "nha-cua-doi-song",
+    "name": "Dụng cụ nhà bếp",
+    "slug": "dung-cu-nha-bep",
+    "file": "nha-cua-doi-song/dung-cu-nha-bep.png",
+    "semantic_icon": "cutlery",
+    "size": "512x512",
+    "background": "transparent"
+  },
+  {
+    "parent": "Nhà cửa & Đời sống",
+    "parent_slug": "nha-cua-doi-song",
+    "name": "Nội thất",
+    "slug": "noi-that",
+    "file": "nha-cua-doi-song/noi-that.png",
+    "semantic_icon": "home",
+    "size": "512x512",
+    "background": "transparent"
+  },
+  {
+    "parent": "Nhà cửa & Đời sống",
+    "parent_slug": "nha-cua-doi-song",
+    "name": "Giường / Chăn / Ga / Gối / Nệm",
+    "slug": "giuong-nem",
+    "file": "nha-cua-doi-song/giuong-nem.png",
+    "semantic_icon": "bed",
+    "size": "512x512",
+    "background": "transparent"
+  },
+  {
+    "parent": "Nhà cửa & Đời sống",
+    "parent_slug": "nha-cua-doi-song",
+    "name": "Thiết bị vệ sinh & Nhà tắm",
+    "slug": "thiet-bi-ve-sinh-nha-tam",
+    "file": "nha-cua-doi-song/thiet-bi-ve-sinh-nha-tam.png",
+    "semantic_icon": "bath",
+    "size": "512x512",
+    "background": "transparent"
+  },
+  {
+    "parent": "Nhà cửa & Đời sống",
+    "parent_slug": "nha-cua-doi-song",
+    "name": "Quạt & Thiết bị không khí",
+    "slug": "quat-thiet-bi-khong-khi",
+    "file": "nha-cua-doi-song/quat-thiet-bi-khong-khi.png",
+    "semantic_icon": "refresh",
+    "size": "512x512",
+    "background": "transparent"
+  },
+  {
+    "parent": "Nhà cửa & Đời sống",
+    "parent_slug": "nha-cua-doi-song",
+    "name": "Đèn",
+    "slug": "den-chieu-sang",
+    "file": "nha-cua-doi-song/den-chieu-sang.png",
+    "semantic_icon": "lightbulb-o",
+    "size": "512x512",
+    "background": "transparent"
+  },
+  {
+    "parent": "Nhà cửa & Đời sống",
+    "parent_slug": "nha-cua-doi-song",
+    "name": "Trang trí nhà cửa",
+    "slug": "trang-tri-nha-cua",
+    "file": "nha-cua-doi-song/trang-tri-nha-cua.png",
+    "semantic_icon": "picture-o",
+    "size": "512x512",
+    "background": "transparent"
+  },
+  {
+    "parent": "Nhà cửa & Đời sống",
+    "parent_slug": "nha-cua-doi-song",
+    "name": "Cây cảnh & Sân vườn",
+    "slug": "cay-canh-san-vuon",
+    "file": "nha-cua-doi-song/cay-canh-san-vuon.png",
+    "semantic_icon": "leaf",
+    "size": "512x512",
+    "background": "transparent"
+  },
+  {
+    "parent": "Nhà cửa & Đời sống",
+    "parent_slug": "nha-cua-doi-song",
+    "name": "Đồ gia dụng khác",
+    "slug": "do-gia-dung-khac",
+    "file": "nha-cua-doi-song/do-gia-dung-khac.png",
+    "semantic_icon": "home",
+    "size": "512x512",
+    "background": "transparent"
+  },
+  {
+    "parent": "Thời trang & Cá nhân",
+    "parent_slug": "thoi-trang-ca-nhan",
+    "name": "Quần áo nam",
+    "slug": "quan-ao-nam",
+    "file": "thoi-trang-ca-nhan/quan-ao-nam.png",
+    "semantic_icon": "male",
+    "size": "512x512",
+    "background": "transparent"
+  },
+  {
+    "parent": "Thời trang & Cá nhân",
+    "parent_slug": "thoi-trang-ca-nhan",
+    "name": "Quần áo nữ",
+    "slug": "quan-ao-nu",
+    "file": "thoi-trang-ca-nhan/quan-ao-nu.png",
+    "semantic_icon": "female",
+    "size": "512x512",
+    "background": "transparent"
+  },
+  {
+    "parent": "Thời trang & Cá nhân",
+    "parent_slug": "thoi-trang-ca-nhan",
+    "name": "Giày dép",
+    "slug": "giay-dep",
+    "file": "thoi-trang-ca-nhan/giay-dep.png",
+    "semantic_icon": "shopping-bag",
+    "size": "512x512",
+    "background": "transparent"
+  },
+  {
+    "parent": "Thời trang & Cá nhân",
+    "parent_slug": "thoi-trang-ca-nhan",
+    "name": "Túi xách / Balo / Vali",
+    "slug": "tui-xach-balo-vali",
+    "file": "thoi-trang-ca-nhan/tui-xach-balo-vali.png",
+    "semantic_icon": "suitcase",
+    "size": "512x512",
+    "background": "transparent"
+  },
+  {
+    "parent": "Thời trang & Cá nhân",
+    "parent_slug": "thoi-trang-ca-nhan",
+    "name": "Đồng hồ",
+    "slug": "dong-ho",
+    "file": "thoi-trang-ca-nhan/dong-ho.png",
+    "semantic_icon": "clock-o",
+    "size": "512x512",
+    "background": "transparent"
+  },
+  {
+    "parent": "Thời trang & Cá nhân",
+    "parent_slug": "thoi-trang-ca-nhan",
+    "name": "Trang sức",
+    "slug": "trang-suc",
+    "file": "thoi-trang-ca-nhan/trang-suc.png",
+    "semantic_icon": "diamond",
+    "size": "512x512",
+    "background": "transparent"
+  },
+  {
+    "parent": "Thời trang & Cá nhân",
+    "parent_slug": "thoi-trang-ca-nhan",
+    "name": "Nước hoa",
+    "slug": "nuoc-hoa",
+    "file": "thoi-trang-ca-nhan/nuoc-hoa.png",
+    "semantic_icon": "tint",
+    "size": "512x512",
+    "background": "transparent"
+  },
+  {
+    "parent": "Thời trang & Cá nhân",
+    "parent_slug": "thoi-trang-ca-nhan",
+    "name": "Mỹ phẩm",
+    "slug": "my-pham",
+    "file": "thoi-trang-ca-nhan/my-pham.png",
+    "semantic_icon": "magic",
+    "size": "512x512",
+    "background": "transparent"
+  },
+  {
+    "parent": "Thời trang & Cá nhân",
+    "parent_slug": "thoi-trang-ca-nhan",
+    "name": "Phụ kiện thời trang",
+    "slug": "phu-kien-thoi-trang",
+    "file": "thoi-trang-ca-nhan/phu-kien-thoi-trang.png",
+    "semantic_icon": "star",
+    "size": "512x512",
+    "background": "transparent"
+  },
+  {
+    "parent": "Mẹ & Bé",
+    "parent_slug": "me-va-be",
+    "name": "Đồ cho bé",
+    "slug": "do-cho-be",
+    "file": "me-va-be/do-cho-be.png",
+    "semantic_icon": "child",
+    "size": "512x512",
+    "background": "transparent"
+  },
+  {
+    "parent": "Mẹ & Bé",
+    "parent_slug": "me-va-be",
+    "name": "Đồ cho mẹ",
+    "slug": "do-cho-me",
+    "file": "me-va-be/do-cho-me.png",
+    "semantic_icon": "female",
+    "size": "512x512",
+    "background": "transparent"
+  },
+  {
+    "parent": "Mẹ & Bé",
+    "parent_slug": "me-va-be",
+    "name": "Xe đẩy / Ghế / Nôi / Cũi",
+    "slug": "xe-day-ghe-noi-cui",
+    "file": "me-va-be/xe-day-ghe-noi-cui.png",
+    "semantic_icon": "child",
+    "size": "512x512",
+    "background": "transparent"
+  },
+  {
+    "parent": "Mẹ & Bé",
+    "parent_slug": "me-va-be",
+    "name": "Đồ chơi",
+    "slug": "do-choi-tre-em",
+    "file": "me-va-be/do-choi-tre-em.png",
+    "semantic_icon": "puzzle-piece",
+    "size": "512x512",
+    "background": "transparent"
+  },
+  {
+    "parent": "Mẹ & Bé",
+    "parent_slug": "me-va-be",
+    "name": "Quần áo trẻ em",
+    "slug": "quan-ao-tre-em",
+    "file": "me-va-be/quan-ao-tre-em.png",
+    "semantic_icon": "child",
+    "size": "512x512",
+    "background": "transparent"
+  },
+  {
+    "parent": "Mẹ & Bé",
+    "parent_slug": "me-va-be",
+    "name": "Sữa & Đồ ăn cho bé",
+    "slug": "sua-do-an-cho-be",
+    "file": "me-va-be/sua-do-an-cho-be.png",
+    "semantic_icon": "spoon",
+    "size": "512x512",
+    "background": "transparent"
+  },
+  {
+    "parent": "Mẹ & Bé",
+    "parent_slug": "me-va-be",
+    "name": "Khác",
+    "slug": "me-be-khac",
+    "file": "me-va-be/me-be-khac.png",
+    "semantic_icon": "heart",
+    "size": "512x512",
+    "background": "transparent"
+  },
+  {
+    "parent": "Thể thao & Giải trí",
+    "parent_slug": "the-thao-giai-tri",
+    "name": "Thể thao",
+    "slug": "the-thao",
+    "file": "the-thao-giai-tri/the-thao.png",
+    "semantic_icon": "futbol-o",
+    "size": "512x512",
+    "background": "transparent"
+  },
+  {
+    "parent": "Thể thao & Giải trí",
+    "parent_slug": "the-thao-giai-tri",
+    "name": "Dã ngoại",
+    "slug": "da-ngoai",
+    "file": "the-thao-giai-tri/da-ngoai.png",
+    "semantic_icon": "tree",
+    "size": "512x512",
+    "background": "transparent"
+  },
+  {
+    "parent": "Thể thao & Giải trí",
+    "parent_slug": "the-thao-giai-tri",
+    "name": "Nhạc cụ",
+    "slug": "nhac-cu",
+    "file": "the-thao-giai-tri/nhac-cu.png",
+    "semantic_icon": "music",
+    "size": "512x512",
+    "background": "transparent"
+  },
+  {
+    "parent": "Thể thao & Giải trí",
+    "parent_slug": "the-thao-giai-tri",
+    "name": "Sách / Truyện / Tạp chí",
+    "slug": "sach-truyen-tap-chi",
+    "file": "the-thao-giai-tri/sach-truyen-tap-chi.png",
+    "semantic_icon": "book",
+    "size": "512x512",
+    "background": "transparent"
+  },
+  {
+    "parent": "Thể thao & Giải trí",
+    "parent_slug": "the-thao-giai-tri",
+    "name": "Đồ sưu tầm",
+    "slug": "do-suu-tam",
+    "file": "the-thao-giai-tri/do-suu-tam.png",
+    "semantic_icon": "trophy",
+    "size": "512x512",
+    "background": "transparent"
+  },
+  {
+    "parent": "Thể thao & Giải trí",
+    "parent_slug": "the-thao-giai-tri",
+    "name": "Game & Phụ kiện",
+    "slug": "game-phu-kien",
+    "file": "the-thao-giai-tri/game-phu-kien.png",
+    "semantic_icon": "gamepad",
+    "size": "512x512",
+    "background": "transparent"
+  },
+  {
+    "parent": "Thể thao & Giải trí",
+    "parent_slug": "the-thao-giai-tri",
+    "name": "Vé",
+    "slug": "ve-xem-phim-sukiens",
+    "file": "the-thao-giai-tri/ve-xem-phim-sukiens.png",
+    "semantic_icon": "ticket",
+    "size": "512x512",
+    "background": "transparent"
+  },
+  {
+    "parent": "Thể thao & Giải trí",
+    "parent_slug": "the-thao-giai-tri",
+    "name": "Sở thích khác",
+    "slug": "so-thich-khac",
+    "file": "the-thao-giai-tri/so-thich-khac.png",
+    "semantic_icon": "star",
+    "size": "512x512",
+    "background": "transparent"
+  },
+  {
+    "parent": "Thú cưng",
+    "parent_slug": "thu-cung",
+    "name": "Chó",
+    "slug": "cho",
+    "file": "thu-cung/cho.png",
+    "semantic_icon": "paw",
+    "size": "512x512",
+    "background": "transparent"
+  },
+  {
+    "parent": "Thú cưng",
+    "parent_slug": "thu-cung",
+    "name": "Mèo",
+    "slug": "meo",
+    "file": "thu-cung/meo.png",
+    "semantic_icon": "paw",
+    "size": "512x512",
+    "background": "transparent"
+  },
+  {
+    "parent": "Thú cưng",
+    "parent_slug": "thu-cung",
+    "name": "Chim",
+    "slug": "chim",
+    "file": "thu-cung/chim.png",
+    "semantic_icon": "twitter",
+    "size": "512x512",
+    "background": "transparent"
+  },
+  {
+    "parent": "Thú cưng",
+    "parent_slug": "thu-cung",
+    "name": "Cá cảnh",
+    "slug": "ca-canh",
+    "file": "thu-cung/ca-canh.png",
+    "semantic_icon": "tint",
+    "size": "512x512",
+    "background": "transparent"
+  },
+  {
+    "parent": "Thú cưng",
+    "parent_slug": "thu-cung",
+    "name": "Thú cưng khác",
+    "slug": "thu-cung-khac",
+    "file": "thu-cung/thu-cung-khac.png",
+    "semantic_icon": "paw",
+    "size": "512x512",
+    "background": "transparent"
+  },
+  {
+    "parent": "Thú cưng",
+    "parent_slug": "thu-cung",
+    "name": "Thức ăn",
+    "slug": "thuc-an-thu-cung",
+    "file": "thu-cung/thuc-an-thu-cung.png",
+    "semantic_icon": "cutlery",
+    "size": "512x512",
+    "background": "transparent"
+  },
+  {
+    "parent": "Thú cưng",
+    "parent_slug": "thu-cung",
+    "name": "Phụ kiện",
+    "slug": "phu-kien-thu-cung",
+    "file": "thu-cung/phu-kien-thu-cung.png",
+    "semantic_icon": "tag",
+    "size": "512x512",
+    "background": "transparent"
+  },
+  {
+    "parent": "Thú cưng",
+    "parent_slug": "thu-cung",
+    "name": "Dịch vụ thú cưng",
+    "slug": "dich-vu-thu-cung",
+    "file": "thu-cung/dich-vu-thu-cung.png",
+    "semantic_icon": "paw",
+    "size": "512x512",
+    "background": "transparent"
+  },
+  {
+    "parent": "Việc làm",
+    "parent_slug": "viec-lam",
+    "name": "Bán hàng",
+    "slug": "ban-hang-viec",
+    "file": "viec-lam/ban-hang-viec.png",
+    "semantic_icon": "shopping-cart",
+    "size": "512x512",
+    "background": "transparent"
+  },
+  {
+    "parent": "Việc làm",
+    "parent_slug": "viec-lam",
+    "name": "Kinh doanh",
+    "slug": "kinh-doanh-viec",
+    "file": "viec-lam/kinh-doanh-viec.png",
+    "semantic_icon": "line-chart",
+    "size": "512x512",
+    "background": "transparent"
+  },
+  {
+    "parent": "Việc làm",
+    "parent_slug": "viec-lam",
+    "name": "Văn phòng",
+    "slug": "van-phong-viec",
+    "file": "viec-lam/van-phong-viec.png",
+    "semantic_icon": "briefcase",
+    "size": "512x512",
+    "background": "transparent"
+  },
+  {
+    "parent": "Việc làm",
+    "parent_slug": "viec-lam",
+    "name": "Kế toán",
+    "slug": "ke-toan-viec",
+    "file": "viec-lam/ke-toan-viec.png",
+    "semantic_icon": "calculator",
+    "size": "512x512",
+    "background": "transparent"
+  },
+  {
+    "parent": "Việc làm",
+    "parent_slug": "viec-lam",
+    "name": "IT / Công nghệ",
+    "slug": "it-cong-nghe-viec",
+    "file": "viec-lam/it-cong-nghe-viec.png",
+    "semantic_icon": "code",
+    "size": "512x512",
+    "background": "transparent"
+  },
+  {
+    "parent": "Việc làm",
+    "parent_slug": "viec-lam",
+    "name": "Marketing",
+    "slug": "marketing-viec",
+    "file": "viec-lam/marketing-viec.png",
+    "semantic_icon": "bullhorn",
+    "size": "512x512",
+    "background": "transparent"
+  },
+  {
+    "parent": "Việc làm",
+    "parent_slug": "viec-lam",
+    "name": "Thiết kế",
+    "slug": "thiet-ke-viec",
+    "file": "viec-lam/thiet-ke-viec.png",
+    "semantic_icon": "paint-brush",
+    "size": "512x512",
+    "background": "transparent"
+  },
+  {
+    "parent": "Việc làm",
+    "parent_slug": "viec-lam",
+    "name": "Nhà hàng / Khách sạn",
+    "slug": "nha-hang-khach-san-viec",
+    "file": "viec-lam/nha-hang-khach-san-viec.png",
+    "semantic_icon": "cutlery",
+    "size": "512x512",
+    "background": "transparent"
+  },
+  {
+    "parent": "Việc làm",
+    "parent_slug": "viec-lam",
+    "name": "Giao hàng / Tài xế",
+    "slug": "giao-hang-tai-xe-viec",
+    "file": "viec-lam/giao-hang-tai-xe-viec.png",
+    "semantic_icon": "motorcycle",
+    "size": "512x512",
+    "background": "transparent"
+  },
+  {
+    "parent": "Việc làm",
+    "parent_slug": "viec-lam",
+    "name": "Lao động phổ thông",
+    "slug": "lao-dong-pho-thong-viec",
+    "file": "viec-lam/lao-dong-pho-thong-viec.png",
+    "semantic_icon": "users",
+    "size": "512x512",
+    "background": "transparent"
+  },
+  {
+    "parent": "Việc làm",
+    "parent_slug": "viec-lam",
+    "name": "Kỹ thuật",
+    "slug": "ky-thuat-viec",
+    "file": "viec-lam/ky-thuat-viec.png",
+    "semantic_icon": "wrench",
+    "size": "512x512",
+    "background": "transparent"
+  },
+  {
+    "parent": "Việc làm",
+    "parent_slug": "viec-lam",
+    "name": "Việc làm khác",
+    "slug": "viec-lam-khac",
+    "file": "viec-lam/viec-lam-khac.png",
+    "semantic_icon": "user-plus",
+    "size": "512x512",
+    "background": "transparent"
+  },
+  {
+    "parent": "Dịch vụ",
+    "parent_slug": "dich-vu",
+    "name": "Sửa chữa",
+    "slug": "sua-chua-dich-vu",
+    "file": "dich-vu/sua-chua-dich-vu.png",
+    "semantic_icon": "wrench",
+    "size": "512x512",
+    "background": "transparent"
+  },
+  {
+    "parent": "Dịch vụ",
+    "parent_slug": "dich-vu",
+    "name": "Vận chuyển",
+    "slug": "van-chuyen-dich-vu",
+    "file": "dich-vu/van-chuyen-dich-vu.png",
+    "semantic_icon": "truck",
+    "size": "512x512",
+    "background": "transparent"
+  },
+  {
+    "parent": "Dịch vụ",
+    "parent_slug": "dich-vu",
+    "name": "Thuê xe",
+    "slug": "thue-xe-dich-vu",
+    "file": "dich-vu/thue-xe-dich-vu.png",
+    "semantic_icon": "car",
+    "size": "512x512",
+    "background": "transparent"
+  },
+  {
+    "parent": "Dịch vụ",
+    "parent_slug": "dich-vu",
+    "name": "Du lịch",
+    "slug": "du-lich-dich-vu",
+    "file": "dich-vu/du-lich-dich-vu.png",
+    "semantic_icon": "plane",
+    "size": "512x512",
+    "background": "transparent"
+  },
+  {
+    "parent": "Dịch vụ",
+    "parent_slug": "dich-vu",
+    "name": "Lưu trú",
+    "slug": "luu-tru-dich-vu",
+    "file": "dich-vu/luu-tru-dich-vu.png",
+    "semantic_icon": "bed",
+    "size": "512x512",
+    "background": "transparent"
+  },
+  {
+    "parent": "Dịch vụ",
+    "parent_slug": "dich-vu",
+    "name": "Gia đình",
+    "slug": "gia-dinh-dich-vu",
+    "file": "dich-vu/gia-dinh-dich-vu.png",
+    "semantic_icon": "home",
+    "size": "512x512",
+    "background": "transparent"
+  },
+  {
+    "parent": "Dịch vụ",
+    "parent_slug": "dich-vu",
+    "name": "Vệ sinh",
+    "slug": "ve-sinh-dich-vu",
+    "file": "dich-vu/ve-sinh-dich-vu.png",
+    "semantic_icon": "shower",
+    "size": "512x512",
+    "background": "transparent"
+  },
+  {
+    "parent": "Dịch vụ",
+    "parent_slug": "dich-vu",
+    "name": "Làm đẹp",
+    "slug": "lam-dep-dich-vu",
+    "file": "dich-vu/lam-dep-dich-vu.png",
+    "semantic_icon": "magic",
+    "size": "512x512",
+    "background": "transparent"
+  },
+  {
+    "parent": "Dịch vụ",
+    "parent_slug": "dich-vu",
+    "name": "Chụp ảnh / Video",
+    "slug": "chup-anh-video-dich-vu",
+    "file": "dich-vu/chup-anh-video-dich-vu.png",
+    "semantic_icon": "camera",
+    "size": "512x512",
+    "background": "transparent"
+  },
+  {
+    "parent": "Dịch vụ",
+    "parent_slug": "dich-vu",
+    "name": "Thiết kế / Công nghệ",
+    "slug": "thiet-ke-cong-nghe-dich-vu",
+    "file": "dich-vu/thiet-ke-cong-nghe-dich-vu.png",
+    "semantic_icon": "laptop",
+    "size": "512x512",
+    "background": "transparent"
+  },
+  {
+    "parent": "Dịch vụ",
+    "parent_slug": "dich-vu",
+    "name": "Giáo dục",
+    "slug": "giao-duc-dich-vu",
+    "file": "dich-vu/giao-duc-dich-vu.png",
+    "semantic_icon": "graduation-cap",
+    "size": "512x512",
+    "background": "transparent"
+  },
+  {
+    "parent": "Dịch vụ",
+    "parent_slug": "dich-vu",
+    "name": "Tổ chức sự kiện",
+    "slug": "to-chuc-su-kien-dich-vu",
+    "file": "dich-vu/to-chuc-su-kien-dich-vu.png",
+    "semantic_icon": "calendar",
+    "size": "512x512",
+    "background": "transparent"
+  },
+  {
+    "parent": "Dịch vụ",
+    "parent_slug": "dich-vu",
+    "name": "Dịch vụ khác",
+    "slug": "dich-vu-khac",
+    "file": "dich-vu/dich-vu-khac.png",
+    "semantic_icon": "handshake-o",
+    "size": "512x512",
+    "background": "transparent"
+  },
+  {
+    "parent": "Thực phẩm",
+    "parent_slug": "thuc-pham",
+    "name": "Đồ ăn",
+    "slug": "do-an",
+    "file": "thuc-pham/do-an.png",
+    "semantic_icon": "cutlery",
+    "size": "512x512",
+    "background": "transparent"
+  },
+  {
+    "parent": "Thực phẩm",
+    "parent_slug": "thuc-pham",
+    "name": "Đồ uống",
+    "slug": "do-uong",
+    "file": "thuc-pham/do-uong.png",
+    "semantic_icon": "coffee",
+    "size": "512x512",
+    "background": "transparent"
+  },
+  {
+    "parent": "Thực phẩm",
+    "parent_slug": "thuc-pham",
+    "name": "Đặc sản",
+    "slug": "dac-san",
+    "file": "thuc-pham/dac-san.png",
+    "semantic_icon": "gift",
+    "size": "512x512",
+    "background": "transparent"
+  },
+  {
+    "parent": "Thực phẩm",
+    "parent_slug": "thuc-pham",
+    "name": "Rau củ / Trái cây",
+    "slug": "rau-cu-trai-cay",
+    "file": "thuc-pham/rau-cu-trai-cay.png",
+    "semantic_icon": "leaf",
+    "size": "512x512",
+    "background": "transparent"
+  },
+  {
+    "parent": "Thực phẩm",
+    "parent_slug": "thuc-pham",
+    "name": "Thực phẩm tươi sống",
+    "slug": "thuc-pham-tuoi-song",
+    "file": "thuc-pham/thuc-pham-tuoi-song.png",
+    "semantic_icon": "shopping-basket",
+    "size": "512x512",
+    "background": "transparent"
+  },
+  {
+    "parent": "Thực phẩm",
+    "parent_slug": "thuc-pham",
+    "name": "Thực phẩm khô",
+    "slug": "thuc-pham-kho",
+    "file": "thuc-pham/thuc-pham-kho.png",
+    "semantic_icon": "archive",
+    "size": "512x512",
+    "background": "transparent"
+  },
+  {
+    "parent": "Thực phẩm",
+    "parent_slug": "thuc-pham",
+    "name": "Đồ handmade",
+    "slug": "do-handmade",
+    "file": "thuc-pham/do-handmade.png",
+    "semantic_icon": "birthday-cake",
+    "size": "512x512",
+    "background": "transparent"
+  },
+  {
+    "parent": "Thực phẩm",
+    "parent_slug": "thuc-pham",
+    "name": "Khác",
+    "slug": "thuc-pham-khac",
+    "file": "thuc-pham/thuc-pham-khac.png",
+    "semantic_icon": "shopping-basket",
+    "size": "512x512",
+    "background": "transparent"
+  },
+  {
+    "parent": "Máy móc & Công nghiệp",
+    "parent_slug": "may-moc-cong-nghiep",
+    "name": "Máy móc công nghiệp",
+    "slug": "may-moc-cong-nghiep",
+    "file": "may-moc-cong-nghiep/may-moc-cong-nghiep.png",
+    "semantic_icon": "cogs",
+    "size": "512x512",
+    "background": "transparent"
+  },
+  {
+    "parent": "Máy móc & Công nghiệp",
+    "parent_slug": "may-moc-cong-nghiep",
+    "name": "Máy móc nông nghiệp",
+    "slug": "may-moc-nong-nghiep",
+    "file": "may-moc-cong-nghiep/may-moc-nong-nghiep.png",
+    "semantic_icon": "truck",
+    "size": "512x512",
+    "background": "transparent"
+  },
+  {
+    "parent": "Máy móc & Công nghiệp",
+    "parent_slug": "may-moc-cong-nghiep",
+    "name": "Thiết bị xây dựng",
+    "slug": "thiet-bi-xay-dung",
+    "file": "may-moc-cong-nghiep/thiet-bi-xay-dung.png",
+    "semantic_icon": "building",
+    "size": "512x512",
+    "background": "transparent"
+  },
+  {
+    "parent": "Máy móc & Công nghiệp",
+    "parent_slug": "may-moc-cong-nghiep",
+    "name": "Dụng cụ cơ khí",
+    "slug": "dung-cu-co-khi",
+    "file": "may-moc-cong-nghiep/dung-cu-co-khi.png",
+    "semantic_icon": "wrench",
+    "size": "512x512",
+    "background": "transparent"
+  },
+  {
+    "parent": "Máy móc & Công nghiệp",
+    "parent_slug": "may-moc-cong-nghiep",
+    "name": "Thiết bị nhà hàng",
+    "slug": "thiet-bi-nha-hang",
+    "file": "may-moc-cong-nghiep/thiet-bi-nha-hang.png",
+    "semantic_icon": "cutlery",
+    "size": "512x512",
+    "background": "transparent"
+  },
+  {
+    "parent": "Máy móc & Công nghiệp",
+    "parent_slug": "may-moc-cong-nghiep",
+    "name": "Thiết bị cửa hàng",
+    "slug": "thiet-bi-cua-hang",
+    "file": "may-moc-cong-nghiep/thiet-bi-cua-hang.png",
+    "semantic_icon": "shopping-cart",
+    "size": "512x512",
+    "background": "transparent"
+  },
+  {
+    "parent": "Máy móc & Công nghiệp",
+    "parent_slug": "may-moc-cong-nghiep",
+    "name": "Thiết bị văn phòng",
+    "slug": "thiet-bi-van-phong",
+    "file": "may-moc-cong-nghiep/thiet-bi-van-phong.png",
+    "semantic_icon": "print",
+    "size": "512x512",
+    "background": "transparent"
+  },
+  {
+    "parent": "Máy móc & Công nghiệp",
+    "parent_slug": "may-moc-cong-nghiep",
+    "name": "Nguyên vật liệu",
+    "slug": "nguyen-vat-lieu",
+    "file": "may-moc-cong-nghiep/nguyen-vat-lieu.png",
+    "semantic_icon": "cubes",
+    "size": "512x512",
+    "background": "transparent"
+  },
+  {
+    "parent": "Máy móc & Công nghiệp",
+    "parent_slug": "may-moc-cong-nghiep",
+    "name": "Giống cây trồng",
+    "slug": "giong-cay-trong",
+    "file": "may-moc-cong-nghiep/giong-cay-trong.png",
+    "semantic_icon": "leaf",
+    "size": "512x512",
+    "background": "transparent"
+  },
+  {
+    "parent": "Máy móc & Công nghiệp",
+    "parent_slug": "may-moc-cong-nghiep",
+    "name": "Khác",
+    "slug": "may-moc-khac",
+    "file": "may-moc-cong-nghiep/may-moc-khac.png",
+    "semantic_icon": "cog",
+    "size": "512x512",
+    "background": "transparent"
+  },
+  {
+    "parent": "Tặng miễn phí",
+    "parent_slug": "tang-mien-phi",
+    "name": "Đồ gia dụng tặng",
+    "slug": "do-gia-dung-tang",
+    "file": "tang-mien-phi/do-gia-dung-tang.png",
+    "semantic_icon": "gift",
+    "size": "512x512",
+    "background": "transparent"
+  },
+  {
+    "parent": "Tặng miễn phí",
+    "parent_slug": "tang-mien-phi",
+    "name": "Sách & Quần áo tặng",
+    "slug": "sach-quan-ao-tang",
+    "file": "tang-mien-phi/sach-quan-ao-tang.png",
+    "semantic_icon": "book",
+    "size": "512x512",
+    "background": "transparent"
+  },
+  {
+    "parent": "Tặng miễn phí",
+    "parent_slug": "tang-mien-phi",
+    "name": "Thú cưng tặng nuôi",
+    "slug": "thu-cung-cho-nuoi",
+    "file": "tang-mien-phi/thu-cung-cho-nuoi.png",
+    "semantic_icon": "paw",
+    "size": "512x512",
+    "background": "transparent"
+  },
+  {
+    "parent": "Khác",
+    "parent_slug": "khac",
+    "name": "Sản phẩm khác",
+    "slug": "san-pham-khac",
+    "file": "khac/san-pham-khac.png",
+    "semantic_icon": "cube",
+    "size": "512x512",
+    "background": "transparent"
+  }
+]
