@@ -137,6 +137,40 @@ export function MarketplaceHome({ query }: { query: string; group: string; sort:
   const [showSuggestions, setShowSuggestions] = useState(false);
   const categoryScrollRef = useRef<HTMLDivElement>(null);
 
+  // DYNAMIC BANNERS STATE LOADED FROM ADMIN CONSOLE
+  const [activeBanners, setActiveBanners] = useState<{ leftBanner?: string; rightBanner?: string; heroBanner?: string }>({
+    leftBanner: '/assets/banner_right.png',
+    rightBanner: '/assets/banner_right.png',
+    heroBanner: '/assets/hero-dog-banner.png'
+  });
+
+  useEffect(() => {
+    const loadBanners = () => {
+      try {
+        const saved = localStorage.getItem('tattantat_banners');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          const left = parsed.find((b: any) => b.position.includes('Left') && b.status === 'ACTIVE');
+          const right = parsed.find((b: any) => b.position.includes('Right') && b.status === 'ACTIVE');
+          const hero = parsed.find((b: any) => b.position.includes('Hero') && b.status === 'ACTIVE');
+          setActiveBanners({
+            leftBanner: left?.imageUrl,
+            rightBanner: right?.imageUrl,
+            heroBanner: hero?.imageUrl,
+          });
+        }
+      } catch (err) {}
+    };
+
+    loadBanners();
+    window.addEventListener('storage', loadBanners);
+    window.addEventListener('tattantat-banner-change', loadBanners);
+    return () => {
+      window.removeEventListener('storage', loadBanners);
+      window.removeEventListener('tattantat-banner-change', loadBanners);
+    };
+  }, []);
+
   useEffect(() => {
     let cancelled = false;
     async function load() {
@@ -216,22 +250,29 @@ export function MarketplaceHome({ query }: { query: string; group: string; sort:
 
   return (
     <main id="home">
-      {/* BANNER QUẢNG CÁO NẰM NGOÀI PHẠM VI TRANG (TRƯỢT THEO KHI CUỘN) */}
-      <div className="floating-banner left-floating-banner">
-        <Link href="/sell">
-          <img src="/assets/banner_right.png" alt="Quảng cáo Tất Tần Tật" />
-        </Link>
-      </div>
-      <div className="floating-banner right-floating-banner">
-        <Link href="/sell">
-          <img src="/assets/banner_right.png" alt="Quảng cáo Tất Tần Tật" />
-        </Link>
-      </div>
+      {/* BANNER QUẢNG CÁO TRƯỢT 2 BÊN MÉP (TỰ ĐỘNG ĐỒNG BỘ TỪ ADMIN CONSOLE) */}
+      {activeBanners.leftBanner && (
+        <div className="floating-banner left-floating-banner">
+          <Link href="/sell">
+            <img src={activeBanners.leftBanner} alt="Quảng cáo Tất Tần Tật" />
+          </Link>
+        </div>
+      )}
+      {activeBanners.rightBanner && (
+        <div className="floating-banner right-floating-banner">
+          <Link href="/sell">
+            <img src={activeBanners.rightBanner} alt="Quảng cáo Tất Tần Tật" />
+          </Link>
+        </div>
+      )}
 
-      {/* HERO BANNER SÁT MÉP TRÊN */}
+      {/* HERO BANNER SÁT MÉP TRÊN (TỰ ĐỘNG ẨN KHI XÓA TRONG ADMIN) */}
       <section className="hero">
         <div className="shell">
-          <div className="hero-banner-container">
+          <div
+            className="hero-banner-container"
+            style={activeBanners.heroBanner ? { backgroundImage: `url(${activeBanners.heroBanner})` } : { backgroundImage: 'none' }}
+          >
             <div className="hero-banner-bg" />
             <div className="hero-banner-overlay">
               <form className="search-box" onSubmit={handleSearch} style={{ position: 'relative' }}>
@@ -384,7 +425,7 @@ export function MarketplaceHome({ query }: { query: string; group: string; sort:
         </div>
       </section>
 
-      {/* SẢN PHẨM NỔI BẬT KHÔNG CẦN CỘT BÊN PHẢI */}
+      {/* SẢN PHẨM NỔI BẬT */}
       <section className="shell main-grid">
         <div className="main-content" style={{display:'flex', flexDirection:'column', gap: 16, width: '100%'}}>
           <div className="white-card-box">
