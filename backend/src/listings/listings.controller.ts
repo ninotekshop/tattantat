@@ -32,6 +32,7 @@ const envelope=<T>(data:T)=>({success:true,data,message:null,errorCode:null});
 export class ListingTemplatesController {
   constructor(private readonly listings:ListingsService){}
   @Get('listing-categories') categories(){return this.listings.categories();}
+  @Get('categories/:id/schema') categorySchema(@Param('id') id:string){return this.listings.getCategorySchema(id);}
   @Get('categories/:id') category(@Param('id') id:string){return this.listings.category(categoryId(id));}
   @Get('listing-templates/:categoryId') async template(@Param('categoryId') id:string){return envelope(await this.listings.template(categoryId(id)));}
   @Get('listing-fields/:templateId') fields(@Param('templateId',ParseUUIDPipe) id:string){return this.listings.fields(id);}
@@ -41,6 +42,7 @@ export class ListingTemplatesController {
 @UseGuards(ThrottlerGuard)
 export class ListingsController {
   constructor(private readonly listings:ListingsService){}
+  @Post('clear-and-seed-demo') clearAndSeedDemo(){return this.listings.clearAndSeedDemo();}
   @Get('mine') @UseGuards(JwtAuthGuard) mine(@Req() req:AuthRequest){return this.listings.mine(req.user.id);}
   @Get('by-product/:productId') @UseGuards(JwtAuthGuard)
   byProduct(@Req() req:AuthRequest,@Param('productId',ParseUUIDPipe) id:string){return this.listings.byProduct(id,req.user.id);}
