@@ -8,7 +8,8 @@ import {
   ChevronDown, TrendingUp, DollarSign, PackageCheck, ShieldAlert,
   Calendar, ExternalLink, Activity, Clock, Image as ImageIcon,
   Edit, Trash2, Plus, Code, Save, RotateCcw, Upload, CheckCircle,
-  X, Filter, Eye, RefreshCw, AlertTriangle, ShieldCheck, UserCheck, Check, XCircle, Menu
+  X, Filter, Eye, RefreshCw, AlertTriangle, ShieldCheck, UserCheck,
+  Check, XCircle, Menu, LogOut, User, Sparkles
 } from 'lucide-react';
 import '../admin.css';
 
@@ -108,6 +109,8 @@ export default function AdminDashboardPage() {
   const [searchResults, setSearchResults] = useState<{ posts: any[]; users: any[]; orders: any[] }>({ posts: [], users: [], orders: [] });
   const [toast, setToast] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
+  const [quickCreateOpen, setQuickCreateOpen] = useState(false);
 
   // DASHBOARD STATE
   const [dashboard, setDashboard] = useState<DashboardData | null>(null);
@@ -168,7 +171,7 @@ export default function AdminDashboardPage() {
   // FETCH DASHBOARD DATA
   const fetchDashboardData = useCallback(() => {
     setLoading(true);
-    const rangeParam = dateRange === 'Hôm nay' ? 'today' : dateRange === '7 ngày' ? '7d' : '30d';
+    const rangeParam = dateRange === 'Hôm nay' ? 'today' : dateRange === '7 ngày' ? '7d' : dateRange === '12 tháng' ? '1y' : '30d';
     fetch(`/api/v1/admin/dashboard?range=${rangeParam}`)
       .then(r => r.json())
       .then(res => {
@@ -261,6 +264,8 @@ export default function AdminDashboardPage() {
         setBannerModalOpen(false);
         setRejectModalOpen(false);
         setSuspendModalOpen(false);
+        setProfileDropdownOpen(false);
+        setQuickCreateOpen(false);
       }
     };
     window.addEventListener('keydown', handleKeyDown);
@@ -690,7 +695,7 @@ export default function AdminDashboardPage() {
         </div>
       )}
 
-      {/* SIDEBAR */}
+      {/* SIDEBAR ADMIN V2 */}
       <aside className={`admin-sidebar ${sidebarCollapsed ? 'collapsed' : ''}`}>
         <div className="admin-brand">
           <img src="/assets/logo.png" alt="Tất Tần Tật" />
@@ -751,17 +756,17 @@ export default function AdminDashboardPage() {
 
         <div className="admin-sidebar-footer">
           <Link href="/" target="_blank" className="admin-view-website">
-            <ExternalLink size={16} /> {!sidebarCollapsed && <span>Xem website</span>}
+            <ExternalLink size={16} /> {!sidebarCollapsed && <span>Xem website ↗</span>}
           </Link>
         </div>
       </aside>
 
       {/* MAIN CONTENT AREA */}
       <div className={`admin-main ${sidebarCollapsed ? 'collapsed' : ''}`}>
-        {/* TOPBAR */}
+        {/* TOPBAR ADMIN V2 */}
         <header className="admin-header">
           <div style={{display:'flex', alignItems:'center', gap:16}}>
-            <button onClick={() => setSidebarCollapsed(!sidebarCollapsed)} style={{background:'transparent', border:'none', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', width:36, height:36, borderRadius:8}}>
+            <button onClick={() => setSidebarCollapsed(!sidebarCollapsed)} title="Thu gọn / Mở rộng Sidebar" style={{background:'transparent', border:'none', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', width:36, height:36, borderRadius:8}}>
               <Menu size={20} color="#334155" />
             </button>
             <div className="admin-search" onClick={() => setSearchOpen(true)} style={{cursor:'pointer'}}>
@@ -772,20 +777,65 @@ export default function AdminDashboardPage() {
           </div>
 
           <div className="admin-header-actions">
-            <button style={{background:'#f1f5f9', border:'none', width:40, height:40, borderRadius:'50%', display:'flex', alignItems:'center', justifyContent:'center', position:'relative', cursor:'pointer'}}>
+            <button style={{background:'#f1f5f9', border:'none', width:40, height:40, borderRadius:'50%', display:'flex', alignItems:'center', justifyContent:'center', position:'relative', cursor:'pointer'}} title="Thông báo hệ thống">
               <Bell size={18} color="#334155" />
               {dashboard?.actionRequired.pendingPosts ? (
                 <span style={{position:'absolute', top:8, right:8, width:8, height:8, background:'#ef4444', borderRadius:'50%'}}></span>
               ) : null}
             </button>
 
-            <div style={{display:'flex', alignItems:'center', gap:10, cursor:'pointer'}}>
-              <img src="/assets/product-1.jpg" alt="Admin" style={{width:38, height:38, borderRadius:'50%', objectFit:'cover'}} />
-              <div>
-                <div style={{fontSize:14, fontWeight:600, color:'#0f172a'}}>Super Admin</div>
-                <div style={{fontSize:11, color:'#64748b'}}>Hệ thống Tất Tần Tật</div>
+            {/* ADMIN PROFILE AVATAR DROPDOWN */}
+            <div style={{position:'relative'}}>
+              <div
+                onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
+                style={{display:'flex', alignItems:'center', gap:10, cursor:'pointer', userSelect:'none'}}
+              >
+                <img src="/assets/product-1.jpg" alt="Admin" style={{width:38, height:38, borderRadius:'50%', objectFit:'cover', border:'2px solid #00a65a'}} />
+                <div>
+                  <div style={{fontSize:14, fontWeight:600, color:'#0f172a'}}>Super Admin</div>
+                  <div style={{fontSize:11, color:'#00a65a', fontWeight:700}}>Hệ thống Tất Tần Tật</div>
+                </div>
+                <ChevronDown size={14} color="#64748b" />
               </div>
-              <ChevronDown size={14} color="#64748b" />
+
+              {profileDropdownOpen && (
+                <div style={{
+                  position: 'absolute',
+                  top: 'calc(100% + 8px)',
+                  right: 0,
+                  background: '#ffffff',
+                  border: '1px solid #cbd5e1',
+                  borderRadius: 14,
+                  boxShadow: '0 12px 32px rgba(0,0,0,0.15)',
+                  width: 220,
+                  zIndex: 1000,
+                  padding: '8px 0',
+                  overflow: 'hidden'
+                }}>
+                  <div style={{ padding: '10px 16px', borderBottom: '1px solid #f1f5f9', fontWeight: 700, fontSize: 13, color: '#0f172a' }}>
+                    Quản trị viên Super Admin
+                  </div>
+                  <div onClick={() => { showToast('Đang mở hồ sơ Admin'); setProfileDropdownOpen(false); }} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 16px', color: '#334155', fontSize: 13, fontWeight: 500, cursor: 'pointer' }}>
+                    <User size={16} /> Hồ sơ của tôi
+                  </div>
+                  <div onClick={() => { setActiveNav('cai-dat'); setProfileDropdownOpen(false); }} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 16px', color: '#334155', fontSize: 13, fontWeight: 500, cursor: 'pointer' }}>
+                    <Settings size={16} /> Cài đặt hệ thống
+                  </div>
+                  <Link href="/" target="_blank" onClick={() => setProfileDropdownOpen(false)} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 16px', color: '#334155', textDecoration: 'none', fontSize: 13, fontWeight: 500 }}>
+                    <ExternalLink size={16} /> Xem website người dùng
+                  </Link>
+                  <div style={{ borderTop: '1px solid #f1f5f9', margin: '4px 0' }} />
+                  <div
+                    onClick={() => {
+                      showToast('Đã đăng xuất phiên Admin');
+                      setProfileDropdownOpen(false);
+                    }}
+                    style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 16px', color: '#dc2626', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
+                  >
+                    <LogOut size={16} /> Đăng xuất
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </header>
@@ -794,15 +844,34 @@ export default function AdminDashboardPage() {
         <div className="admin-content">
           <div className="admin-page-header">
             <div className="admin-page-title">
-              <h1>
-                {activeNav === 'banners' ? 'Quản lý Banner hệ thống'
-                  : activeNav === 'tin-dang' ? 'Quản lý Tin đăng Marketplace'
-                  : activeNav === 'nguoi-dung' ? 'Quản lý Người dùng & Xác minh'
-                  : activeNav === 'don-hang' ? 'Quản lý Đơn hàng'
-                  : activeNav === 'reports' ? 'Báo cáo vi phạm & Moderation'
-                  : activeNav === 'css-editor' ? 'Chỉnh sửa Giao diện CSS'
-                  : 'Tổng quan hệ thống'}
-              </h1>
+              <div style={{display:'flex', alignItems:'center', gap:12}}>
+                <h1>
+                  {activeNav === 'banners' ? 'Quản lý Banner hệ thống'
+                    : activeNav === 'tin-dang' ? 'Quản lý Tin đăng Marketplace'
+                    : activeNav === 'nguoi-dung' ? 'Quản lý Người dùng & Xác minh'
+                    : activeNav === 'don-hang' ? 'Quản lý Đơn hàng'
+                    : activeNav === 'reports' ? 'Báo cáo vi phạm & Moderation'
+                    : activeNav === 'css-editor' ? 'Chỉnh sửa Giao diện CSS'
+                    : 'Tổng quan hệ thống'}
+                </h1>
+
+                {/* QUICK ACTION BUTTON */}
+                <div style={{position:'relative'}}>
+                  <button
+                    onClick={() => setQuickCreateOpen(!quickCreateOpen)}
+                    style={{background:'#00a65a', color:'#fff', border:'none', padding:'6px 14px', borderRadius:999, fontSize:12, fontWeight:700, cursor:'pointer', display:'flex', alignItems:'center', gap:4}}
+                  >
+                    + Tạo mới <ChevronDown size={14} />
+                  </button>
+                  {quickCreateOpen && (
+                    <div style={{position:'absolute', top:'100%', left:0, background:'#fff', border:'1px solid #cbd5e1', borderRadius:12, boxShadow:'0 10px 25px rgba(0,0,0,0.15)', width:180, zIndex:100, padding:'6px 0', marginTop:4}}>
+                      <div onClick={() => { handleOpenAddBanner(); setQuickCreateOpen(false); }} style={{padding:'8px 14px', fontSize:13, color:'#334155', cursor:'pointer'}}>Tạo Banner mới</div>
+                      <Link href="/admin/listing-templates" onClick={() => setQuickCreateOpen(false)} style={{padding:'8px 14px', fontSize:13, color:'#334155', textDecoration:'none', display:'block'}}>Tạo Danh mục mới</Link>
+                      <Link href="/sell" target="_blank" onClick={() => setQuickCreateOpen(false)} style={{padding:'8px 14px', fontSize:13, color:'#334155', textDecoration:'none', display:'block'}}>Đăng tin mới</Link>
+                    </div>
+                  )}
+                </div>
+              </div>
               <p>
                 {activeNav === 'banners' ? 'Thêm mới, tải ảnh từ máy tính, bật/tắt và quản lý thời hạn hiển thị của các Banner quảng cáo.'
                   : activeNav === 'tin-dang' ? 'Duyệt, từ chối, ẩn và quản lý danh sách tin đăng sản phẩm từ người bán.'
@@ -815,7 +884,7 @@ export default function AdminDashboardPage() {
             </div>
 
             <div className="admin-filters">
-              {activeNav === 'tong-quan' && ['Hôm nay', '7 ngày', '30 ngày'].map((range) => (
+              {activeNav === 'tong-quan' && ['Hôm nay', '7 ngày', '30 ngày', '12 tháng'].map((range) => (
                 <button
                   key={range}
                   className={`admin-filter-btn ${dateRange === range ? 'active' : ''}`}
@@ -836,7 +905,7 @@ export default function AdminDashboardPage() {
               {/* ACTION ITEMS NEEDED */}
               <div className="action-required-box">
                 <div className="action-required-title">
-                  <ShieldAlert size={18} color="#d97706" /> CẦN XỬ LÝ NGAY
+                  <ShieldAlert size={18} color="#b45309" /> CẦN XỬ LÝ NGAY
                 </div>
                 <div className="action-chips-grid">
                   <div className="action-chip warning" onClick={() => { setActiveNav('tin-dang'); setPostStatusFilter('PENDING'); }}>
@@ -1446,6 +1515,12 @@ export default function AdminDashboardPage() {
               <p style={{color:'#64748b', marginTop:8}}>Chức năng quản lý cho mục này đang được kết nối dữ liệu.</p>
             </div>
           )}
+
+          {/* SYSTEM FOOTER ADMIN */}
+          <footer style={{marginTop:36, paddingTop:16, borderTop:'1px solid #e2e8f0', display:'flex', alignItems:'center', justifyContent:'space-between', fontSize:12.5, color:'#64748b'}}>
+            <span>© 2026 Tất Tần Tật · Admin Console v2.0 · Trạng thái hệ thống: <b style={{color:'#059669'}}>Hoạt động bình thường</b></span>
+            <span>www.tattantat.vn</span>
+          </footer>
         </div>
       </div>
     </div>
