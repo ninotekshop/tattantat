@@ -417,7 +417,7 @@ export function MarketplaceHome({ query = '', group = '', sort = '', view = '' }
 
       {/* 3D CATEGORIES CAROUSEL */}
       <section className="shell" style={{ marginBottom: 16 }}>
-        <div className="white-card-box" style={{ padding: '16px 20px', position: 'relative', border: 'none', background: 'transparent', boxShadow: 'none' }}>
+        <div className="white-card-box" style={{ padding: '10px 16px', position: 'relative' }}>
           <div className="category-carousel-wrapper">
             <button
               className="cat-scroll-arrow left"
