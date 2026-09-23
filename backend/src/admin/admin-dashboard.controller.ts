@@ -57,7 +57,7 @@ export class AdminDashboardController {
       this.db.query(`
         SELECT p.category_id, COALESCE(cat.name, 'Đồ công nghệ') AS category_name, COUNT(*)::int AS count
         FROM products p
-        LEFT JOIN listing_categories cat ON cat.id::text = p.category_id::text
+        LEFT JOIN categories cat ON cat.id::text = p.category_id::text
         WHERE p.deleted_at IS NULL
         GROUP BY p.category_id, cat.name
         ORDER BY count DESC
@@ -69,7 +69,7 @@ export class AdminDashboardController {
         SELECT p.id, p.title, p.price, p.status, p.image_url, p.created_at,
                COALESCE(cat.name, 'Khác') AS category_name
         FROM products p
-        LEFT JOIN listing_categories cat ON cat.id::text = p.category_id::text
+        LEFT JOIN categories cat ON cat.id::text = p.category_id::text
         WHERE p.deleted_at IS NULL
         ORDER BY p.created_at DESC
         LIMIT 5

@@ -43,8 +43,8 @@ export class AdminPostsController {
                 COALESCE(cat.name, 'Khác') AS category_name,
                 COALESCE(u.full_name, 'Người dùng') AS seller_name, u.email AS seller_email, u.phone AS seller_phone
          FROM products p
-         LEFT JOIN listing_categories cat ON cat.id::text = p.category_id::text
-         LEFT JOIN users u ON u.id = p.user_id
+         LEFT JOIN categories cat ON cat.id::text = p.category_id::text
+         LEFT JOIN users u ON u.id = p.seller_id
          WHERE p.deleted_at IS NULL
            AND ($1::text IS NULL OR p.title ILIKE $1 OR p.id::text ILIKE $1 OR u.full_name ILIKE $1)
            AND ($2::text IS NULL OR p.status = $2)
@@ -56,7 +56,7 @@ export class AdminPostsController {
       this.db.query(
         `SELECT COUNT(*)::int AS total
          FROM products p
-         LEFT JOIN users u ON u.id = p.user_id
+         LEFT JOIN users u ON u.id = p.seller_id
          WHERE p.deleted_at IS NULL
            AND ($1::text IS NULL OR p.title ILIKE $1 OR p.id::text ILIKE $1 OR u.full_name ILIKE $1)
            AND ($2::text IS NULL OR p.status = $2)

@@ -9,8 +9,10 @@ import {
   Calendar, ExternalLink, Activity, Clock, Image as ImageIcon,
   Edit, Trash2, Plus, Code, Save, RotateCcw, Upload, CheckCircle,
   X, Filter, Eye, RefreshCw, AlertTriangle, ShieldCheck, UserCheck,
-  Check, XCircle, Menu, LogOut, User, Lock, Mail, KeyRound, Sparkles
+  Check, XCircle, Menu, LogOut, User, Lock, Mail, KeyRound, Sparkles,
+  Server, Sliders, Shield
 } from 'lucide-react';
+import { TemplateAdmin } from '../../components/listings/TemplateAdmin';
 import '../admin.css';
 
 interface AdminSession {
@@ -166,6 +168,20 @@ export default function AdminDashboardPage() {
 
   // REPORTS MODULE STATE
   const [reports, setReports] = useState<ReportItem[]>([]);
+
+  // SYSTEM SETTINGS STATE
+  const [systemSettings, setSystemSettings] = useState({
+    siteName: 'Tất Tần Tật',
+    supportEmail: 'hotro@tattantat.vn',
+    supportPhone: '1900 1234',
+    maintenanceMode: false,
+    autoApproveListings: false,
+    commissionRate: '2.5',
+    maxImagesPerPost: '20'
+  });
+
+  // CHANGE PASSWORD STATE
+  const [pwdForm, setPwdForm] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
 
   // CSS EDITOR STATE
   const cssFiles = [
@@ -848,8 +864,9 @@ export default function AdminDashboardPage() {
       {/* SIDEBAR ADMIN V2 */}
       <aside className={`admin-sidebar ${sidebarCollapsed ? 'collapsed' : ''}`}>
         <div className="admin-brand">
-          <img src="/assets/logo.png" alt="Tất Tần Tật" />
-          {!sidebarCollapsed && <span style={{fontWeight:700, fontSize:15, color:'#fff'}}>AdminTTT Console</span>}
+          <div style={{ background: '#ffffff', padding: '6px 12px', borderRadius: 10, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+            <img src="/assets/logo.png" alt="Tất Tần Tật" style={{ height: 28, objectFit: 'contain' }} />
+          </div>
         </div>
 
         <nav className="admin-nav">
@@ -870,9 +887,9 @@ export default function AdminDashboardPage() {
             <div className="admin-nav-left"><Users size={18} />{!sidebarCollapsed && <span>Quản lý người dùng</span>}</div>
           </button>
 
-          <Link href="/adminttt/listing-templates" className={`admin-nav-item ${activeNav === 'danh-muc' ? 'active' : ''}`}>
-            <div className="admin-nav-left"><FolderTree size={18} />{!sidebarCollapsed && <span>Quản lý danh mục</span>}</div>
-          </Link>
+          <button className={`admin-nav-item ${activeNav === 'danh-muc' ? 'active' : ''}`} onClick={() => setActiveNav('danh-muc')}>
+            <div className="admin-nav-left"><FolderTree size={18} />{!sidebarCollapsed && <span>Quản lý danh mục & Biểu mẫu</span>}</div>
+          </button>
 
           <button className={`admin-nav-item ${activeNav === 'don-hang' ? 'active' : ''}`} onClick={() => setActiveNav('don-hang')}>
             <div className="admin-nav-left"><ShoppingCart size={18} />{!sidebarCollapsed && <span>Quản lý đơn hàng</span>}</div>
@@ -890,17 +907,17 @@ export default function AdminDashboardPage() {
             ) : null}
           </button>
 
-          <div style={{fontSize:11, fontWeight:700, color:'#64748b', padding:'16px 16px 8px', letterSpacing:'0.5px'}}>GIAO DIỆN & TÀI CHÍNH</div>
+          <div style={{fontSize:11, fontWeight:700, color:'#64748b', padding:'16px 16px 8px', letterSpacing:'0.5px'}}>GIAO DIỆN & BẢO MẬT</div>
           <button className={`admin-nav-item ${activeNav === 'css-editor' ? 'active' : ''}`} onClick={() => setActiveNav('css-editor')}>
             <div className="admin-nav-left"><Code size={18} />{!sidebarCollapsed && <span>Quản lý CSS / Giao diện</span>}</div>
           </button>
 
-          <button className={`admin-nav-item ${activeNav === 'thanh-toan' ? 'active' : ''}`} onClick={() => setActiveNav('thanh-toan')}>
-            <div className="admin-nav-left"><CreditCard size={18} />{!sidebarCollapsed && <span>Thanh toán & Giao dịch</span>}</div>
+          <button className={`admin-nav-item ${activeNav === 'ho-so' ? 'active' : ''}`} onClick={() => setActiveNav('ho-so')}>
+            <div className="admin-nav-left"><User size={18} />{!sidebarCollapsed && <span>Hồ sơ cá nhân</span>}</div>
           </button>
 
-          <button className={`admin-nav-item ${activeNav === 'quang-cao' ? 'active' : ''}`} onClick={() => setActiveNav('quang-cao')}>
-            <div className="admin-nav-left"><Megaphone size={18} />{!sidebarCollapsed && <span>Quảng cáo</span>}</div>
+          <button className={`admin-nav-item ${activeNav === 'cai-dat' ? 'active' : ''}`} onClick={() => setActiveNav('cai-dat')}>
+            <div className="admin-nav-left"><Settings size={18} />{!sidebarCollapsed && <span>Cài đặt hệ thống</span>}</div>
           </button>
         </nav>
 
@@ -921,8 +938,8 @@ export default function AdminDashboardPage() {
             </button>
             <div className="admin-search" onClick={() => setSearchOpen(true)} style={{cursor:'pointer'}}>
               <Search size={16} color="#64748b" />
-              <span style={{color:'#64748b', fontSize:14, flex:1}}>Tìm kiếm tin đăng, người dùng, mã đơn hàng...</span>
-              <span style={{background:'#e2e8f0', color:'#475569', padding:'2px 6px', borderRadius:4, fontSize:10, fontWeight:600}}>Ctrl + K</span>
+              <span>Tìm kiếm tin đăng, người dùng, mã đơn hàng...</span>
+              <span style={{background:'#e2e8f0', color:'#475569', padding:'2px 6px', borderRadius:4, fontSize:10, fontWeight:600, marginLeft:'auto'}}>Ctrl + K</span>
             </div>
           </div>
 
@@ -943,7 +960,7 @@ export default function AdminDashboardPage() {
                 <img src="/assets/product-1.jpg" alt="AdminTTT" style={{width:38, height:38, borderRadius:'50%', objectFit:'cover', border:'2px solid #00a65a'}} />
                 <div>
                   <div style={{fontSize:14, fontWeight:600, color:'#0f172a'}}>{adminSession.fullName || 'Super Admin'}</div>
-                  <div style={{fontSize:11, color:'#00a65a', fontWeight:700}}>AdminTTT Security</div>
+                  <div style={{fontSize:11, color:'#00a65a', fontWeight:700}}>Admin Security</div>
                 </div>
                 <ChevronDown size={14} color="#64748b" />
               </div>
@@ -965,8 +982,8 @@ export default function AdminDashboardPage() {
                   <div style={{ padding: '10px 16px', borderBottom: '1px solid #f1f5f9', fontWeight: 700, fontSize: 13, color: '#0f172a' }}>
                     {adminSession.email}
                   </div>
-                  <div onClick={() => { showToast('Đang mở hồ sơ AdminTTT'); setProfileDropdownOpen(false); }} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 16px', color: '#334155', fontSize: 13, fontWeight: 500, cursor: 'pointer' }}>
-                    <User size={16} /> Hồ sơ của tôi
+                  <div onClick={() => { setActiveNav('ho-so'); setProfileDropdownOpen(false); }} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 16px', color: '#334155', fontSize: 13, fontWeight: 500, cursor: 'pointer' }}>
+                    <User size={16} /> Hồ sơ cá nhân
                   </div>
                   <div onClick={() => { setActiveNav('cai-dat'); setProfileDropdownOpen(false); }} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 16px', color: '#334155', fontSize: 13, fontWeight: 500, cursor: 'pointer' }}>
                     <Settings size={16} /> Cài đặt hệ thống
@@ -996,10 +1013,13 @@ export default function AdminDashboardPage() {
                   {activeNav === 'banners' ? 'Quản lý Banner hệ thống'
                     : activeNav === 'tin-dang' ? 'Quản lý Tin đăng Marketplace'
                     : activeNav === 'nguoi-dung' ? 'Quản lý Người dùng & Xác minh'
+                    : activeNav === 'danh-muc' ? 'Quản lý Danh mục & Biểu mẫu Đăng tin'
                     : activeNav === 'don-hang' ? 'Quản lý Đơn hàng'
                     : activeNav === 'reports' ? 'Báo cáo vi phạm & Moderation'
                     : activeNav === 'css-editor' ? 'Chỉnh sửa Giao diện CSS'
-                    : 'Tổng quan hệ thống AdminTTT'}
+                    : activeNav === 'ho-so' ? 'Hồ sơ cá nhân Admin'
+                    : activeNav === 'cai-dat' ? 'Cài đặt hệ thống'
+                    : 'Tổng quan hệ thống Quản trị'}
                 </h1>
 
                 {/* QUICK ACTION BUTTON */}
@@ -1013,7 +1033,7 @@ export default function AdminDashboardPage() {
                   {quickCreateOpen && (
                     <div style={{position:'absolute', top:'100%', left:0, background:'#fff', border:'1px solid #cbd5e1', borderRadius:12, boxShadow:'0 10px 25px rgba(0,0,0,0.15)', width:180, zIndex:100, padding:'6px 0', marginTop:4}}>
                       <div onClick={() => { handleOpenAddBanner(); setQuickCreateOpen(false); }} style={{padding:'8px 14px', fontSize:13, color:'#334155', cursor:'pointer'}}>Tạo Banner mới</div>
-                      <Link href="/adminttt/listing-templates" onClick={() => setQuickCreateOpen(false)} style={{padding:'8px 14px', fontSize:13, color:'#334155', textDecoration:'none', display:'block'}}>Tạo Danh mục mới</Link>
+                      <div onClick={() => { setActiveNav('danh-muc'); setQuickCreateOpen(false); }} style={{padding:'8px 14px', fontSize:13, color:'#334155', cursor:'pointer'}}>Tạo Danh mục mới</div>
                       <Link href="/sell" target="_blank" onClick={() => setQuickCreateOpen(false)} style={{padding:'8px 14px', fontSize:13, color:'#334155', textDecoration:'none', display:'block'}}>Đăng tin mới</Link>
                     </div>
                   )}
@@ -1023,9 +1043,12 @@ export default function AdminDashboardPage() {
                 {activeNav === 'banners' ? 'Thêm mới, tải ảnh từ máy tính, bật/tắt và quản lý thời hạn hiển thị của các Banner quảng cáo.'
                   : activeNav === 'tin-dang' ? 'Duyệt, từ chối, ẩn và quản lý danh sách tin đăng sản phẩm từ người bán.'
                   : activeNav === 'nguoi-dung' ? 'Quản lý danh sách thành viên, xác minh tài khoản và khóa tài khoản vi phạm.'
+                  : activeNav === 'danh-muc' ? 'Thiết lập danh mục, tạo thuộc tính động và phiên bản biểu mẫu đăng tin.'
                   : activeNav === 'don-hang' ? 'Theo dõi danh sách đơn hàng mua bán và trạng thái giao dịch.'
                   : activeNav === 'reports' ? 'Xử lý các báo cáo vi phạm sản phẩm và người dùng từ cộng đồng.'
                   : activeNav === 'css-editor' ? 'Chỉnh sửa trực tiếp style CSS của các trang giao diện trong hệ thống Tất Tần Tật.'
+                  : activeNav === 'ho-so' ? 'Thông tin tài khoản và đổi mật khẩu quản trị.'
+                  : activeNav === 'cai-dat' ? 'Cấu hình các tham số vận hành toàn hệ thống.'
                   : 'Theo dõi hoạt động và các công việc cần xử lý của Tất Tần Tật.'}
               </p>
             </div>
@@ -1046,8 +1069,109 @@ export default function AdminDashboardPage() {
             </div>
           </div>
 
-          {/* DASHBOARD OVERVIEW */}
-          {activeNav === 'tong-quan' ? (
+          {/* EMBEDDED CATEGORY & LISTING TEMPLATES MANAGEMENT (ISSUE 6 FIX) */}
+          {activeNav === 'danh-muc' ? (
+            <div className="dashboard-card" style={{ padding: 0, overflow: 'hidden' }}>
+              <TemplateAdmin />
+            </div>
+          ) : activeNav === 'ho-so' ? (
+            /* MY PROFILE MODULE */
+            <div className="dashboard-card" style={{ maxWidth: 680 }}>
+              <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 16, color: '#0f172a' }}>Hồ sơ tài khoản Quản trị</h3>
+
+              <div style={{ background: '#f8fafc', padding: 20, borderRadius: 12, border: '1px solid #e2e8f0', marginBottom: 24, display: 'flex', gap: 16, alignItems: 'center' }}>
+                <img src="/assets/product-1.jpg" alt="" style={{ width: 64, height: 64, borderRadius: '50%', objectFit: 'cover', border: '3px solid #00a65a' }} />
+                <div>
+                  <div style={{ fontSize: 16, fontWeight: 700, color: '#0f172a' }}>{adminSession.fullName}</div>
+                  <div style={{ fontSize: 13, color: '#64748b' }}>Email: <b>{adminSession.email}</b></div>
+                  <div style={{ fontSize: 12, color: '#00a65a', fontWeight: 700, marginTop: 4 }}>Quyền hạn: {adminSession.role}</div>
+                </div>
+              </div>
+
+              <h4 style={{ fontSize: 15, fontWeight: 700, marginBottom: 12, color: '#0f172a' }}>Đổi mật khẩu</h4>
+              <form onSubmit={(e) => {
+                e.preventDefault();
+                if (pwdForm.newPassword !== pwdForm.confirmPassword) {
+                  alert('Mật khẩu xác nhận không khớp!');
+                  return;
+                }
+                showToast('Đã đổi mật khẩu thành công!');
+                setPwdForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
+              }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#334155', marginBottom: 4 }}>Mật khẩu hiện tại *</label>
+                    <input type="password" value={pwdForm.currentPassword} onChange={e => setPwdForm({...pwdForm, currentPassword: e.target.value})} required style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1px solid #cbd5e1' }} />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#334155', marginBottom: 4 }}>Mật khẩu mới *</label>
+                    <input type="password" value={pwdForm.newPassword} onChange={e => setPwdForm({...pwdForm, newPassword: e.target.value})} required style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1px solid #cbd5e1' }} />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#334155', marginBottom: 4 }}>Xác nhận mật khẩu mới *</label>
+                    <input type="password" value={pwdForm.confirmPassword} onChange={e => setPwdForm({...pwdForm, confirmPassword: e.target.value})} required style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1px solid #cbd5e1' }} />
+                  </div>
+                  <button type="submit" style={{ background: '#00a65a', color: '#fff', border: 'none', padding: '10px 20px', borderRadius: 8, fontWeight: 700, cursor: 'pointer', width: 'fit-content' }}>
+                    LƯU MẬT KHẨU MỚI
+                  </button>
+                </div>
+              </form>
+            </div>
+          ) : activeNav === 'cai-dat' ? (
+            /* SYSTEM SETTINGS MODULE */
+            <div className="dashboard-card" style={{ maxWidth: 720 }}>
+              <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 16, color: '#0f172a' }}>Cài đặt hệ thống Tất Tần Tật</h3>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#334155', marginBottom: 4 }}>Tên nền tảng *</label>
+                  <input type="text" value={systemSettings.siteName} onChange={e => setSystemSettings({...systemSettings, siteName: e.target.value})} style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1px solid #cbd5e1' }} />
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#334155', marginBottom: 4 }}>Email hỗ trợ *</label>
+                    <input type="email" value={systemSettings.supportEmail} onChange={e => setSystemSettings({...systemSettings, supportEmail: e.target.value})} style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1px solid #cbd5e1' }} />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#334155', marginBottom: 4 }}>Hotline *</label>
+                    <input type="text" value={systemSettings.supportPhone} onChange={e => setSystemSettings({...systemSettings, supportPhone: e.target.value})} style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1px solid #cbd5e1' }} />
+                  </div>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#334155', marginBottom: 4 }}>Tỷ lệ phí hoa hồng (% giao dịch)</label>
+                    <input type="text" value={systemSettings.commissionRate} onChange={e => setSystemSettings({...systemSettings, commissionRate: e.target.value})} style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1px solid #cbd5e1' }} />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#334155', marginBottom: 4 }}>Tối đa số ảnh / tin đăng</label>
+                    <input type="text" value={systemSettings.maxImagesPerPost} onChange={e => setSystemSettings({...systemSettings, maxImagesPerPost: e.target.value})} style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1px solid #cbd5e1' }} />
+                  </div>
+                </div>
+
+                <div style={{ background: '#f8fafc', padding: 14, borderRadius: 10, border: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div>
+                    <strong style={{ display: 'block', fontSize: 14, color: '#0f172a' }}>Tự động duyệt tin đăng mới</strong>
+                    <span style={{ fontSize: 12, color: '#64748b' }}>Tự động chuyển tin mới sang trạng thái Đã duyệt không cần qua kiểm duyệt viên.</span>
+                  </div>
+                  <input type="checkbox" checked={systemSettings.autoApproveListings} onChange={e => setSystemSettings({...systemSettings, autoApproveListings: e.target.checked})} style={{ width: 18, height: 18, cursor: 'pointer' }} />
+                </div>
+
+                <div style={{ background: '#f8fafc', padding: 14, borderRadius: 10, border: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div>
+                    <strong style={{ display: 'block', fontSize: 14, color: '#dc2626' }}>Chế độ Bảo trì Hệ thống</strong>
+                    <span style={{ fontSize: 12, color: '#64748b' }}>Tạm khóa tính năng mua bán để nâng cấp máy chủ.</span>
+                  </div>
+                  <input type="checkbox" checked={systemSettings.maintenanceMode} onChange={e => setSystemSettings({...systemSettings, maintenanceMode: e.target.checked})} style={{ width: 18, height: 18, cursor: 'pointer' }} />
+                </div>
+
+                <button onClick={() => showToast('Đã lưu cấu hình hệ thống thành công!')} style={{ background: '#00a65a', color: '#fff', border: 'none', padding: '10px 20px', borderRadius: 8, fontWeight: 700, cursor: 'pointer', width: 'fit-content', marginTop: 10 }}>
+                  LƯU CÀI ĐẶT HỆ THỐNG
+                </button>
+              </div>
+            </div>
+          ) : activeNav === 'tong-quan' ? (
+            /* DASHBOARD OVERVIEW */
             <>
               {/* ACTION ITEMS NEEDED */}
               <div className="action-required-box">
@@ -1276,7 +1400,7 @@ export default function AdminDashboardPage() {
             /* POSTS MANAGEMENT MODULE */
             <div className="dashboard-card">
               <div className="card-header-flex" style={{gap:12, flexWrap:'wrap'}}>
-                <h3>Quản lý danh sách tin đăng</h3>
+                <h3>Quản lý danh sách tin đăng ({posts.length})</h3>
                 <div style={{display:'flex', gap:10, alignItems:'center', flexWrap:'wrap'}}>
                   <input
                     type="text"
@@ -1360,7 +1484,7 @@ export default function AdminDashboardPage() {
             /* USERS MANAGEMENT MODULE */
             <div className="dashboard-card">
               <div className="card-header-flex" style={{gap:12, flexWrap:'wrap'}}>
-                <h3>Quản lý thành viên hệ thống</h3>
+                <h3>Quản lý thành viên hệ thống ({users.length})</h3>
                 <div style={{display:'flex', gap:10, alignItems:'center', flexWrap:'wrap'}}>
                   <input
                     type="text"

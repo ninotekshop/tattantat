@@ -48,6 +48,9 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
           created_at TIMESTAMPTZ DEFAULT NOW(),
           updated_at TIMESTAMPTZ DEFAULT NOW()
         );
+        ALTER TABLE banners ADD COLUMN IF NOT EXISTS target_url TEXT DEFAULT '/';
+        ALTER TABLE banners ADD COLUMN IF NOT EXISTS expiry_date VARCHAR(50) DEFAULT '2026-12-31';
+        ALTER TABLE banners ADD COLUMN IF NOT EXISTS status VARCHAR(20) DEFAULT 'ACTIVE';
 
         CREATE TABLE IF NOT EXISTS admin_audit_logs (
           id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

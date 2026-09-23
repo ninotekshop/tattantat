@@ -38,7 +38,7 @@ export class AdminUsersController {
         `SELECT u.id, u.full_name, u.email, u.phone, u.avatar_url, u.status,
                 COALESCE(u.verification_status, 'UNVERIFIED') AS verification_status,
                 u.created_at,
-                (SELECT COUNT(*)::int FROM products p WHERE p.user_id = u.id AND p.deleted_at IS NULL) AS posts_count,
+                (SELECT COUNT(*)::int FROM products p WHERE p.seller_id = u.id AND p.deleted_at IS NULL) AS posts_count,
                 (SELECT COUNT(*)::int FROM orders o WHERE o.buyer_id = u.id) AS orders_count
          FROM users u
          WHERE ($1::text IS NULL OR u.full_name ILIKE $1 OR u.email ILIKE $1 OR u.phone ILIKE $1 OR u.id::text ILIKE $1)

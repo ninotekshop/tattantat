@@ -17,7 +17,7 @@ android {
         versionCode = 1
         versionName = "0.1.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        buildConfigField("String", "API_BASE_URL", "\"https://api-dev.tattantat.vn/api/v1/\"")
+        buildConfigField("String", "API_BASE_URL", "\"https://tattantat.vn/api/v1/\"")
     }
     buildTypes {
         debug { applicationIdSuffix = ".dev"; versionNameSuffix = "-dev"; buildConfigField("String", "DEMO_ADMIN_EMAIL", "\"admin@tattantat.vn\""); buildConfigField("String", "DEMO_USER_EMAIL", "\"user@tattantat.vn\""); buildConfigField("String", "DEMO_PASSWORD", "\"Demo@123\"") }

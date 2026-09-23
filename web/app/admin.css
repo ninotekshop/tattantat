@@ -157,10 +157,17 @@
   background: #f1f5f9;
   border-radius: 999px;
   padding: 8px 16px;
-  width: 380px;
+  width: 450px;
+  max-width: 100%;
   gap: 10px;
   border: 1px solid transparent;
   transition: all 0.2s;
+}
+
+.admin-search span {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .admin-search:hover {
