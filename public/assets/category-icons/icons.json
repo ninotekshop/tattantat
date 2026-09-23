@@ -1,0 +1,77 @@
+{
+  "version": "1.0",
+  "source": "Generated Tất Tần Tật 3D category icon sheet",
+  "note": "Parent icons are individually extracted. Reference cards preserve the generated subcategory artwork for subsequent individual asset production.",
+  "parent_icons": [
+    {
+      "slug": "nha-dat",
+      "png": "parent/nha-dat.png",
+      "webp": "parent/nha-dat.webp"
+    },
+    {
+      "slug": "xe-co",
+      "png": "parent/xe-co.png",
+      "webp": "parent/xe-co.webp"
+    },
+    {
+      "slug": "do-cong-nghe",
+      "png": "parent/do-cong-nghe.png",
+      "webp": "parent/do-cong-nghe.webp"
+    },
+    {
+      "slug": "viec-lam",
+      "png": "parent/viec-lam.png",
+      "webp": "parent/viec-lam.webp"
+    },
+    {
+      "slug": "thu-cung",
+      "png": "parent/thu-cung.png",
+      "webp": "parent/thu-cung.webp"
+    },
+    {
+      "slug": "nha-cua-doi-song",
+      "png": "parent/nha-cua-doi-song.png",
+      "webp": "parent/nha-cua-doi-song.webp"
+    },
+    {
+      "slug": "me-va-be",
+      "png": "parent/me-va-be.png",
+      "webp": "parent/me-va-be.webp"
+    },
+    {
+      "slug": "thoi-trang-ca-nhan",
+      "png": "parent/thoi-trang-ca-nhan.png",
+      "webp": "parent/thoi-trang-ca-nhan.webp"
+    },
+    {
+      "slug": "the-thao-giai-tri",
+      "png": "parent/the-thao-giai-tri.png",
+      "webp": "parent/the-thao-giai-tri.webp"
+    },
+    {
+      "slug": "may-moc-cong-nghiep",
+      "png": "parent/may-moc-cong-nghiep.png",
+      "webp": "parent/may-moc-cong-nghiep.webp"
+    },
+    {
+      "slug": "dich-vu",
+      "png": "parent/dich-vu.png",
+      "webp": "parent/dich-vu.webp"
+    },
+    {
+      "slug": "thuc-pham",
+      "png": "parent/thuc-pham.png",
+      "webp": "parent/thuc-pham.webp"
+    },
+    {
+      "slug": "tang-mien-phi",
+      "png": "parent/tang-mien-phi.png",
+      "webp": "parent/tang-mien-phi.webp"
+    },
+    {
+      "slug": "khac",
+      "png": "parent/khac.png",
+      "webp": "parent/khac.webp"
+    }
+  ]
+}

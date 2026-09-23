@@ -142,13 +142,6 @@ if (!global.__HOSTINGER_BACKEND_INIT__) {
     console.warn('[Hostinger Standalone] Could not auto-launch backend process:', e.message);
   }
 }
-    process.env.API_INTERNAL_BASE_URL = 'http://127.0.0.1:' + _backendPort + '/api/v1';
-  } else {
-    console.error('[Hostinger Standalone] ERROR: Could not locate backend/dist/main.js in standalone environment! Tried:', _candidates);
-  }
-} catch (e) {
-  console.warn('[Hostinger Standalone] Could not auto-launch backend process:', e.message);
-}
 `;
     fs.writeFileSync(serverFilePath, backendForkSnippet + '\n' + content, 'utf8');
     console.log('[Hostinger Postbuild] Patched standalone server:', serverFilePath);
