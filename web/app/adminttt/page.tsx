@@ -20,6 +20,7 @@ interface AdminSession {
   fullName: string;
   role: string;
   token?: string;
+  avatarUrl?: string;
 }
 
 interface DashboardData {
@@ -221,6 +222,81 @@ export default function AdminDashboardPage() {
     return headers;
   };
 
+  // SYNC ADMIN PROFILE FROM BACKEND DATABASE
+  useEffect(() => {
+    if (!adminSession?.token) return;
+    fetch('/api/v1/me', { headers: getAuthHeaders() })
+      .then(r => r.json())
+      .then(res => {
+        if (res.success && res.data) {
+          const updatedSession: AdminSession = {
+            ...adminSession,
+            fullName: res.data.full_name || adminSession.fullName,
+            avatarUrl: res.data.avatar_url || adminSession.avatarUrl,
+            email: res.data.email || adminSession.email
+          };
+          setAdminSession(updatedSession);
+          localStorage.setItem('tattantat_adminttt_session', JSON.stringify(updatedSession));
+        }
+      })
+      .catch(() => {});
+  }, [adminSession?.token]);
+
+  // ADMIN AVATAR UPLOAD HANDLER
+  const handleAvatarUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (uploadEvent) => {
+      const dataUrl = uploadEvent.target?.result as string;
+      fetch('/api/v1/me', {
+        method: 'PATCH',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ avatarUrl: dataUrl }),
+      })
+        .then(r => r.json())
+        .then(res => {
+          if (res.success && res.data) {
+            const updatedSession = { ...adminSession!, avatarUrl: res.data.avatar_url };
+            setAdminSession(updatedSession);
+            localStorage.setItem('tattantat_adminttt_session', JSON.stringify(updatedSession));
+            showToast('Đã cập nhật ảnh đại diện Admin thành công!');
+          } else {
+            showToast(res.message || 'Không thể cập nhật ảnh đại diện');
+          }
+        })
+        .catch(() => showToast('Lỗi khi tải ảnh đại diện'));
+    };
+    reader.readAsDataURL(file);
+  };
+
+  // ADMIN CHANGE PASSWORD HANDLER
+  const handleChangePassword = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (pwdForm.newPassword !== pwdForm.confirmPassword) {
+      alert('Mật khẩu xác nhận không khớp!');
+      return;
+    }
+    fetch('/api/v1/me/change-password', {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({
+        currentPassword: pwdForm.currentPassword,
+        newPassword: pwdForm.newPassword
+      }),
+    })
+      .then(r => r.json())
+      .then(res => {
+        if (res.success) {
+          showToast('Đã đổi mật khẩu Admin thành công! Mật khẩu mới đã được cập nhật.');
+          setPwdForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
+        } else {
+          alert(res.message || 'Mật khẩu hiện tại chưa chính xác!');
+        }
+      })
+      .catch(() => alert('Lỗi kết nối máy chủ khi đổi mật khẩu'));
+  };
+
   // ADMIN LOGIN SUBMIT HANDLER WITH OFFICIAL REAL API AUTHENTICATION
   const handleAdminLogin = (e: React.FormEvent) => {
     e.preventDefault();
@@ -244,7 +320,8 @@ export default function AdminDashboardPage() {
             email: res.data.user?.email || res.data.email || loginEmail,
             fullName: res.data.user?.fullName || res.data.fullName || 'Quản trị viên',
             role: role,
-            token: res.data.accessToken
+            token: res.data.accessToken,
+            avatarUrl: res.data.user?.avatarUrl
           };
           setAdminSession(sessionData);
           localStorage.setItem('tattantat_adminttt_session', JSON.stringify(sessionData));
@@ -957,7 +1034,7 @@ export default function AdminDashboardPage() {
                 onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
                 style={{display:'flex', alignItems:'center', gap:10, cursor:'pointer', userSelect:'none'}}
               >
-                <img src="/assets/product-1.jpg" alt="AdminTTT" style={{width:38, height:38, borderRadius:'50%', objectFit:'cover', border:'2px solid #00a65a'}} />
+                <img src={adminSession.avatarUrl || '/assets/logo.png'} alt="AdminTTT" style={{width:38, height:38, borderRadius:'50%', objectFit:'cover', border:'2px solid #00a65a', background:'#fff'}} />
                 <div>
                   <div style={{fontSize:14, fontWeight:600, color:'#0f172a'}}>{adminSession.fullName || 'Super Admin'}</div>
                   <div style={{fontSize:11, color:'#00a65a', fontWeight:700}}>Admin Security</div>
@@ -1069,7 +1146,7 @@ export default function AdminDashboardPage() {
             </div>
           </div>
 
-          {/* EMBEDDED CATEGORY & LISTING TEMPLATES MANAGEMENT (ISSUE 6 FIX) */}
+          {/* EMBEDDED CATEGORY & LISTING TEMPLATES MANAGEMENT */}
           {activeNav === 'danh-muc' ? (
             <div className="dashboard-card" style={{ padding: 0, overflow: 'hidden' }}>
               <TemplateAdmin />
@@ -1079,25 +1156,24 @@ export default function AdminDashboardPage() {
             <div className="dashboard-card" style={{ maxWidth: 680 }}>
               <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 16, color: '#0f172a' }}>Hồ sơ tài khoản Quản trị</h3>
 
-              <div style={{ background: '#f8fafc', padding: 20, borderRadius: 12, border: '1px solid #e2e8f0', marginBottom: 24, display: 'flex', gap: 16, alignItems: 'center' }}>
-                <img src="/assets/product-1.jpg" alt="" style={{ width: 64, height: 64, borderRadius: '50%', objectFit: 'cover', border: '3px solid #00a65a' }} />
-                <div>
+              <div style={{ background: '#f8fafc', padding: 20, borderRadius: 12, border: '1px solid #e2e8f0', marginBottom: 24, display: 'flex', gap: 20, alignItems: 'center' }}>
+                <div style={{ position: 'relative' }}>
+                  <img src={adminSession.avatarUrl || '/assets/logo.png'} alt="" style={{ width: 72, height: 72, borderRadius: '50%', objectFit: 'cover', border: '3px solid #00a65a', background: '#fff' }} />
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                   <div style={{ fontSize: 16, fontWeight: 700, color: '#0f172a' }}>{adminSession.fullName}</div>
                   <div style={{ fontSize: 13, color: '#64748b' }}>Email: <b>{adminSession.email}</b></div>
-                  <div style={{ fontSize: 12, color: '#00a65a', fontWeight: 700, marginTop: 4 }}>Quyền hạn: {adminSession.role}</div>
+                  <div style={{ fontSize: 12, color: '#00a65a', fontWeight: 700 }}>Quyền hạn: {adminSession.role}</div>
+
+                  <label style={{ background: '#00a65a', color: '#fff', padding: '6px 14px', borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6, width: 'fit-content', marginTop: 4 }}>
+                    <Upload size={14} /> Thay đổi Avatar từ máy tính
+                    <input type="file" accept="image/*" onChange={handleAvatarUpload} style={{ display: 'none' }} />
+                  </label>
                 </div>
               </div>
 
-              <h4 style={{ fontSize: 15, fontWeight: 700, marginBottom: 12, color: '#0f172a' }}>Đổi mật khẩu</h4>
-              <form onSubmit={(e) => {
-                e.preventDefault();
-                if (pwdForm.newPassword !== pwdForm.confirmPassword) {
-                  alert('Mật khẩu xác nhận không khớp!');
-                  return;
-                }
-                showToast('Đã đổi mật khẩu thành công!');
-                setPwdForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
-              }}>
+              <h4 style={{ fontSize: 15, fontWeight: 700, marginBottom: 12, color: '#0f172a' }}>Đổi mật khẩu Quản trị</h4>
+              <form onSubmit={handleChangePassword}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                   <div>
                     <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#334155', marginBottom: 4 }}>Mật khẩu hiện tại *</label>

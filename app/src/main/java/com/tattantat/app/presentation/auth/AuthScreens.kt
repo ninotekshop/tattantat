@@ -1,11 +1,14 @@
 package com.tattantat.app.presentation.auth
 
 import com.tattantat.app.BuildConfig
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
@@ -27,7 +30,9 @@ import com.facebook.login.LoginResult
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import android.util.Log
+import android.widget.Toast
 import androidx.activity.ComponentActivity
+import androidx.credentials.exceptions.GetCredentialCancellationException
 import com.tattantat.app.R
 
 @Composable fun LoginScreen(onRegister: () -> Unit, onSuccess: () -> Unit, vm: AuthViewModel = hiltViewModel()) {
@@ -82,7 +87,17 @@ import com.tattantat.app.R
                     Log.e("SocialLogin", "Unexpected type of credential")
                 }
             } catch (e: GetCredentialException) {
-                Log.e("SocialLogin", "GetCredentialException", e)
+                Log.e("SocialLogin", "GetCredentialException: ${e.type}", e)
+                if (e !is GetCredentialCancellationException) {
+                    Toast.makeText(
+                        context,
+                        "Đăng nhập Google thất bại: ${e.message ?: "Chưa có tài khoản trên thiết bị hoặc sai cấu hình Google Cloud"}",
+                        Toast.LENGTH_LONG
+                    ).show()
+                }
+            } catch (e: Exception) {
+                Log.e("SocialLogin", "Unexpected exception", e)
+                Toast.makeText(context, "Lỗi: ${e.message}", Toast.LENGTH_SHORT).show()
             }
         }
     }, onFacebookClick = {

@@ -1,5 +1,6 @@
 package com.tattantat.app.presentation.navigation
 
+import com.tattantat.app.BuildConfig
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -102,7 +103,10 @@ fun TatTanTatApp() {
     val nav = rememberNavController()
     NavHost(nav, "splash") {
         composable("splash") {
-            Splash { nav.navigate("main") { popUpTo("splash") { inclusive = true } } }
+            Splash(onAuthResult = { isLoggedIn ->
+                val destination = if (isLoggedIn || BuildConfig.DEBUG) "main" else "login"
+                nav.navigate(destination) { popUpTo("splash") { inclusive = true } }
+            })
         }
         composable("login") {
             LoginScreen(
@@ -126,8 +130,12 @@ fun TatTanTatApp() {
 }
 
 @Composable
-private fun Splash(done: () -> Unit) {
-    LaunchedEffect(Unit) { delay(750); done() }
+private fun Splash(onAuthResult: (Boolean) -> Unit, vm: AppViewModel = hiltViewModel()) {
+    LaunchedEffect(Unit) {
+        val isLoggedIn = vm.checkSession()
+        delay(500)
+        onAuthResult(isLoggedIn)
+    }
     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text("Tất Tần Tật", style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)

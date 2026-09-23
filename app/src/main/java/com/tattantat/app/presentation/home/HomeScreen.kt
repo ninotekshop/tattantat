@@ -47,6 +47,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
+import com.tattantat.app.R
 import com.tattantat.app.domain.category.Category
 import com.tattantat.app.domain.category.CategoryIcons
 import com.tattantat.app.domain.product.Product
@@ -88,9 +89,13 @@ fun HomeScreen(
 
 @Composable private fun HomeHeader(onNotifications: () -> Unit, onExplore: () -> Unit, onFavorites: () -> Unit = {}) = Column(Modifier.padding(horizontal = 16.dp)) {
     Row(verticalAlignment = Alignment.CenterVertically) {
-        Column(Modifier.weight(1f)) {
-            Text("Tất Tần Tật", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
-            Text("Mua gì cũng có - Bán gì cũng dễ", style = MaterialTheme.typography.labelSmall)
+        Box(Modifier.weight(1f)) {
+            Image(
+                painter = painterResource(id = R.drawable.ic_app_logo_horizontal),
+                contentDescription = "Tất Tần Tật",
+                modifier = Modifier.height(36.dp),
+                contentScale = ContentScale.Fit
+            )
         }
         IconButton(onClick = onFavorites) { Icon(Icons.Outlined.FavoriteBorder, "Yêu thích") }
         IconButton(onClick = onNotifications) { Icon(Icons.Outlined.NotificationsNone, "Thông báo") }
