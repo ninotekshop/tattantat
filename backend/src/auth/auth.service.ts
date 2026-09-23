@@ -267,7 +267,7 @@ export class AuthService {
         secret: this.config.get<string>('JWT_REFRESH_SECRET') || DEFAULT_JWT_REFRESH, expiresIn: '30d',
       }),
     ]);
-    return { accessToken, refreshToken, user: { id: user.id, fullName: user.full_name, avatarUrl: user.avatar_url } };
+    return { accessToken, refreshToken, user: { id: user.id, fullName: user.full_name, avatarUrl: user.avatar_url, role: user.role } };
   }
 
   private envelope<T>(data: T, message: string | null = null) {

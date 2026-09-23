@@ -1,7 +1,7 @@
 export type WebSession = {
   accessToken: string;
   refreshToken: string;
-  user: { id: string; fullName: string; avatarUrl?: string | null };
+  user: { id: string; fullName: string; avatarUrl?: string | null; role?: string };
 };
 
 const sessionKey = 'tattantat.web.session';
