@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { Search, MapPin, Flame, ArrowRight, Heart, Filter, ChevronRight } from 'lucide-react';
+import { Search, MapPin, Flame, ArrowRight, Heart, Filter, ChevronRight, MapPin as MapPinIcon, User, Clock } from 'lucide-react';
 import { api, type Product } from '../../lib/api';
 import { formatVnd, CATEGORY_ENGINE_TAXONOMY, LISTING_INTENTS, ParentCategorySpec, SubCategorySpec } from '../../lib/marketplace';
 
@@ -43,14 +43,52 @@ function ProductCard({ product }: { product: Product }) {
             <span className="price">{product.priceMode==='CONTACT' ? 'LIÊN HỆ' : product.priceMode==='FREE' ? 'TẶNG MIỄN PHÍ' : formatVnd(product.price)}</span>
           </div>
           <div className="location-row" style={{display:'flex', alignItems:'center', gap:4, color:'#64748b'}}>
-            <MapPin size={13} color="#64748b" /> {product.location || 'Quy Nhơn'}
+            <MapPinIcon size={13} color="#64748b" /> {product.location || 'Quy Nhơn'}
           </div>
           <div className="card-seller-name" style={{fontSize:12, color:'#475569', marginTop:2}}>
-            👤 {product.sellerName} <span className="verified-badge">✓ Đã xác thực</span>
+            <User size={13} color="#64748b" /> {product.sellerName} <span className="verified-badge">✓ Đã xác thực</span>
           </div>
         </Link>
       </div>
     </article>
+  );
+}
+
+function SubCategoryButton({ sub, parentSlug, parentKey, selectedSubSlug, selectedIntent }: { sub: SubCategorySpec; parentSlug: string; parentKey: string; selectedSubSlug: string | null; selectedIntent: string }) {
+  const router = useRouter();
+  const iconPath = `/assets/category-icons/sub/${parentSlug}/${sub.slug}.png`;
+  const [imgSrc, setImgSrc] = useState(iconPath);
+
+  useEffect(() => {
+    setImgSrc(`/assets/category-icons/sub/${parentSlug}/${sub.slug}.png`);
+  }, [parentSlug, sub.slug]);
+
+  return (
+    <button
+      onClick={() => router.push(`/categories?cat=${parentKey}&sub=${sub.slug}&intent=${selectedIntent}`)}
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 12,
+        background: selectedSubSlug === sub.slug ? '#e0f6e9' : '#f8fafc',
+        border: selectedSubSlug === sub.slug ? '2px solid #00a65a' : '1px solid #e2e8f0',
+        borderRadius: 14,
+        padding: '12px 16px',
+        cursor: 'pointer',
+        textAlign: 'left',
+        transition: 'all 0.2s ease'
+      }}
+    >
+      <img
+        src={imgSrc}
+        alt={sub.name}
+        onError={() => setImgSrc(`/assets/category-icons/parent/${parentSlug}.png`)}
+        style={{ width: 44, height: 44, objectFit: 'contain', flexShrink: 0, filter: 'drop-shadow(0 2px 6px rgba(0,0,0,0.08))' }}
+      />
+      <span style={{ fontSize: 13, fontWeight: 600, color: selectedSubSlug === sub.slug ? '#008247' : '#1e293b' }}>
+        {sub.name}
+      </span>
+    </button>
   );
 }
 
@@ -149,34 +187,21 @@ function CategoryEngineContent() {
         </div>
       </div>
 
-      {/* DANH MỤC CON VỚI ICON 3D TƯƠNG TỰ DANH MỤC CHA */}
+      {/* DANH MỤC CON VỚI ICON 3D CỤ THỂ RIÊNG BIỆT (114 SUBCATEGORY ICONS) */}
       <div className="white-card-box" style={{ marginBottom: 24, padding: '20px 24px' }}>
         <h2 style={{ fontSize: 18, fontWeight: 700, color: '#0f172a', marginBottom: 16 }}>
           Chuyên mục con: {parentCat.label}
         </h2>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(210px, 1fr))', gap: 14 }}>
           {parentCat.subCategories.map(sub => (
-            <button
+            <SubCategoryButton
               key={sub.slug}
-              onClick={() => router.push(`/categories?cat=${parentCat.key}&sub=${sub.slug}&intent=${selectedIntent}`)}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 12,
-                background: selectedSubSlug === sub.slug ? '#e0f6e9' : '#f8fafc',
-                border: selectedSubSlug === sub.slug ? '2px solid #00a65a' : '1px solid #e2e8f0',
-                borderRadius: 14,
-                padding: '12px 16px',
-                cursor: 'pointer',
-                textAlign: 'left',
-                transition: 'all 0.2s ease'
-              }}
-            >
-              <img src={sub.icon} alt={sub.name} style={{ width: 40, height: 40, objectFit: 'contain', flexShrink: 0 }} />
-              <span style={{ fontSize: 13, fontWeight: 600, color: selectedSubSlug === sub.slug ? '#008247' : '#1e293b' }}>
-                {sub.name}
-              </span>
-            </button>
+              sub={sub}
+              parentSlug={parentCat.slug}
+              parentKey={parentCat.key}
+              selectedSubSlug={selectedSubSlug}
+              selectedIntent={selectedIntent}
+            />
           ))}
         </div>
       </div>
