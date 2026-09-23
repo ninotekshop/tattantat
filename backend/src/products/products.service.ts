@@ -32,9 +32,11 @@ export class ProductsService {
   }
 
   async detail(id: string, viewerId?: string) {
-    const result = await this.database.query<ProductRow>(
+    const result = await this.database.query<ProductRow & { images: string[] }>(
       `SELECT p.id, p.title, p.price::text, p.address, p.created_at, p.status::text, p.seller_id, p.description, p.condition, p.category_id, p.listing_price_mode, (SELECT l.id FROM listings l WHERE l.product_id=p.id) AS listing_id, u.full_name AS seller_name,
-       (SELECT url FROM product_images WHERE product_id = p.id ORDER BY sort_order LIMIT 1) AS image_url FROM products p JOIN users u ON u.id = p.seller_id
+       (SELECT url FROM product_images WHERE product_id = p.id ORDER BY sort_order LIMIT 1) AS image_url,
+       COALESCE((SELECT jsonb_agg(url ORDER BY sort_order) FROM product_images WHERE product_id = p.id), '[]'::jsonb) AS images
+       FROM products p JOIN users u ON u.id = p.seller_id
        WHERE p.id = $1 AND p.status = 'ACTIVE' AND p.deleted_at IS NULL
          AND NOT EXISTS (SELECT 1 FROM user_blocks b WHERE $2::uuid IS NOT NULL AND ((b.blocker_id=$2::uuid AND b.blocked_id=p.seller_id) OR (b.blocker_id=p.seller_id AND b.blocked_id=$2::uuid)))`, [id, viewerId ?? null],
     );
@@ -145,7 +147,25 @@ export class ProductsService {
     return this.envelope(this.productPayload(result));
   }
 
-  private productPayload(row: ProductRow) { return { id: row.id, title: row.title, price: row.price, priceMode:row.listing_price_mode??'FIXED', listingId:row.listing_id??null, location: row.address ?? 'Chưa cập nhật', postedAt: row.created_at, sellerId: row.seller_id ?? '', sellerName: row.seller_name, imageUrl: row.image_url ?? '', description: row.description ?? null, condition: row.condition ?? null, categoryId: row.category_id ?? null, status: row.status ?? 'ACTIVE' }; }
+  private productPayload(row: ProductRow & { images?: string[] }) {
+    return {
+      id: row.id,
+      title: row.title,
+      price: row.price,
+      priceMode: row.listing_price_mode ?? 'FIXED',
+      listingId: row.listing_id ?? null,
+      location: row.address ?? 'Chưa cập nhật',
+      postedAt: row.created_at,
+      sellerId: row.seller_id ?? '',
+      sellerName: row.seller_name,
+      imageUrl: row.image_url ?? '',
+      images: row.images && row.images.length > 0 ? row.images : (row.image_url ? [row.image_url] : []),
+      description: row.description ?? null,
+      condition: row.condition ?? null,
+      categoryId: row.category_id ?? null,
+      status: row.status ?? 'ACTIVE'
+    };
+  }
   private envelope<T>(data: T) { return { success: true, data, message: null, errorCode: null }; }
   private slugify(value: string) { return value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd').replace(/Đ/g, 'd').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, ''); }
 }

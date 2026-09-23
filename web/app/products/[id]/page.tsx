@@ -12,6 +12,25 @@ import { api, Product } from '../../../lib/api';
 import { formatVnd } from '../../../lib/marketplace';
 import './listing-detail.css';
 
+function formatCondition(condition?: string | null) {
+  if (!condition) return 'Đã qua sử dụng (Tốt)';
+  const upper = condition.toUpperCase();
+  switch (upper) {
+    case 'NEW':
+      return 'Mới 100%';
+    case 'USED_LIKE_NEW':
+      return 'Như mới (99%)';
+    case 'USED_GOOD':
+      return 'Đã qua sử dụng (Tốt)';
+    case 'USED_FAIR':
+      return 'Đã qua sử dụng (Cũ / Tương đối)';
+    case 'REFURBISHED':
+      return 'Đã tân trang / Sửa chữa';
+    default:
+      return condition.replace('_', ' ');
+  }
+}
+
 function getCategoryPath(product: Product) {
   const title = (product.title || '').toLowerCase();
 
@@ -158,9 +177,9 @@ export default function ProductDetailPage() {
   const catPath = getCategoryPath(product);
 
   // Gallery images array
-  const images = product.imageUrl
-    ? [product.imageUrl, '/assets/product-2.jpg', '/assets/product-3.jpg', '/assets/product-4.jpg']
-    : ['/assets/product-1.jpg', '/assets/product-2.jpg'];
+  const images = (product.images && product.images.length > 0)
+    ? product.images
+    : (product.imageUrl ? [product.imageUrl] : ['/assets/product-1.jpg']);
 
   const hotProducts = allProducts.filter(p => p.id !== product.id).slice(0, 5);
   const relatedProducts = allProducts.filter(p => p.id !== product.id).slice(2, 8);
@@ -249,7 +268,7 @@ export default function ProductDetailPage() {
               {/* KHỐI THÔNG TIN CHÍNH */}
               <div className="detail-info-box">
                 <div className="condition-badge">
-                  {product.condition || 'ĐÃ QUA SỬ DỤNG'}
+                  {formatCondition(product.condition)}
                 </div>
 
                 <h1 className="detail-title">{product.title}</h1>
@@ -329,7 +348,7 @@ export default function ProductDetailPage() {
             <div className="product-specs-table">
               <div className="spec-row">
                 <span className="spec-label">Tình trạng:</span>
-                <span className="spec-val">{product.condition || 'Đã qua sử dụng'}</span>
+                <span className="spec-val">{formatCondition(product.condition)}</span>
               </div>
               <div className="spec-row">
                 <span className="spec-label">Khu vực:</span>

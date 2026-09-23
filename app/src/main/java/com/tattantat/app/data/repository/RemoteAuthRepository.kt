@@ -7,6 +7,7 @@ import com.tattantat.app.data.remote.auth.AuthPayload
 import com.tattantat.app.data.remote.auth.LoginRequest
 import com.tattantat.app.data.remote.auth.RefreshRequest
 import com.tattantat.app.data.remote.auth.RegisterRequest
+import com.tattantat.app.data.remote.auth.SocialLoginRequest
 import com.tattantat.app.data.remote.auth.VerifyOtpRequest
 import com.tattantat.app.domain.auth.AuthRepository
 import com.tattantat.app.domain.auth.SessionUser
@@ -32,6 +33,9 @@ class RemoteAuthRepository @Inject constructor(private val api: AuthApi, private
     }
     override suspend fun login(identity: String, password: String): ApiResult<SessionUser> {
         return call { api.login(LoginRequest(identity, password)) }
+    }
+    override suspend fun socialLogin(provider: String, token: String): ApiResult<SessionUser> {
+        return call { api.socialLogin(SocialLoginRequest(provider, token)) }
     }
     override suspend fun register(name: String, phone: String, password: String): ApiResult<String> = try {
         val response = api.register(RegisterRequest(name, phone, password))

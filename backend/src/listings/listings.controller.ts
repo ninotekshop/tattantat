@@ -56,6 +56,7 @@ export class ListingsController {
   @Post(':id/videos') @UseGuards(JwtAuthGuard) @UseInterceptors(FileInterceptor('file',{limits:{fileSize:50*1024*1024,files:1}}))
   video(@Req() req:AuthRequest,@Param('id',ParseUUIDPipe) id:string,@UploadedFile() file?:{buffer:Buffer;mimetype:string}){if(!file) throw new BadRequestException('Vui lòng chọn video.');return this.listings.upload(id,req.user.id,'videos',file);}
   @Delete(':id/media/:mediaId') @UseGuards(JwtAuthGuard) remove(@Req() req:AuthRequest,@Param('id',ParseUUIDPipe) id:string,@Param('mediaId',ParseUUIDPipe) mediaId:string){return this.listings.removeMedia(id,mediaId,req.user.id);}
+  @Delete(':id') @UseGuards(JwtAuthGuard) deleteListing(@Req() req:AuthRequest,@Param('id',ParseUUIDPipe) id:string){return this.listings.deleteListing(req.user.id,id);}
 }
 
 @Controller('admin/listing-engine')

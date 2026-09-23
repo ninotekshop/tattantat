@@ -9,9 +9,11 @@ interface AuthApi {
     @POST("auth/verify-otp") suspend fun verifyOtp(@Body request: VerifyOtpRequest): ApiEnvelope<AuthPayload>
     @POST("auth/refresh") suspend fun refresh(@Body request: RefreshRequest): ApiEnvelope<AuthPayload>
     @POST("auth/logout") suspend fun logout(@Body request: RefreshRequest): ApiEnvelope<Unit>
+    @POST("auth/social") suspend fun socialLogin(@Body request: SocialLoginRequest): ApiEnvelope<AuthPayload>
 }
 
 data class ApiEnvelope<T>(val success: Boolean, val data: T?, val message: String?, val errorCode: String?)
+data class SocialLoginRequest(val provider: String, val token: String)
 data class LoginRequest(val phoneOrEmail: String, val password: String)
 data class RegisterRequest(val fullName: String, val phone: String, val password: String)
 data class VerifyOtpRequest(val verificationId: String, val otp: String)

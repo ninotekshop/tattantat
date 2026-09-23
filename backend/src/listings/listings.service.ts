@@ -569,6 +569,23 @@ export class ListingsService {
     });
   }
 
+  async deleteListing(sellerId:string, id:string) {
+    return this.db.transaction(async client => {
+      const existing = await client.query('SELECT id, status, product_id FROM listings WHERE id=$1 AND seller_id=$2', [id, sellerId]);
+      if (!existing.rows[0]) throw new NotFoundException('Không tìm thấy bản nháp hoặc bạn không có quyền xóa.');
+
+      const productId = existing.rows[0].product_id;
+      if (productId) {
+        await client.query('UPDATE products SET deleted_at=now() WHERE id=$1', [productId]);
+      }
+      await client.query('DELETE FROM listing_images WHERE listing_id=$1', [id]);
+      await client.query('DELETE FROM listing_videos WHERE listing_id=$1', [id]);
+      await client.query('DELETE FROM listing_field_values WHERE listing_id=$1', [id]);
+      await client.query('DELETE FROM listings WHERE id=$1', [id]);
+      return envelope({ id });
+    });
+  }
+
   async publish(id:string,sellerId:string,revision:number,key:string) {
     if(!uuid(key)) throw new BadRequestException('Cần Idempotency-Key dạng UUID.');
     return this.db.transaction(async client=>{

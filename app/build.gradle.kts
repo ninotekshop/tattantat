@@ -56,4 +56,8 @@ dependencies {
     testImplementation(libs.junit)
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.messaging)
+    implementation(libs.androidx.credentials)
+    implementation(libs.androidx.credentials.auth)
+    implementation(libs.googleid)
+    implementation(libs.facebook.login)
 }

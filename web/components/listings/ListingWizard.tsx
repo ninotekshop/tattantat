@@ -2,10 +2,11 @@
 
 import Link from 'next/link';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ArrowLeft, ArrowRight, Check, CheckCircle2, Cloud, MapPin, ShieldCheck, FileText, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Check, CheckCircle2, Cloud, MapPin, ShieldCheck, FileText, AlertTriangle, Trash2, X } from 'lucide-react';
 import { readSession } from '../../lib/auth';
 import { Listing, ListingCategory, ListingData, ListingError, ListingMedia, ListingSummary, Template, conditionLabels, listingPrice, listingRequest, priceLabels, publicData, validateListing, visible } from '../../lib/listings';
 import { CATEGORY_ENGINE_TAXONOMY, LISTING_INTENTS, ParentCategorySpec, SubCategorySpec, getCategoryPlaceholders } from '../../lib/marketplace';
+import { ALL_PROVINCES } from '../../lib/locations';
 import { DynamicField } from './DynamicField';
 import { MediaPicker } from './MediaPicker';
 import { LocationMap } from './LocationMap';
@@ -222,6 +223,24 @@ export function ListingWizard() {
     }
   }
 
+  async function deleteDraft(id: string) {
+    if (!confirm('Bạn có chắc chắn muốn xóa bản nháp này khỏi danh sách?')) return;
+    setBusy(true);
+    try {
+      await listingRequest(`/listings/${id}`, 'DELETE');
+      setDrafts(prev => prev.filter(d => d.id !== id));
+      if (listingRef.current?.id === id) {
+        listingRef.current = null;
+        setListing(null);
+        setStep(0);
+      }
+    } catch (err) {
+      fail(err);
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function begin() {
     if (!categoryId) return;
     if (!readSession()) {
@@ -254,6 +273,16 @@ export function ListingWizard() {
     if (contactWarning) {
       setError(contactWarning);
       return;
+    }
+
+    // Street address check in Description
+    if (step === 1) {
+      const desc = current.current.description || '';
+      const addressRegex = /(số\s+\d+|đường\s+|phường\s+|quận\s+|huyện\s+|ngõ\s+|ngách\s+|hẻm\s+|xã\s+|thôn\s+)/i;
+      if (addressRegex.test(desc)) {
+        setError('Vui lòng không nhập địa chỉ giao dịch chi tiết vào phần Mô tả chi tiết. Hãy chọn tỉnh/thành, quận/huyện ở bước Giá & Vị trí để bảo mật thông tin cá nhân và định vị tin đăng chính xác nhất.');
+        return;
+      }
     }
 
     const all = validateListing(current.current, template, true);
@@ -333,7 +362,7 @@ export function ListingWizard() {
     }
     navigator.geolocation.getCurrentPosition(
       pos => patch({ location: { ...current.current.location, latitude: pos.coords.latitude, longitude: pos.coords.longitude } }),
-      () => setError('Chưa lấy được vị trí. Hãy nhập địa chỉ bên dưới.'),
+      () => setError('Chưa lấy được vị trí. Hãy chọn tỉnh/thành, quận/huyện bên dưới.'),
       { timeout: 10000 }
     );
   }
@@ -363,6 +392,26 @@ export function ListingWizard() {
 
   return (
     <main id="main-content" className="lf-page">
+      {/* CENTERED POPUP MODAL FOR ERROR NOTIFICATIONS */}
+      {error && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.6)', backdropFilter: 'blur(4px)', zIndex: 99999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+          <div style={{ background: '#ffffff', borderRadius: 20, width: '100%', maxWidth: 460, padding: 24, boxShadow: '0 20px 40px rgba(0,0,0,0.25)', textAlign: 'center' }}>
+            <div style={{ width: 56, height: 56, borderRadius: '50%', background: '#fef2f2', color: '#ef4444', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+              <AlertTriangle size={28} />
+            </div>
+            <h3 style={{ fontSize: 18, fontWeight: 700, color: '#0f172a', marginBottom: 10 }}>Thông báo hệ thống</h3>
+            <p style={{ fontSize: 14, color: '#475569', lineHeight: 1.6, marginBottom: 20 }}>{error}</p>
+            <button
+              type="button"
+              onClick={() => setError('')}
+              style={{ background: '#00a65a', color: '#ffffff', border: 'none', padding: '12px 24px', borderRadius: 999, fontWeight: 700, fontSize: 14, cursor: 'pointer', width: '100%' }}
+            >
+              Đã hiểu & Xác nhận
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="lf-heading">
         <div>
           <Link href="/" className="lf-back"><ArrowLeft size={16} /> Trang chủ</Link>
@@ -398,7 +447,6 @@ export function ListingWizard() {
             {listing && <span className="lf-save" role="status"><Cloud size={17} /> {saveState}</span>}
           </div>
 
-          {error && <div className="lf-alert" role="alert">{error}</div>}
           {contactWarning && (
             <div className="lf-alert warning" style={{ background: '#fffbe3', border: '1px solid #fef08a', color: '#854d0e', marginBottom: 16 }}>
               <AlertTriangle size={18} /> {contactWarning}
@@ -515,19 +563,35 @@ export function ListingWizard() {
                     </div>
                   </div>
 
+                  {/* DANH SÁCH BẢN NHÁP CÓ THỂ XÓA */}
                   {!listing && drafts.length > 0 && (
-                    <div className="lf-drafts">
-                      <h3>Tiếp tục tin đã lưu</h3>
-                      {drafts.map(draft => (
-                        <button type="button" key={draft.id} onClick={() => resume(draft.id)}>
-                          <FileText size={18} />
-                          <span>
-                            <strong>{draft.title || 'Tin chưa có tiêu đề'}</strong>
-                            <small>{draft.status === 'PUBLISHED' ? 'Đã đăng · Chỉnh sửa' : 'Bản nháp'} · {new Date(draft.updatedAt).toLocaleDateString('vi-VN')}</small>
-                          </span>
-                          <ArrowRight size={17} />
-                        </button>
-                      ))}
+                    <div className="lf-drafts" style={{ marginTop: 24 }}>
+                      <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 12 }}>Tiếp tục tin đã lưu ({drafts.length})</h3>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                        {drafts.map(draft => (
+                          <div key={draft.id} style={{ display: 'flex', alignItems: 'center', gap: 10, background: '#f8fafc', padding: '10px 14px', borderRadius: 12, border: '1px solid #e2e8f0' }}>
+                            <button
+                              type="button"
+                              onClick={() => resume(draft.id)}
+                              style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 12, background: 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left', padding: 0 }}
+                            >
+                              <FileText size={20} color="#00a65a" />
+                              <div>
+                                <strong style={{ display: 'block', fontSize: 13.5, color: '#0f172a' }}>{draft.title || 'Tin chưa có tiêu đề'}</strong>
+                                <small style={{ fontSize: 11.5, color: '#64748b' }}>{draft.status === 'PUBLISHED' ? 'Đã đăng · Chỉnh sửa' : 'Bản nháp'} · Cập nhật {new Date(draft.updatedAt).toLocaleDateString('vi-VN')}</small>
+                              </div>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => deleteDraft(draft.id)}
+                              title="Xóa bản nháp"
+                              style={{ background: '#fee2e2', color: '#dc2626', border: 'none', width: 34, height: 34, borderRadius: 8, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   )}
                 </>
@@ -578,6 +642,9 @@ export function ListingWizard() {
                             placeholder={placeholders.description}
                             onChange={e => patch({ description: e.target.value })}
                           />
+                          <small style={{ color: '#00a65a', fontSize: 11.5, marginTop: 4, display: 'block' }}>
+                            🔒 Lưu ý: Không ghi địa chỉ giao dịch cụ thể vào Mô tả chi tiết. Vui lòng chọn khu vực ở bước Giá & Vị trí.
+                          </small>
                           {fieldError('description')}
                         </div>
                       </>
@@ -644,18 +711,56 @@ export function ListingWizard() {
 
                   <h3>Vị trí sản phẩm / dịch vụ</h3>
                   <div className="lf-fields-grid">
-                    {([['province', 'Tỉnh / Thành phố *'], ['district', 'Quận / Huyện'], ['ward', 'Phường / Xã *'], ['address', 'Địa chỉ cụ thể']] as const).map(([k, label]) => (
-                      <div key={k} className="lf-field">
-                        <label htmlFor={`listing-${k}`}>{label}</label>
-                        <input
-                          id={`listing-${k}`}
-                          value={data.location?.[k] ?? ''}
-                          maxLength={k === 'address' ? 300 : 100}
-                          onChange={e => patch({ location: { ...current.current.location, [k]: e.target.value } })}
-                        />
-                        {fieldError('location.' + k)}
-                      </div>
-                    ))}
+                    <div className="lf-field">
+                      <label htmlFor="province-select">Tỉnh / Thành phố *</label>
+                      <select
+                        id="province-select"
+                        value={data.location?.province || ''}
+                        onChange={e => patch({ location: { ...current.current.location, province: e.target.value, district: '' } })}
+                      >
+                        <option value="">-- Chọn Tỉnh / Thành phố --</option>
+                        {ALL_PROVINCES.map((p: any) => (
+                          <option key={p.id} value={p.name}>{p.name}</option>
+                        ))}
+                      </select>
+                      {fieldError('location.province')}
+                    </div>
+
+                    <div className="lf-field">
+                      <label htmlFor="district-select">Quận / Huyện *</label>
+                      <select
+                        id="district-select"
+                        value={data.location?.district || ''}
+                        onChange={e => patch({ location: { ...current.current.location, district: e.target.value } })}
+                      >
+                        <option value="">-- Chọn Quận / Huyện --</option>
+                        {((ALL_PROVINCES.find((p: any) => p.name === data.location?.province)?.children) || []).map((d: any) => (
+                          <option key={d.id || d.name} value={d.name}>{d.name}</option>
+                        ))}
+                      </select>
+                      {fieldError('location.district')}
+                    </div>
+
+                    <div className="lf-field">
+                      <label htmlFor="ward-input">Phường / Xã *</label>
+                      <input
+                        id="ward-input"
+                        value={data.location?.ward || ''}
+                        placeholder="Ví dụ: Phường Lý Thường Kiệt"
+                        onChange={e => patch({ location: { ...current.current.location, ward: e.target.value } })}
+                      />
+                      {fieldError('location.ward')}
+                    </div>
+
+                    <div className="lf-field">
+                      <label htmlFor="address-input">Địa chỉ cụ thể (Không bắt buộc)</label>
+                      <input
+                        id="address-input"
+                        value={data.location?.address || ''}
+                        placeholder="Ví dụ: 123 Đường Lê Hồng Phong"
+                        onChange={e => patch({ location: { ...current.current.location, address: e.target.value } })}
+                      />
+                    </div>
                   </div>
 
                   <label className="lf-check">
@@ -748,51 +853,45 @@ export function ListingWizard() {
 
               {/* BƯỚC 7: HOÀN TẤT */}
               {step === 6 && (
-                <div className="lf-success">
-                  <CheckCircle2 size={64} />
-                  <h2>Tin của bạn đã được xuất bản công khai!</h2>
-                  <p>Người mua có thể tìm kiếm và xem tin đăng trên Tất Tần Tật ngay bây giờ.</p>
-                  <Link className="lf-primary" href={`/products/${listing?.productId}`}>
-                    Xem tin vừa đăng <ArrowRight size={18} />
-                  </Link>
-                  <a className="lf-secondary" href="/sell">Đăng tin khác</a>
+                <div className="lf-callout">
+                  <CheckCircle2 size={32} color="#00a65a" />
+                  <div>
+                    <strong>ĐĂNG TIN THÀNH CÔNG!</strong>
+                    <p>Tin đăng của bạn đã sẵn sàng tiếp cận hàng ngàn người mua trên Tất Tần Tật.</p>
+                    {listing?.productId && (
+                      <p style={{ marginTop: 12 }}>
+                        <Link href={`/products/${listing.productId}`} className="lf-button" style={{ textDecoration: 'none', display: 'inline-flex' }}>
+                          Xem tin vừa đăng →
+                        </Link>
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* NAVIGATION BUTTONS */}
+              {step < 6 && (
+                <div className="lf-actions">
+                  {step > 0 && (
+                    <button type="button" className="lf-secondary" disabled={disabled} onClick={() => setStep(s => Math.max(0, s - 1))}>
+                      Quay lại
+                    </button>
+                  )}
+                  {step < 5 && (
+                    <button type="button" className="lf-primary" disabled={disabled} onClick={nextStep}>
+                      {busy ? 'Đang xử lý…' : 'Tiếp tục'}
+                    </button>
+                  )}
+                  {step === 5 && (
+                    <button type="button" className="lf-primary" disabled={disabled} onClick={publish}>
+                      {busy ? 'Đang xuất bản…' : 'ĐĂNG TIN NGAY'}
+                    </button>
+                  )}
                 </div>
               )}
             </fieldset>
           )}
-
-          {step < 6 && (
-            <div className="lf-actions">
-              <button className="lf-secondary" type="button" disabled={step === 0 || busy || mediaBusy} onClick={() => { setError(''); setStep(v => v - 1); }}>
-                <ArrowLeft size={17} /> Quay lại
-              </button>
-              <div>
-                {listing && (
-                  <button className="lf-text-button" type="button" disabled={disabled || mediaBusy} onClick={() => flush().catch(fail)}>
-                    Lưu nháp
-                  </button>
-                )}
-                <button className="lf-primary" type="button" disabled={loading || disabled || mediaBusy} onClick={step === 5 ? publish : nextStep}>
-                  {busy ? 'Đang xử lý…' : step === 5 ? 'Đăng tin ngay' : 'Tiếp tục'} <ArrowRight size={18} />
-                </button>
-              </div>
-            </div>
-          )}
         </section>
-
-        <aside className="lf-aside">
-          <div className="lf-tips">
-            <span className="lf-tip-icon"><ShieldCheck size={28} /></span>
-            <h3>Đăng tin an toàn trên Tất Tần Tật</h3>
-            <p>Hệ thống hỗ trợ kiểm tra bảo mật & thông tin cá nhân tự động.</p>
-            <ul>
-              <li>Không lộ số điện thoại / email trong tiêu đề & mô tả.</li>
-              <li>Sử dụng ảnh thật, mô tả trung thực chất lượng.</li>
-              <li>Chỉ giao dịch qua kênh chính thức của Tất Tần Tật.</li>
-            </ul>
-            <div className="lf-tip-footer"><Cloud size={19} /> Bản nháp tự động lưu liên tục</div>
-          </div>
-        </aside>
       </div>
     </main>
   );

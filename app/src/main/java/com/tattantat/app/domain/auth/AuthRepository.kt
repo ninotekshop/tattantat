@@ -14,6 +14,7 @@ interface AuthRepository {
     val currentUser: StateFlow<SessionUser?>
     suspend fun restoreSession(): ApiResult<SessionUser>
     suspend fun login(identity: String, password: String): ApiResult<SessionUser>
+    suspend fun socialLogin(provider: String, token: String): ApiResult<SessionUser>
     suspend fun register(name: String, phone: String, password: String): ApiResult<String>
     suspend fun verifyOtp(verificationId: String, otp: String): ApiResult<SessionUser>
     suspend fun logout()
