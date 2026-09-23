@@ -92,6 +92,10 @@ export class SocialLoginDto {
   @IsString()
   @IsOptional()
   idToken?: string;
+
+  @IsString()
+  @IsOptional()
+  accessToken?: string;
 }
 
 export class RefreshDto {

@@ -157,10 +157,10 @@ export class AuthService {
 
   async socialLogin(body: SocialLoginDto) {
     let email = body.email?.trim().toLowerCase() || null;
-    let name = body.name || 'Thành viên Google';
+    let name = body.name || `Thành viên ${body.provider === 'google' ? 'Google' : body.provider === 'facebook' ? 'Facebook' : 'Apple'}`;
     let avatarUrl = body.avatarUrl || null;
 
-    // Verify Google ID Token if provided
+    // 1. Verify Google ID Token if provided
     if (body.provider === 'google' && body.idToken) {
       try {
         const verifyRes = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${body.idToken}`);
@@ -170,6 +170,26 @@ export class AuthService {
             email = googlePayload.email.toLowerCase();
             name = googlePayload.name || name;
             avatarUrl = googlePayload.picture || avatarUrl;
+          }
+        }
+      } catch (err) {}
+    }
+
+    // 2. Verify Facebook Access Token via Meta Graph API if provided
+    if (body.provider === 'facebook' && (body.accessToken || body.idToken)) {
+      const fbToken = body.accessToken || body.idToken;
+      try {
+        const verifyRes = await fetch(`https://graph.facebook.com/me?fields=id,name,email,picture.type(large)&access_token=${fbToken}`);
+        if (verifyRes.ok) {
+          const fbPayload = await verifyRes.json();
+          if (fbPayload?.email) {
+            email = fbPayload.email.toLowerCase();
+          }
+          if (fbPayload?.name) {
+            name = fbPayload.name;
+          }
+          if (fbPayload?.picture?.data?.url) {
+            avatarUrl = fbPayload.picture.data.url;
           }
         }
       } catch (err) {}
@@ -200,7 +220,8 @@ export class AuthService {
       await this.database.query('UPDATE users SET avatar_url = $1 WHERE id = $2', [avatarUrl, user.id]);
     }
 
-    return this.envelope(await this.tokensFor(user), `Đăng nhập ${body.provider === 'google' ? 'Google' : body.provider} thành công!`);
+    const providerName = body.provider === 'google' ? 'Google' : body.provider === 'facebook' ? 'Facebook' : 'Apple';
+    return this.envelope(await this.tokensFor(user), `Đăng nhập ${providerName} thành công!`);
   }
 
   async refresh(body: RefreshDto) {

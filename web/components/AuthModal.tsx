@@ -217,6 +217,10 @@ export function AuthModal({ isOpen, onClose, initialMode = 'LOGIN', onSuccess }:
       setSuccessMsg(data.message || 'Nếu email này được đăng ký tại Tất Tần Tật, bạn sẽ nhận được hướng dẫn đặt lại mật khẩu trong ít phút.');
     } catch (err) {
       setError('Lỗi kết nối máy chủ.');
+    } finally {
+      setLoading(false);
+    }
+  };
   useEffect(() => {
     if (typeof window === 'undefined') return;
     const scriptId = 'google-gsi-client-script';
@@ -226,6 +230,33 @@ export function AuthModal({ isOpen, onClose, initialMode = 'LOGIN', onSuccess }:
       script.src = 'https://accounts.google.com/gsi/client';
       script.async = true;
       script.defer = true;
+      document.body.appendChild(script);
+    }
+  }, []);
+
+  // Load Facebook SDK Script dynamically
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const fbAppId = process.env.NEXT_PUBLIC_FACEBOOK_APP_ID;
+    if (!fbAppId) return;
+
+    if (!document.getElementById('facebook-jssdk')) {
+      const script = document.createElement('script');
+      script.id = 'facebook-jssdk';
+      script.src = 'https://connect.facebook.net/vi_VN/sdk.js';
+      script.async = true;
+      script.defer = true;
+      script.crossOrigin = 'anonymous';
+      script.onload = () => {
+        if ((window as any).FB) {
+          (window as any).FB.init({
+            appId: fbAppId,
+            cookie: true,
+            xfbml: true,
+            version: 'v19.0',
+          });
+        }
+      };
       document.body.appendChild(script);
     }
   }, []);
@@ -267,6 +298,47 @@ export function AuthModal({ isOpen, onClose, initialMode = 'LOGIN', onSuccess }:
       (window as any).google.accounts.id.prompt();
     } else {
       handleSocialLogin('google');
+    }
+  };
+
+  const handleFacebookAuth = () => {
+    const fbAppId = process.env.NEXT_PUBLIC_FACEBOOK_APP_ID;
+    if ((window as any).FB && fbAppId) {
+      (window as any).FB.login(
+        async (response: any) => {
+          if (response?.authResponse?.accessToken) {
+            setLoading(true);
+            try {
+              const res = await fetch('/api/v1/auth/social', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  provider: 'facebook',
+                  providerAccountId: response.authResponse.userID || 'facebook_user_2026',
+                  accessToken: response.authResponse.accessToken,
+                }),
+              });
+              const data = await res.json();
+              if (data.success && data.data) {
+                saveSession(data.data);
+                onClose();
+                if (onSuccess) onSuccess();
+              } else {
+                setError(data.message || 'Chưa thể xác thực Facebook.');
+              }
+            } catch (err) {
+              setError('Lỗi kết nối Facebook.');
+            } finally {
+              setLoading(false);
+            }
+          } else {
+            setError('Người dùng đã hủy đăng nhập Facebook.');
+          }
+        },
+        { scope: 'public_profile,email' }
+      );
+    } else {
+      handleSocialLogin('facebook');
     }
   };
 
@@ -528,7 +600,7 @@ export function AuthModal({ isOpen, onClose, initialMode = 'LOGIN', onSuccess }:
                 <button type="button" onClick={handleGoogleAuth} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '10px', borderRadius: 10, border: '1px solid #cbd5e1', background: '#fff', cursor: 'pointer', fontSize: 13, fontWeight: 600, color: '#334155' }}>
                   <GoogleIcon /> Google
                 </button>
-                <button type="button" onClick={() => handleSocialLogin('facebook')} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '10px', borderRadius: 10, border: '1px solid #cbd5e1', background: '#fff', cursor: 'pointer', fontSize: 13, fontWeight: 600, color: '#334155' }}>
+                <button type="button" onClick={handleFacebookAuth} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '10px', borderRadius: 10, border: '1px solid #cbd5e1', background: '#fff', cursor: 'pointer', fontSize: 13, fontWeight: 600, color: '#334155' }}>
                   <FacebookIcon /> Facebook
                 </button>
                 <button type="button" onClick={() => handleSocialLogin('apple')} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '10px', borderRadius: 10, border: '1px solid #cbd5e1', background: '#fff', cursor: 'pointer', fontSize: 13, fontWeight: 600, color: '#334155' }}>
