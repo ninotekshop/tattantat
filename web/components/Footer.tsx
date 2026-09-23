@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { ShieldCheck, Zap, Headphones } from 'lucide-react';
+import { ShieldCheck, Zap, Headphones, Tag } from 'lucide-react';
 
 function FacebookIcon() {
   return <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>;
@@ -19,11 +19,29 @@ function ZaloIcon() {
   return <span style={{fontWeight:800, fontSize:12, letterSpacing:-0.5}}>Zalo</span>;
 }
 
+const popularKeywords = [
+  'iPhone 15 Pro Max', 'Xe máy Honda Vision', 'Căn hộ Quy Nhơn', 'Laptop MacBook Air M2',
+  'Tủ lạnh Inverter', 'Sofa phòng khách', 'Chó Poodle thuần chủng', 'Tuyển dụng nhân viên bán hàng',
+  'Sửa chữa điều hòa tại nhà', 'Túi xách nữ da thật', 'Bán nhà mặt tiền', 'Đồng hồ thông minh'
+];
+
 export function Footer() {
   return (
     <footer className="main-footer">
-      {/* TRUST FEATURE STRIP */}
-      <div className="footer-trust-strip">
+      {/* POPULAR KEYWORDS SECTION (REQ 6) */}
+      <div className="shell popular-keywords-section">
+        <h4 className="popular-keywords-heading"><Tag size={16} color="#00a65a" /> Từ khóa phổ biến</h4>
+        <div className="popular-keywords-tags">
+          {popularKeywords.map(keyword => (
+            <Link key={keyword} href={`/?q=${encodeURIComponent(keyword)}`} className="keyword-tag">
+              {keyword}
+            </Link>
+          ))}
+        </div>
+      </div>
+
+      {/* TRUST FEATURE STRIP (DESKTOP ONLY) */}
+      <div className="footer-trust-strip desktop-only-flex">
         <div className="shell trust-strip-inner">
           <div className="trust-item">
             <ShieldCheck size={20} color="#00a65a" />
@@ -49,9 +67,10 @@ export function Footer() {
         </div>
       </div>
 
-      {/* MAIN FOOTER GRID (5 COLUMNS) */}
+      {/* MAIN FOOTER GRID (5 COLUMNS ON PC, COMPACT ON MOBILE) */}
       <div className="shell footer-main">
-        <div className="footer-grid-5">
+        {/* DESKTOP FOOTER 5 COLUMNS */}
+        <div className="footer-grid-5 desktop-only-grid">
           {/* COL 1: BRAND */}
           <div className="footer-col brand-col">
             <Link href="/" className="footer-logo-link">
@@ -143,12 +162,51 @@ export function Footer() {
             </div>
           </div>
         </div>
+
+        {/* MOBILE COMPACT FOOTER (REQ 7) */}
+        <div className="mobile-only-footer">
+          <div className="mobile-footer-top">
+            <Link href="/" className="footer-logo-link">
+              <img src="/assets/logo.png" alt="Tất Tần Tật" className="footer-logo" />
+            </Link>
+            <p className="footer-slogan">Mua bán mọi thứ, gần bạn.</p>
+          </div>
+
+          {/* 4 MENU LINKS IN 2x2 GRID */}
+          <div className="mobile-footer-grid-2x2">
+            <Link href="/about">Về Tất Tần Tật</Link>
+            <Link href="/privacy">Chính sách bảo mật</Link>
+            <Link href="/regulations">Quy chế hoạt động</Link>
+            <Link href="/dispute-resolution">Giải quyết tranh chấp</Link>
+          </div>
+
+          <div className="mobile-footer-badges">
+            <div className="app-badges" style={{ justifyContent: 'center', marginBottom: 12 }}>
+              <div className="app-store-btn" style={{ padding: '6px 12px' }}>
+                <span className="app-icon" style={{ fontSize: 16 }}></span>
+                <div><small style={{ fontSize: 8 }}>Download on</small><strong style={{ fontSize: 11 }}>App Store</strong></div>
+              </div>
+              <div className="app-store-btn" style={{ padding: '6px 12px' }}>
+                <span className="app-icon" style={{ fontSize: 14 }}>▶</span>
+                <div><small style={{ fontSize: 8 }}>GET IT ON</small><strong style={{ fontSize: 11 }}>Google Play</strong></div>
+              </div>
+            </div>
+
+            <Link href="/regulations" className="bocongthuong-badge" style={{ margin: '0 auto', textDecoration: 'none' }}>
+              <div className="bct-icon">✓</div>
+              <div>
+                <strong>ĐÃ THÔNG BÁO</strong>
+                <span>BỘ CÔNG THƯƠNG</span>
+              </div>
+            </Link>
+          </div>
+        </div>
       </div>
 
       {/* FOOTER BOTTOM */}
       <div className="footer-bottom">
         <div className="shell footer-bottom-inner">
-          <span>© 2026 Tất Tần Tật. Mọi quyền được bảo lưu.</span>
+          <span>© 2026 Tất Tần Tật · Công ty TNHH Ninotek. Mọi quyền được bảo lưu.</span>
           <span className="domain-text">www.tattantat.vn</span>
         </div>
       </div>

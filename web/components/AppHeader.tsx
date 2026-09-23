@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useState, useEffect, useSyncExternalStore } from 'react';
 import { useRouter } from 'next/navigation';
 import { clearSession, readSessionSnapshot } from '../lib/auth';
-import { Home, PlusCircle, Heart, MessageSquare, User, Bell, LogOut, FileText } from 'lucide-react';
+import { Home, PlusCircle, Heart, MessageSquare, User, Bell, LogOut, FileText, Search } from 'lucide-react';
 import { AuthModal } from './AuthModal';
 
 function subscribeSession(listener: () => void) {
@@ -55,7 +55,17 @@ export function AppHeader() {
             <img src="/assets/logo.png" alt="Tất Tần Tật - Mua bán mọi thứ, gần bạn" className="header-logo-img" />
           </Link>
 
-          <nav className="main-nav">
+          {/* MOBILE HEADER SEARCH BAR */}
+          <div className="mobile-header-search" onClick={() => router.push('/categories')}>
+            <Search size={16} color="#00a65a" />
+            <input
+              type="text"
+              placeholder="Tìm sản phẩm, dịch vụ..."
+              readOnly
+            />
+          </div>
+
+          <nav className="main-nav desktop-only-nav">
             <Link className="nav-link active" href="/"><Home size={18} /><span>Trang chủ</span></Link>
             <button className="nav-link" onClick={() => requireAuth('/favorites')} style={{ background: 'transparent', border: 'none', cursor: 'pointer' }}>
               <Heart size={18} /><span>Yêu thích</span>
@@ -69,13 +79,17 @@ export function AppHeader() {
           </nav>
 
           <div className="top-actions">
-            <button onClick={() => requireAuth('/sell')} className="topbar-sell-cta" style={{ cursor: 'pointer', border: 'none' }}>
+            <button onClick={() => requireAuth('/sell')} className="topbar-sell-cta desktop-only-btn" style={{ cursor: 'pointer', border: 'none' }}>
               <PlusCircle size={18} className="topbar-sell-icon" /> ĐĂNG TIN MIỄN PHÍ
             </button>
 
             <button className="bell-btn" onClick={() => requireAuth('/account')} title="Thông báo">
               <Bell size={20} />
               <span className="bell-badge">3</span>
+            </button>
+
+            <button className="heart-btn-mobile desktop-only-btn" onClick={() => requireAuth('/favorites')} title="Yêu thích">
+              <Heart size={20} />
             </button>
 
             {name ? (
