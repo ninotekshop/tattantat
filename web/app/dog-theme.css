@@ -1375,3 +1375,271 @@ body {
   font-weight: 600 !important;
   color: var(--brand) !important;
 }
+
+/* ==========================================================================
+   MOBILE & TABLET UI RESPONSIVE STYLES (EXCLUSIVELY FOR <= 768px & <= 480px)
+   DOES NOT AFFECT DESKTOP LAYOUT (>= 1024px / >= 1280px)
+   ========================================================================== */
+
+@media (max-width: 768px) {
+  /* 1. Header Topbar Mobile */
+  .topbar-inner {
+    height: 56px !important;
+    padding: 0 12px !important;
+  }
+
+  .header-logo-img {
+    height: 38px !important;
+  }
+
+  .topbar-sell-cta {
+    padding: 7px 12px !important;
+    font-size: 12px !important;
+    gap: 4px !important;
+  }
+
+  .bell-btn, .user-avatar {
+    width: 36px !important;
+    height: 36px !important;
+  }
+
+  /* 2. Hero Banner & Search Form Mobile */
+  .hero {
+    padding-top: 0 !important;
+  }
+
+  .hero-banner-container.hero-flush-top {
+    padding: 16px 12px !important;
+    border-bottom-left-radius: 16px !important;
+    border-bottom-right-radius: 16px !important;
+    margin-bottom: 12px !important;
+  }
+
+  .hero-banner-overlay h1 {
+    font-size: 18px !important;
+    line-height: 1.3 !important;
+  }
+
+  .hero-banner-overlay p {
+    font-size: 12px !important;
+  }
+
+  .search-box {
+    padding: 4px 6px 4px 14px !important;
+  }
+
+  .search-input-group input {
+    font-size: 13.5px !important;
+  }
+
+  .search-divider {
+    height: 18px !important;
+    margin: 0 8px !important;
+  }
+
+  .search-location {
+    font-size: 12.5px !important;
+  }
+
+  .search-submit-btn {
+    padding: 9px 16px !important;
+    font-size: 13px !important;
+    margin-left: 6px !important;
+  }
+
+  .hero-quick-keywords {
+    font-size: 11.5px !important;
+    gap: 6px !important;
+    margin-top: 10px !important;
+  }
+
+  .hero-quick-keywords button {
+    padding: 3px 10px !important;
+    font-size: 11.5px !important;
+  }
+
+  /* 3. 3D Category Slider Mobile */
+  .category-carousel-wrapper {
+    position: relative;
+  }
+
+  .category-grid-scroll {
+    gap: 10px !important;
+    padding: 4px 0 !important;
+  }
+
+  .category-card-3d-large {
+    flex: 0 0 76px !important;
+    min-width: 76px !important;
+    padding: 0 !important;
+  }
+
+  .cat-3d-img-large {
+    width: 52px !important;
+    height: 52px !important;
+    margin-bottom: 2px !important;
+  }
+
+  .cat-title-large {
+    font-size: 11px !important;
+    line-height: 1.15 !important;
+  }
+
+  .cat-scroll-arrow {
+    display: none !important;
+  }
+
+  /* 4. Tab Header & Quick Filter Pills Mobile */
+  .tabbed-header-left {
+    gap: 6px !important;
+  }
+
+  .explore-tab-btn {
+    padding: 5px 12px !important;
+    font-size: 12px !important;
+  }
+
+  /* 5. Product Grid & Cards Mobile */
+  .products-grid-4, .products-grid-6 {
+    grid-template-columns: repeat(2, minmax(130px, 1fr)) !important;
+    gap: 8px !important;
+  }
+
+  .product-card {
+    border-radius: 12px !important;
+  }
+
+  .card-img {
+    min-width: 100% !important;
+    min-height: 135px !important;
+  }
+
+  .card-body {
+    padding: 8px 10px !important;
+  }
+
+  .card-title-full {
+    font-size: 13px !important;
+    line-height: 1.3 !important;
+    margin-bottom: 2px !important;
+  }
+
+  .card-metadata {
+    font-size: 11.5px !important;
+    margin-bottom: 4px !important;
+  }
+
+  .price {
+    font-size: 15px !important;
+  }
+
+  .location-row, .card-seller-name, .card-posted-date {
+    font-size: 11px !important;
+  }
+
+  .verified-badge {
+    font-size: 10.5px !important;
+  }
+
+  .card-footer-flex {
+    font-size: 11px !important;
+    padding-top: 6px !important;
+  }
+
+  /* 6. Footer Mobile */
+  .footer-trust-strip {
+    padding: 12px 0 !important;
+  }
+
+  .trust-strip-inner {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 10px !important;
+    padding: 0 16px !important;
+  }
+
+  .trust-item {
+    gap: 8px !important;
+  }
+
+  .trust-item strong {
+    font-size: 13px !important;
+  }
+
+  .trust-item span {
+    font-size: 11.5px !important;
+  }
+
+  .footer-main {
+    padding: 24px 0 20px !important;
+  }
+
+  .footer-grid-5 {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 20px 16px !important;
+  }
+
+  .brand-col, .app-col {
+    grid-column: span 2 !important;
+  }
+
+  .footer-logo {
+    height: 36px !important;
+  }
+
+  .footer-slogan {
+    font-size: 14px !important;
+  }
+
+  .footer-desc {
+    font-size: 12.5px !important;
+    margin-bottom: 12px !important;
+  }
+
+  .app-badges {
+    flex-direction: row !important;
+    gap: 8px !important;
+  }
+
+  .app-store-btn {
+    padding: 6px 10px !important;
+  }
+
+  .footer-bottom-inner {
+    flex-direction: column !important;
+    gap: 6px !important;
+    text-align: center !important;
+    font-size: 12px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .shell {
+    padding: 0 10px !important;
+  }
+
+  .search-box {
+    flex-wrap: wrap !important;
+    border-radius: 16px !important;
+    padding: 8px 10px !important;
+  }
+
+  .search-input-group {
+    width: 100% !important;
+    margin-bottom: 6px !important;
+  }
+
+  .search-divider {
+    display: none !important;
+  }
+
+  .search-location-wrapper {
+    flex: 1 !important;
+  }
+
+  .search-submit-btn {
+    padding: 8px 16px !important;
+    border-radius: 12px !important;
+  }
+}
+
