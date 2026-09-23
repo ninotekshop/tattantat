@@ -297,106 +297,113 @@ export class ListingsService {
       await client.query('DELETE FROM products');
 
       // 2. Fetch active seller user ID
-      const sellerRes = await client.query(`SELECT id, full_name FROM users WHERE status='ACTIVE' ORDER BY created_at LIMIT 1`);
+      const sellerRes = await client.query(`SELECT id FROM users WHERE status='ACTIVE' ORDER BY created_at LIMIT 1`);
       const sellerId = sellerRes.rows[0]?.id;
-      const sellerName = sellerRes.rows[0]?.full_name || 'Thành viên Tất Tần Tật';
 
       if (!sellerId) throw new BadRequestException('Chưa có tài khoản người dùng để gán tin đăng.');
 
-      // Fetch first category ID
-      const catRes = await client.query(`SELECT id FROM categories WHERE status='ACTIVE' LIMIT 1`);
-      const categoryId = catRes.rows[0]?.id || 1;
+      // 3. Get all leaf subcategories
+      const subcatsRes = await client.query(`
+        SELECT c1.id, c1.name, c1.slug
+        FROM categories c1
+        WHERE NOT EXISTS (SELECT 1 FROM categories c2 WHERE c2.parent_id = c1.id)
+        ORDER BY c1.id
+      `);
+      const subcategories = subcatsRes.rows;
 
-      // 3. Seed 8 new high quality demo listings across categories
-      const demoItems = [
-        {
-          title: 'iPhone 15 Pro Max 256GB Titanium Tự Nhiên VN/A',
-          price: '26500000',
-          priceMode: 'FIXED',
-          condition: 'USED_GOOD',
-          description: 'Máy chính chủ mua tại FPT Shop còn nguyên hộp, hoá đơn đầy đủ. Ngoại hình mới 98%, pin 92%. Bao test thoải mái tại nhà Quy Nhơn.',
-          address: 'Quy Nhơn, Bình Định',
-          img: '/assets/product-1.jpg'
-        },
-        {
-          title: 'Xe máy Honda Vision 2023 màu trắng chính chủ biển Quy Nhơn',
-          price: '29800000',
-          priceMode: 'FIXED',
-          condition: 'LIKE_NEW',
-          description: 'Xe nữ chạy giữ kỹ mới đi 8.500 km. Đã dán keo nguyên xe, thay dầu định kỳ tại hãng. Giấy tờ chính chủ sang tên trong ngày.',
-          address: 'Quy Nhơn, Bình Định',
-          img: '/assets/product-2.jpg'
-        },
-        {
-          title: 'Căn hộ chung cư 2PN FLC Sea Tower Quy Nhơn View biển cực đẹp',
-          price: '2200000000',
-          priceMode: 'FIXED',
-          condition: 'NEW',
-          description: 'Căn hộ tầng trung view biển thoáng mát, diện tích 72m² đã trang bị đầy đủ nội thất cao cấp. Pháp lý sổ hồng chính chủ mua vào ở ngay.',
-          address: 'Quy Nhơn, Bình Định',
-          img: '/assets/product-3.jpg'
-        },
-        {
-          title: 'MacBook Air M2 8GB/256GB Space Gray chính hãng mới 99%',
-          price: '21500000',
-          priceMode: 'FIXED',
-          condition: 'USED_GOOD',
-          description: 'Máy dùng văn phòng giữ gìn cẩn thận, pin sạc 45 lần. Kèm sạc cáp zin và túi chống sốc cao cấp. Bảo hành trách nhiệm 1 tháng.',
-          address: 'Quy Nhơn, Bình Định',
-          img: '/assets/product-4.jpg'
-        },
-        {
-          title: 'Tuyển 02 Nhân viên tư vấn bán hàng thời trang tại Quy Nhơn',
-          price: '8500000',
-          priceMode: 'FIXED',
-          condition: 'NEW',
-          description: 'Cần tuyển nhân viên bán hàng xoay ca hoặc cố định. Lương cứng 8.5 triệu + thưởng doanh số. Được đào tạo kỹ năng bài bản.',
-          address: 'Quy Nhơn, Bình Định',
-          img: '/assets/product-5.jpg'
-        },
-        {
-          title: 'Tặng miễn phí Bàn học sinh gỗ công nghiệp còn mới cho bạn nhỏ',
-          price: '0',
-          priceMode: 'FREE',
-          condition: 'USED_GOOD',
-          description: 'Gia đình chuyển nhà không dùng đến cần tặng lại bàn học có kệ sách cho gia đình khó khăn. Vui lòng tự chuẩn bị xe chở.',
-          address: 'Quy Nhơn, Bình Định',
-          img: '/assets/product-6.jpg'
-        },
-        {
-          title: 'Dịch vụ sửa chữa & bảo dưỡng điều hòa, tủ lạnh tận nhà Quy Nhơn',
-          price: '0',
-          priceMode: 'CONTACT',
-          condition: 'NEW',
-          description: 'Chuyên nhận nạp ga, vệ sinh, sửa chữa điều hòa, máy giặt, tủ lạnh giá bình dân. Báo giá công khai trước khi làm, bảo hành chu đáo.',
-          address: 'Quy Nhơn, Bình Định',
-          img: '/assets/product-1.jpg'
-        },
-        {
-          title: 'Hải sản tươi sống Quy Nhơn: Cua huỳnh đế, Mực lá, Cua gạch',
-          price: '350000',
-          priceMode: 'FIXED',
-          condition: 'NEW',
-          description: 'Hải sản đánh bắt trong ngày tại đầm Thị Nại & Nhơn Lý. Đảm bảo tươi ngon, đóng thùng xốp giao tận nơi nội thành Quy Nhơn.',
-          address: 'Quy Nhơn, Bình Định',
-          img: '/assets/product-2.jpg'
-        }
+      const photoBank = [
+        'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&w=1200&q=80',
+        'https://images.unsplash.com/photo-1592899677977-9c10ca588bbd?auto=format&fit=crop&w=1200&q=80',
+        'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?auto=format&fit=crop&w=1200&q=80',
+        'https://images.unsplash.com/photo-1552519507-da3b142c6e3d?auto=format&fit=crop&w=1200&q=80',
+        'https://images.unsplash.com/photo-1558981806-ec527fa84c39?auto=format&fit=crop&w=1200&q=80',
+        'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1200&q=80',
+        'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?auto=format&fit=crop&w=1200&q=80',
+        'https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=1200&q=80',
+        'https://images.unsplash.com/photo-1543466835-00a7907e9de1?auto=format&fit=crop&w=1200&q=80',
+        'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=1200&q=80'
       ];
 
-      const inserted = [];
-      for (const item of demoItems) {
-        const slug = `demo-${Math.random().toString(36).slice(2, 9)}`;
-        const res = await client.query<{ id: string }>(
-          `INSERT INTO products (seller_id, category_id, title, slug, description, price, condition, status, published_at, address, listing_price_mode)
-           VALUES ($1, $2, $3, $4, $5, $6, $7::product_condition, 'ACTIVE', NOW(), $8, $9) RETURNING id`,
-          [sellerId, categoryId, item.title, slug, item.description, item.price, item.condition, item.address, item.priceMode],
-        );
-        const prodId = res.rows[0].id;
-        await client.query('INSERT INTO product_images (product_id, url, sort_order) VALUES ($1, $2, 0)', [prodId, item.img]);
-        inserted.push(prodId);
+      const makeUuid = () => require('crypto').randomUUID();
+      let totalCreated = 0;
+
+      for (const cat of subcategories) {
+        const templateRes = await client.query(`SELECT id, name, config FROM listing_templates WHERE category_id = $1 LIMIT 1`, [cat.id]);
+        let templateId = templateRes.rows[0]?.id;
+        const templateObj = templateRes.rows[0] ? {
+          id: templateRes.rows[0].id,
+          categoryId: cat.id,
+          version: 1,
+          name: templateRes.rows[0].name,
+          fields: [],
+          config: templateRes.rows[0].config || { priceModes: ['FIXED', 'CONTACT', 'FREE', 'MONTH', 'DAY', 'HOUR'] }
+        } : {
+          id: makeUuid(),
+          categoryId: cat.id,
+          version: 1,
+          name: 'Biểu mẫu ' + cat.name,
+          fields: [],
+          config: { priceModes: ['FIXED', 'CONTACT', 'FREE', 'MONTH', 'DAY', 'HOUR'] }
+        };
+
+        if (!templateId) {
+          const insTpl = await client.query(
+            `INSERT INTO listing_templates(id, category_id, version, name, active, config)
+             VALUES($1, $2, 1, $3, true, $4::jsonb)
+             ON CONFLICT DO NOTHING RETURNING id`,
+            [templateObj.id, cat.id, templateObj.name, JSON.stringify(templateObj.config)]
+          );
+          templateId = insTpl.rows[0]?.id || templateObj.id;
+        }
+
+        for (let i = 0; i < 2; i++) {
+          const seedSlug = `seed-${cat.slug}-${i + 1}-${Math.random().toString(36).slice(2, 7)}`;
+          const productId = makeUuid();
+          const listingId = makeUuid();
+          const title = `${cat.name} cao cấp ${i === 0 ? 'chính hãng mới 99%' : 'giá tốt Quy Nhơn'}`;
+          const price = (150000 * (i + 1) * 10).toString();
+          const description = `Sản phẩm ${cat.name} chất lượng cao, giữ gìn cẩn thận. Đầy đủ hình ảnh, hỗ trợ kiểm tra thoải mái trước khi nhận hàng.`;
+          const img1 = photoBank[(cat.id.charCodeAt(0) + i) % photoBank.length];
+          const img2 = photoBank[(cat.id.charCodeAt(0) + i + 1) % photoBank.length];
+
+          await client.query(`
+            INSERT INTO products(id, seller_id, category_id, title, slug, description, price, condition, status, published_at, address, listing_price_mode, listing_negotiable)
+            VALUES($1, $2, $3, $4, $5, $6, $7, $8::product_condition, 'ACTIVE', NOW() - ($9 * interval '1 minute'), $10, $11, $12)
+          `, [
+            productId, sellerId, cat.id, title, seedSlug, description, price, i === 0 ? 'LIKE_NEW' : 'USED_GOOD',
+            i * 30 + 5, 'Quy Nhơn, Bình Định', 'FIXED', true
+          ]);
+
+          const listingDataObj = {
+            title, description, condition: i === 0 ? 'LIKE_NEW' : 'USED_GOOD',
+            priceMode: 'FIXED', price, negotiable: true,
+            location: { province: 'Bình Định', district: 'Quy Nhơn', ward: 'Trần Phú', address: 'Quy Nhơn, Bình Định', hideExact: false },
+            contact: { name: 'Nguyễn Văn A', phone: '0901234567', email: 'user@tattantat.vn' },
+            values: {}, images: [], videos: []
+          };
+
+          await client.query(`
+            INSERT INTO listings(id, seller_id, category_id, template_id, template_snapshot, data, status, revision, client_key, product_id, published_snapshot, published_at)
+            VALUES($1, $2, $3, $4, $5::jsonb, $6::jsonb, 'PUBLISHED', 1, $7, $8, $9::jsonb, NOW())
+          `, [
+            listingId, sellerId, cat.id, templateId, JSON.stringify(templateObj), JSON.stringify(listingDataObj),
+            makeUuid(), productId, JSON.stringify({ template: templateObj, data: listingDataObj })
+          ]);
+
+          const imgs = [img1, img2];
+          for (let imgIdx = 0; imgIdx < imgs.length; imgIdx++) {
+            const mediaId = makeUuid();
+            await client.query(`INSERT INTO product_images(product_id, url, sort_order) VALUES($1, $2, $3)`, [productId, imgs[imgIdx], imgIdx + 1]);
+            await client.query(`INSERT INTO listing_images(id, listing_id, storage_key, mime_type, byte_size) VALUES($1, $2, $3, 'image/jpeg', 102400)`, [mediaId, listingId, `demo/${seedSlug}-${imgIdx}.jpg`]);
+          }
+
+          await client.query(`INSERT INTO listing_publish_requests(seller_id, key, listing_id, revision, product_id) VALUES($1, $2, $3, 1, $4)`, [sellerId, makeUuid(), listingId, productId]);
+
+          totalCreated++;
+        }
       }
 
-      return envelope({ message: 'Đã xóa toàn bộ dữ liệu tin đăng cũ và khởi tạo lại 8 tin đăng Demo thành công!', count: inserted.length });
+      return envelope({ message: `Đã xóa toàn bộ dữ liệu tin đăng cũ và khởi tạo lại ${totalCreated} tin đăng Demo cho ${subcategories.length} danh mục con!`, count: totalCreated });
     });
   }
 
