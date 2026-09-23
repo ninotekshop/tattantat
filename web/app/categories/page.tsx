@@ -2,13 +2,12 @@
 
 import Link from 'next/link';
 import { useEffect, useState, Suspense } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
-import { Search, MapPin, Flame, ArrowRight, Heart, Filter, ChevronRight, MapPin as MapPinIcon, User, Clock } from 'lucide-react';
+import { useSearchParams } from 'next/navigation';
+import { Flame, Filter, MapPin as MapPinIcon, User } from 'lucide-react';
 import { api, type Product } from '../../lib/api';
 import { formatVnd, CATEGORY_ENGINE_TAXONOMY, LISTING_INTENTS, ParentCategorySpec, SubCategorySpec } from '../../lib/marketplace';
 
 function ProductCard({ product }: { product: Product }) {
-  const [failedImage, setFailedImage] = useState(false);
   const [isFavorite, setIsFavorite] = useState(false);
 
   return (
@@ -28,10 +27,12 @@ function ProductCard({ product }: { product: Product }) {
 
         <Link href={'/products/' + product.id}>
           <img
-            src={product.imageUrl && !failedImage ? product.imageUrl : '/assets/product-1.jpg'}
+            src={product.imageUrl || '/assets/product-1.jpg'}
             alt={product.title}
             loading="lazy"
-            onError={() => setFailedImage(true)}
+            onError={(e) => {
+              (e.target as HTMLImageElement).src = '/assets/product-1.jpg';
+            }}
           />
         </Link>
       </div>
@@ -55,17 +56,9 @@ function ProductCard({ product }: { product: Product }) {
 }
 
 function SubCategoryButton({ sub, parentSlug, parentKey, selectedSubSlug, selectedIntent }: { sub: SubCategorySpec; parentSlug: string; parentKey: string; selectedSubSlug: string | null; selectedIntent: string }) {
-  const router = useRouter();
-  const iconPath = `/assets/category-icons/sub/${parentSlug}/${sub.slug}.png`;
-  const [imgSrc, setImgSrc] = useState(iconPath);
-
-  useEffect(() => {
-    setImgSrc(`/assets/category-icons/sub/${parentSlug}/${sub.slug}.png`);
-  }, [parentSlug, sub.slug]);
-
   return (
-    <button
-      onClick={() => router.push(`/categories?cat=${parentKey}&sub=${sub.slug}&intent=${selectedIntent}`)}
+    <Link
+      href={`/categories?cat=${parentKey}&sub=${sub.slug}&intent=${selectedIntent}`}
       style={{
         display: 'flex',
         alignItems: 'center',
@@ -74,27 +67,28 @@ function SubCategoryButton({ sub, parentSlug, parentKey, selectedSubSlug, select
         border: selectedSubSlug === sub.slug ? '2px solid #00a65a' : '1px solid #e2e8f0',
         borderRadius: 14,
         padding: '12px 16px',
-        cursor: 'pointer',
+        textDecoration: 'none',
         textAlign: 'left',
         transition: 'all 0.2s ease'
       }}
     >
       <img
-        src={imgSrc}
+        src={`/assets/category-icons/sub/${parentSlug}/${sub.slug}.png`}
         alt={sub.name}
-        onError={() => setImgSrc(`/assets/category-icons/parent/${parentSlug}.png`)}
+        onError={(e) => {
+          (e.target as HTMLImageElement).src = `/assets/category-icons/parent/${parentSlug}.png`;
+        }}
         style={{ width: 44, height: 44, objectFit: 'contain', flexShrink: 0, filter: 'drop-shadow(0 2px 6px rgba(0,0,0,0.08))' }}
       />
       <span style={{ fontSize: 13, fontWeight: 600, color: selectedSubSlug === sub.slug ? '#008247' : '#1e293b' }}>
         {sub.name}
       </span>
-    </button>
+    </Link>
   );
 }
 
 function CategoryEngineContent() {
   const searchParams = useSearchParams();
-  const router = useRouter();
 
   const selectedCatKey = searchParams.get('cat') || 'property';
   const selectedSubSlug = searchParams.get('sub');
@@ -135,24 +129,23 @@ function CategoryEngineContent() {
       <div className="white-card-box" style={{ marginBottom: 16, padding: '14px 20px' }}>
         <div style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 4 }}>
           {LISTING_INTENTS.map(intent => (
-            <button
+            <Link
               key={intent.code}
-              onClick={() => router.push(`/categories?cat=${parentCat.key}&intent=${intent.code}`)}
+              href={`/categories?cat=${parentCat.key}&intent=${intent.code}`}
               style={{
                 background: selectedIntent === intent.code ? '#00a65a' : '#f1f5f9',
                 color: selectedIntent === intent.code ? '#ffffff' : '#334155',
-                border: 'none',
                 borderRadius: 999,
                 padding: '7px 16px',
                 fontSize: 13,
                 fontWeight: 600,
-                cursor: 'pointer',
+                textDecoration: 'none',
                 whiteSpace: 'nowrap',
                 transition: 'all 0.2s ease'
               }}
             >
               {intent.name}
-            </button>
+            </Link>
           ))}
         </div>
       </div>
@@ -162,9 +155,9 @@ function CategoryEngineContent() {
         <h2 style={{ fontSize: 16, fontWeight: 700, color: '#0f172a', marginBottom: 12 }}>Tất cả danh mục sản phẩm</h2>
         <div style={{ display: 'flex', gap: 12, overflowX: 'auto', paddingBottom: 8, scrollbarWidth: 'none' }}>
           {CATEGORY_ENGINE_TAXONOMY.map(cat => (
-            <button
+            <Link
               key={cat.key}
-              onClick={() => router.push(`/categories?cat=${cat.key}`)}
+              href={`/categories?cat=${cat.key}`}
               style={{
                 flex: '0 0 95px',
                 display: 'flex',
@@ -174,7 +167,7 @@ function CategoryEngineContent() {
                 border: parentCat.key === cat.key ? '2px solid #00a65a' : '1px solid #e2e8f0',
                 borderRadius: 14,
                 padding: '10px 6px',
-                cursor: 'pointer',
+                textDecoration: 'none',
                 transition: 'all 0.2s ease'
               }}
             >
@@ -182,7 +175,7 @@ function CategoryEngineContent() {
               <span style={{ fontSize: 11.5, fontWeight: 600, color: parentCat.key === cat.key ? '#008247' : '#334155', textAlign: 'center', lineHeight: 1.2 }}>
                 {cat.label}
               </span>
-            </button>
+            </Link>
           ))}
         </div>
       </div>
