@@ -17,6 +17,7 @@ data class AuthUiState(val loading: Boolean = false, val error: String? = null, 
 class AuthViewModel @Inject constructor(private val repository: AuthRepository) : ViewModel() {
     private val _state = MutableStateFlow(AuthUiState()); val state: StateFlow<AuthUiState> = _state.asStateFlow()
     fun login(identity: String, password: String) = submit { repository.login(identity, password) }
+    fun loginWithSocial(provider: String, token: String) = submit { repository.socialLogin(provider, token) }
     fun register(name: String, phone: String, password: String) { viewModelScope.launch { _state.value = AuthUiState(loading = true); when (val r = repository.register(name, phone, password)) { is ApiResult.Success -> _state.value = AuthUiState(verificationId = r.data); is ApiResult.Failure -> _state.value = AuthUiState(error = r.message) } } }
     fun verifyOtp(verificationId: String, code: String) = submit { repository.verifyOtp(verificationId, code) }
     fun clearError() { _state.value = _state.value.copy(error = null) }

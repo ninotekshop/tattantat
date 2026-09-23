@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Tất Tần Tật</string>
+    <!-- Social Login placeholders -->
+    <string name="google_web_client_id">927392714442-7s4c7vca99p1rtr9jvd3ken6ctinut9v.apps.googleusercontent.com</string>
+    <string name="facebook_app_id">2833629363678891</string>
+    <string name="facebook_client_token">feb8672e2ca289bfab916732d4c04e8a</string>
+    <string name="fb_login_protocol_scheme">fb2833629363678891</string>
+</resources>

@@ -39,7 +39,9 @@ export class AdminPostsController {
 
     const [items, count] = await Promise.all([
       this.db.query(
-        `SELECT p.id, p.title, p.price, p.status, p.image_url, p.description, p.created_at, p.updated_at,
+        `SELECT p.id, p.title, p.price, p.status,
+                (SELECT url FROM product_images WHERE product_id = p.id ORDER BY sort_order LIMIT 1) AS image_url,
+                p.description, p.created_at, p.updated_at,
                 COALESCE(cat.name, 'Khác') AS category_name,
                 COALESCE(u.full_name, 'Người dùng') AS seller_name, u.email AS seller_email, u.phone AS seller_phone
          FROM products p

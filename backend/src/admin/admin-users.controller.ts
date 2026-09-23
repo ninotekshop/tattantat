@@ -36,14 +36,14 @@ export class AdminUsersController {
     const [items, count] = await Promise.all([
       this.db.query(
         `SELECT u.id, u.full_name, u.email, u.phone, u.avatar_url, u.status,
-                COALESCE(u.verification_status, 'UNVERIFIED') AS verification_status,
+                CASE WHEN u.is_verified THEN 'VERIFIED' ELSE 'UNVERIFIED' END AS verification_status,
                 u.created_at,
                 (SELECT COUNT(*)::int FROM products p WHERE p.seller_id = u.id AND p.deleted_at IS NULL) AS posts_count,
                 (SELECT COUNT(*)::int FROM orders o WHERE o.buyer_id = u.id) AS orders_count
          FROM users u
          WHERE ($1::text IS NULL OR u.full_name ILIKE $1 OR u.email ILIKE $1 OR u.phone ILIKE $1 OR u.id::text ILIKE $1)
            AND ($2::text IS NULL OR u.status = $2)
-           AND ($3::text IS NULL OR u.verification_status = $3)
+           AND ($3::text IS NULL OR (CASE WHEN u.is_verified THEN 'VERIFIED' ELSE 'UNVERIFIED' END) = $3)
          ORDER BY u.created_at DESC
          LIMIT $4 OFFSET $5`,
         [searchTerm, filterStatus, filterVerification, limit, offset],
@@ -53,7 +53,7 @@ export class AdminUsersController {
          FROM users u
          WHERE ($1::text IS NULL OR u.full_name ILIKE $1 OR u.email ILIKE $1 OR u.phone ILIKE $1 OR u.id::text ILIKE $1)
            AND ($2::text IS NULL OR u.status = $2)
-           AND ($3::text IS NULL OR u.verification_status = $3)`,
+           AND ($3::text IS NULL OR (CASE WHEN u.is_verified THEN 'VERIFIED' ELSE 'UNVERIFIED' END) = $3)`,
         [searchTerm, filterStatus, filterVerification],
       ),
     ]);
@@ -75,7 +75,7 @@ export class AdminUsersController {
   async detail(@Param('id') id: string) {
     const user = await this.db.query(
       `SELECT u.id, u.full_name, u.email, u.phone, u.avatar_url, u.status,
-              COALESCE(u.verification_status, 'UNVERIFIED') AS verification_status,
+              CASE WHEN u.is_verified THEN 'VERIFIED' ELSE 'UNVERIFIED' END AS verification_status,
               u.created_at
        FROM users u WHERE u.id = $1`,
       [id],
@@ -109,7 +109,7 @@ export class AdminUsersController {
   @Post(':id/verify')
   async verify(@Req() request: { user: { id: string } }, @Param('id') id: string) {
     const result = await this.db.query(
-      `UPDATE users SET verification_status='VERIFIED', updated_at=NOW() WHERE id=$1 RETURNING id, full_name, verification_status`,
+      `UPDATE users SET is_verified=true, updated_at=NOW() WHERE id=$1 RETURNING id, full_name, is_verified`,
       [id],
     );
     if (!result.rows[0]) throw new BadRequestException('Không tìm thấy người dùng');
