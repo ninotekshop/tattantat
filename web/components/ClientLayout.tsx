@@ -5,7 +5,7 @@ import { Footer } from './Footer';
 
 export function ClientLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const isAdmin = pathname?.startsWith('/admin');
+  const isAdmin = pathname?.startsWith('/adminttt') || pathname?.startsWith('/admin');
 
   return (
     <>

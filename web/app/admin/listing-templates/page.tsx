@@ -1,3 +1,5 @@
-import { TemplateAdmin } from '../../../components/listings/TemplateAdmin';
-import '../../sell/listing-form.css';
-export default function TemplateAdminPage(){return <TemplateAdmin/>;}
+import { notFound } from 'next/navigation';
+
+export default function OldAdminListingTemplatesPage() {
+  notFound();
+}
