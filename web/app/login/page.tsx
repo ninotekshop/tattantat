@@ -43,33 +43,6 @@ function LoginContent() {
     }
   }, []);
 
-  // Load Facebook SDK
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const fbAppId = process.env.NEXT_PUBLIC_FACEBOOK_APP_ID;
-    if (!fbAppId) return;
-
-    if (!document.getElementById('facebook-jssdk')) {
-      const script = document.createElement('script');
-      script.id = 'facebook-jssdk';
-      script.src = 'https://connect.facebook.net/vi_VN/sdk.js';
-      script.async = true;
-      script.defer = true;
-      script.crossOrigin = 'anonymous';
-      script.onload = () => {
-        if ((window as any).FB) {
-          (window as any).FB.init({
-            appId: fbAppId,
-            cookie: true,
-            xfbml: true,
-            version: 'v19.0',
-          });
-        }
-      };
-      document.body.appendChild(script);
-    }
-  }, []);
-
   // Load Apple JS SDK
   useEffect(() => {
     if (typeof window === 'undefined') return;

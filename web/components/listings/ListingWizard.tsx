@@ -5,7 +5,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { ArrowLeft, ArrowRight, Check, CheckCircle2, Cloud, MapPin, ShieldCheck, FileText, AlertTriangle } from 'lucide-react';
 import { readSession } from '../../lib/auth';
 import { Listing, ListingCategory, ListingData, ListingError, ListingMedia, ListingSummary, Template, conditionLabels, listingPrice, listingRequest, priceLabels, publicData, validateListing, visible } from '../../lib/listings';
-import { CATEGORY_ENGINE_TAXONOMY, LISTING_INTENTS, ParentCategorySpec, SubCategorySpec } from '../../lib/marketplace';
+import { CATEGORY_ENGINE_TAXONOMY, LISTING_INTENTS, ParentCategorySpec, SubCategorySpec, getCategoryPlaceholders } from '../../lib/marketplace';
 import { DynamicField } from './DynamicField';
 import { MediaPicker } from './MediaPicker';
 import { LocationMap } from './LocationMap';
@@ -518,46 +518,53 @@ export function ListingWizard() {
               {/* BƯỚC 2: THÔNG TIN CHI TIẾT DYNAMIC */}
               {step === 1 && template && (
                 <>
-                  <div className="lf-field">
-                    <label htmlFor="listing-title">Tiêu đề tin đăng *</label>
-                    <input
-                      id="listing-title"
-                      value={data.title ?? ''}
-                      maxLength={200}
-                      placeholder="VD: iPhone 15 Pro Max 256GB Titanium chính chủ mới 99%"
-                      onChange={e => patch({ title: e.target.value })}
-                      aria-invalid={!!errors.title}
-                    />
-                    <small>{data.title?.length ?? 0}/200 ký tự</small>
-                    {fieldError('title')}
-                  </div>
+                  {(() => {
+                    const placeholders = getCategoryPlaceholders(selectedParentKey, template.category?.name || activeParent?.label, selectedIntent);
+                    return (
+                      <>
+                        <div className="lf-field">
+                          <label htmlFor="listing-title">Tiêu đề tin đăng *</label>
+                          <input
+                            id="listing-title"
+                            value={data.title ?? ''}
+                            maxLength={200}
+                            placeholder={placeholders.title}
+                            onChange={e => patch({ title: e.target.value })}
+                            aria-invalid={!!errors.title}
+                          />
+                          <small>{data.title?.length ?? 0}/200 ký tự</small>
+                          {fieldError('title')}
+                        </div>
 
-                  <div className="lf-field">
-                    <label htmlFor="listing-condition">Tình trạng *</label>
-                    <select id="listing-condition" value={data.condition ?? ''} onChange={e => patch({ condition: e.target.value })}>
-                      <option value="">Chọn tình trạng</option>
-                      {Object.entries(conditionLabels).map(([k, label]) => (
-                        <option key={k} value={k}>{label}</option>
-                      ))}
-                    </select>
-                    {fieldError('condition')}
-                  </div>
+                        <div className="lf-field">
+                          <label htmlFor="listing-condition">Tình trạng *</label>
+                          <select id="listing-condition" value={data.condition ?? ''} onChange={e => patch({ condition: e.target.value })}>
+                            <option value="">Chọn tình trạng</option>
+                            {Object.entries(conditionLabels).map(([k, label]) => (
+                              <option key={k} value={k}>{label}</option>
+                            ))}
+                          </select>
+                          {fieldError('condition')}
+                        </div>
 
-                  <h3>Thông tin thuộc tính động theo danh mục</h3>
-                  <div className="lf-fields-grid">{dynamicFields(false)}</div>
+                        <h3>Thông tin thuộc tính động theo danh mục</h3>
+                        <div className="lf-fields-grid">{dynamicFields(false)}</div>
 
-                  <div className="lf-field">
-                    <label htmlFor="listing-description">Mô tả chi tiết *</label>
-                    <textarea
-                      id="listing-description"
-                      rows={6}
-                      value={data.description ?? ''}
-                      maxLength={10000}
-                      placeholder="Mô tả thực tế tình trạng, phụ kiện đi kèm, bảo hành và lý do bán..."
-                      onChange={e => patch({ description: e.target.value })}
-                    />
-                    {fieldError('description')}
-                  </div>
+                        <div className="lf-field">
+                          <label htmlFor="listing-description">Mô tả chi tiết *</label>
+                          <textarea
+                            id="listing-description"
+                            rows={6}
+                            value={data.description ?? ''}
+                            maxLength={10000}
+                            placeholder={placeholders.description}
+                            onChange={e => patch({ description: e.target.value })}
+                          />
+                          {fieldError('description')}
+                        </div>
+                      </>
+                    );
+                  })()}
                 </>
               )}
 

@@ -30,6 +30,34 @@ import com.tattantat.app.domain.category.CategoryIcons
 
 private val steps=listOf("Danh mục","Thông tin","Ảnh & video","Giá & vị trí","Liên hệ","Xem trước","Hoàn tất")
 
+private fun getCategoryPlaceholders(slug: String, name: String): Pair<String, String> {
+    val key = (slug + " " + name).lowercase()
+    return when {
+        key.contains("nha") || key.contains("dat") || key.contains("bat-dong-san") || key.contains("chung-cu") || key.contains("phong-tro") ->
+            Pair("VD: Bán nhà 3 tầng mặt tiền đường Nguyễn Huệ, 85m², sổ hồng chính chủ", "Mô tả chi tiết vị trí, diện tích (m²), số phòng ngủ/tắm, giấy tờ pháp lý (sổ hồng/sổ đỏ), hướng nhà và tiện ích xung quanh...")
+        key.contains("xe") || key.contains("o-to") || key.contains("xe-may") ->
+            Pair("VD: Xe máy Honda Vision 2022 chính chủ, odo 12.000 km, biển TP.HCM", "Mô tả tình trạng máy móc, số km đã đi (odo), năm đăng ký, lịch sử bảo dưỡng, giấy tờ xe chính chủ...")
+        key.contains("viec") || key.contains("tuyen-dung") ->
+            Pair("VD: Tuyển 03 Nhân viên Tư vấn Bán hàng Thu nhập 10-15 triệu/tháng", "Mô tả chi tiết vị trí công việc, thời gian làm việc, yêu cầu độ tuổi/kinh nghiệm, mức lương, phụ cấp...")
+        key.contains("dich-vu") ->
+            Pair("VD: Dịch vụ sửa chữa điện nước, điện lạnh tại nhà 24/7 giá tốt", "Mô tả chi tiết các hạng mục dịch vụ, quy trình làm việc, bảng giá tham khảo, khu vực hỗ trợ...")
+        key.contains("nha-cua") || key.contains("gia-dung") || key.contains("noi-that") ->
+            Pair("VD: Tủ lạnh LG Inverter 315 lít còn bảo hành chính hãng, mới 95%", "Mô tả thương hiệu, kích thước/dung tích, thời gian đã sử dụng, tình trạng hoạt động thực tế...")
+        key.contains("me-va-be") ->
+            Pair("VD: Xe đẩy em bé Aprica Nhật Bản siêu nhẹ, gấp gọn mới 95%", "Mô tả thương hiệu, độ tuổi phù hợp, chất liệu, tình trạng sử dụng thực tế và vệ sinh/khử khuẩn...")
+        key.contains("thu-cung") || key.contains("cho") || key.contains("meo") ->
+            Pair("VD: Chó Poodle thuần chủng 2 tháng tuổi đã tiêm phòng 2 mũi", "Mô tả giống loài, độ tuổi, giới tính, tình trạng sức khỏe, sổ tiêm phòng và chế độ ăn...")
+        key.contains("thoi-trang") || key.contains("quan-ao") ->
+            Pair("VD: Áo khoác nam da thật size L màu đen mới 99% chính hãng", "Mô tả thương hiệu, chất liệu, size (kích cỡ), màu sắc, kiểu dáng và tình trạng mới/cũ...")
+        key.contains("the-thao") || key.contains("sach") || key.contains("nhac-cu") ->
+            Pair("VD: Đàn Guitar Acoustic Fender chính hãng kèm bao da và phím gảy", "Mô tả thương hiệu, chất liệu, phụ kiện đi kèm, tình trạng âm thanh/ngoại hình...")
+        key.contains("do-cong-nghe") || key.contains("dien-thoai") || key.contains("laptop") ->
+            Pair("VD: iPhone 15 Pro Max 256GB Titanium chính chủ mới 99%", "Mô tả thực tế tình trạng máy, dung lượng pin, thời gian bảo hành, phụ kiện đi kèm và lý do bán...")
+        else ->
+            Pair("VD: Tên sản phẩm/món đồ, thương hiệu, tình trạng và đặc điểm nổi bật", "Mô tả thực tế tình trạng sản phẩm, kích thước, phụ kiện đi kèm, bảo hành và lý do thanh lý...")
+    }
+}
+
 @Composable
 fun DynamicListingScreen(onMyListings:()->Unit,initialDraftId:String?=null,vm:DynamicListingViewModel=hiltViewModel()){
     val s by vm.state.collectAsState()
@@ -88,10 +116,12 @@ fun DynamicListingScreen(onMyListings:()->Unit,initialDraftId:String?=null,vm:Dy
                         }
                     }
                     1->Column(verticalArrangement=Arrangement.spacedBy(12.dp)){
-                        ListingText("Tiêu đề *",s.data.title,{value->vm.change{it.copy(title=value)}},enabled,s.errors["title"],maxLength=200)
+                        val selectedCat = s.categories.find{it.id==s.categoryId}
+                        val (titlePlaceholder, descPlaceholder) = getCategoryPlaceholders(selectedCat?.slug.orEmpty(), selectedCat?.name.orEmpty())
+                        ListingText("Tiêu đề *",s.data.title,{value->vm.change{it.copy(title=value)}},enabled,s.errors["title"],maxLength=200,placeholder=titlePlaceholder)
                         ListingChoice("Tình trạng *",s.data.condition,ListingRules.conditions.map{FieldOption(it.key,it.value)},enabled){value->vm.change{it.copy(condition=value)}}
                         s.template?.let{template->template.fields.filter{it.type !in listOf("image","video")&&ListingRules.visible(it,s.data.values,template.fields)}.forEach{field->key(field.key){DynamicListingField(field,s.data.values[field.key],s.media,enabled,s.errors["values.${field.key}"]){vm.field(field.key,it)}}}}
-                        ListingText("Mô tả chi tiết *",s.data.description,{value->vm.change{it.copy(description=value)}},enabled,s.errors["description"],multiline=true,maxLength=10000)
+                        ListingText("Mô tả chi tiết *",s.data.description,{value->vm.change{it.copy(description=value)}},enabled,s.errors["description"],multiline=true,maxLength=10000,placeholder=descPlaceholder)
                     }
                     2->Column(verticalArrangement=Arrangement.spacedBy(10.dp)){
                         Text("Ảnh đầu tiên là ảnh bìa. Tối đa 20 ảnh và 3 video.")

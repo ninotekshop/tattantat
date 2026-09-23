@@ -312,3 +312,89 @@ export const shoppingGuides = [
   { title: 'Cách đăng tin bất động sản hiệu quả', art: 'house', category: 'MẸO ĐĂNG TIN', body: 'Chụp ảnh rõ ràng, đủ ánh sáng và đúng hiện trạng. Ghi chính xác vị trí, diện tích, giá và các chi phí liên quan. Mô tả thông tin giấy tờ bạn có thể cung cấp. Không công khai hình ảnh chứa thông tin cá nhân nhạy cảm.' },
   { title: 'Những món đồ gia dụng nên mua thanh lý', art: 'laptop', category: 'SỐNG TIẾT KIỆM', body: 'Bàn, ghế, kệ và các món đồ bền dễ kiểm tra là lựa chọn phù hợp khi mua thanh lý. Với đồ điện, hãy yêu cầu chạy thử và kiểm tra dây nguồn. Hỏi rõ kích thước, tình trạng và phương án vận chuyển trước khi mua.' },
 ] as const;
+
+export function getCategoryPlaceholders(parentKeyOrSlug?: string, categoryName?: string, intentCode?: string) {
+  const key = (parentKeyOrSlug || categoryName || '').toLowerCase();
+  const isRent = intentCode === 'rent' || key.includes('thuê') || key.includes('rent');
+
+  if (key.includes('property') || key.includes('nha-dat') || key.includes('nhà') || key.includes('đất') || key.includes('bất động sản') || key.includes('căn hộ') || key.includes('phòng trọ')) {
+    if (isRent) {
+      return {
+        title: 'VD: Cho thuê căn hộ 2PN 70m² KĐT An Phú, full nội thất, view đẹp',
+        description: 'Mô tả vị trí, diện tích (m²), số phòng ngủ/tắm, tình trạng nội thất, tiện ích xung quanh (trường học, siêu thị), giá thuê và chi phí dịch vụ...'
+      };
+    }
+    return {
+      title: 'VD: Bán nhà 3 tầng mặt tiền đường Nguyễn Huệ, 85m², sổ hồng chính chủ',
+      description: 'Mô tả chi tiết vị trí, diện tích (m²), số tầng/phòng, giấy tờ pháp lý (sổ hồng/sổ đỏ), hướng nhà, giá bán và tiện ích xung quanh...'
+    };
+  }
+
+  if (key.includes('vehicle') || key.includes('xe-co') || key.includes('xe') || key.includes('ô tô') || key.includes('xe máy')) {
+    return {
+      title: 'VD: Xe máy Honda Vision 2022 chính chủ, odo 12.000 km, biển TP.HCM',
+      description: 'Mô tả tình trạng máy móc, số km đã đi (odo), năm đăng ký, lịch sử bảo dưỡng, giấy tờ xe chính chủ và phụ kiện kèm theo...'
+    };
+  }
+
+  if (key.includes('job') || key.includes('viec-lam') || key.includes('việc làm') || key.includes('tuyển dụng')) {
+    return {
+      title: 'VD: Tuyển 03 Nhân viên Tư vấn Bán hàng Thu nhập 10-15 triệu/tháng',
+      description: 'Mô tả chi tiết vị trí công việc, địa điểm, thời gian làm việc, yêu cầu độ tuổi/kinh nghiệm, mức lương, phụ cấp và cách nộp hồ sơ...'
+    };
+  }
+
+  if (key.includes('service') || key.includes('dich-vu') || key.includes('dịch vụ')) {
+    return {
+      title: 'VD: Dịch vụ sửa chữa điện nước, điện lạnh tại nhà 24/7 giá tốt',
+      description: 'Mô tả chi tiết các hạng mục dịch vụ cung cấp, quy trình phục vụ, bảng giá tham khảo, khu vực hỗ trợ và cam kết bảo hành...'
+    };
+  }
+
+  if (key.includes('home') || key.includes('nha-cua') || key.includes('gia dụng') || key.includes('nội thất')) {
+    return {
+      title: 'VD: Tủ lạnh LG Inverter 315 lít còn bảo hành chính hãng, mới 95%',
+      description: 'Mô tả thương hiệu, kích thước/dung tích, thời gian sử dụng, tình trạng hoạt động thực tế, phụ kiện đi kèm và lý do thanh lý...'
+    };
+  }
+
+  if (key.includes('mother_baby') || key.includes('me-va-be') || key.includes('mẹ') || key.includes('bé')) {
+    return {
+      title: 'VD: Xe đẩy em bé Aprica Nhật Bản siêu nhẹ, gấp gọn mới 95%',
+      description: 'Mô tả thương hiệu, độ tuổi phù hợp, chất liệu, tình trạng sử dụng thực tế và vệ sinh/khử khuẩn...'
+    };
+  }
+
+  if (key.includes('pet') || key.includes('thu-cung') || key.includes('thú cưng') || key.includes('chó') || key.includes('mèo')) {
+    return {
+      title: 'VD: Chó Poodle thuần chủng 2 tháng tuổi đã tiêm phòng 2 mũi',
+      description: 'Mô tả giống loài, độ tuổi, giới tính, tình trạng sức khỏe, sổ tiêm phòng và chế độ ăn...'
+    };
+  }
+
+  if (key.includes('fashion') || key.includes('thoi-trang') || key.includes('thời trang') || key.includes('quần áo') || key.includes('giày')) {
+    return {
+      title: 'VD: Áo khoác nam da thật size L màu đen mới 99% chính hãng',
+      description: 'Mô tả thương hiệu, chất liệu, size (kích cỡ), kiểu dáng, màu sắc và tình trạng mới/cũ...'
+    };
+  }
+
+  if (key.includes('sports') || key.includes('the-thao') || key.includes('thể thao') || key.includes('sách') || key.includes('nhạc cụ')) {
+    return {
+      title: 'VD: Đàn Guitar Acoustic Fender chính hãng kèm bao da và phím gảy',
+      description: 'Mô tả thương hiệu, chất liệu, phụ kiện đi kèm, tình trạng âm thanh/ngoại hình và lịch sử sử dụng...'
+    };
+  }
+
+  if (key.includes('tech') || key.includes('cong-nghe') || key.includes('điện thoại') || key.includes('laptop') || key.includes('máy tính')) {
+    return {
+      title: 'VD: iPhone 15 Pro Max 256GB Titanium chính chủ mới 99%',
+      description: 'Mô tả thực tế tình trạng máy, dung lượng pin, thời gian bảo hành, phụ kiện đi kèm (sạc, hộp) và lý do bán...'
+    };
+  }
+
+  return {
+    title: 'VD: Tên sản phẩm/món đồ, thương hiệu, tình trạng và đặc điểm nổi bật',
+    description: 'Mô tả thực tế tình trạng, kích thước, phụ kiện đi kèm, bảo hành và lý do thanh lý...'
+  };
+}

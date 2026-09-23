@@ -12,8 +12,8 @@ import androidx.compose.ui.unit.dp
 import com.tattantat.app.data.remote.listing.*
 
 @Composable
-fun ListingText(label:String,value:String,onChange:(String)->Unit,enabled:Boolean=true,error:String?=null,multiline:Boolean=false,type:KeyboardType=KeyboardType.Text,maxLength:Int=2000){
-    OutlinedTextField(value=value,onValueChange={if(it.length<=maxLength)onChange(it)},label={Text(label)},modifier=Modifier.fillMaxWidth(),enabled=enabled,isError=error!=null,supportingText=error?.let{{Text(it)}},singleLine=!multiline,minLines=if(multiline)4 else 1,keyboardOptions=KeyboardOptions(keyboardType=type))
+fun ListingText(label:String,value:String,onChange:(String)->Unit,enabled:Boolean=true,error:String?=null,multiline:Boolean=false,type:KeyboardType=KeyboardType.Text,maxLength:Int=2000,placeholder:String?=null){
+    OutlinedTextField(value=value,onValueChange={if(it.length<=maxLength)onChange(it)},label={Text(label)},placeholder=placeholder?.takeIf{it.isNotBlank()}?.let{{Text(it)}},modifier=Modifier.fillMaxWidth(),enabled=enabled,isError=error!=null,supportingText=error?.let{{Text(it)}},singleLine=!multiline,minLines=if(multiline)4 else 1,keyboardOptions=KeyboardOptions(keyboardType=type))
 }
 @Composable
 fun ListingChoice(label:String,value:String,options:List<FieldOption>,enabled:Boolean,onChange:(String)->Unit){
@@ -45,7 +45,7 @@ fun DynamicListingField(field:ListingField,value:Any?,media:List<ListingMedia>,e
                 val numeric=field.type in listOf("number","year")
                 var input by remember(field.key){mutableStateOf(ListingRules.display(field,value))}
                 LaunchedEffect(value){if(!numeric||input.toDoubleOrNull()!=(value as? Number)?.toDouble())input=ListingRules.display(field,value)}
-                ListingText(label+(if(field.type=="date")" (YYYY-MM-DD)" else ""),if(numeric)input else ListingRules.display(field,value),{raw->input=raw;onChange(if(numeric&&raw.isNotBlank())raw.toDoubleOrNull()?:raw else raw)},enabled,error,field.type=="textarea",if(numeric||field.type=="currency")KeyboardType.Decimal else KeyboardType.Text,if(field.type=="currency")13 else field.config.maxLength?:2000)
+                ListingText(label+(if(field.type=="date")" (YYYY-MM-DD)" else ""),if(numeric)input else ListingRules.display(field,value),{raw->input=raw;onChange(if(numeric&&raw.isNotBlank())raw.toDoubleOrNull()?:raw else raw)},enabled,error,field.type=="textarea",if(numeric||field.type=="currency")KeyboardType.Decimal else KeyboardType.Text,if(field.type=="currency")13 else field.config.maxLength?:2000,placeholder=field.config.placeholder)
             }
         }
         if(field.type in listOf("boolean","checkbox","select","image","video","radio","multi-select","range")&&error!=null)Text(error,color=MaterialTheme.colorScheme.error,style=MaterialTheme.typography.bodySmall)
