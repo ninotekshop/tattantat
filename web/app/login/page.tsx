@@ -107,6 +107,73 @@ function LoginContent() {
     }
   };
 
+  // Load Facebook SDK Script dynamically
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const fbAppId = process.env.NEXT_PUBLIC_FACEBOOK_APP_ID;
+    if (!fbAppId) return;
+
+    if (!document.getElementById('facebook-jssdk')) {
+      const script = document.createElement('script');
+      script.id = 'facebook-jssdk';
+      script.src = 'https://connect.facebook.net/vi_VN/sdk.js';
+      script.async = true;
+      script.defer = true;
+      script.crossOrigin = 'anonymous';
+      script.onload = () => {
+        if ((window as any).FB) {
+          (window as any).FB.init({
+            appId: fbAppId,
+            cookie: true,
+            xfbml: true,
+            version: 'v19.0',
+          });
+        }
+      };
+      document.body.appendChild(script);
+    }
+  }, []);
+
+  const handleFacebookAuth = () => {
+    const fbAppId = process.env.NEXT_PUBLIC_FACEBOOK_APP_ID;
+    if ((window as any).FB && fbAppId) {
+      (window as any).FB.login(
+        async (response: any) => {
+          if (response?.authResponse?.accessToken) {
+            setLoading(true);
+            try {
+              const res = await fetch('/api/v1/auth/social', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  provider: 'facebook',
+                  providerAccountId: response.authResponse.userID || 'facebook_user_2026',
+                  accessToken: response.authResponse.accessToken,
+                }),
+              });
+              const data = await res.json();
+              if (data.success && data.data) {
+                saveSession(data.data);
+                router.replace(safeReturnPath(nextParam));
+              } else {
+                setError(data.message || 'Chưa thể xác thực Facebook.');
+              }
+            } catch (err) {
+              setError('Lỗi kết nối Facebook.');
+            } finally {
+              setLoading(false);
+            }
+          } else {
+            setError('Người dùng đã hủy đăng nhập Facebook.');
+          }
+        },
+        { scope: 'public_profile,email' }
+      );
+    } else {
+      handleSocialLogin('facebook');
+    }
+  };
+
   const handleSocialLogin = async (provider: 'google' | 'facebook') => {
     setLoading(true);
     try {
@@ -230,7 +297,7 @@ function LoginContent() {
           </button>
           <button
             type="button"
-            onClick={() => handleSocialLogin('facebook')}
+            onClick={handleFacebookAuth}
             style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '11px', borderRadius: 12, border: '1px solid #cbd5e1', background: '#ffffff', cursor: 'pointer', fontSize: 13.5, fontWeight: 600, color: '#334155' }}
           >
             <FacebookIcon /> Facebook
