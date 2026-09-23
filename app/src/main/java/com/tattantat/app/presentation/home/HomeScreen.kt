@@ -356,10 +356,6 @@ fun ProductCard(
                     onDismissRequest = { showMenu = false }
                 ) {
                     DropdownMenuItem(
-                        text = { Text("Báo cáo tin đăng") },
-                        onClick = { showMenu = false }
-                    )
-                    DropdownMenuItem(
                         text = { Text("Chia sẻ tin đăng") },
                         onClick = { showMenu = false }
                     )

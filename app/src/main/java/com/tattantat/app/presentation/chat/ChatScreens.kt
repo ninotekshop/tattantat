@@ -138,6 +138,7 @@ fun ChatDetailScreen(
     }
 
     val otherName = state.chatInfo?.other_name ?: "Người bán"
+    var deletingMessageId by remember { mutableStateOf<String?>(null) }
 
     Scaffold(
         topBar = {
@@ -286,6 +287,8 @@ fun ChatDetailScreen(
             ) {
                 items(state.messages, key = { it.id }) { message ->
                     val mine = message.sender_id == state.ownUserId
+                    val isMedia = message.content.startsWith("[Hình ảnh]") || message.content.startsWith("[Video]")
+
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = if (mine) Arrangement.End else Arrangement.Start,
@@ -313,10 +316,14 @@ fun ChatDetailScreen(
                                 bottomStart = if (mine) 16.dp else 4.dp,
                                 bottomEnd = if (mine) 4.dp else 16.dp
                             ),
-                            color = if (mine) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
-                            modifier = Modifier.widthIn(max = 280.dp)
+                            color = if (isMedia) Color.Transparent else if (mine) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
+                            modifier = Modifier
+                                .widthIn(max = 280.dp)
+                                .clickable {
+                                    deletingMessageId = message.id
+                                }
                         ) {
-                            Column(Modifier.padding(horizontal = 10.dp, vertical = 8.dp)) {
+                            Column(Modifier.padding(if (isMedia) 0.dp else 10.dp)) {
                                 val content = message.content
                                 when {
                                     content.startsWith("[Hình ảnh]") -> {
@@ -424,6 +431,28 @@ fun ChatDetailScreen(
                 }
             }
         }
+    }
+
+    // Message Deletion Dialog
+    deletingMessageId?.let { msgId ->
+        AlertDialog(
+            onDismissRequest = { deletingMessageId = null },
+            title = { Text("Tùy chọn tin nhắn") },
+            text = { Text("Bạn có muốn thu hồi hoặc xóa tin nhắn này không?") },
+            confirmButton = {
+                TextButton(onClick = {
+                    vm.deleteMessage(chatId, msgId)
+                    deletingMessageId = null
+                }) {
+                    Text("Thu hồi / Xóa", color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { deletingMessageId = null }) {
+                    Text("Hủy")
+                }
+            }
+        )
     }
 
     // Modal view for sent images

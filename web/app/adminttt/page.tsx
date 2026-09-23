@@ -10,7 +10,7 @@ import {
   Edit, Trash2, Plus, Code, Save, RotateCcw, Upload, CheckCircle,
   X, Filter, Eye, RefreshCw, AlertTriangle, ShieldCheck, UserCheck,
   Check, XCircle, Menu, LogOut, User, Lock, Mail, KeyRound, Sparkles,
-  Server, Sliders, Shield, EyeOff, CheckSquare
+  Server, Sliders, Shield, EyeOff, CheckSquare, MessageSquare
 } from 'lucide-react';
 import { TemplateAdmin } from '../../components/listings/TemplateAdmin';
 import { ListingManagementPage } from '../../components/admin/listing/ListingManagementPage';
@@ -88,11 +88,16 @@ interface OrderItem {
   id: string;
   order_code: string;
   total_amount: string;
+  platform_fee?: string;
+  seller_net_amount?: string;
+  product_title?: string;
   order_status: string;
   payment_status: string;
   payment_method?: string;
   buyer_name: string;
+  buyer_email?: string;
   seller_name: string;
+  seller_email?: string;
   created_at: string;
 }
 
@@ -110,7 +115,8 @@ interface ReportItem {
 
 function formatVnd(val: string | number) {
   const num = typeof val === 'number' ? val : parseInt(val || '0', 10);
-  return new Intl.NumberFormat('vi-VN').format(num) + 'đ';
+  if (isNaN(num) || num === 0) return '0 ₫';
+  return num.toLocaleString('de-DE') + ' ₫';
 }
 
 export default function AdminDashboardPage() {
@@ -134,6 +140,20 @@ export default function AdminDashboardPage() {
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
   const [notifDropdownOpen, setNotifDropdownOpen] = useState(false);
 
+  // CATEGORIES STATE
+  const [categories, setCategories] = useState<{ id: string; name: string }[]>([]);
+
+  useEffect(() => {
+    fetch('/api/v1/listing-categories')
+      .then(r => r.json())
+      .then(res => {
+        if (res.data) {
+          setCategories(res.data.map((c: any) => ({ id: String(c.id), name: c.name })));
+        }
+      })
+      .catch(() => {});
+  }, []);
+
   // DROPDOWN CLICK OUTSIDE REFS
   const profileRef = useRef<HTMLDivElement>(null);
   const notifRef = useRef<HTMLDivElement>(null);
@@ -152,7 +172,6 @@ export default function AdminDashboardPage() {
   // EDIT POST MODAL STATE
   const [editPostModalOpen, setEditPostModalOpen] = useState(false);
   const [editingPost, setEditingPost] = useState<PostItem | null>(null);
-  const [editPostForm, setEditPostForm] = useState({ title: '', price: '', status: 'ACTIVE', description: '' });
 
   // USERS MODULE STATE
   const [users, setUsers] = useState<UserItem[]>([]);
@@ -161,6 +180,11 @@ export default function AdminDashboardPage() {
   const [suspendModalOpen, setSuspendModalOpen] = useState(false);
   const [suspendUserId, setSuspendUserId] = useState<string | null>(null);
   const [suspendReason, setSuspendReason] = useState('Vi phạm tiêu chuẩn cộng đồng');
+
+  // EDIT USER MODAL STATE
+  const [editUserModalOpen, setEditUserModalOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState<UserItem | null>(null);
+  const [editUserForm, setEditUserForm] = useState({ fullName: '', email: '', phone: '', status: 'ACTIVE', isVerified: false });
 
   // BANNERS MODULE STATE
   const [banners, setBanners] = useState<BannerItem[]>([]);
@@ -178,6 +202,10 @@ export default function AdminDashboardPage() {
   // ORDERS MODULE STATE
   const [orders, setOrders] = useState<OrderItem[]>([]);
   const [orderStatusFilter, setOrderStatusFilter] = useState<string>('');
+
+  // CHAT HISTORY MODAL STATE
+  const [chatModalOpen, setChatModalOpen] = useState(false);
+  const [chatData, setChatData] = useState<{ orderId: string; buyerName: string; sellerName: string; messages: any[] } | null>(null);
 
   // REPORTS MODULE STATE
   const [reports, setReports] = useState<ReportItem[]>([]);
@@ -207,20 +235,6 @@ export default function AdminDashboardPage() {
   const [selectedCssFile, setSelectedCssFile] = useState('dog-theme.css');
   const [cssCode, setCssCode] = useState('/* Đang tải nội dung CSS... */');
   const [cssLoading, setCssLoading] = useState(false);
-
-  // CATEGORIES STATE
-  const [categories, setCategories] = useState<{ id: string; name: string }[]>([]);
-
-  useEffect(() => {
-    fetch('/api/v1/listing-categories')
-      .then(r => r.json())
-      .then(res => {
-        if (res.data) {
-          setCategories(res.data.map((c: any) => ({ id: String(c.id), name: c.name })));
-        }
-      })
-      .catch(() => {});
-  }, []);
 
   // CLICK OUTSIDE TO CLOSE DROPDOWNS
   useEffect(() => {
@@ -517,6 +531,8 @@ export default function AdminDashboardPage() {
         setProfileDropdownOpen(false);
         setNotifDropdownOpen(false);
         setEditPostModalOpen(false);
+        setEditUserModalOpen(false);
+        setChatModalOpen(false);
       }
     };
     window.addEventListener('keydown', handleKeyDown);
@@ -602,31 +618,6 @@ export default function AdminDashboardPage() {
       });
   };
 
-  const handleOpenEditPost = (p: PostItem) => {
-    setEditingPost(p);
-    setEditPostForm({ title: p.title, price: p.price, status: p.status, description: p.description || '' });
-    setEditPostModalOpen(true);
-  };
-
-  const handleSaveEditPost = () => {
-    if (!editingPost) return;
-    fetch(`/api/v1/admin/posts/${editingPost.id}`, {
-      method: 'PATCH',
-      headers: getAuthHeaders(),
-      body: JSON.stringify(editPostForm),
-    })
-      .then(r => r.json())
-      .then(res => {
-        if (res.success) {
-          showToast('Đã cập nhật thông tin tin đăng!');
-          setEditPostModalOpen(false);
-          fetchPostsData();
-        } else {
-          showToast(res.message || 'Không thể sửa tin đăng');
-        }
-      });
-  };
-
   const handleDeletePost = (id: string) => {
     if (!confirm('Bạn có chắc chắn muốn xóa vĩnh viễn tin đăng này khỏi hệ thống?')) return;
     fetch(`/api/v1/admin/posts/${id}`, { method: 'DELETE', headers: getAuthHeaders() })
@@ -673,7 +664,52 @@ export default function AdminDashboardPage() {
       });
   };
 
-  // USER ACTIONS
+  // USER ACTIONS: EDIT, DELETE, SUSPEND, UNSUSPEND, VERIFY
+  const handleOpenEditUser = (u: UserItem) => {
+    setEditingUser(u);
+    setEditUserForm({
+      fullName: u.full_name || '',
+      email: u.email || '',
+      phone: u.phone || '',
+      status: u.status || 'ACTIVE',
+      isVerified: u.verification_status === 'VERIFIED'
+    });
+    setEditUserModalOpen(true);
+  };
+
+  const handleSaveEditUser = () => {
+    if (!editingUser) return;
+    fetch(`/api/v1/admin/users/${editingUser.id}`, {
+      method: 'PATCH',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(editUserForm),
+    })
+      .then(r => r.json())
+      .then(res => {
+        if (res.success) {
+          showToast('Đã cập nhật thông tin tài khoản thành công!');
+          setEditUserModalOpen(false);
+          fetchUsersData();
+        } else {
+          showToast(res.message || 'Không thể cập nhật người dùng');
+        }
+      });
+  };
+
+  const handleDeleteUser = (id: string) => {
+    if (!confirm('Bạn có chắc chắn muốn xóa / tạm khóa tài khoản này?')) return;
+    fetch(`/api/v1/admin/users/${id}`, { method: 'DELETE', headers: getAuthHeaders() })
+      .then(r => r.json())
+      .then(res => {
+        if (res.success) {
+          showToast('Đã xóa / vô hiệu hóa tài khoản thành công!');
+          fetchUsersData();
+        } else {
+          showToast(res.message || 'Không thể xóa tài khoản');
+        }
+      });
+  };
+
   const handleSuspendUser = () => {
     if (!suspendUserId) return;
     fetch(`/api/v1/admin/users/${suspendUserId}/suspend`, {
@@ -711,6 +747,20 @@ export default function AdminDashboardPage() {
           fetchUsersData();
         }
       });
+  };
+
+  // ORDER CHAT HISTORY
+  const handleOpenChatModal = (orderId: string) => {
+    setChatModalOpen(true);
+    setChatData(null);
+    fetch(`/api/v1/admin/orders/${orderId}/chat-history`, { headers: getAuthHeaders() })
+      .then(r => r.json())
+      .then(res => {
+        if (res.success && res.data) {
+          setChatData(res.data);
+        }
+      })
+      .catch(() => showToast('Không thể tải lịch sử trò chuyện'));
   };
 
   // BANNER ACTIONS
@@ -891,46 +941,98 @@ export default function AdminDashboardPage() {
         </div>
       )}
 
-      {/* EDIT POST MODAL */}
-      {editPostModalOpen && editingPost && (
-        <div style={{position:'fixed', inset:0, background:'rgba(0,0,0,0.5)', backdropFilter:'blur(4px)', zIndex:1000, display:'flex', alignItems:'center', justifyContent:'center'}} onClick={() => setEditPostModalOpen(false)}>
-          <div style={{background:'#fff', borderRadius:16, width:'90%', maxWidth:540, padding:24, boxShadow:'0 20px 40px rgba(0,0,0,0.2)'}} onClick={e => e.stopPropagation()}>
+      {/* CHAT HISTORY MODAL */}
+      {chatModalOpen && (
+        <div style={{position:'fixed', inset:0, background:'rgba(0,0,0,0.5)', backdropFilter:'blur(4px)', zIndex:10000, display:'flex', alignItems:'center', justifyContent:'center'}} onClick={() => setChatModalOpen(false)}>
+          <div style={{background:'#fff', borderRadius:16, width:'90%', maxWidth:580, padding:24, boxShadow:'0 20px 40px rgba(0,0,0,0.2)'}} onClick={e => e.stopPropagation()}>
+            <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:16, borderBottom:'1px solid #e2e8f0', paddingBottom:12}}>
+              <div>
+                <h3 style={{margin:0, fontSize:18, fontWeight:700, color:'#0f172a'}}>Nội dung Chat giao dịch</h3>
+                <div style={{fontSize:12, color:'#64748b', marginTop:2}}>
+                  Trao đổi giữa <b>{chatData?.buyerName || 'Bên Mua'}</b> và <b>{chatData?.sellerName || 'Bên Bán'}</b>
+                </div>
+              </div>
+              <button onClick={() => setChatModalOpen(false)} style={{background:'transparent', border:'none', cursor:'pointer'}}><X size={20} color="#64748b" /></button>
+            </div>
+
+            <div style={{display:'flex', flexDirection:'column', gap:10, maxHeight:360, overflowY:'auto', padding:12, background:'#f8fafc', borderRadius:12, border:'1px solid #e2e8f0', marginBottom:20}}>
+              {chatData?.messages && chatData.messages.length > 0 ? (
+                chatData.messages.map((m: any, idx: number) => (
+                  <div key={m.id || idx} style={{display:'flex', flexDirection:'column', alignItems: m.sender_name === chatData.buyerName ? 'flex-start' : 'flex-end'}}>
+                    <span style={{fontSize:10.5, color:'#64748b', marginBottom:2, fontWeight:600}}>{m.sender_name}</span>
+                    <div style={{
+                      padding:'8px 14px',
+                      borderRadius:12,
+                      fontSize:13,
+                      maxWidth:'80%',
+                      background: m.sender_name === chatData.buyerName ? '#ffffff' : '#00a65a',
+                      color: m.sender_name === chatData.buyerName ? '#0f172a' : '#ffffff',
+                      border: m.sender_name === chatData.buyerName ? '1px solid #e2e8f0' : 'none',
+                      boxShadow:'0 1px 3px rgba(0,0,0,0.05)'
+                    }}>
+                      {m.content}
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div style={{textAlign:'center', color:'#64748b', padding:20}}>Đang tải nội dung cuộc trò chuyện...</div>
+              )}
+            </div>
+
+            <div style={{display:'flex', justifyContent:'flex-end'}}>
+              <button onClick={() => setChatModalOpen(false)} style={{padding:'8px 20px', borderRadius:8, border:'none', background:'#00a65a', color:'#fff', fontWeight:700, cursor:'pointer'}}>Đóng</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* EDIT USER MODAL */}
+      {editUserModalOpen && editingUser && (
+        <div style={{position:'fixed', inset:0, background:'rgba(0,0,0,0.5)', backdropFilter:'blur(4px)', zIndex:10000, display:'flex', alignItems:'center', justifyContent:'center'}} onClick={() => setEditUserModalOpen(false)}>
+          <div style={{background:'#fff', borderRadius:16, width:'90%', maxWidth:480, padding:24, boxShadow:'0 20px 40px rgba(0,0,0,0.2)'}} onClick={e => e.stopPropagation()}>
             <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:20, borderBottom:'1px solid #e2e8f0', paddingBottom:12}}>
-              <h3 style={{margin:0, fontSize:18, fontWeight:700, color:'#0f172a'}}>Chỉnh sửa tin đăng</h3>
-              <button onClick={() => setEditPostModalOpen(false)} style={{background:'transparent', border:'none', cursor:'pointer'}}><X size={20} color="#64748b" /></button>
+              <h3 style={{margin:0, fontSize:18, fontWeight:700, color:'#0f172a'}}>Sửa thông tin người dùng</h3>
+              <button onClick={() => setEditUserModalOpen(false)} style={{background:'transparent', border:'none', cursor:'pointer'}}><X size={20} color="#64748b" /></button>
             </div>
 
             <div style={{display:'flex', flexDirection:'column', gap:14}}>
               <div>
-                <label style={{display:'block', fontSize:13, fontWeight:600, marginBottom:4, color:'#334155'}}>Tiêu đề tin *</label>
-                <input type="text" value={editPostForm.title} onChange={e => setEditPostForm({...editPostForm, title:e.target.value})} style={{width:'100%', padding:'10px 12px', borderRadius:8, border:'1px solid #cbd5e1', fontSize:14}} />
+                <label style={{display:'block', fontSize:13, fontWeight:600, marginBottom:4, color:'#334155'}}>Họ và tên *</label>
+                <input type="text" value={editUserForm.fullName} onChange={e => setEditUserForm({...editUserForm, fullName: e.target.value})} style={{width:'100%', padding:'10px 12px', borderRadius:8, border:'1px solid #cbd5e1', fontSize:14}} />
               </div>
 
               <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:12}}>
                 <div>
-                  <label style={{display:'block', fontSize:13, fontWeight:600, marginBottom:4, color:'#334155'}}>Giá bán (VND)</label>
-                  <input type="text" value={editPostForm.price} onChange={e => setEditPostForm({...editPostForm, price:e.target.value})} style={{width:'100%', padding:'10px 12px', borderRadius:8, border:'1px solid #cbd5e1', fontSize:14}} />
+                  <label style={{display:'block', fontSize:13, fontWeight:600, marginBottom:4, color:'#334155'}}>Email</label>
+                  <input type="email" value={editUserForm.email} onChange={e => setEditUserForm({...editUserForm, email: e.target.value})} style={{width:'100%', padding:'10px 12px', borderRadius:8, border:'1px solid #cbd5e1', fontSize:14}} />
                 </div>
                 <div>
-                  <label style={{display:'block', fontSize:13, fontWeight:600, marginBottom:4, color:'#334155'}}>Trạng thái</label>
-                  <select value={editPostForm.status} onChange={e => setEditPostForm({...editPostForm, status:e.target.value})} style={{width:'100%', padding:'10px 12px', borderRadius:8, border:'1px solid #cbd5e1', fontSize:14}}>
-                    <option value="ACTIVE">Hiển thị (Active)</option>
-                    <option value="PENDING">Chờ duyệt</option>
-                    <option value="HIDDEN">Tạm ẩn</option>
-                    <option value="REJECTED">Đã từ chối</option>
-                  </select>
+                  <label style={{display:'block', fontSize:13, fontWeight:600, marginBottom:4, color:'#334155'}}>Số điện thoại</label>
+                  <input type="text" value={editUserForm.phone} onChange={e => setEditUserForm({...editUserForm, phone: e.target.value})} style={{width:'100%', padding:'10px 12px', borderRadius:8, border:'1px solid #cbd5e1', fontSize:14}} />
                 </div>
               </div>
 
-              <div>
-                <label style={{display:'block', fontSize:13, fontWeight:600, marginBottom:4, color:'#334155'}}>Mô tả chi tiết</label>
-                <textarea rows={4} value={editPostForm.description} onChange={e => setEditPostForm({...editPostForm, description:e.target.value})} style={{width:'100%', padding:'10px 12px', borderRadius:8, border:'1px solid #cbd5e1', fontSize:13}} />
+              <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:12}}>
+                <div>
+                  <label style={{display:'block', fontSize:13, fontWeight:600, marginBottom:4, color:'#334155'}}>Trạng thái tài khoản</label>
+                  <select value={editUserForm.status} onChange={e => setEditUserForm({...editUserForm, status: e.target.value})} style={{width:'100%', padding:'10px 12px', borderRadius:8, border:'1px solid #cbd5e1', fontSize:14}}>
+                    <option value="ACTIVE">● Hoạt động</option>
+                    <option value="SUSPENDED">● Đã tạm khóa</option>
+                  </select>
+                </div>
+                <div>
+                  <label style={{display:'block', fontSize:13, fontWeight:600, marginBottom:4, color:'#334155'}}>Trạng thái xác minh</label>
+                  <select value={editUserForm.isVerified ? 'VERIFIED' : 'UNVERIFIED'} onChange={e => setEditUserForm({...editUserForm, isVerified: e.target.value === 'VERIFIED'})} style={{width:'100%', padding:'10px 12px', borderRadius:8, border:'1px solid #cbd5e1', fontSize:14}}>
+                    <option value="VERIFIED">✓ Đã xác minh</option>
+                    <option value="UNVERIFIED">Chưa xác minh</option>
+                  </select>
+                </div>
               </div>
             </div>
 
             <div style={{display:'flex', justifyContent:'flex-end', gap:10, marginTop:24}}>
-              <button onClick={() => setEditPostModalOpen(false)} style={{padding:'8px 16px', borderRadius:8, border:'1px solid #cbd5e1', background:'#f8fafc', color:'#475569', fontWeight:600, cursor:'pointer'}}>Hủy</button>
-              <button onClick={handleSaveEditPost} style={{padding:'8px 20px', borderRadius:8, border:'none', background:'#00a65a', color:'#fff', fontWeight:600, cursor:'pointer'}}>Lưu thay đổi</button>
+              <button onClick={() => setEditUserModalOpen(false)} style={{padding:'8px 16px', borderRadius:8, border:'1px solid #cbd5e1', background:'#f8fafc', color:'#475569', fontWeight:600, cursor:'pointer'}}>Hủy</button>
+              <button onClick={handleSaveEditUser} style={{padding:'8px 20px', borderRadius:8, border:'none', background:'#00a65a', color:'#fff', fontWeight:700, cursor:'pointer'}}>Lưu thay đổi</button>
             </div>
           </div>
         </div>
@@ -1340,7 +1442,7 @@ export default function AdminDashboardPage() {
                     {activeNav === 'banners' ? 'Quản lý Banner hệ thống'
                       : activeNav === 'nguoi-dung' ? 'Quản lý Người dùng & Xác minh'
                       : activeNav === 'danh-muc' ? 'Quản lý Danh mục & form'
-                      : activeNav === 'don-hang' ? 'Quản lý Đơn hàng'
+                      : activeNav === 'don-hang' ? 'Quản lý Đơn hàng giao dịch thành công'
                       : activeNav === 'reports' ? 'Báo cáo vi phạm & Moderation'
                       : activeNav === 'css-editor' ? 'Chỉnh sửa Giao diện CSS'
                       : activeNav === 'ho-so' ? 'Hồ sơ cá nhân Admin'
@@ -1350,9 +1452,9 @@ export default function AdminDashboardPage() {
                 </div>
                 <p>
                   {activeNav === 'banners' ? 'Thêm mới, tải ảnh từ máy tính, bật/tắt và quản lý thời hạn hiển thị của các Banner quảng cáo.'
-                    : activeNav === 'nguoi-dung' ? 'Quản lý danh sách thành viên, xác minh tài khoản và khóa tài khoản vi phạm.'
+                    : activeNav === 'nguoi-dung' ? 'Quản lý danh sách thành viên, xác minh tài khoản, sửa và xóa tài khoản vi phạm.'
                     : activeNav === 'danh-muc' ? 'Thiết lập danh mục, tạo thuộc tính động và quản lý phiên bản biểu mẫu đăng tin.'
-                    : activeNav === 'don-hang' ? 'Theo dõi danh sách đơn hàng mua bán và trạng thái giao dịch.'
+                    : activeNav === 'don-hang' ? 'Theo dõi danh sách đơn hàng đã giao dịch thành công, giá trị, phí nền tảng, số tiền thực nhận và xem nội dung chat.'
                     : activeNav === 'reports' ? 'Xử lý các báo cáo vi phạm sản phẩm và người dùng từ cộng đồng.'
                     : activeNav === 'css-editor' ? 'Chỉnh sửa trực tiếp style CSS của các trang giao diện trong hệ thống Tất Tần Tật.'
                     : activeNav === 'ho-so' ? 'Thông tin cá nhân thành viên và đổi mật khẩu quản trị.'
@@ -1383,8 +1485,286 @@ export default function AdminDashboardPage() {
             <div className="dashboard-card" style={{ padding: 24 }}>
               <TemplateAdmin />
             </div>
+          ) : activeNav === 'tin-dang' ? (
+            /* REDESIGNED LISTING MANAGEMENT MODULE */
+            <ListingManagementPage
+              posts={posts}
+              categories={categories}
+              onRefresh={fetchPostsData}
+              onApprove={handleApprovePost}
+              onUnhide={handleUnhidePost}
+              onHide={handleHidePost}
+              onSaveEdit={(id, form) => {
+                fetch(`/api/v1/admin/posts/${id}`, {
+                  method: 'PATCH',
+                  headers: getAuthHeaders(),
+                  body: JSON.stringify(form),
+                })
+                  .then(r => r.json())
+                  .then(res => {
+                    if (res.success) {
+                      showToast('Đã cập nhật tin đăng thành công!');
+                      fetchPostsData();
+                    }
+                  });
+              }}
+              onDelete={handleDeletePost}
+              onToast={showToast}
+              getAuthHeaders={getAuthHeaders}
+            />
+          ) : activeNav === 'nguoi-dung' ? (
+            /* USERS MANAGEMENT MODULE WITH EDIT & DELETE */
+            <div className="dashboard-card">
+              <div className="card-header-flex" style={{gap:12, flexWrap:'wrap'}}>
+                <h3>Quản lý thành viên hệ thống ({users.length})</h3>
+                <div style={{display:'flex', gap:10, alignItems:'center', flexWrap:'wrap'}}>
+                  <input
+                    type="text"
+                    placeholder="Tìm theo tên, email, SĐT..."
+                    value={userSearch}
+                    onChange={e => setUserSearch(e.target.value)}
+                    style={{padding:'6px 12px', borderRadius:8, border:'1px solid #cbd5e1', fontSize:13}}
+                  />
+                  <select
+                    value={userStatusFilter}
+                    onChange={e => setUserStatusFilter(e.target.value)}
+                    style={{padding:'6px 12px', borderRadius:8, border:'1px solid #cbd5e1', fontSize:13}}
+                  >
+                    <option value="">Tất cả trạng thái</option>
+                    <option value="ACTIVE">Hoạt động</option>
+                    <option value="SUSPENDED">Đã tạm khóa</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="table-responsive" style={{marginTop:16}}>
+                <table className="admin-table">
+                  <thead>
+                    <tr>
+                      <th>Thành viên</th>
+                      <th>Email / SĐT</th>
+                      <th>Tin đăng</th>
+                      <th>Đơn hàng</th>
+                      <th>Xác minh</th>
+                      <th>Trạng thái</th>
+                      <th>Thao tác</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {users.length > 0 ? (
+                      users.map(u => (
+                        <tr key={u.id}>
+                          <td style={{fontWeight:600, color:'#0f172a'}}>{u.full_name || 'Thành viên'}</td>
+                          <td>
+                            <div style={{fontSize:13}}>{u.email || '—'}</div>
+                            <div style={{fontSize:11, color:'#64748b'}}>{u.phone || ''}</div>
+                          </td>
+                          <td style={{fontWeight:600}}>{u.posts_count} tin</td>
+                          <td style={{fontWeight:600}}>{u.orders_count} đơn</td>
+                          <td>
+                            <span className={`status-badge ${u.verification_status === 'VERIFIED' ? 'approved' : 'pending'}`}>
+                              {u.verification_status === 'VERIFIED' ? '✓ Đã xác minh' : 'Chưa xác minh'}
+                            </span>
+                          </td>
+                          <td>
+                            <span className={`status-badge ${u.status === 'SUSPENDED' ? 'danger' : 'approved'}`}>
+                              {u.status === 'SUSPENDED' ? 'Đã khóa' : 'Hoạt động'}
+                            </span>
+                          </td>
+                          <td>
+                            <div style={{display:'flex', gap:6, flexWrap:'wrap'}}>
+                              {u.verification_status !== 'VERIFIED' && (
+                                <button onClick={() => handleVerifyUser(u.id)} style={{background:'#d1fae5', color:'#059669', border:'none', padding:'6px 10px', borderRadius:6, fontSize:12, fontWeight:600, cursor:'pointer'}}>Xác minh</button>
+                              )}
+                              <button onClick={() => handleOpenEditUser(u)} style={{background:'#e0f2fe', color:'#0284c7', border:'none', padding:'6px 10px', borderRadius:6, fontSize:12, fontWeight:600, cursor:'pointer', display:'flex', alignItems:'center', gap:4}}>
+                                <Edit size={13} /> Sửa
+                              </button>
+                              <button onClick={() => handleDeleteUser(u.id)} style={{background:'#fee2e2', color:'#dc2626', border:'none', padding:'6px 10px', borderRadius:6, fontSize:12, fontWeight:600, cursor:'pointer', display:'flex', alignItems:'center', gap:4}}>
+                                <Trash2 size={13} /> Xóa
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr><td colSpan={7} style={{textAlign:'center', color:'#64748b', padding:24}}>Không tìm thấy thành viên.</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          ) : activeNav === 'don-hang' ? (
+            /* ORDERS MANAGEMENT MODULE (REQ 4) */
+            <div className="dashboard-card">
+              <div className="card-header-flex" style={{gap:12, flexWrap:'wrap'}}>
+                <h3>Đơn hàng giao dịch thành công ({orders.length})</h3>
+                <div style={{display:'flex', gap:10, alignItems:'center'}}>
+                  <select
+                    value={orderStatusFilter}
+                    onChange={e => setOrderStatusFilter(e.target.value)}
+                    style={{padding:'6px 12px', borderRadius:8, border:'1px solid #cbd5e1', fontSize:13}}
+                  >
+                    <option value="">Tất cả đơn hàng</option>
+                    <option value="COMPLETED">Thành công (Completed)</option>
+                    <option value="PAID">Đã thanh toán (Paid)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="table-responsive" style={{marginTop:16}}>
+                <table className="admin-table">
+                  <thead>
+                    <tr>
+                      <th>Mã đơn</th>
+                      <th>Sản phẩm</th>
+                      <th>Người bán</th>
+                      <th>Người mua</th>
+                      <th>Giá trị</th>
+                      <th>Phí nền tảng (2.5%)</th>
+                      <th>Thực nhận</th>
+                      <th>Ngày giao dịch</th>
+                      <th>Trạng thái</th>
+                      <th>Thao tác</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {orders.length > 0 ? (
+                      orders.map(o => (
+                        <tr key={o.id}>
+                          <td style={{fontWeight:700, color:'#0f172a'}}>#{o.order_code || o.id.slice(0, 8)}</td>
+                          <td style={{fontWeight:600, maxWidth:180, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>{o.product_title || 'Sản phẩm mua bán'}</td>
+                          <td>
+                            <div style={{fontWeight:600, fontSize:13}}>{o.seller_name}</div>
+                            <div style={{fontSize:11, color:'#64748b'}}>{o.seller_email}</div>
+                          </td>
+                          <td>
+                            <div style={{fontWeight:600, fontSize:13}}>{o.buyer_name}</div>
+                            <div style={{fontSize:11, color:'#64748b'}}>{o.buyer_email}</div>
+                          </td>
+                          <td style={{fontWeight:700, color:'#059669', fontSize:14}}>{formatVnd(o.total_amount)}</td>
+                          <td style={{fontWeight:600, color:'#d97706', fontSize:13}}>{formatVnd(o.platform_fee || Math.round(parseInt(o.total_amount || '0') * 0.025))}</td>
+                          <td style={{fontWeight:700, color:'#2563eb', fontSize:14}}>{formatVnd(o.seller_net_amount || (parseInt(o.total_amount || '0') - Math.round(parseInt(o.total_amount || '0') * 0.025)))}</td>
+                          <td style={{fontSize:12, color:'#64748b'}}>{new Date(o.created_at).toLocaleDateString('vi-VN')}</td>
+                          <td><span className="status-badge delivered">{o.order_status || 'COMPLETED'}</span></td>
+                          <td>
+                            <button
+                              onClick={() => handleOpenChatModal(o.id)}
+                              style={{ background: '#e0f2fe', color: '#0284c7', border: 'none', padding: '6px 12px', borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}
+                            >
+                              <MessageSquare size={13} /> Xem Chat
+                            </button>
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr><td colSpan={10} style={{textAlign:'center', color:'#64748b', padding:24}}>Chưa có đơn hàng giao dịch thành công.</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          ) : activeNav === 'reports' ? (
+            /* MODERATION REPORTS MODULE */
+            <div className="dashboard-card">
+              <div className="card-header-flex">
+                <h3>Báo cáo vi phạm từ người dùng</h3>
+              </div>
+              <div className="table-responsive" style={{marginTop:16}}>
+                <table className="admin-table">
+                  <thead>
+                    <tr>
+                      <th>Lý do</th>
+                      <th>Chi tiết</th>
+                      <th>Người báo cáo</th>
+                      <th>Sản phẩm bị báo cáo</th>
+                      <th>Thời gian</th>
+                      <th>Trạng thái</th>
+                      <th>Thao tác</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {reports.length > 0 ? (
+                      reports.map(r => (
+                        <tr key={r.id}>
+                          <td style={{fontWeight:600, color:'#dc2626'}}>{r.reason}</td>
+                          <td style={{fontSize:13, maxWidth:200}}>{r.details || 'Không có chi tiết'}</td>
+                          <td>{r.reporter_name}</td>
+                          <td style={{fontWeight:600}}>{r.product_title || 'Sản phẩm'}</td>
+                          <td style={{fontSize:12, color:'#64748b'}}>{new Date(r.created_at).toLocaleDateString('vi-VN')}</td>
+                          <td>
+                            <span className={`status-badge ${r.status === 'RESOLVED' ? 'approved' : 'pending'}`}>{r.status}</span>
+                          </td>
+                          <td>
+                            {r.status !== 'RESOLVED' && (
+                              <div style={{display:'flex', gap:6}}>
+                                <button onClick={() => handleResolveReport(r.id, 'HIDE')} style={{background:'#fee2e2', color:'#dc2626', border:'none', padding:'6px 10px', borderRadius:6, fontSize:12, fontWeight:600, cursor:'pointer'}}>Ẩn tin vi phạm</button>
+                                <button onClick={() => handleResolveReport(r.id, 'RESOLVE')} style={{background:'#d1fae5', color:'#059669', border:'none', padding:'6px 10px', borderRadius:6, fontSize:12, fontWeight:600, cursor:'pointer'}}>Đóng báo cáo</button>
+                              </div>
+                            )}
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr><td colSpan={7} style={{textAlign:'center', color:'#64748b', padding:24}}>Chưa có báo cáo vi phạm mới.</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          ) : activeNav === 'banners' ? (
+            /* BANNERS MANAGEMENT MODULE */
+            <div className="dashboard-card">
+              <div className="card-header-flex">
+                <h3>Quản lý Banner quảng cáo ({banners.length})</h3>
+                <button onClick={handleOpenAddBanner} style={{background:'#00a65a', color:'#fff', border:'none', padding:'8px 16px', borderRadius:8, fontSize:13, fontWeight:600, cursor:'pointer', display:'flex', alignItems:'center', gap:6}}>
+                  <Plus size={16} /> Thêm Banner mới
+                </button>
+              </div>
+
+              <div className="table-responsive" style={{marginTop:16}}>
+                <table className="admin-table">
+                  <thead>
+                    <tr>
+                      <th>Hình ảnh</th>
+                      <th>Tên Banner</th>
+                      <th>Vị trí</th>
+                      <th>Liên kết (Target)</th>
+                      <th>Hạn hiển thị</th>
+                      <th>Trạng thái</th>
+                      <th>Thao tác</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {banners.length > 0 ? (
+                      banners.map(b => (
+                        <tr key={b.id}>
+                          <td><img src={b.imageUrl} alt="" style={{height:40, maxWidth:100, borderRadius:6, objectFit:'cover', border:'1px solid #cbd5e1'}} /></td>
+                          <td style={{fontWeight:600, color:'#0f172a'}}>{b.title}</td>
+                          <td><span className="admin-badge blue">{b.position}</span></td>
+                          <td style={{fontSize:12, color:'#64748b'}}>{b.targetUrl}</td>
+                          <td style={{fontSize:12, color:'#64748b'}}>{b.expiryDate}</td>
+                          <td>
+                            <span className={`status-badge ${b.status === 'ACTIVE' ? 'approved' : 'danger'}`}>
+                              {b.status === 'ACTIVE' ? 'Đang hiển thị' : 'Tạm ẩn'}
+                            </span>
+                          </td>
+                          <td>
+                            <div style={{display:'flex', gap:8}}>
+                              <button onClick={() => handleOpenEditBanner(b)} style={{background:'#f1f5f9', border:'none', padding:'6px 10px', borderRadius:6, cursor:'pointer', color:'#334155'}} title="Sửa"><Edit size={14} /></button>
+                              <button onClick={() => handleDeleteBanner(b.id)} style={{background:'#fee2e2', border:'none', padding:'6px 10px', borderRadius:6, cursor:'pointer', color:'#dc2626'}} title="Xóa"><Trash2 size={14} /></button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr><td colSpan={7} style={{textAlign:'center', color:'#64748b', padding:24}}>Chưa có banner nào. Hãy tạo banner đầu tiên.</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
           ) : activeNav === 'ho-so' ? (
-            /* MY PROFILE MODULE */
+            /* MY PROFILE MODULE (REQ 7) */
             <div style={{ display: 'grid', gridTemplateColumns: '320px 1fr', gap: 24 }}>
               {/* PROFILE CARD LEFT */}
               <div className="dashboard-card" style={{ textAlign: 'center', padding: 28 }}>
@@ -1531,7 +1911,7 @@ export default function AdminDashboardPage() {
                     <span className="kpi-title">Tổng tin đăng hoạt động</span>
                     <div className="kpi-icon green"><FileText size={20} /></div>
                   </div>
-                  <div className="kpi-value">{dashboard ? dashboard.kpis.activeListings.toLocaleString('vi-VN') : '...'}</div>
+                  <div className="kpi-value">{dashboard ? dashboard.kpis.activeListings.toLocaleString('de-DE') : '...'}</div>
                   <div className="kpi-trend up">
                     <TrendingUp size={15} /> {dashboard?.kpis.activeListingsTrend ? `+${dashboard.kpis.activeListingsTrend}%` : '0%'} <span style={{color:'#64748b', fontWeight:400}}>so với kỳ trước</span>
                   </div>
@@ -1542,7 +1922,7 @@ export default function AdminDashboardPage() {
                     <span className="kpi-title">Người dùng mới</span>
                     <div className="kpi-icon blue"><Users size={20} /></div>
                   </div>
-                  <div className="kpi-value">{dashboard ? dashboard.kpis.newUsers.toLocaleString('vi-VN') : '...'}</div>
+                  <div className="kpi-value">{dashboard ? dashboard.kpis.newUsers.toLocaleString('de-DE') : '...'}</div>
                   <div className="kpi-trend up">
                     <TrendingUp size={15} /> {dashboard?.kpis.newUsersTrend ? `+${dashboard.kpis.newUsersTrend}%` : '0%'} <span style={{color:'#64748b', fontWeight:400}}>so với kỳ trước</span>
                   </div>
@@ -1553,7 +1933,7 @@ export default function AdminDashboardPage() {
                     <span className="kpi-title">Đơn hàng hoàn thành</span>
                     <div className="kpi-icon purple"><PackageCheck size={20} /></div>
                   </div>
-                  <div className="kpi-value">{dashboard ? dashboard.kpis.completedOrders.toLocaleString('vi-VN') : '...'}</div>
+                  <div className="kpi-value">{dashboard ? dashboard.kpis.completedOrders.toLocaleString('de-DE') : '...'}</div>
                   <div className="kpi-trend up">
                     <TrendingUp size={15} /> {dashboard?.kpis.completedOrdersTrend ? `+${dashboard.kpis.completedOrdersTrend}%` : '0%'} <span style={{color:'#64748b', fontWeight:400}}>so với kỳ trước</span>
                   </div>
@@ -1726,213 +2106,6 @@ export default function AdminDashboardPage() {
                 </div>
               </div>
             </>
-          ) : activeNav === 'tin-dang' ? (
-            /* REDESIGNED LISTING MANAGEMENT MODULE */
-            <ListingManagementPage
-              posts={posts}
-              categories={categories}
-              onRefresh={fetchPostsData}
-              onApprove={handleApprovePost}
-              onUnhide={handleUnhidePost}
-              onHide={handleHidePost}
-              onSaveEdit={(id, form) => {
-                fetch(`/api/v1/admin/posts/${id}`, {
-                  method: 'PATCH',
-                  headers: getAuthHeaders(),
-                  body: JSON.stringify(form),
-                })
-                  .then(r => r.json())
-                  .then(res => {
-                    if (res.success) {
-                      showToast('Đã cập nhật tin đăng thành công!');
-                      fetchPostsData();
-                    }
-                  });
-              }}
-              onDelete={handleDeletePost}
-              onToast={showToast}
-              getAuthHeaders={getAuthHeaders}
-            />
-          ) : activeNav === 'nguoi-dung' ? (
-            /* USERS MANAGEMENT MODULE */
-            <div className="dashboard-card">
-              <div className="card-header-flex" style={{gap:12, flexWrap:'wrap'}}>
-                <h3>Quản lý thành viên hệ thống ({users.length})</h3>
-                <div style={{display:'flex', gap:10, alignItems:'center', flexWrap:'wrap'}}>
-                  <input
-                    type="text"
-                    placeholder="Tìm theo tên, email, SĐT..."
-                    value={userSearch}
-                    onChange={e => setUserSearch(e.target.value)}
-                    style={{padding:'6px 12px', borderRadius:8, border:'1px solid #cbd5e1', fontSize:13}}
-                  />
-                  <select
-                    value={userStatusFilter}
-                    onChange={e => setUserStatusFilter(e.target.value)}
-                    style={{padding:'6px 12px', borderRadius:8, border:'1px solid #cbd5e1', fontSize:13}}
-                  >
-                    <option value="">Tất cả trạng thái</option>
-                    <option value="ACTIVE">Hoạt động</option>
-                    <option value="SUSPENDED">Đã tạm khóa</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="table-responsive" style={{marginTop:16}}>
-                <table className="admin-table">
-                  <thead>
-                    <tr>
-                      <th>Thành viên</th>
-                      <th>Email / SĐT</th>
-                      <th>Tin đăng</th>
-                      <th>Đơn hàng</th>
-                      <th>Xác minh</th>
-                      <th>Trạng thái</th>
-                      <th>Thao tác</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {users.length > 0 ? (
-                      users.map(u => (
-                        <tr key={u.id}>
-                          <td style={{fontWeight:600, color:'#0f172a'}}>{u.full_name || 'Thành viên'}</td>
-                          <td>
-                            <div style={{fontSize:13}}>{u.email || '—'}</div>
-                            <div style={{fontSize:11, color:'#64748b'}}>{u.phone || ''}</div>
-                          </td>
-                          <td style={{fontWeight:600}}>{u.posts_count} tin</td>
-                          <td style={{fontWeight:600}}>{u.orders_count} đơn</td>
-                          <td>
-                            <span className={`status-badge ${u.verification_status === 'VERIFIED' ? 'approved' : 'pending'}`}>
-                              {u.verification_status === 'VERIFIED' ? '✓ Đã xác minh' : 'Chưa xác minh'}
-                            </span>
-                          </td>
-                          <td>
-                            <span className={`status-badge ${u.status === 'SUSPENDED' ? 'danger' : 'approved'}`}>
-                              {u.status === 'SUSPENDED' ? 'Đã khóa' : 'Hoạt động'}
-                            </span>
-                          </td>
-                          <td>
-                            <div style={{display:'flex', gap:6}}>
-                              {u.verification_status !== 'VERIFIED' && (
-                                <button onClick={() => handleVerifyUser(u.id)} style={{background:'#d1fae5', color:'#059669', border:'none', padding:'6px 10px', borderRadius:6, fontSize:12, fontWeight:600, cursor:'pointer'}}>Xác minh</button>
-                              )}
-                              {u.status === 'SUSPENDED' ? (
-                                <button onClick={() => handleUnsuspendUser(u.id)} style={{background:'#e0f2fe', color:'#0284c7', border:'none', padding:'6px 10px', borderRadius:6, fontSize:12, fontWeight:600, cursor:'pointer'}}>Mở khóa</button>
-                              ) : (
-                                <button onClick={() => { setSuspendUserId(u.id); setSuspendModalOpen(true); }} style={{background:'#fee2e2', color:'#dc2626', border:'none', padding:'6px 10px', borderRadius:6, fontSize:12, fontWeight:600, cursor:'pointer'}}>Khóa TK</button>
-                              )}
-                            </div>
-                          </td>
-                        </tr>
-                      ))
-                    ) : (
-                      <tr><td colSpan={7} style={{textAlign:'center', color:'#64748b', padding:24}}>Không tìm thấy thành viên.</td></tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          ) : activeNav === 'reports' ? (
-            /* MODERATION REPORTS MODULE */
-            <div className="dashboard-card">
-              <div className="card-header-flex">
-                <h3>Báo cáo vi phạm từ người dùng</h3>
-              </div>
-              <div className="table-responsive" style={{marginTop:16}}>
-                <table className="admin-table">
-                  <thead>
-                    <tr>
-                      <th>Lý do</th>
-                      <th>Chi tiết</th>
-                      <th>Người báo cáo</th>
-                      <th>Sản phẩm bị báo cáo</th>
-                      <th>Thời gian</th>
-                      <th>Trạng thái</th>
-                      <th>Thao tác</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {reports.length > 0 ? (
-                      reports.map(r => (
-                        <tr key={r.id}>
-                          <td style={{fontWeight:600, color:'#dc2626'}}>{r.reason}</td>
-                          <td style={{fontSize:13, maxWidth:200}}>{r.details || 'Không có chi tiết'}</td>
-                          <td>{r.reporter_name}</td>
-                          <td style={{fontWeight:600}}>{r.product_title || 'Sản phẩm'}</td>
-                          <td style={{fontSize:12, color:'#64748b'}}>{new Date(r.created_at).toLocaleDateString('vi-VN')}</td>
-                          <td>
-                            <span className={`status-badge ${r.status === 'RESOLVED' ? 'approved' : 'pending'}`}>{r.status}</span>
-                          </td>
-                          <td>
-                            {r.status !== 'RESOLVED' && (
-                              <div style={{display:'flex', gap:6}}>
-                                <button onClick={() => handleResolveReport(r.id, 'HIDE')} style={{background:'#fee2e2', color:'#dc2626', border:'none', padding:'6px 10px', borderRadius:6, fontSize:12, fontWeight:600, cursor:'pointer'}}>Ẩn tin vi phạm</button>
-                                <button onClick={() => handleResolveReport(r.id, 'RESOLVE')} style={{background:'#d1fae5', color:'#059669', border:'none', padding:'6px 10px', borderRadius:6, fontSize:12, fontWeight:600, cursor:'pointer'}}>Đóng báo cáo</button>
-                              </div>
-                            )}
-                          </td>
-                        </tr>
-                      ))
-                    ) : (
-                      <tr><td colSpan={7} style={{textAlign:'center', color:'#64748b', padding:24}}>Chưa có báo cáo vi phạm mới.</td></tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          ) : activeNav === 'banners' ? (
-            /* BANNERS MANAGEMENT MODULE */
-            <div className="dashboard-card">
-              <div className="card-header-flex">
-                <h3>Quản lý Banner quảng cáo ({banners.length})</h3>
-                <button onClick={handleOpenAddBanner} style={{background:'#00a65a', color:'#fff', border:'none', padding:'8px 16px', borderRadius:8, fontSize:13, fontWeight:600, cursor:'pointer', display:'flex', alignItems:'center', gap:6}}>
-                  <Plus size={16} /> Thêm Banner mới
-                </button>
-              </div>
-
-              <div className="table-responsive" style={{marginTop:16}}>
-                <table className="admin-table">
-                  <thead>
-                    <tr>
-                      <th>Hình ảnh</th>
-                      <th>Tên Banner</th>
-                      <th>Vị trí</th>
-                      <th>Liên kết (Target)</th>
-                      <th>Hạn hiển thị</th>
-                      <th>Trạng thái</th>
-                      <th>Thao tác</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {banners.length > 0 ? (
-                      banners.map(b => (
-                        <tr key={b.id}>
-                          <td><img src={b.imageUrl} alt="" style={{height:40, maxWidth:100, borderRadius:6, objectFit:'cover', border:'1px solid #cbd5e1'}} /></td>
-                          <td style={{fontWeight:600, color:'#0f172a'}}>{b.title}</td>
-                          <td><span className="admin-badge blue">{b.position}</span></td>
-                          <td style={{fontSize:12, color:'#64748b'}}>{b.targetUrl}</td>
-                          <td style={{fontSize:12, color:'#64748b'}}>{b.expiryDate}</td>
-                          <td>
-                            <span className={`status-badge ${b.status === 'ACTIVE' ? 'approved' : 'danger'}`}>
-                              {b.status === 'ACTIVE' ? 'Đang hiển thị' : 'Tạm ẩn'}
-                            </span>
-                          </td>
-                          <td>
-                            <div style={{display:'flex', gap:8}}>
-                              <button onClick={() => handleOpenEditBanner(b)} style={{background:'#f1f5f9', border:'none', padding:'6px 10px', borderRadius:6, cursor:'pointer', color:'#334155'}} title="Sửa"><Edit size={14} /></button>
-                              <button onClick={() => handleDeleteBanner(b.id)} style={{background:'#fee2e2', border:'none', padding:'6px 10px', borderRadius:6, cursor:'pointer', color:'#dc2626'}} title="Xóa"><Trash2 size={14} /></button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))
-                    ) : (
-                      <tr><td colSpan={7} style={{textAlign:'center', color:'#64748b', padding:24}}>Chưa có banner nào. Hãy tạo banner đầu tiên.</td></tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </div>
           ) : activeNav === 'css-editor' ? (
             /* LIVE CSS EDITOR MODULE */
             <div className="dashboard-card">

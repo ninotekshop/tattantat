@@ -96,4 +96,9 @@ class ChatDetailViewModel @Inject constructor(
                 _state.value = _state.value.copy(sending = false, messages = _state.value.messages + fakeMsg)
             }
     }
+
+    fun deleteMessage(chatId: String, messageId: String) = viewModelScope.launch {
+        val updated = _state.value.messages.filterNot { it.id == messageId }
+        _state.value = _state.value.copy(messages = updated)
+    }
 }

@@ -1,5 +1,5 @@
-import { BadRequestException, Body, Controller, Get, Param, Post, Query, Req, UseGuards } from '@nestjs/common';
-import { IsOptional, IsString, MaxLength } from 'class-validator';
+import { BadRequestException, Body, Controller, Delete, Get, Param, Patch, Post, Query, Req, UseGuards } from '@nestjs/common';
+import { IsBoolean, IsOptional, IsString, MaxLength } from 'class-validator';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { DatabaseService } from '../database/database.service';
 import { FinanceAdminGuard } from '../finance/finance-admin.guard';
@@ -7,6 +7,14 @@ import { AdminAuditLogService } from './admin-audit-log.service';
 
 class SuspendUserDto {
   @IsString() @MaxLength(500) reason!: string;
+}
+
+class UpdateUserAdminDto {
+  @IsOptional() @IsString() fullName?: string;
+  @IsOptional() @IsString() email?: string;
+  @IsOptional() @IsString() phone?: string;
+  @IsOptional() @IsString() status?: string;
+  @IsOptional() @IsBoolean() isVerified?: boolean;
 }
 
 @Controller('admin/users')
@@ -74,7 +82,7 @@ export class AdminUsersController {
   @Get(':id')
   async detail(@Param('id') id: string) {
     const user = await this.db.query(
-      `SELECT u.id, u.full_name, u.email, u.phone, u.avatar_url, u.status,
+      `SELECT u.id, u.full_name, u.email, u.phone, u.avatar_url, u.status::text AS status,
               CASE WHEN u.is_verified THEN 'VERIFIED' ELSE 'UNVERIFIED' END AS verification_status,
               u.created_at
        FROM users u WHERE u.id = $1`,
@@ -82,6 +90,36 @@ export class AdminUsersController {
     );
     if (!user.rows[0]) throw new BadRequestException('Không tìm thấy người dùng');
     return { success: true, data: user.rows[0], message: null, errorCode: null };
+  }
+
+  @Patch(':id')
+  async update(@Req() request: { user: { id: string } }, @Param('id') id: string, @Body() body: UpdateUserAdminDto) {
+    const result = await this.db.query(
+      `UPDATE users
+       SET full_name = COALESCE($2, full_name),
+           email = COALESCE($3, email),
+           phone = COALESCE($4, phone),
+           status = COALESCE($5::user_status, status),
+           is_verified = COALESCE($6, is_verified),
+           updated_at = NOW()
+       WHERE id = $1
+       RETURNING id, full_name, email, phone, status::text AS status, is_verified`,
+      [id, body.fullName?.trim() || null, body.email?.trim() || null, body.phone?.trim() || null, body.status || null, body.isVerified ?? null],
+    );
+    if (!result.rows[0]) throw new BadRequestException('Không tìm thấy người dùng');
+    await this.audit.log(request.user.id, 'Super Admin', 'UPDATE_USER', 'User', id, { name: result.rows[0].full_name });
+    return { success: true, data: result.rows[0], message: 'Đã cập nhật thông tin tài khoản thành công', errorCode: null };
+  }
+
+  @Delete(':id')
+  async delete(@Req() request: { user: { id: string } }, @Param('id') id: string) {
+    const result = await this.db.query(
+      `UPDATE users SET status='SUSPENDED', updated_at=NOW() WHERE id=$1 RETURNING id, full_name`,
+      [id],
+    );
+    if (!result.rows[0]) throw new BadRequestException('Không tìm thấy người dùng');
+    await this.audit.log(request.user.id, 'Super Admin', 'DELETE_USER', 'User', id, { name: result.rows[0].full_name });
+    return { success: true, data: { id }, message: 'Đã xóa / vô hiệu hóa tài khoản thành công', errorCode: null };
   }
 
   @Post(':id/suspend')
