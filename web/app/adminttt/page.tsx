@@ -219,14 +219,14 @@ export default function AdminDashboardPage() {
       .then(r => r.json())
       .then(res => {
         if (res.success && res.data) {
-          const role = res.data.role || 'USER';
+          const role = res.data.user?.role || res.data.role || 'USER';
           if (role !== 'ADMIN' && role !== 'SUPER_ADMIN') {
             setLoginError('Từ chối truy cập: Tài khoản không có quyền Quản trị viên (ADMIN/SUPER_ADMIN)');
             return;
           }
           const sessionData: AdminSession = {
-            email: res.data.email || loginEmail,
-            fullName: res.data.fullName || 'Quản trị viên',
+            email: res.data.user?.email || res.data.email || loginEmail,
+            fullName: res.data.user?.fullName || res.data.fullName || 'Quản trị viên',
             role: role,
             token: res.data.accessToken
           };
