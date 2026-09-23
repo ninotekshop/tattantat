@@ -1,4 +1,4 @@
-import { BadRequestException, Body, Controller, Get, Param, Post, Query, Req, UseGuards } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Delete, Get, Param, Patch, Post, Query, Req, UseGuards } from '@nestjs/common';
 import { IsOptional, IsString, MaxLength } from 'class-validator';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { DatabaseService } from '../database/database.service';
@@ -11,6 +11,13 @@ class RejectPostDto {
 
 class HidePostDto {
   @IsOptional() @IsString() @MaxLength(500) reason?: string;
+}
+
+class UpdatePostAdminDto {
+  @IsOptional() @IsString() title?: string;
+  @IsOptional() @IsString() price?: string;
+  @IsOptional() @IsString() status?: string;
+  @IsOptional() @IsString() description?: string;
 }
 
 @Controller('admin/posts')
@@ -92,6 +99,49 @@ export class AdminPostsController {
     if (!result.rows[0]) throw new BadRequestException('Không tìm thấy tin đăng');
     await this.audit.log(request.user.id, 'Super Admin', 'POST_APPROVED', 'Product', id, { title: result.rows[0].title });
     return { success: true, data: result.rows[0], message: 'Đã duyệt tin đăng thành công', errorCode: null };
+  }
+
+  @Post(':id/unhide')
+  async unhide(@Req() request: { user: { id: string } }, @Param('id') id: string) {
+    const result = await this.db.query(
+      `UPDATE products
+       SET status='ACTIVE', updated_at=NOW()
+       WHERE id=$1 AND deleted_at IS NULL
+       RETURNING id, title, status`,
+      [id],
+    );
+    if (!result.rows[0]) throw new BadRequestException('Không tìm thấy tin đăng');
+    await this.audit.log(request.user.id, 'Super Admin', 'POST_UNHIDDEN', 'Product', id, { title: result.rows[0].title });
+    return { success: true, data: result.rows[0], message: 'Đã hiển thị lại tin đăng thành công', errorCode: null };
+  }
+
+  @Patch(':id')
+  async update(@Req() request: { user: { id: string } }, @Param('id') id: string, @Body() body: UpdatePostAdminDto) {
+    const result = await this.db.query(
+      `UPDATE products
+       SET title = COALESCE($2, title),
+           price = COALESCE($3, price),
+           status = COALESCE($4::product_status, status),
+           description = COALESCE($5, description),
+           updated_at = NOW()
+       WHERE id = $1 AND deleted_at IS NULL
+       RETURNING id, title, price, status`,
+      [id, body.title?.trim() || null, body.price || null, body.status || null, body.description?.trim() || null],
+    );
+    if (!result.rows[0]) throw new BadRequestException('Không tìm thấy tin đăng');
+    await this.audit.log(request.user.id, 'Super Admin', 'POST_EDITED', 'Product', id, { title: result.rows[0].title });
+    return { success: true, data: result.rows[0], message: 'Đã cập nhật thông tin tin đăng', errorCode: null };
+  }
+
+  @Delete(':id')
+  async delete(@Req() request: { user: { id: string } }, @Param('id') id: string) {
+    const result = await this.db.query(
+      `UPDATE products SET deleted_at=NOW() WHERE id=$1 AND deleted_at IS NULL RETURNING id, title`,
+      [id],
+    );
+    if (!result.rows[0]) throw new BadRequestException('Không tìm thấy tin đăng');
+    await this.audit.log(request.user.id, 'Super Admin', 'POST_DELETED', 'Product', id, { title: result.rows[0].title });
+    return { success: true, data: { id }, message: 'Đã xóa tin đăng thành công', errorCode: null };
   }
 
   @Post(':id/reject')

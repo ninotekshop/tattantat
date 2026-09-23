@@ -210,7 +210,7 @@ fun ProductDetailScreen(
                         )
                     }
                     IconButton({
-                        val shareUrl = "https://tattantat.vn/product/${shown.id}"
+                        val shareUrl = "https://tattantat.vn/products/${shown.id}"
                         val shareText = "${shown.title}\nGiá: ${shown.price}\nXem chi tiết tại: $shareUrl"
                         val shareIntent = Intent(Intent.ACTION_SEND).apply {
                             type = "text/plain"

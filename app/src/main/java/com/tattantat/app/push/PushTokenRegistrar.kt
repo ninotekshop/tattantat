@@ -12,8 +12,10 @@ import javax.inject.Singleton
 @Singleton
 class PushTokenRegistrar @Inject constructor(private val api: AccountApi) {
     fun sync() {
-        FirebaseMessaging.getInstance().token.addOnSuccessListener { token ->
-            CoroutineScope(Dispatchers.IO).launch { runCatching { api.registerPushDevice(PushDeviceRequest(token)) } }
+        runCatching {
+            FirebaseMessaging.getInstance().token.addOnSuccessListener { token ->
+                CoroutineScope(Dispatchers.IO).launch { runCatching { api.registerPushDevice(PushDeviceRequest(token)) } }
+            }
         }
     }
     fun syncToken(token: String) = CoroutineScope(Dispatchers.IO).launch { runCatching { api.registerPushDevice(PushDeviceRequest(token)) } }

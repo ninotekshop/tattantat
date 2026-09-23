@@ -6,13 +6,16 @@ function resolveCssPath(filename: string): string {
   const candidates = [
     path.join(process.cwd(), 'app', filename),
     path.join(process.cwd(), 'web', 'app', filename),
+    path.join(process.cwd(), '..', 'web', 'app', filename),
+    path.join(process.cwd(), '..', '..', 'web', 'app', filename),
     path.resolve(__dirname, '../../../../app', filename),
+    path.resolve(__dirname, '../../../../../../app', filename),
     path.resolve('C:/Projects/TatTanTat/web/app', filename)
   ];
 
   for (const candidate of candidates) {
     try {
-      if (fs.existsSync(candidate) && !candidate.includes('intermediates')) {
+      if (fs.existsSync(candidate) && !candidate.includes('intermediates') && !candidate.includes('transforms')) {
         return candidate;
       }
     } catch {}
@@ -34,7 +37,7 @@ export async function GET(request: Request) {
     const content = fs.readFileSync(filePath, 'utf8');
     return NextResponse.json({ file: filename, content });
   } catch (err) {
-    return NextResponse.json({ error: 'Không đọc được file CSS' }, { status: 500 });
+    return NextResponse.json({ error: 'Không đọc được file CSS: ' + (err instanceof Error ? err.message : String(err)) }, { status: 500 });
   }
 }
 

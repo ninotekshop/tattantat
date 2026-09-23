@@ -1,12 +1,18 @@
 package com.tattantat.app.domain.category
 
+import android.content.Context
 import androidx.annotation.DrawableRes
 import com.tattantat.app.R
 
 object CategoryIcons {
-    /**
-     * Resolves the 3D drawable icon resource for a category ID or slug.
-     */
+    @DrawableRes
+    fun getSubCategoryDrawableRes(context: Context, slugOrId: String): Int {
+        val cleanSlug = slugOrId.lowercase().trim().replace("-", "_")
+        val resId = context.resources.getIdentifier("sub_$cleanSlug", "drawable", context.packageName)
+        if (resId != 0) return resId
+        return getDrawableRes(slugOrId, isSubCategory = true)
+    }
+
     @DrawableRes
     fun getDrawableRes(categoryIdOrSlug: String, isSubCategory: Boolean = false): Int {
         val key = categoryIdOrSlug.lowercase().trim().replace("_", "-")
@@ -58,12 +64,13 @@ object CategoryIcons {
             "4", "65", "66", "67", "68", "69", "thoi-trang-ca-nhan", "thoi-trang", "fashion", "quan-ao", "giay-dep", "tui-xach", "thoi-trang-dong-ho", "phu-kien-thoi-trang" -> R.drawable.cat_thoi_trang_ca_nhan
             "10", "80", "me-va-be", "mother-baby", "mother_baby", "do-dung-hoc-tap" -> R.drawable.cat_me_va_be
             "8", "7", "71", "72", "73", "74", "75", "the-thao-giai-tri", "the-thao", "sports", "playstation", "xbox", "nintendo", "dung-cu-the-thao", "nhac-cu", "do-choi" -> R.drawable.cat_the_thao_giai_tri
-            "9", "78", "79", "sach-van-phong-pham", "sach", "giao-trinh" -> R.drawable.cat_the_thao_giai_tri
+            "9", "78", "79", "sach-van-phong-pham", "sach", "giao-trinh", "sach-hoc-tap" -> R.drawable.cat_sach_hoc_tap
             "92", "93", "94", "95", "thu-cung", "thu-cung-canh", "phu-kien-thu-cung", "thuc-an-thu-cung", "pets" -> R.drawable.cat_thu_cung
             "98", "99", "100", "101", "102", "103", "104", "dich-vu", "services", "sua-chua", "van-chuyen", "thiet-ke", "cho-thue", "dich-vu-ca-nhan", "dich-vu-doanh-nghiep" -> R.drawable.cat_dich_vu
             "thuc-pham", "food" -> R.drawable.cat_thuc_pham
-            "81", "82", "83", "84", "85", "may-moc-cong-nghiep", "may-moc-cong-cu", "may-moc-nghiep", "dung-cu", "thiet-bi-xay-dung", "thiet-bi-dien" -> R.drawable.cat_may_moc_cong_nghiep
-            "86", "87", "88", "89", "90", "91", "do-suu-tam", "suu-tam-dong-ho", "do-co", "mo-hinh", "tem", "vat-pham-suu-tam" -> R.drawable.cat_the_thao_giai_tri
+            "81", "82", "83", "84", "85", "may-moc-cong-nghiep", "may-moc-cong-cu", "may-moc-nghiep", "dung-cu", "thiet-bi-xay-dung", "thiet-bi-dien" -> R.drawable.cat_may_moc_cong_cu
+            "86", "87", "88", "89", "90", "91", "do-suu-tam", "suu-tam-dong-ho", "do-co", "mo-hinh", "tem", "vat-pham-suu-tam" -> R.drawable.cat_do_suu_tam
+            "12", "11", "hang-hoa-khac", "do-dien-tu", "khac" -> R.drawable.cat_hang_hoa_khac
             "tang-mien-phi", "giveaway", "free" -> R.drawable.cat_tang_mien_phi
             else -> R.drawable.cat_khac
         }

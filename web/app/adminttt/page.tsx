@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import {
   LayoutDashboard, FileText, Users, FolderTree, ShoppingCart,
   CreditCard, Megaphone, BarChart3, Settings, Bell, Search,
@@ -10,7 +10,7 @@ import {
   Edit, Trash2, Plus, Code, Save, RotateCcw, Upload, CheckCircle,
   X, Filter, Eye, RefreshCw, AlertTriangle, ShieldCheck, UserCheck,
   Check, XCircle, Menu, LogOut, User, Lock, Mail, KeyRound, Sparkles,
-  Server, Sliders, Shield
+  Server, Sliders, Shield, EyeOff, CheckSquare
 } from 'lucide-react';
 import { TemplateAdmin } from '../../components/listings/TemplateAdmin';
 import { saveSession, readSession } from '../../lib/auth';
@@ -67,6 +67,7 @@ interface PostItem {
   category_name: string;
   seller_name: string;
   seller_email: string;
+  description?: string;
   created_at: string;
 }
 
@@ -130,7 +131,11 @@ export default function AdminDashboardPage() {
   const [toast, setToast] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
-  const [quickCreateOpen, setQuickCreateOpen] = useState(false);
+  const [notifDropdownOpen, setNotifDropdownOpen] = useState(false);
+
+  // DROPDOWN CLICK OUTSIDE REFS
+  const profileRef = useRef<HTMLDivElement>(null);
+  const notifRef = useRef<HTMLDivElement>(null);
 
   // DASHBOARD STATE
   const [dashboard, setDashboard] = useState<DashboardData | null>(null);
@@ -142,6 +147,11 @@ export default function AdminDashboardPage() {
   const [rejectModalOpen, setRejectModalOpen] = useState(false);
   const [rejectPostId, setRejectPostId] = useState<string | null>(null);
   const [rejectReason, setRejectReason] = useState('Nội dung không phù hợp quy định');
+
+  // EDIT POST MODAL STATE
+  const [editPostModalOpen, setEditPostModalOpen] = useState(false);
+  const [editingPost, setEditingPost] = useState<PostItem | null>(null);
+  const [editPostForm, setEditPostForm] = useState({ title: '', price: '', status: 'ACTIVE', description: '' });
 
   // USERS MODULE STATE
   const [users, setUsers] = useState<UserItem[]>([]);
@@ -197,6 +207,20 @@ export default function AdminDashboardPage() {
   const [cssCode, setCssCode] = useState('/* Đang tải nội dung CSS... */');
   const [cssLoading, setCssLoading] = useState(false);
 
+  // CLICK OUTSIDE TO CLOSE DROPDOWNS
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (profileRef.current && !profileRef.current.contains(e.target as Node)) {
+        setProfileDropdownOpen(false);
+      }
+      if (notifRef.current && !notifRef.current.contains(e.target as Node)) {
+        setNotifDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   // CHECK SAVED ADMIN SESSION ON MOUNT
   useEffect(() => {
     try {
@@ -224,6 +248,14 @@ export default function AdminDashboardPage() {
     }
     return headers;
   };
+
+  const handleUnauthorized = useCallback((res: any) => {
+    if (res?.message?.includes('token') || res?.message?.includes('xác thực') || res?.errorCode === 'UNAUTHORIZED') {
+      showToast('Phiên làm việc đã hết hạn. Vui lòng đăng nhập lại.');
+      setAdminSession(null);
+      localStorage.removeItem('tattantat_adminttt_session');
+    }
+  }, []);
 
   // SYNC ADMIN PROFILE FROM BACKEND DATABASE
   useEffect(() => {
@@ -356,14 +388,6 @@ export default function AdminDashboardPage() {
     showToast('Đã đăng xuất khỏi phiên Admin');
   };
 
-  const handleUnauthorized = useCallback((res: any) => {
-    if (res?.message?.includes('token') || res?.message?.includes('xác thực') || res?.errorCode === 'UNAUTHORIZED') {
-      showToast('Phiên làm việc đã hết hạn. Vui lòng đăng nhập lại.');
-      setAdminSession(null);
-      localStorage.removeItem('tattantat_adminttt_session');
-    }
-  }, []);
-
   // FETCH DASHBOARD DATA
   const fetchDashboardData = useCallback(() => {
     setLoading(true);
@@ -476,7 +500,8 @@ export default function AdminDashboardPage() {
         setRejectModalOpen(false);
         setSuspendModalOpen(false);
         setProfileDropdownOpen(false);
-        setQuickCreateOpen(false);
+        setNotifDropdownOpen(false);
+        setEditPostModalOpen(false);
       }
     };
     window.addEventListener('keydown', handleKeyDown);
@@ -503,9 +528,13 @@ export default function AdminDashboardPage() {
       fetch(`/api/v1/admin/css?file=${selectedCssFile}`, { headers: getAuthHeaders() })
         .then(r => r.json())
         .then(data => {
-          if (data.content) setCssCode(data.content);
+          if (data.content) {
+            setCssCode(data.content);
+          } else if (data.error) {
+            showToast(data.error);
+          }
         })
-        .catch(() => setToast('Không thể đọc file CSS'))
+        .catch(() => showToast('Không thể kết nối API đọc CSS'))
         .finally(() => setCssLoading(false));
     }
   }, [adminSession, selectedCssFile, activeNav]);
@@ -529,7 +558,7 @@ export default function AdminDashboardPage() {
       .finally(() => setCssLoading(false));
   };
 
-  // POST ACTIONS
+  // POST ACTIONS: APPROVE, REJECT, HIDE, UNHIDE, EDIT, DELETE
   const handleApprovePost = (id: string) => {
     fetch(`/api/v1/admin/posts/${id}/approve`, { method: 'POST', headers: getAuthHeaders() })
       .then(r => r.json())
@@ -540,6 +569,60 @@ export default function AdminDashboardPage() {
           fetchDashboardData();
         } else {
           showToast(res.message || 'Lỗi khi duyệt tin đăng');
+        }
+      });
+  };
+
+  const handleUnhidePost = (id: string) => {
+    fetch(`/api/v1/admin/posts/${id}/unhide`, { method: 'POST', headers: getAuthHeaders() })
+      .then(r => r.json())
+      .then(res => {
+        if (res.success) {
+          showToast('Đã hiển thị lại tin đăng!');
+          fetchPostsData();
+          fetchDashboardData();
+        } else {
+          showToast(res.message || 'Lỗi khi hiển thị lại tin');
+        }
+      });
+  };
+
+  const handleOpenEditPost = (p: PostItem) => {
+    setEditingPost(p);
+    setEditPostForm({ title: p.title, price: p.price, status: p.status, description: p.description || '' });
+    setEditPostModalOpen(true);
+  };
+
+  const handleSaveEditPost = () => {
+    if (!editingPost) return;
+    fetch(`/api/v1/admin/posts/${editingPost.id}`, {
+      method: 'PATCH',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(editPostForm),
+    })
+      .then(r => r.json())
+      .then(res => {
+        if (res.success) {
+          showToast('Đã cập nhật thông tin tin đăng!');
+          setEditPostModalOpen(false);
+          fetchPostsData();
+        } else {
+          showToast(res.message || 'Không thể sửa tin đăng');
+        }
+      });
+  };
+
+  const handleDeletePost = (id: string) => {
+    if (!confirm('Bạn có chắc chắn muốn xóa vĩnh viễn tin đăng này khỏi hệ thống?')) return;
+    fetch(`/api/v1/admin/posts/${id}`, { method: 'DELETE', headers: getAuthHeaders() })
+      .then(r => r.json())
+      .then(res => {
+        if (res.success) {
+          showToast('Đã xóa tin đăng thành công!');
+          fetchPostsData();
+          fetchDashboardData();
+        } else {
+          showToast(res.message || 'Không thể xóa tin đăng');
         }
       });
   };
@@ -793,6 +876,51 @@ export default function AdminDashboardPage() {
         </div>
       )}
 
+      {/* EDIT POST MODAL */}
+      {editPostModalOpen && editingPost && (
+        <div style={{position:'fixed', inset:0, background:'rgba(0,0,0,0.5)', backdropFilter:'blur(4px)', zIndex:1000, display:'flex', alignItems:'center', justifyContent:'center'}} onClick={() => setEditPostModalOpen(false)}>
+          <div style={{background:'#fff', borderRadius:16, width:'90%', maxWidth:540, padding:24, boxShadow:'0 20px 40px rgba(0,0,0,0.2)'}} onClick={e => e.stopPropagation()}>
+            <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:20, borderBottom:'1px solid #e2e8f0', paddingBottom:12}}>
+              <h3 style={{margin:0, fontSize:18, fontWeight:700, color:'#0f172a'}}>Chỉnh sửa tin đăng</h3>
+              <button onClick={() => setEditPostModalOpen(false)} style={{background:'transparent', border:'none', cursor:'pointer'}}><X size={20} color="#64748b" /></button>
+            </div>
+
+            <div style={{display:'flex', flexDirection:'column', gap:14}}>
+              <div>
+                <label style={{display:'block', fontSize:13, fontWeight:600, marginBottom:4, color:'#334155'}}>Tiêu đề tin *</label>
+                <input type="text" value={editPostForm.title} onChange={e => setEditPostForm({...editPostForm, title:e.target.value})} style={{width:'100%', padding:'10px 12px', borderRadius:8, border:'1px solid #cbd5e1', fontSize:14}} />
+              </div>
+
+              <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:12}}>
+                <div>
+                  <label style={{display:'block', fontSize:13, fontWeight:600, marginBottom:4, color:'#334155'}}>Giá bán (VND)</label>
+                  <input type="text" value={editPostForm.price} onChange={e => setEditPostForm({...editPostForm, price:e.target.value})} style={{width:'100%', padding:'10px 12px', borderRadius:8, border:'1px solid #cbd5e1', fontSize:14}} />
+                </div>
+                <div>
+                  <label style={{display:'block', fontSize:13, fontWeight:600, marginBottom:4, color:'#334155'}}>Trạng thái</label>
+                  <select value={editPostForm.status} onChange={e => setEditPostForm({...editPostForm, status:e.target.value})} style={{width:'100%', padding:'10px 12px', borderRadius:8, border:'1px solid #cbd5e1', fontSize:14}}>
+                    <option value="ACTIVE">Hiển thị (Active)</option>
+                    <option value="PENDING">Chờ duyệt</option>
+                    <option value="HIDDEN">Tạm ẩn</option>
+                    <option value="REJECTED">Đã từ chối</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label style={{display:'block', fontSize:13, fontWeight:600, marginBottom:4, color:'#334155'}}>Mô tả chi tiết</label>
+                <textarea rows={4} value={editPostForm.description} onChange={e => setEditPostForm({...editPostForm, description:e.target.value})} style={{width:'100%', padding:'10px 12px', borderRadius:8, border:'1px solid #cbd5e1', fontSize:13}} />
+              </div>
+            </div>
+
+            <div style={{display:'flex', justifyContent:'flex-end', gap:10, marginTop:24}}>
+              <button onClick={() => setEditPostModalOpen(false)} style={{padding:'8px 16px', borderRadius:8, border:'1px solid #cbd5e1', background:'#f8fafc', color:'#475569', fontWeight:600, cursor:'pointer'}}>Hủy</button>
+              <button onClick={handleSaveEditPost} style={{padding:'8px 20px', borderRadius:8, border:'none', background:'#00a65a', color:'#fff', fontWeight:600, cursor:'pointer'}}>Lưu thay đổi</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* REJECT POST MODAL */}
       {rejectModalOpen && (
         <div style={{position:'fixed', inset:0, background:'rgba(0,0,0,0.5)', backdropFilter:'blur(4px)', zIndex:1000, display:'flex', alignItems:'center', justifyContent:'center'}} onClick={() => setRejectModalOpen(false)}>
@@ -1000,7 +1128,7 @@ export default function AdminDashboardPage() {
           </button>
 
           <button className={`admin-nav-item ${activeNav === 'danh-muc' ? 'active' : ''}`} onClick={() => setActiveNav('danh-muc')}>
-            <div className="admin-nav-left"><FolderTree size={18} />{!sidebarCollapsed && <span>Quản lý danh mục & Biểu mẫu</span>}</div>
+            <div className="admin-nav-left"><FolderTree size={18} />{!sidebarCollapsed && <span>Quản lý Danh mục & form</span>}</div>
           </button>
 
           <button className={`admin-nav-item ${activeNav === 'don-hang' ? 'active' : ''}`} onClick={() => setActiveNav('don-hang')}>
@@ -1056,15 +1184,86 @@ export default function AdminDashboardPage() {
           </div>
 
           <div className="admin-header-actions">
-            <button style={{background:'#f1f5f9', border:'none', width:40, height:40, borderRadius:'50%', display:'flex', alignItems:'center', justifyContent:'center', position:'relative', cursor:'pointer'}} title="Thông báo hệ thống">
-              <Bell size={18} color="#334155" />
-              {dashboard?.actionRequired.pendingPosts ? (
-                <span style={{position:'absolute', top:8, right:8, width:8, height:8, background:'#ef4444', borderRadius:'50%'}}></span>
-              ) : null}
-            </button>
+            {/* NOTIFICATIONS BELL DROPDOWN POPOVER */}
+            <div style={{position:'relative'}} ref={notifRef}>
+              <button
+                onClick={() => setNotifDropdownOpen(!notifDropdownOpen)}
+                style={{background:'#f1f5f9', border:'none', width:40, height:40, borderRadius:'50%', display:'flex', alignItems:'center', justifyContent:'center', position:'relative', cursor:'pointer'}}
+                title="Thông báo hệ thống"
+              >
+                <Bell size={18} color="#334155" />
+                {dashboard?.actionRequired.pendingPosts || dashboard?.actionRequired.pendingReports ? (
+                  <span style={{position:'absolute', top:8, right:8, width:8, height:8, background:'#ef4444', borderRadius:'50%'}}></span>
+                ) : null}
+              </button>
+
+              {notifDropdownOpen && (
+                <div style={{
+                  position: 'absolute',
+                  top: 'calc(100% + 8px)',
+                  right: 0,
+                  background: '#ffffff',
+                  border: '1px solid #cbd5e1',
+                  borderRadius: 16,
+                  boxShadow: '0 16px 36px rgba(0,0,0,0.15)',
+                  width: 320,
+                  zIndex: 1000,
+                  overflow: 'hidden'
+                }}>
+                  <div style={{ padding: '12px 16px', borderBottom: '1px solid #f1f5f9', fontWeight: 700, fontSize: 14, color: '#0f172a', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span>Thông báo hệ thống</span>
+                    <span style={{ fontSize: 11, color: '#00a65a', fontWeight: 600 }}>Tất Tần Tật Admin</span>
+                  </div>
+
+                  <div style={{ maxHeight: 300, overflowY: 'auto', padding: '8px 0' }}>
+                    {dashboard?.actionRequired.pendingPosts ? (
+                      <div
+                        onClick={() => { setActiveNav('tin-dang'); setPostStatusFilter('PENDING'); setNotifDropdownOpen(false); }}
+                        style={{ padding: '10px 16px', borderBottom: '1px solid #f8fafc', cursor: 'pointer', transition: 'background 0.2s' }}
+                      >
+                        <div style={{ fontSize: 13, fontWeight: 600, color: '#d97706', display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <AlertTriangle size={14} /> Có {dashboard.actionRequired.pendingPosts} tin đăng chờ duyệt
+                        </div>
+                        <div style={{ fontSize: 11.5, color: '#64748b', marginTop: 2 }}>Nhấn để vào trang Quản lý tin đăng kiểm duyệt.</div>
+                      </div>
+                    ) : null}
+
+                    {dashboard?.actionRequired.pendingReports ? (
+                      <div
+                        onClick={() => { setActiveNav('reports'); setNotifDropdownOpen(false); }}
+                        style={{ padding: '10px 16px', borderBottom: '1px solid #f8fafc', cursor: 'pointer', transition: 'background 0.2s' }}
+                      >
+                        <div style={{ fontSize: 13, fontWeight: 600, color: '#dc2626', display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <ShieldAlert size={14} /> Có {dashboard.actionRequired.pendingReports} báo cáo vi phạm mới
+                        </div>
+                        <div style={{ fontSize: 11.5, color: '#64748b', marginTop: 2 }}>Nhấn để vào trang xử lý Báo cáo vi phạm.</div>
+                      </div>
+                    ) : null}
+
+                    {dashboard?.actionRequired.pendingVerifications ? (
+                      <div
+                        onClick={() => { setActiveNav('nguoi-dung'); setUserStatusFilter('PENDING'); setNotifDropdownOpen(false); }}
+                        style={{ padding: '10px 16px', borderBottom: '1px solid #f8fafc', cursor: 'pointer', transition: 'background 0.2s' }}
+                      >
+                        <div style={{ fontSize: 13, fontWeight: 600, color: '#2563eb', display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <UserCheck size={14} /> Có {dashboard.actionRequired.pendingVerifications} tài khoản cần xác minh
+                        </div>
+                        <div style={{ fontSize: 11.5, color: '#64748b', marginTop: 2 }}>Nhấn để vào trang Quản lý người dùng.</div>
+                      </div>
+                    ) : null}
+
+                    {!dashboard?.actionRequired.pendingPosts && !dashboard?.actionRequired.pendingReports && !dashboard?.actionRequired.pendingVerifications && (
+                      <div style={{ padding: 20, textAlign: 'center', fontSize: 13, color: '#64748b' }}>
+                        🎉 Hiện tại không có thông báo cần xử lý khẩn cấp.
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
 
             {/* ADMIN PROFILE AVATAR DROPDOWN */}
-            <div style={{position:'relative'}}>
+            <div style={{position:'relative'}} ref={profileRef}>
               <div
                 onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
                 style={{display:'flex', alignItems:'center', gap:10, cursor:'pointer', userSelect:'none'}}
@@ -1125,7 +1324,7 @@ export default function AdminDashboardPage() {
                   {activeNav === 'banners' ? 'Quản lý Banner hệ thống'
                     : activeNav === 'tin-dang' ? 'Quản lý Tin đăng Marketplace'
                     : activeNav === 'nguoi-dung' ? 'Quản lý Người dùng & Xác minh'
-                    : activeNav === 'danh-muc' ? 'Quản lý Danh mục & Biểu mẫu Đăng tin'
+                    : activeNav === 'danh-muc' ? 'Quản lý Danh mục & form'
                     : activeNav === 'don-hang' ? 'Quản lý Đơn hàng'
                     : activeNav === 'reports' ? 'Báo cáo vi phạm & Moderation'
                     : activeNav === 'css-editor' ? 'Chỉnh sửa Giao diện CSS'
@@ -1133,33 +1332,16 @@ export default function AdminDashboardPage() {
                     : activeNav === 'cai-dat' ? 'Cài đặt hệ thống'
                     : 'Tổng quan hệ thống Quản trị'}
                 </h1>
-
-                {/* QUICK ACTION BUTTON */}
-                <div style={{position:'relative'}}>
-                  <button
-                    onClick={() => setQuickCreateOpen(!quickCreateOpen)}
-                    style={{background:'#00a65a', color:'#fff', border:'none', padding:'6px 14px', borderRadius:999, fontSize:12, fontWeight:700, cursor:'pointer', display:'flex', alignItems:'center', gap:4}}
-                  >
-                    + Tạo mới <ChevronDown size={14} />
-                  </button>
-                  {quickCreateOpen && (
-                    <div style={{position:'absolute', top:'100%', left:0, background:'#fff', border:'1px solid #cbd5e1', borderRadius:12, boxShadow:'0 10px 25px rgba(0,0,0,0.15)', width:180, zIndex:100, padding:'6px 0', marginTop:4}}>
-                      <div onClick={() => { handleOpenAddBanner(); setQuickCreateOpen(false); }} style={{padding:'8px 14px', fontSize:13, color:'#334155', cursor:'pointer'}}>Tạo Banner mới</div>
-                      <div onClick={() => { setActiveNav('danh-muc'); setQuickCreateOpen(false); }} style={{padding:'8px 14px', fontSize:13, color:'#334155', cursor:'pointer'}}>Tạo Danh mục mới</div>
-                      <Link href="/sell" target="_blank" onClick={() => setQuickCreateOpen(false)} style={{padding:'8px 14px', fontSize:13, color:'#334155', textDecoration:'none', display:'block'}}>Đăng tin mới</Link>
-                    </div>
-                  )}
-                </div>
               </div>
               <p>
                 {activeNav === 'banners' ? 'Thêm mới, tải ảnh từ máy tính, bật/tắt và quản lý thời hạn hiển thị của các Banner quảng cáo.'
-                  : activeNav === 'tin-dang' ? 'Duyệt, từ chối, ẩn và quản lý danh sách tin đăng sản phẩm từ người bán.'
+                  : activeNav === 'tin-dang' ? 'Duyệt, từ chối, ẩn, chỉnh sửa và quản lý danh sách tin đăng sản phẩm từ người bán.'
                   : activeNav === 'nguoi-dung' ? 'Quản lý danh sách thành viên, xác minh tài khoản và khóa tài khoản vi phạm.'
-                  : activeNav === 'danh-muc' ? 'Thiết lập danh mục, tạo thuộc tính động và phiên bản biểu mẫu đăng tin.'
+                  : activeNav === 'danh-muc' ? 'Thiết lập danh mục, tạo thuộc tính động và quản lý phiên bản biểu mẫu đăng tin.'
                   : activeNav === 'don-hang' ? 'Theo dõi danh sách đơn hàng mua bán và trạng thái giao dịch.'
                   : activeNav === 'reports' ? 'Xử lý các báo cáo vi phạm sản phẩm và người dùng từ cộng đồng.'
                   : activeNav === 'css-editor' ? 'Chỉnh sửa trực tiếp style CSS của các trang giao diện trong hệ thống Tất Tần Tật.'
-                  : activeNav === 'ho-so' ? 'Thông tin tài khoản và đổi mật khẩu quản trị.'
+                  : activeNav === 'ho-so' ? 'Thông tin cá nhân thành viên và đổi mật khẩu quản trị.'
                   : activeNav === 'cai-dat' ? 'Cấu hình các tham số vận hành toàn hệ thống.'
                   : 'Theo dõi hoạt động và các công việc cần xử lý của Tất Tần Tật.'}
               </p>
@@ -1183,50 +1365,72 @@ export default function AdminDashboardPage() {
 
           {/* EMBEDDED CATEGORY & LISTING TEMPLATES MANAGEMENT */}
           {activeNav === 'danh-muc' ? (
-            <div className="dashboard-card" style={{ padding: 0, overflow: 'hidden' }}>
+            <div className="dashboard-card" style={{ padding: 24 }}>
               <TemplateAdmin />
             </div>
           ) : activeNav === 'ho-so' ? (
             /* MY PROFILE MODULE */
-            <div className="dashboard-card" style={{ maxWidth: 680 }}>
-              <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 16, color: '#0f172a' }}>Hồ sơ tài khoản Quản trị</h3>
+            <div style={{ display: 'grid', gridTemplateColumns: '320px 1fr', gap: 24 }}>
+              {/* PROFILE CARD LEFT */}
+              <div className="dashboard-card" style={{ textAlign: 'center', padding: 28 }}>
+                <img src={adminSession.avatarUrl || '/assets/logo.png'} alt="" style={{ width: 100, height: 100, borderRadius: '50%', objectFit: 'cover', border: '4px solid #00a65a', background: '#fff', margin: '0 auto 16px' }} />
+                <h3 style={{ fontSize: 18, fontWeight: 700, color: '#0f172a', marginBottom: 4 }}>{adminSession.fullName}</h3>
+                <span className="admin-badge green" style={{ fontSize: 12, padding: '4px 12px' }}>{adminSession.role}</span>
 
-              <div style={{ background: '#f8fafc', padding: 20, borderRadius: 12, border: '1px solid #e2e8f0', marginBottom: 24, display: 'flex', gap: 20, alignItems: 'center' }}>
-                <div style={{ position: 'relative' }}>
-                  <img src={adminSession.avatarUrl || '/assets/logo.png'} alt="" style={{ width: 72, height: 72, borderRadius: '50%', objectFit: 'cover', border: '3px solid #00a65a', background: '#fff' }} />
+                <div style={{ marginTop: 20, paddingTop: 20, borderTop: '1px solid #f1f5f9', textAlign: 'left', fontSize: 13, color: '#475569', display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  <div>Email: <b style={{ color: '#0f172a' }}>{adminSession.email}</b></div>
+                  <div>Trạng thái: <span className="status-badge approved">Hoạt động</span></div>
+                  <div>Xác minh: <span className="status-badge approved">✓ Đã xác minh</span></div>
+                  <div>Ngày tham gia: <b style={{ color: '#0f172a' }}>23/09/2026</b></div>
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                  <div style={{ fontSize: 16, fontWeight: 700, color: '#0f172a' }}>{adminSession.fullName}</div>
-                  <div style={{ fontSize: 13, color: '#64748b' }}>Email: <b>{adminSession.email}</b></div>
-                  <div style={{ fontSize: 12, color: '#00a65a', fontWeight: 700 }}>Quyền hạn: {adminSession.role}</div>
 
-                  <label style={{ background: '#00a65a', color: '#fff', padding: '6px 14px', borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6, width: 'fit-content', marginTop: 4 }}>
-                    <Upload size={14} /> Thay đổi Avatar từ máy tính
-                    <input type="file" accept="image/*" onChange={handleAvatarUpload} style={{ display: 'none' }} />
-                  </label>
-                </div>
+                <label style={{ background: '#00a65a', color: '#fff', padding: '10px 18px', borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 8, marginTop: 20, width: '100%', justifyContent: 'center' }}>
+                  <Upload size={16} /> Thay đổi Avatar từ máy tính
+                  <input type="file" accept="image/*" onChange={handleAvatarUpload} style={{ display: 'none' }} />
+                </label>
               </div>
 
-              <h4 style={{ fontSize: 15, fontWeight: 700, marginBottom: 12, color: '#0f172a' }}>Đổi mật khẩu Quản trị</h4>
-              <form onSubmit={handleChangePassword}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-                  <div>
-                    <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#334155', marginBottom: 4 }}>Mật khẩu hiện tại *</label>
-                    <input type="password" value={pwdForm.currentPassword} onChange={e => setPwdForm({...pwdForm, currentPassword: e.target.value})} required style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1px solid #cbd5e1' }} />
-                  </div>
-                  <div>
-                    <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#334155', marginBottom: 4 }}>Mật khẩu mới *</label>
-                    <input type="password" value={pwdForm.newPassword} onChange={e => setPwdForm({...pwdForm, newPassword: e.target.value})} required style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1px solid #cbd5e1' }} />
-                  </div>
-                  <div>
-                    <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#334155', marginBottom: 4 }}>Xác nhận mật khẩu mới *</label>
-                    <input type="password" value={pwdForm.confirmPassword} onChange={e => setPwdForm({...pwdForm, confirmPassword: e.target.value})} required style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1px solid #cbd5e1' }} />
-                  </div>
-                  <button type="submit" style={{ background: '#00a65a', color: '#fff', border: 'none', padding: '10px 20px', borderRadius: 8, fontWeight: 700, cursor: 'pointer', width: 'fit-content' }}>
-                    LƯU MẬT KHẨU MỚI
-                  </button>
+              {/* PROFILE RIGHT: CHANGE PASSWORD FORM & ACTIVITY AUDIT */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+                <div className="dashboard-card">
+                  <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 16, color: '#0f172a' }}>Đổi mật khẩu tài khoản</h3>
+                  <form onSubmit={handleChangePassword}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 14 }}>
+                      <div>
+                        <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#334155', marginBottom: 4 }}>Mật khẩu hiện tại *</label>
+                        <input type="password" value={pwdForm.currentPassword} onChange={e => setPwdForm({...pwdForm, currentPassword: e.target.value})} required style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1px solid #cbd5e1' }} />
+                      </div>
+                      <div>
+                        <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#334155', marginBottom: 4 }}>Mật khẩu mới *</label>
+                        <input type="password" value={pwdForm.newPassword} onChange={e => setPwdForm({...pwdForm, newPassword: e.target.value})} required style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1px solid #cbd5e1' }} />
+                      </div>
+                      <div>
+                        <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#334155', marginBottom: 4 }}>Xác nhận mật khẩu mới *</label>
+                        <input type="password" value={pwdForm.confirmPassword} onChange={e => setPwdForm({...pwdForm, confirmPassword: e.target.value})} required style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1px solid #cbd5e1' }} />
+                      </div>
+                    </div>
+                    <button type="submit" style={{ background: '#00a65a', color: '#fff', border: 'none', padding: '10px 20px', borderRadius: 8, fontWeight: 700, cursor: 'pointer', marginTop: 14 }}>
+                      LƯU MẬT KHẨU MỚI
+                    </button>
+                  </form>
                 </div>
-              </form>
+
+                <div className="dashboard-card">
+                  <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 14, color: '#0f172a' }}>Lịch sử hoạt động quản trị (Audit Log)</h3>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                    {dashboard?.recentActivities && dashboard.recentActivities.length > 0 ? (
+                      dashboard.recentActivities.slice(0, 5).map((log) => (
+                        <div key={log.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', background: '#f8fafc', borderRadius: 10, fontSize: 13 }}>
+                          <span style={{ fontWeight: 600, color: '#0f172a' }}>{log.action} ({log.entity_type})</span>
+                          <span style={{ fontSize: 12, color: '#64748b' }}>{new Date(log.created_at).toLocaleString('vi-VN')}</span>
+                        </div>
+                      ))
+                    ) : (
+                      <div style={{ color: '#64748b', fontSize: 13 }}>Chưa có lịch sử hoạt động.</div>
+                    )}
+                  </div>
+                </div>
+              </div>
             </div>
           ) : activeNav === 'cai-dat' ? (
             /* SYSTEM SETTINGS MODULE */
@@ -1570,16 +1774,25 @@ export default function AdminDashboardPage() {
                             </span>
                           </td>
                           <td>
-                            <div style={{display:'flex', gap:6}}>
+                            <div style={{display:'flex', gap:6, flexWrap:'wrap'}}>
                               {p.status === 'PENDING' && (
-                                <>
-                                  <button onClick={() => handleApprovePost(p.id)} style={{background:'#d1fae5', color:'#059669', border:'none', padding:'6px 12px', borderRadius:6, fontSize:12, fontWeight:600, cursor:'pointer'}}>Duyệt</button>
-                                  <button onClick={() => { setRejectPostId(p.id); setRejectModalOpen(true); }} style={{background:'#fee2e2', color:'#dc2626', border:'none', padding:'6px 12px', borderRadius:6, fontSize:12, fontWeight:600, cursor:'pointer'}}>Từ chối</button>
-                                </>
+                                <button onClick={() => handleApprovePost(p.id)} style={{background:'#d1fae5', color:'#059669', border:'none', padding:'4px 8px', borderRadius:6, fontSize:12, fontWeight:600, cursor:'pointer'}}>Duyệt</button>
                               )}
-                              {p.status === 'ACTIVE' && (
-                                <button onClick={() => handleHidePost(p.id)} style={{background:'#f1f5f9', color:'#475569', border:'none', padding:'6px 12px', borderRadius:6, fontSize:12, fontWeight:600, cursor:'pointer'}}>Ẩn tin</button>
-                              )}
+                              {p.status === 'HIDDEN' ? (
+                                <button onClick={() => handleUnhidePost(p.id)} style={{background:'#d1fae5', color:'#059669', border:'none', padding:'4px 8px', borderRadius:6, fontSize:12, fontWeight:600, cursor:'pointer', display:'flex', alignItems:'center', gap:4}}>
+                                  <Eye size={12} /> Hiện lại
+                                </button>
+                              ) : p.status === 'ACTIVE' ? (
+                                <button onClick={() => handleHidePost(p.id)} style={{background:'#f1f5f9', color:'#475569', border:'none', padding:'4px 8px', borderRadius:6, fontSize:12, fontWeight:600, cursor:'pointer', display:'flex', alignItems:'center', gap:4}}>
+                                  <EyeOff size={12} /> Ẩn tin
+                                </button>
+                              ) : null}
+                              <button onClick={() => handleOpenEditPost(p)} style={{background:'#e0f2fe', color:'#0284c7', border:'none', padding:'4px 8px', borderRadius:6, fontSize:12, fontWeight:600, cursor:'pointer', display:'flex', alignItems:'center', gap:4}}>
+                                <Edit size={12} /> Sửa
+                              </button>
+                              <button onClick={() => handleDeletePost(p.id)} style={{background:'#fee2e2', color:'#dc2626', border:'none', padding:'4px 8px', borderRadius:6, fontSize:12, fontWeight:600, cursor:'pointer', display:'flex', alignItems:'center', gap:4}}>
+                                <Trash2 size={12} /> Xóa
+                              </button>
                             </div>
                           </td>
                         </tr>

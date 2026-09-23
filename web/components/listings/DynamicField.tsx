@@ -45,6 +45,33 @@ export function DynamicField({
   const common = { id, 'aria-invalid': !!error, 'aria-describedby': error ? `${id}-error` : config.help ? `${id}-help` : undefined };
   const text = typeof value === 'string' || typeof value === 'number' ? String(value) : '';
 
+  const fieldKeyLower = field.key.toLowerCase();
+  const fieldLabelLower = field.label.toLowerCase();
+
+  const isInteger =
+    field.type === 'year' ||
+    fieldKeyLower.includes('nam_san_xuat') ||
+    fieldKeyLower.includes('so_cho_ngoi') ||
+    fieldKeyLower.includes('so_phong') ||
+    fieldKeyLower.includes('so_tang') ||
+    fieldKeyLower.includes('so_km') ||
+    fieldLabelLower.includes('năm sản xuất') ||
+    fieldLabelLower.includes('chỗ ngồi') ||
+    fieldLabelLower.includes('số phòng') ||
+    fieldLabelLower.includes('số tầng') ||
+    fieldLabelLower.includes('số km');
+
+  const isDecimal =
+    !isInteger &&
+    (field.type === 'number' ||
+      fieldKeyLower.includes('dien_tich') ||
+      fieldKeyLower.includes('mat_tien') ||
+      fieldKeyLower.includes('duong_vao') ||
+      fieldLabelLower.includes('diện tích') ||
+      fieldLabelLower.includes('mặt tiền') ||
+      fieldLabelLower.includes('đường vào') ||
+      ['m²', 'm2', 'm', 'ha', 'sao'].includes(config.unit || ''));
+
   let control;
   if (field.type === 'boolean' || field.type === 'checkbox') {
     control = <label className="lf-check"><input {...common} type="checkbox" checked={value === true} onChange={event => onChange(event.target.checked)} />Có</label>;
@@ -54,12 +81,12 @@ export function DynamicField({
     let rawOptions = field.type === 'select' ? field.options : media.filter(item => item.kind === (field.type === 'image' ? 'images' : 'videos')).map((item,index) => ({ value:item.id, label:`${field.type === 'image' ? 'Ảnh' : 'Video'} ${index + 1}` }));
 
     // Standardize Hướng nhà options
-    if (field.key === 'huong_nha' || field.key === 'huong' || field.label.toLowerCase().includes('hướng')) {
+    if (field.key === 'huong_nha' || field.key === 'huong' || fieldLabelLower.includes('hướng')) {
       rawOptions = COMPASS_DIRECTIONS;
     }
 
     // Standardize Pháp lý options
-    if (field.key === 'phap_ly' || field.key === 'giay_to_phap_ly' || field.label.toLowerCase().includes('pháp lý')) {
+    if (field.key === 'phap_ly' || field.key === 'giay_to_phap_ly' || fieldLabelLower.includes('pháp lý')) {
       rawOptions = LEGAL_DOCUMENTS;
     }
 
@@ -86,22 +113,21 @@ export function DynamicField({
   } else if (field.type === 'textarea') {
     control = <textarea {...common} rows={4} maxLength={config.maxLength ?? 2000} value={text} placeholder={config.placeholder} onChange={event => onChange(event.target.value)} />;
   } else {
-    const isDecimalOrNumber = ['number', 'year', 'range'].includes(field.type) || !!config.unit || field.label.toLowerCase().includes('diện tích') || field.label.toLowerCase().includes('mặt tiền') || field.label.toLowerCase().includes('đường vào');
-
     control = (
       <div className="lf-input-container">
         <div className="lf-input-unit">
           <input
             {...common}
             type={field.type === 'date' ? 'date' : 'text'}
-            inputMode={isDecimalOrNumber ? 'decimal' : field.type === 'currency' ? 'numeric' : undefined}
+            inputMode={isInteger ? 'numeric' : isDecimal ? 'decimal' : field.type === 'currency' ? 'numeric' : undefined}
             maxLength={field.type === 'currency' ? 13 : config.maxLength ?? 2000}
             value={text}
-            placeholder={config.placeholder || (isDecimalOrNumber ? 'Ví dụ: 80.5' : '')}
+            placeholder={config.placeholder || (isInteger ? 'Ví dụ: 5' : isDecimal ? 'Ví dụ: 80.5' : '')}
             onChange={event => {
               let val = event.target.value;
-              if (isDecimalOrNumber) {
-                // Auto normalize commas to dots for decimal inputs
+              if (isInteger) {
+                val = val.replace(/[^0-9]/g, '');
+              } else if (isDecimal) {
                 val = val.replace(',', '.');
               }
               onChange(val);
@@ -109,7 +135,7 @@ export function DynamicField({
           />
           {config.unit && <span>{config.unit}</span>}
         </div>
-        {isDecimalOrNumber && (
+        {isDecimal && (
           <small style={{ color: '#00a65a', fontSize: 11.5, display: 'block', marginTop: 4, fontWeight: 500 }}>
             💡 Ghi chú: Nhập số thập phân dùng dấu chấm "." (Ví dụ: 80.5 {config.unit || ''})
           </small>

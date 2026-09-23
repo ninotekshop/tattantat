@@ -13,6 +13,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -73,7 +74,8 @@ fun SubCategoriesScreen(
                             Modifier.fillMaxWidth().padding(12.dp),
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
-                            val iconRes = cat.iconRes ?: CategoryIcons.getDrawableRes(cat.slug.ifBlank { cat.id }, isSubCategory = true)
+                            val context = LocalContext.current
+                            val iconRes = cat.iconRes ?: CategoryIcons.getSubCategoryDrawableRes(context, cat.slug.ifBlank { cat.id })
                             Image(
                                 painter = painterResource(id = iconRes),
                                 contentDescription = cat.name,
