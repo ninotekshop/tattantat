@@ -64,6 +64,8 @@ import com.tattantat.app.presentation.admin.ModerationReportsScreen
 import com.tattantat.app.presentation.auth.LoginScreen
 import com.tattantat.app.presentation.auth.OtpScreen
 import com.tattantat.app.presentation.auth.RegisterScreen
+import com.tattantat.app.presentation.category.CategoryProductsScreen
+import com.tattantat.app.presentation.category.SubCategoriesScreen
 import com.tattantat.app.presentation.chat.ChatDetailScreen
 import com.tattantat.app.presentation.chat.ChatListScreen
 import com.tattantat.app.presentation.home.HomeScreen
@@ -158,86 +160,93 @@ private fun MainTabs(onLoggedOut: () -> Unit) {
 
     Scaffold(
         bottomBar = {
-            if (route?.startsWith("product/") != true && route?.startsWith("checkout/") != true && route?.startsWith("chat-detail/") != true) {
-                Surface(
-                    shadowElevation = 8.dp,
-                    color = MaterialTheme.colorScheme.surface,
-                ) {
-                    Row(
+            if (route?.startsWith("checkout/") != true && route?.startsWith("chat-detail/") != true) {
+                Box(modifier = Modifier.fillMaxWidth()) {
+                    Surface(
+                        shadowElevation = 8.dp,
+                        color = MaterialTheme.colorScheme.surface,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(64.dp),
-                        verticalAlignment = Alignment.CenterVertically,
+                            .height(64.dp)
+                            .align(Alignment.BottomCenter)
                     ) {
-                        mainTabs.forEach { tab ->
-                            val isSelected = route == tab.route
-                            if (tab.isCenter) {
-                                Box(
-                                    modifier = Modifier
-                                        .weight(1f)
-                                        .clickable {
+                        Row(
+                            modifier = Modifier.fillMaxSize(),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            mainTabs.forEach { tab ->
+                                if (tab.isCenter) {
+                                    Spacer(modifier = Modifier.weight(1f))
+                                } else {
+                                    val isSelected = route == tab.route
+                                    NavigationBarItem(
+                                        modifier = Modifier.weight(1f),
+                                        selected = isSelected,
+                                        onClick = {
                                             nav.navigate(tab.route) { launchSingleTop = true }
                                         },
-                                    contentAlignment = Alignment.Center,
-                                ) {
-                                    Column(
-                                        horizontalAlignment = Alignment.CenterHorizontally,
-                                        modifier = Modifier.offset(y = (-6).dp),
-                                    ) {
-                                        Box(
-                                            modifier = Modifier
-                                                .size(48.dp)
-                                                .clip(CircleShape)
-                                                .background(MaterialTheme.colorScheme.primary),
-                                            contentAlignment = Alignment.Center,
-                                        ) {
+                                        icon = {
                                             Icon(
-                                                imageVector = Icons.Filled.Add,
-                                                contentDescription = "Đăng tin",
-                                                tint = Color.White,
-                                                modifier = Modifier.size(28.dp),
+                                                imageVector = if (isSelected) tab.selectedIcon else tab.unselectedIcon,
+                                                contentDescription = tab.label,
+                                                modifier = Modifier.size(22.dp),
                                             )
-                                        }
-                                        Text(
-                                            text = tab.label,
-                                            style = MaterialTheme.typography.labelSmall,
-                                            fontWeight = FontWeight.Bold,
-                                            color = MaterialTheme.colorScheme.primary,
-                                            fontSize = 10.sp,
-                                            modifier = Modifier.padding(top = 2.dp),
-                                        )
-                                    }
+                                        },
+                                        label = {
+                                            Text(
+                                                text = tab.label,
+                                                fontSize = 11.sp,
+                                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                            )
+                                        },
+                                        colors = NavigationBarItemDefaults.colors(
+                                            selectedIconColor = MaterialTheme.colorScheme.primary,
+                                            selectedTextColor = MaterialTheme.colorScheme.primary,
+                                            unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            indicatorColor = MaterialTheme.colorScheme.primaryContainer,
+                                        ),
+                                    )
                                 }
-                            } else {
-                                NavigationBarItem(
-                                    modifier = Modifier.weight(1f),
-                                    selected = isSelected,
-                                    onClick = {
-                                        nav.navigate(tab.route) { launchSingleTop = true }
-                                    },
-                                    icon = {
-                                        Icon(
-                                            imageVector = if (isSelected) tab.selectedIcon else tab.unselectedIcon,
-                                            contentDescription = tab.label,
-                                            modifier = Modifier.size(22.dp),
-                                        )
-                                    },
-                                    label = {
-                                        Text(
-                                            text = tab.label,
-                                            fontSize = 11.sp,
-                                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                                        )
-                                    },
-                                    colors = NavigationBarItemDefaults.colors(
-                                        selectedIconColor = MaterialTheme.colorScheme.primary,
-                                        selectedTextColor = MaterialTheme.colorScheme.primary,
-                                        unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        indicatorColor = MaterialTheme.colorScheme.primaryContainer,
-                                    ),
-                                )
                             }
+                        }
+                    }
+
+                    // Floating Center Button
+                    val centerTab = mainTabs.find { it.isCenter }
+                    if (centerTab != null) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier
+                                .align(Alignment.BottomCenter)
+                                .offset(y = (-8).dp)
+                                .clickable {
+                                    nav.navigate(centerTab.route) { launchSingleTop = true }
+                                }
+                        ) {
+                            Surface(
+                                shape = CircleShape,
+                                color = MaterialTheme.colorScheme.primary,
+                                shadowElevation = 6.dp,
+                                modifier = Modifier.size(52.dp)
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Icon(
+                                        imageVector = Icons.Filled.Add,
+                                        contentDescription = "Đăng tin",
+                                        tint = Color.White,
+                                        modifier = Modifier.size(30.dp)
+                                    )
+                                }
+                            }
+                            Text(
+                                text = centerTab.label,
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary,
+                                fontSize = 10.sp,
+                                modifier = Modifier.padding(top = 2.dp)
+                            )
                         }
                     }
                 }
@@ -250,9 +259,31 @@ private fun MainTabs(onLoggedOut: () -> Unit) {
                     onProduct = { nav.navigate("product/$it") },
                     onNotifications = { nav.navigate("notifications") },
                     onExplore = { nav.navigate("explore") },
-                    onCategory = { nav.navigate("explore?categoryId=$it") },
+                    onCategoryClick = { cat ->
+                        nav.navigate("subcategories/${cat.id}")
+                    },
                     onSell = { nav.navigate("sell") },
                     onFavorites = { nav.navigate("favorites") },
+                )
+            }
+            composable("subcategories/{parentId}") { entry ->
+                val parentId = entry.arguments?.getString("parentId").orEmpty()
+                SubCategoriesScreen(
+                    parentId = parentId,
+                    onBack = { nav.popBackStack() },
+                    onSubCategoryClick = { subCat ->
+                        nav.navigate("category-products/${subCat.id}/${subCat.name}")
+                    }
+                )
+            }
+            composable("category-products/{catId}/{catName}") { entry ->
+                val catId = entry.arguments?.getString("catId").orEmpty()
+                val catName = entry.arguments?.getString("catName").orEmpty()
+                CategoryProductsScreen(
+                    categoryId = catId,
+                    categoryName = catName,
+                    onBack = { nav.popBackStack() },
+                    onProductClick = { nav.navigate("product/$it") }
                 )
             }
             composable("explore?categoryId={categoryId}", arguments = listOf(navArgument("categoryId") { type = NavType.LongType; defaultValue = -1L })) { entry ->
@@ -263,7 +294,13 @@ private fun MainTabs(onLoggedOut: () -> Unit) {
                 val vm: ProductViewModel = hiltViewModel()
                 val products by vm.products.collectAsState()
                 val productId = entry.arguments?.getString("id").orEmpty()
-                ProductDetailScreen(productId = productId, fallback = products.find { it.id == productId }, onChat = { nav.navigate("chat-detail/$it") }, onBuy = { nav.navigate("checkout/$productId") })
+                ProductDetailScreen(
+                    productId = productId,
+                    fallback = products.find { it.id == productId },
+                    onBack = { nav.popBackStack() },
+                    onChat = { nav.navigate("chat-detail/$it") },
+                    onBuy = { nav.navigate("checkout/$productId") }
+                )
             }
             composable("sell") { SellScreen(onMyListings = { nav.navigate("my-listings") }) }
             composable("my-listings") { MyListingsScreen(onPromote = { nav.navigate("promotions/$it") }, onAdvertise = { nav.navigate("advertising/$it") }, onEdit = { nav.navigate("edit-listing/$it") }) }

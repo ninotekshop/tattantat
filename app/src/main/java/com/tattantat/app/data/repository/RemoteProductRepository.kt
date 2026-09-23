@@ -56,6 +56,33 @@ suspend fun updateListing(id:String,title:String,price:Long,description:String,c
             }
         }
         val resolvedImage = if (imageUrl.startsWith("/")) BuildConfig.API_BASE_URL.toHttpUrl().resolve(imageUrl)?.toString().orEmpty() else imageUrl
-        return Product(id, title, displayPrice, location, postedAt, sellerName, resolvedImage, description = description, condition = condition, status = status, sellerId = sellerId, categoryId = categoryId)
+        val resolvedImages = if (images.isNotEmpty()) {
+            images.map { img -> if (img.startsWith("/")) BuildConfig.API_BASE_URL.toHttpUrl().resolve(img)?.toString().orEmpty() else img }
+        } else {
+            listOf(resolvedImage)
+        }
+        val formattedDate = formatPostedDateOnly(postedAt)
+        return Product(id, title, displayPrice, location, formattedDate, sellerName, resolvedImage, description = description, condition = condition, status = status, sellerId = sellerId, categoryId = categoryId, images = resolvedImages)
+    }
+
+    private fun formatPostedDateOnly(rawDate: String): String {
+        if (rawDate.isBlank()) return ""
+        if (rawDate.contains("T")) {
+            val datePart = rawDate.substringBefore("T")
+            val parts = datePart.split("-")
+            if (parts.size == 3) return "${parts[2]}/${parts[1]}/${parts[0]}"
+            return datePart
+        }
+        val parts = rawDate.trim().split(" ")
+        for (part in parts) {
+            if (part.contains("/") || (part.contains("-") && part.length >= 8)) {
+                if (part.contains("-")) {
+                    val subParts = part.split("-")
+                    if (subParts.size == 3 && subParts[0].length == 4) return "${subParts[2]}/${subParts[1]}/${subParts[0]}"
+                }
+                return part
+            }
+        }
+        return rawDate.substringBefore(" ")
     }
 }

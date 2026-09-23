@@ -356,6 +356,14 @@ export default function AdminDashboardPage() {
     showToast('Đã đăng xuất khỏi phiên Admin');
   };
 
+  const handleUnauthorized = useCallback((res: any) => {
+    if (res?.message?.includes('token') || res?.message?.includes('xác thực') || res?.errorCode === 'UNAUTHORIZED') {
+      showToast('Phiên làm việc đã hết hạn. Vui lòng đăng nhập lại.');
+      setAdminSession(null);
+      localStorage.removeItem('tattantat_adminttt_session');
+    }
+  }, []);
+
   // FETCH DASHBOARD DATA
   const fetchDashboardData = useCallback(() => {
     setLoading(true);
@@ -365,11 +373,13 @@ export default function AdminDashboardPage() {
       .then(res => {
         if (res.success && res.data) {
           setDashboard(res.data);
+        } else {
+          handleUnauthorized(res);
         }
       })
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, [dateRange, adminSession]);
+  }, [dateRange, adminSession, handleUnauthorized]);
 
   // FETCH POSTS
   const fetchPostsData = useCallback(() => {
@@ -378,11 +388,15 @@ export default function AdminDashboardPage() {
     fetch(url, { headers: getAuthHeaders() })
       .then(r => r.json())
       .then(res => {
-        if (res.success && res.data) setPosts(res.data);
+        if (res.success && res.data) {
+          setPosts(res.data);
+        } else {
+          handleUnauthorized(res);
+        }
       })
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, [postStatusFilter, postSearch, adminSession]);
+  }, [postStatusFilter, postSearch, adminSession, handleUnauthorized]);
 
   // FETCH USERS
   const fetchUsersData = useCallback(() => {
@@ -391,21 +405,29 @@ export default function AdminDashboardPage() {
     fetch(url, { headers: getAuthHeaders() })
       .then(r => r.json())
       .then(res => {
-        if (res.success && res.data) setUsers(res.data);
+        if (res.success && res.data) {
+          setUsers(res.data);
+        } else {
+          handleUnauthorized(res);
+        }
       })
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, [userStatusFilter, userSearch, adminSession]);
+  }, [userStatusFilter, userSearch, adminSession, handleUnauthorized]);
 
   // FETCH BANNERS
   const fetchBannersData = useCallback(() => {
     fetch('/api/v1/admin/banners', { headers: getAuthHeaders() })
       .then(r => r.json())
       .then(res => {
-        if (res.success && res.data) setBanners(res.data);
+        if (res.success && res.data) {
+          setBanners(res.data);
+        } else {
+          handleUnauthorized(res);
+        }
       })
       .catch(() => {});
-  }, [adminSession]);
+  }, [adminSession, handleUnauthorized]);
 
   // FETCH ORDERS
   const fetchOrdersData = useCallback(() => {

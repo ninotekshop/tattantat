@@ -15,12 +15,14 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.Favorite
 import androidx.compose.material.icons.outlined.LocationOn
@@ -28,6 +30,8 @@ import androidx.compose.material.icons.outlined.NotificationsNone
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -36,6 +40,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -58,7 +65,7 @@ fun HomeScreen(
     onProduct: (String) -> Unit = {},
     onNotifications: () -> Unit = {},
     onExplore: () -> Unit = {},
-    onCategory: (Long) -> Unit = {},
+    onCategoryClick: (Category) -> Unit = {},
     onSell: () -> Unit = {},
     onFavorites: () -> Unit = {},
     viewModel: HomeViewModel = hiltViewModel()
@@ -66,28 +73,123 @@ fun HomeScreen(
     val state by viewModel.state.collectAsState()
     val productViewModel: ProductViewModel = hiltViewModel()
     val favoriteIds by productViewModel.favoriteIds.collectAsState()
+
+    // Parent Categories (5 per page)
+    val parentCategories = remember(state.categories) {
+        val parents = state.categories.filter { it.parentId == null }
+        if (parents.isNotEmpty()) parents else state.categories
+    }
+    val categoryPages = remember(parentCategories) { parentCategories.chunked(5) }
+    val categoryPagerState = rememberPagerState { categoryPages.size }
+
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(vertical = 12.dp)) {
         HomeHeader(onNotifications, onExplore, onFavorites)
-        PromoBanner(onSell)
-        SectionHeader("Danh mục nổi bật", "Xem tất cả", onExplore)
-        LazyRow(contentPadding = PaddingValues(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            items(state.categories) { CategoryItem(it, onClick = { it.id.toLongOrNull()?.let(onCategory) }) }
+
+        // 5 Parent Categories per page
+        if (categoryPages.isNotEmpty()) {
+            HorizontalPager(
+                state = categoryPagerState,
+                modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp)
+            ) { pageIndex ->
+                val pageItems = categoryPages.getOrNull(pageIndex).orEmpty()
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp),
+                    horizontalArrangement = Arrangement.SpaceEvenly,
+                    verticalAlignment = Alignment.Top
+                ) {
+                    pageItems.forEach { cat ->
+                        CategoryItem(cat, onClick = { onCategoryClick(cat) })
+                    }
+                }
+            }
+            if (categoryPages.size > 1) {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp),
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    repeat(categoryPages.size) { iteration ->
+                        val color = if (categoryPagerState.currentPage == iteration) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant
+                        Box(modifier = Modifier.padding(2.dp).size(6.dp).clip(CircleShape).background(color))
+                    }
+                }
+            }
         }
-        Spacer(Modifier.height(20.dp))
+
         SectionHeader("Sản phẩm gần bạn", "Xem tất cả", onExplore)
-        LazyRow(contentPadding = PaddingValues(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            items(state.nearby) { ProductCard(it, onClick = { onProduct(it.id) }, isFavorite = it.id in favoriteIds, onFavorite = { productViewModel.toggleFavorite(it.id) }) }
-        }
+        ProductPager(
+            products = state.nearby,
+            favoriteIds = favoriteIds,
+            onProductClick = onProduct,
+            onFavoriteClick = { productViewModel.toggleFavorite(it) }
+        )
+
         Spacer(Modifier.height(20.dp))
+
         SectionHeader("Mới đăng hôm nay", "Xem tất cả", onExplore)
-        LazyRow(contentPadding = PaddingValues(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            items(state.nearby.reversed()) { ProductCard(it, onClick = { onProduct(it.id) }, isFavorite = it.id in favoriteIds, onFavorite = { productViewModel.toggleFavorite(it.id) }) }
-        }
+        ProductPager(
+            products = state.nearby.reversed(),
+            favoriteIds = favoriteIds,
+            onProductClick = onProduct,
+            onFavoriteClick = { productViewModel.toggleFavorite(it) }
+        )
+
         Spacer(Modifier.height(24.dp))
     }
 }
 
-@Composable private fun HomeHeader(onNotifications: () -> Unit, onExplore: () -> Unit, onFavorites: () -> Unit = {}) = Column(Modifier.padding(horizontal = 16.dp)) {
+@Composable
+private fun ProductPager(
+    products: List<Product>,
+    favoriteIds: Set<String>,
+    onProductClick: (String) -> Unit,
+    onFavoriteClick: (String) -> Unit
+) {
+    val pages = remember(products) { products.chunked(2) }
+    if (pages.isEmpty()) return
+    val pagerState = rememberPagerState { pages.size }
+    Column {
+        HorizontalPager(
+            state = pagerState,
+            modifier = Modifier.fillMaxWidth(),
+            contentPadding = PaddingValues(horizontal = 16.dp),
+            pageSpacing = 12.dp
+        ) { pageIndex ->
+            val pageItems = pages.getOrNull(pageIndex).orEmpty()
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                pageItems.forEach { product ->
+                    Box(modifier = Modifier.weight(1f)) {
+                        ProductCard(
+                            product = product,
+                            onClick = { onProductClick(product.id) },
+                            isFavorite = product.id in favoriteIds,
+                            onFavorite = { onFavoriteClick(product.id) }
+                        )
+                    }
+                }
+                if (pageItems.size == 1) {
+                    Spacer(modifier = Modifier.weight(1f))
+                }
+            }
+        }
+        if (pages.size > 1) {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                horizontalArrangement = Arrangement.Center
+            ) {
+                repeat(minOf(pages.size, 8)) { iteration ->
+                    val color = if (pagerState.currentPage == iteration) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant
+                    Box(modifier = Modifier.padding(2.dp).size(6.dp).clip(CircleShape).background(color))
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun HomeHeader(onNotifications: () -> Unit, onExplore: () -> Unit, onFavorites: () -> Unit = {}) = Column(Modifier.padding(horizontal = 16.dp)) {
     Row(verticalAlignment = Alignment.CenterVertically) {
         Box(Modifier.weight(1f)) {
             Image(
@@ -100,36 +202,148 @@ fun HomeScreen(
         IconButton(onClick = onFavorites) { Icon(Icons.Outlined.FavoriteBorder, "Yêu thích") }
         IconButton(onClick = onNotifications) { Icon(Icons.Outlined.NotificationsNone, "Thông báo") }
     }
-    OutlinedTextField(value = "", onValueChange = {}, modifier = Modifier.fillMaxWidth().padding(top = 12.dp).clickable(onClick = onExplore), readOnly = true, singleLine = true,
-        placeholder = { Text("Tìm kiếm mọi thứ bạn cần…") }, leadingIcon = { Icon(Icons.Outlined.Search, null) }, shape = RoundedCornerShape(14.dp))
+    OutlinedTextField(
+        value = "", onValueChange = {},
+        modifier = Modifier.fillMaxWidth().padding(top = 12.dp).clickable(onClick = onExplore),
+        readOnly = true, singleLine = true,
+        placeholder = { Text("Tìm kiếm mọi thứ bạn cần…") },
+        leadingIcon = { Icon(Icons.Outlined.Search, null) },
+        shape = RoundedCornerShape(14.dp)
+    )
 }
 
-@Composable private fun PromoBanner(onSell: () -> Unit) = Card(Modifier.fillMaxWidth().padding(16.dp).clickable(onClick = onSell), shape = RoundedCornerShape(18.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)) {
-    Row(Modifier.padding(20.dp), verticalAlignment = Alignment.CenterVertically) {
-        Column(Modifier.weight(1f)) { Text("Dọn nhà, bán nhanh", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium); Text("Đăng tin miễn phí chỉ trong vài phút") }
-        Text("ĐĂNG BÁN", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
-    }
-}
-
-@Composable private fun SectionHeader(title: String, action: String, onAction: () -> Unit) = Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+@Composable
+private fun SectionHeader(title: String, action: String, onAction: () -> Unit) = Row(
+    Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+    verticalAlignment = Alignment.CenterVertically
+) {
     Text(title, Modifier.weight(1f), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
     Text(action, Modifier.clickable(onClick = onAction), color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelLarge)
 }
 
-@Composable fun CategoryItem(category: Category, onClick: () -> Unit = {}) = Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.width(72.dp).clickable(onClick = onClick)) {
-    Box(Modifier.size(56.dp).clip(RoundedCornerShape(16.dp)).background(MaterialTheme.colorScheme.primaryContainer), contentAlignment = Alignment.Center) {
+@Composable
+fun CategoryItem(category: Category, onClick: () -> Unit = {}) = Column(
+    horizontalAlignment = Alignment.CenterHorizontally,
+    modifier = Modifier.width(68.dp).clickable(onClick = onClick)
+) {
+    Box(Modifier.size(52.dp).clip(RoundedCornerShape(16.dp)).background(MaterialTheme.colorScheme.primaryContainer), contentAlignment = Alignment.Center) {
         val iconRes = category.iconRes ?: CategoryIcons.getDrawableRes(category.slug.ifBlank { category.id })
         Image(
             painter = painterResource(id = iconRes),
             contentDescription = category.name,
-            modifier = Modifier.size(42.dp),
+            modifier = Modifier.size(38.dp),
             contentScale = ContentScale.Fit
         )
     }
-    Text(category.name, Modifier.padding(top = 6.dp), maxLines = 1, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.labelSmall)
+    Text(
+        category.name,
+        Modifier.padding(top = 6.dp),
+        maxLines = 1,
+        overflow = TextOverflow.Ellipsis,
+        style = MaterialTheme.typography.labelSmall,
+        fontWeight = FontWeight.Medium
+    )
 }
 
-@Composable fun ProductCard(product: Product, onClick: () -> Unit = {}, isFavorite: Boolean = false, onFavorite: (() -> Unit)? = null) = Card(Modifier.width(174.dp).clickable(onClick = onClick), shape = RoundedCornerShape(14.dp), elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)) {
-    Box { AsyncImage(product.imageUrl, product.title, Modifier.fillMaxWidth().height(142.dp), contentScale = ContentScale.Crop); if(onFavorite != null) IconButton(onClick = onFavorite, Modifier.align(Alignment.TopEnd)) { Icon(if(isFavorite) Icons.Outlined.Favorite else Icons.Outlined.FavoriteBorder, "Yêu thích", tint = Color.White) } }
-    Column(Modifier.padding(10.dp)) { Text(product.title, maxLines = 2, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.bodyMedium); Text(product.price, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 6.dp)); Row(verticalAlignment = Alignment.CenterVertically) { Icon(Icons.Outlined.LocationOn, null, Modifier.size(14.dp)); Text(product.location, maxLines = 1, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.labelSmall) }; Text(product.postedAt, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+@Composable
+fun ProductCard(
+    product: Product,
+    onClick: () -> Unit = {},
+    isFavorite: Boolean = false,
+    onFavorite: (() -> Unit)? = null,
+    modifier: Modifier = Modifier
+) = Card(
+    onClick = onClick,
+    shape = RoundedCornerShape(14.dp),
+    elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+    modifier = modifier.fillMaxWidth()
+) {
+    Box {
+        AsyncImage(
+            model = product.imageUrl,
+            contentDescription = product.title,
+            modifier = Modifier.fillMaxWidth().height(130.dp),
+            contentScale = ContentScale.Crop
+        )
+        if (onFavorite != null) {
+            IconButton(onClick = onFavorite, Modifier.align(Alignment.TopEnd)) {
+                Icon(
+                    if (isFavorite) Icons.Outlined.Favorite else Icons.Outlined.FavoriteBorder,
+                    contentDescription = "Yêu thích",
+                    tint = if (isFavorite) Color.Red else Color.White
+                )
+            }
+        }
+    }
+    Column(Modifier.padding(10.dp)) {
+        Text(
+            product.title,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = FontWeight.Medium
+        )
+        Text(
+            product.price,
+            color = MaterialTheme.colorScheme.primary,
+            fontWeight = FontWeight.Bold,
+            style = MaterialTheme.typography.titleSmall,
+            modifier = Modifier.padding(top = 4.dp)
+        )
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.padding(top = 4.dp)
+        ) {
+            Icon(Icons.Outlined.LocationOn, null, Modifier.size(12.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+            Spacer(Modifier.width(2.dp))
+            Text(
+                product.location,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
+            modifier = Modifier.fillMaxWidth().padding(top = 4.dp)
+        ) {
+            Text(
+                product.postedAt,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f, fill = false)
+            )
+            var showMenu by remember { mutableStateOf(false) }
+            Box {
+                IconButton(
+                    onClick = { showMenu = true },
+                    modifier = Modifier.size(20.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.MoreVert,
+                        contentDescription = "Tùy chọn",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(16.dp)
+                    )
+                }
+                DropdownMenu(
+                    expanded = showMenu,
+                    onDismissRequest = { showMenu = false }
+                ) {
+                    DropdownMenuItem(
+                        text = { Text("Báo cáo tin đăng") },
+                        onClick = { showMenu = false }
+                    )
+                    DropdownMenuItem(
+                        text = { Text("Chia sẻ tin đăng") },
+                        onClick = { showMenu = false }
+                    )
+                }
+            }
+        }
+    }
 }

@@ -9,21 +9,22 @@ object CategoryIcons {
      */
     @DrawableRes
     fun getDrawableRes(categoryIdOrSlug: String): Int {
-        val slug = categoryIdOrSlug.lowercase().trim().replace("_", "-")
-        return when (slug) {
-            "nha-dat", "property", "can-ho-chung-cu", "nha-o", "dat", "phong-tro", "van-phong", "mat-bang-kinh-doanh", "kho-xuang", "bds-khac" -> R.drawable.cat_nha_dat
-            "xe-co", "vehicle", "vehicles", "o-to", "xe-may", "xe-dap", "xe-tai-chuyen-dung", "phu-tung-phu-kien-xe", "phuong-tien-khac" -> R.drawable.cat_xe_co
-            "do-cong-nghe", "phones", "tech", "technology", "dien-thoai", "may-tinh-bang", "laptop", "may-tinh-de-ban", "may-anh-may-quay", "tv-am-thanh", "thiet-bi-choi-game", "thiet-bi-deo-thong-minh", "phu-kien-tech", "linh-kien-tech" -> R.drawable.cat_do_cong_nghe
-            "nha-cua-doi-song", "home", "dien-lanh", "bep-dien-nha-bep", "dung-cu-nha-bep", "noi-that", "giuong-nem", "thiet-bi-ve-sinh-nha-tam", "quat-thiet-bi-khong-khi", "den-chieu-sang", "trang-tri-nha-cua", "cay-canh-san-vuon", "do-gia-dung-khac" -> R.drawable.cat_nha_cua_doi_song
-            "thoi-trang-ca-nhan", "fashion", "quan-ao-nam", "quan-ao-nu", "giay-dep", "tui-xach-balo-vali", "dong-ho", "trang-suc", "nuoc-hoa", "my-pham", "phu-kien-thoi-trang" -> R.drawable.cat_thoi_trang_ca_nhan
-            "me-va-be", "mother-baby", "mother_baby", "do-cho-be", "do-cho-me", "xe-day-ghe-noi-cui", "do-choi-tre-em", "quan-ao-tre-em", "sua-do-an-cho-be", "me-be-khac" -> R.drawable.cat_me_va_be
-            "the-thao-giai-tri", "sports", "the-thao", "da-ngoai", "nhac-cu", "sach-truyen-tap-chi", "do-suu-tam", "game-phu-kien", "ve-xem-phim-sukiens", "so-thich-khac" -> R.drawable.cat_the_thao_giai_tri
-            "thu-cung", "pets", "cho", "meo", "chim", "ca-canh", "thu-cung-khac", "thuc-an-thu-cung", "phu-kien-thu-cung", "dich-vu-thu-cung" -> R.drawable.cat_thu_cung
-            "viec-lam", "jobs", "ban-hang-viec", "kinh-doanh-viec", "van-phong-viec", "ke-toan-viec", "it-cong-nghe-viec", "marketing-viec", "thiet-ke-viec", "nha-hang-khach-san-viec", "giao-hang-tai-xe-viec", "lao-dong-pho-thong-viec", "ky-thuat-viec", "viec-lam-khac" -> R.drawable.cat_viec_lam
-            "dich-vu", "services", "sua-chua-dich-vu", "van-chuyen-dich-vu", "thue-xe-dich-vu", "du-lich-dich-vu", "luu-tru-dich-vu", "gia-dinh-dich-vu", "ve-sinh-dich-vu", "lam-dep-dich-vu", "chup-anh-video-dich-vu", "thiet-ke-cong-nghe-dich-vu", "giao-duc-dich-vu", "to-chuc-su-kien-dich-vu", "dich-vu-khac" -> R.drawable.cat_dich_vu
-            "thuc-pham", "food", "do-an", "do-uong", "dac-san", "rau-cu-trai-cay", "thuc-pham-tuoi-song", "thuc-pham-kho", "do-handmade", "thuc-pham-khac" -> R.drawable.cat_thuc_pham
-            "may-moc-cong-nghiep", "machinery", "may-moc-nong-nghiep", "thiet-bi-xay-dung", "dung-cu-co-khi", "thiet-bi-nha-hang", "thiet-bi-cua-hang", "thiet-bi-van-phong", "nguyen-vat-lieu", "giong-cay-trong", "may-moc-khac" -> R.drawable.cat_may_moc_cong_nghiep
-            "tang-mien-phi", "giveaway", "free", "do-gia-dung-tang", "sach-quan-ao-tang", "thu-cung-cho-nuoi" -> R.drawable.cat_tang_mien_phi
+        val key = categoryIdOrSlug.lowercase().trim().replace("_", "-")
+        return when (key) {
+            "6", "54", "47", "48", "49", "50", "51", "52", "53", "nha-dat", "bat-dong-san", "property", "can-ho-chung-cu", "nha-o", "dat", "phong-tro", "van-phong", "mat-bang-kinh-doanh", "kho-xuang", "bds-khac", "ban-nha", "ban-dat", "can-ho", "cho-thue-nha", "cho-thue-mat-bang" -> R.drawable.cat_nha_dat
+            "5", "24", "38", "40", "41", "42", "43", "44", "45", "xe-co", "vehicle", "vehicles", "o-to", "xe-may", "xe-dap", "xe-tai-chuyen-dung", "phu-tung-phu-kien-xe", "phu-tung-xe", "xe-ban-tai", "xe-khach", "xe-dien", "phuong-tien-khac" -> R.drawable.cat_xe_co
+            "25", "1", "2", "13", "14", "15", "16", "17", "18", "19", "20", "21", "28", "29", "30", "31", "32", "33", "34", "35", "36", "do-cong-nghe", "phones", "tech", "technology", "dien-thoai", "may-tinh-bang", "laptop", "macbook", "dell", "hp", "lenovo", "asus", "iphone", "samsung", "xiaomi", "oppo", "may-tinh-de-ban", "may-anh", "may-quay", "tv", "thiet-bi-am-thanh", "phu-kien-cong-nghe", "may-choi-game", "dong-ho-thong-minh" -> R.drawable.cat_do_cong_nghe
+            "3", "56", "57", "58", "59", "60", "61", "62", "63", "nha-cua-doi-song", "do-gia-dung", "home", "dien-lanh", "sofa", "ban-ghe", "tu", "giuong", "tu-lanh", "may-giat", "dieu-hoa", "thiet-bi-nha-bep" -> R.drawable.cat_nha_cua_doi_song
+            "4", "65", "66", "67", "68", "69", "thoi-trang-ca-nhan", "thoi-trang", "fashion", "quan-ao", "giay-dep", "tui-xach", "thoi-trang-dong-ho", "phu-kien-thoi-trang" -> R.drawable.cat_thoi_trang_ca_nhan
+            "10", "80", "me-va-be", "mother-baby", "mother_baby", "do-dung-hoc-tap" -> R.drawable.cat_me_va_be
+            "8", "7", "71", "72", "73", "74", "75", "the-thao-giai-tri", "the-thao", "sports", "playstation", "xbox", "nintendo", "dung-cu-the-thao", "nhac-cu", "do-choi" -> R.drawable.cat_the_thao_giai_tri
+            "9", "78", "79", "sach-van-phong-pham", "sach", "giao-trinh" -> R.drawable.cat_the_thao_giai_tri
+            "92", "93", "94", "95", "thu-cung", "thu-cung-canh", "phu-kien-thu-cung", "thuc-an-thu-cung", "pets" -> R.drawable.cat_thu_cung
+            "98", "99", "100", "101", "102", "103", "104", "dich-vu", "services", "sua-chua", "van-chuyen", "thiet-ke", "cho-thue", "dich-vu-ca-nhan", "dich-vu-doanh-nghiep" -> R.drawable.cat_dich_vu
+            "thuc-pham", "food" -> R.drawable.cat_thuc_pham
+            "81", "82", "83", "84", "85", "may-moc-cong-nghiep", "may-moc-cong-cu", "may-moc-nghiep", "dung-cu", "thiet-bi-xay-dung", "thiet-bi-dien" -> R.drawable.cat_may_moc_cong_nghiep
+            "86", "87", "88", "89", "90", "91", "do-suu-tam", "suu-tam-dong-ho", "do-co", "mo-hinh", "tem", "vat-pham-suu-tam" -> R.drawable.cat_the_thao_giai_tri
+            "tang-mien-phi", "giveaway", "free" -> R.drawable.cat_tang_mien_phi
             else -> R.drawable.cat_khac
         }
     }

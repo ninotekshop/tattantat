@@ -105,7 +105,35 @@ import com.tattantat.app.R
     }, onAppleClick = {
         // TBD: Apple Login usually handled via custom tab or Firebase Auth, assuming backend handles web flow for now
         Log.d("SocialLogin", "Apple login triggered")
-    }) }; if (state.authenticated) LaunchedEffect(Unit) { onSuccess() } }
+    })
+    
+    if (BuildConfig.DEBUG) {
+        Column(
+            modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            HorizontalDivider()
+            Text("Đăng nhập nhanh thử nghiệm (Real Backend)", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                Button(
+                    onClick = { vm.login(BuildConfig.DEMO_USER_EMAIL, BuildConfig.DEMO_PASSWORD) },
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondaryContainer, contentColor = MaterialTheme.colorScheme.onSecondaryContainer),
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Text("User Demo")
+                }
+                Button(
+                    onClick = { vm.login(BuildConfig.DEMO_ADMIN_EMAIL, BuildConfig.DEMO_PASSWORD) },
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.tertiaryContainer, contentColor = MaterialTheme.colorScheme.onTertiaryContainer),
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Text("Admin Demo")
+                }
+            }
+        }
+    }
+    }; if (state.authenticated) LaunchedEffect(Unit) { onSuccess() } }
 }
 @Composable fun RegisterScreen(onLogin: () -> Unit, onOtp: (String) -> Unit, vm: AuthViewModel = hiltViewModel()) {
     var name by remember { mutableStateOf("") }; var phone by remember { mutableStateOf("") }; var password by remember { mutableStateOf("") }; val state by vm.state.collectAsState()

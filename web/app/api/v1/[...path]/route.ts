@@ -1,11 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const BACKEND_PORTS = [
-  process.env.BACKEND_PORT || '3009',
-  '3009',
-  '3000',
-  '8080',
-];
+const BACKEND_URLS = [
+  process.env.BACKEND_URL,
+  process.env.API_URL,
+  process.env.BACKEND_PORT ? `http://127.0.0.1:${process.env.BACKEND_PORT}` : null,
+  'http://127.0.0.1:3009',
+  'http://127.0.0.1:3000',
+  'http://127.0.0.1:8080',
+  'http://localhost:3000',
+  'http://localhost:3009',
+].filter(Boolean) as string[];
 
 async function proxyRequest(
   request: NextRequest,
@@ -28,15 +32,15 @@ async function proxyRequest(
   headers.delete('host');
   headers.delete('content-length');
 
-  const triedPorts: string[] = [];
-  const uniquePorts = Array.from(new Set(BACKEND_PORTS));
+  const uniqueUrls = Array.from(new Set(BACKEND_URLS.map(u => u.replace(/\/$/, ''))));
 
-  for (const port of uniquePorts) {
-    triedPorts.push(port);
-    const backendUrl = `http://127.0.0.1:${port}/api/v1/${subPath}${search}`;
+  for (const baseUrl of uniqueUrls) {
+    const fullTarget = baseUrl.endsWith('/api/v1')
+      ? `${baseUrl}/${subPath}${search}`
+      : `${baseUrl}/api/v1/${subPath}${search}`;
 
     try {
-      const backendRes = await fetch(backendUrl, {
+      const backendRes = await fetch(fullTarget, {
         method: request.method,
         headers,
         body: body && body.byteLength > 0 ? body : undefined,
@@ -53,11 +57,11 @@ async function proxyRequest(
       });
     } catch (err: unknown) {
       const errorMsg = err instanceof Error ? err.message : String(err);
-      console.warn(`[API Proxy Port ${port} Failed] /api/v1/${subPath}: ${errorMsg}`);
+      console.warn(`[API Proxy Target ${fullTarget} Failed]: ${errorMsg}`);
     }
   }
 
-  console.error(`[API Proxy Error] All backend ports (${triedPorts.join(', ')}) failed for /api/v1/${subPath}`);
+  console.error(`[API Proxy Error] All backend targets failed for /api/v1/${subPath}`);
 
   return NextResponse.json(
     {
