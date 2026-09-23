@@ -409,14 +409,31 @@ export class ListingsService {
 
   async template(categoryId:string, client?:PoolClient):Promise<Template> {
     const db={query:<T extends QueryResultRow>(sql:string,values:unknown[]=[])=>client?client.query<T>(sql,values):this.db.query<T>(sql,values)};
-    const row=(await db.query(`WITH RECURSIVE tree AS (
+    const rows=(await db.query(`WITH RECURSIVE tree AS (
       SELECT id,parent_id,0 AS depth FROM categories WHERE id=$1 AND status='ACTIVE'
       UNION ALL SELECT c.id,c.parent_id,t.depth+1 FROM categories c JOIN tree t ON c.id=t.parent_id WHERE t.depth<10 AND c.status='ACTIVE'
-    ) SELECT l.* FROM tree t JOIN listing_templates l ON l.category_id=t.id AND l.active ORDER BY t.depth LIMIT 1`,[categoryId])).rows[0];
-    if(!row) throw new NotFoundException('Danh mục chưa có biểu mẫu đăng tin.');
-    const fields=(await db.query(`SELECT f.key,f.label,f.type,f.required,f.enabled,f.config,
-      COALESCE((SELECT jsonb_agg(jsonb_build_object('value',o.value,'label',o.label) ORDER BY o.sort_order) FROM listing_field_options o WHERE o.field_id=f.id),'[]'::jsonb) AS options
-      FROM listing_fields f WHERE template_id=$1 ORDER BY sort_order`,[row.id])).rows as Field[];
+    ) SELECT l.* FROM tree t JOIN listing_templates l ON l.category_id=t.id AND l.active ORDER BY t.depth`,[categoryId])).rows;
+    if(!rows.length) throw new NotFoundException('Danh mục chưa có biểu mẫu đăng tin.');
+
+    let row = rows[0];
+    let fields: Field[] = [];
+    for (const r of rows) {
+      const f = (await db.query(`SELECT f.key,f.label,f.type,f.required,f.enabled,f.config,
+        COALESCE((SELECT jsonb_agg(jsonb_build_object('value',o.value,'label',o.label) ORDER BY o.sort_order) FROM listing_field_options o WHERE o.field_id=f.id),'[]'::jsonb) AS options
+        FROM listing_fields f WHERE template_id=$1 ORDER BY sort_order`,[r.id])).rows as Field[];
+      if (f.length > 0) {
+        row = r;
+        fields = f;
+        break;
+      }
+    }
+
+    if (!fields.length) {
+      const catRow = (await db.query(`SELECT slug, name FROM categories WHERE id=$1`, [categoryId])).rows[0];
+      const schema = await this.getCategorySchema(catRow?.slug || categoryId);
+      fields = schema.data.attributes;
+    }
+
     return {id:row.id,categoryId,version:row.version,name:row.name,config:row.config,fields};
   }
 

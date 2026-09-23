@@ -36,8 +36,8 @@ export function ListingWizard() {
   // Category Engine State
   const [selectedIntent, setSelectedIntent] = useState<string>('sell');
   const [selectedParentKey, setSelectedParentKey] = useState<string>('property');
-  const [selectedSubSlug, setSelectedSubSlug] = useState<string>('can-ho-chung-cu');
-  const [categoryId, setCategoryId] = useState<string>('1');
+  const [selectedSubSlug, setSelectedSubSlug] = useState<string>('ban-nha');
+  const [categoryId, setCategoryId] = useState<string>('47');
   const [template, setTemplate] = useState<Template | null>(null);
 
   const [listing, setListing] = useState<Listing | null>(null);
@@ -70,6 +70,24 @@ export function ListingWizard() {
 
   // Active Parent Category
   const activeParent = CATEGORY_ENGINE_TAXONOMY.find(c => c.key === selectedParentKey) || CATEGORY_ENGINE_TAXONOMY[0];
+
+  // Dynamically sync categoryId with selectedSubSlug / selectedParentKey
+  useEffect(() => {
+    if (!categories.length || listing) return;
+
+    let matched = categories.find(c => c.slug === selectedSubSlug);
+
+    if (!matched) {
+      const activeParentSpec = CATEGORY_ENGINE_TAXONOMY.find(c => c.key === selectedParentKey);
+      const parentSlug = activeParentSpec?.slug;
+      matched = categories.find(c => c.slug === parentSlug || c.slug === selectedParentKey);
+    }
+
+    if (matched && matched.id !== categoryId) {
+      setCategoryId(matched.id);
+      change({ ...current.current, values: {} });
+    }
+  }, [selectedSubSlug, selectedParentKey, categories, listing, categoryId]);
 
   useEffect(() => {
     const session = readSession();
