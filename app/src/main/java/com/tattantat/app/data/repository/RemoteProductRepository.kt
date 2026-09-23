@@ -56,6 +56,6 @@ suspend fun updateListing(id:String,title:String,price:Long,description:String,c
             }
         }
         val resolvedImage = if (imageUrl.startsWith("/")) BuildConfig.API_BASE_URL.toHttpUrl().resolve(imageUrl)?.toString().orEmpty() else imageUrl
-        return Product(id, title, displayPrice, location, postedAt, sellerName, resolvedImage, description = description, condition = condition, status = status, sellerId = sellerId)
+        return Product(id, title, displayPrice, location, postedAt, sellerName, resolvedImage, description = description, condition = condition, status = status, sellerId = sellerId, categoryId = categoryId)
     }
 }

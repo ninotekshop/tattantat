@@ -1,17 +1,21 @@
 package com.tattantat.app.presentation.navigation
 
 import com.tattantat.app.BuildConfig
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Chat
@@ -49,6 +53,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.NavType
 import androidx.navigation.navArgument
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.tattantat.app.R
 import com.tattantat.app.presentation.admin.AdminCreateServiceScreen
 import com.tattantat.app.presentation.admin.AdminPricingScreen
 import com.tattantat.app.presentation.admin.AdminScreen
@@ -138,8 +143,9 @@ private fun Splash(onAuthResult: (Boolean) -> Unit, vm: AppViewModel = hiltViewM
     }
     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text("Tất Tần Tật", style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
-            Text("Mua gì cũng có - Bán gì cũng dễ", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Image(painter = painterResource(id = R.drawable.ic_app_logo_icon), contentDescription = "Logo", modifier = Modifier.size(96.dp))
+            Spacer(Modifier.height(16.dp))
+            Image(painter = painterResource(id = R.drawable.ic_app_logo_horizontal), contentDescription = "Tất Tần Tật", modifier = Modifier.height(36.dp), contentScale = ContentScale.Fit)
         }
     }
 }

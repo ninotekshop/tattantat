@@ -262,7 +262,7 @@ export class AuthService {
   private async tokensFor(user: UserRow) {
     const claims = { sub: user.id, role: user.role };
     const [accessToken, refreshToken] = await Promise.all([
-      this.jwt.signAsync(claims, { expiresIn: '15m' }),
+      this.jwt.signAsync(claims, { expiresIn: '7d' }),
       this.jwt.signAsync({ ...claims, type: 'refresh' }, {
         secret: this.config.get<string>('JWT_REFRESH_SECRET') || DEFAULT_JWT_REFRESH, expiresIn: '30d',
       }),

@@ -13,6 +13,7 @@ import {
   Server, Sliders, Shield
 } from 'lucide-react';
 import { TemplateAdmin } from '../../components/listings/TemplateAdmin';
+import { saveSession, readSession } from '../../lib/auth';
 import '../admin.css';
 
 interface AdminSession {
@@ -216,8 +217,10 @@ export default function AdminDashboardPage() {
 
   const getAuthHeaders = () => {
     const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-    if (adminSession?.token) {
-      headers['Authorization'] = `Bearer ${adminSession.token}`;
+    const webSession = readSession();
+    const token = adminSession?.token || webSession?.accessToken;
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
     }
     return headers;
   };
@@ -325,6 +328,16 @@ export default function AdminDashboardPage() {
           };
           setAdminSession(sessionData);
           localStorage.setItem('tattantat_adminttt_session', JSON.stringify(sessionData));
+          saveSession({
+            accessToken: res.data.accessToken,
+            refreshToken: res.data.refreshToken || res.data.accessToken,
+            user: {
+              id: res.data.user?.id || '',
+              fullName: res.data.user?.fullName || 'Quản trị viên',
+              avatarUrl: res.data.user?.avatarUrl,
+              role: role
+            }
+          });
           showToast('Đăng nhập Quản trị viên thành công!');
         } else {
           setLoginError(res.message || 'Mật khẩu hoặc email Admin chưa chính xác');
