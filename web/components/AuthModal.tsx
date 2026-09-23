@@ -60,6 +60,59 @@ export function AuthModal({ isOpen, onClose, initialMode = 'LOGIN', onSuccess }:
     return () => clearInterval(timer);
   }, [mode, countdown]);
 
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const scriptId = 'google-gsi-client-script';
+    if (!document.getElementById(scriptId)) {
+      const script = document.createElement('script');
+      script.id = scriptId;
+      script.src = 'https://accounts.google.com/gsi/client';
+      script.async = true;
+      script.defer = true;
+      document.body.appendChild(script);
+    }
+  }, []);
+
+  // Load Facebook SDK Script dynamically
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const fbAppId = process.env.NEXT_PUBLIC_FACEBOOK_APP_ID;
+    if (!fbAppId) return;
+
+    if (!document.getElementById('facebook-jssdk')) {
+      const script = document.createElement('script');
+      script.id = 'facebook-jssdk';
+      script.src = 'https://connect.facebook.net/vi_VN/sdk.js';
+      script.async = true;
+      script.defer = true;
+      script.crossOrigin = 'anonymous';
+      script.onload = () => {
+        if ((window as any).FB) {
+          (window as any).FB.init({
+            appId: fbAppId,
+            cookie: true,
+            xfbml: true,
+            version: 'v19.0',
+          });
+        }
+      };
+      document.body.appendChild(script);
+    }
+  }, []);
+
+  // Load Apple JS SDK dynamically
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (!document.getElementById('apple-auth-script')) {
+      const script = document.createElement('script');
+      script.id = 'apple-auth-script';
+      script.src = 'https://appleid.cdn-apple.com/appleauth/static/jsapi/appleid/1/en_US/appleid.auth.js';
+      script.async = true;
+      script.defer = true;
+      document.body.appendChild(script);
+    }
+  }, []);
+
   if (!isOpen) return null;
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -221,58 +274,6 @@ export function AuthModal({ isOpen, onClose, initialMode = 'LOGIN', onSuccess }:
       setLoading(false);
     }
   };
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const scriptId = 'google-gsi-client-script';
-    if (!document.getElementById(scriptId)) {
-      const script = document.createElement('script');
-      script.id = scriptId;
-      script.src = 'https://accounts.google.com/gsi/client';
-      script.async = true;
-      script.defer = true;
-      document.body.appendChild(script);
-    }
-  }, []);
-
-  // Load Facebook SDK Script dynamically
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const fbAppId = process.env.NEXT_PUBLIC_FACEBOOK_APP_ID;
-    if (!fbAppId) return;
-
-    if (!document.getElementById('facebook-jssdk')) {
-      const script = document.createElement('script');
-      script.id = 'facebook-jssdk';
-      script.src = 'https://connect.facebook.net/vi_VN/sdk.js';
-      script.async = true;
-      script.defer = true;
-      script.crossOrigin = 'anonymous';
-      script.onload = () => {
-        if ((window as any).FB) {
-          (window as any).FB.init({
-            appId: fbAppId,
-            cookie: true,
-            xfbml: true,
-            version: 'v19.0',
-          });
-        }
-      };
-      document.body.appendChild(script);
-    }
-  }, []);
-
-  // Load Apple JS SDK dynamically
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    if (!document.getElementById('apple-auth-script')) {
-      const script = document.createElement('script');
-      script.id = 'apple-auth-script';
-      script.src = 'https://appleid.cdn-apple.com/appleauth/static/jsapi/appleid/1/en_US/appleid.auth.js';
-      script.async = true;
-      script.defer = true;
-      document.body.appendChild(script);
-    }
-  }, []);
 
   const handleGoogleAuth = () => {
     const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '927392714442-7s4c7vca99p1rtr9jvd3ken6ctinut9v.apps.googleusercontent.com';
