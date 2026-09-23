@@ -52,14 +52,20 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import com.tattantat.app.R
 import com.tattantat.app.domain.category.Category
 import com.tattantat.app.domain.category.CategoryIcons
 import com.tattantat.app.domain.product.Product
 import com.tattantat.app.presentation.product.ProductViewModel
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
     onProduct: (String) -> Unit = {},
@@ -73,6 +79,8 @@ fun HomeScreen(
     val state by viewModel.state.collectAsState()
     val productViewModel: ProductViewModel = hiltViewModel()
     val favoriteIds by productViewModel.favoriteIds.collectAsState()
+    val coroutineScope = rememberCoroutineScope()
+    var isRefreshing by remember { mutableStateOf(false) }
 
     // Parent Categories (5 per page)
     val parentCategories = remember(state.categories) {
@@ -82,58 +90,71 @@ fun HomeScreen(
     val categoryPages = remember(parentCategories) { parentCategories.chunked(5) }
     val categoryPagerState = rememberPagerState { categoryPages.size }
 
-    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(vertical = 12.dp)) {
-        HomeHeader(onNotifications, onExplore, onFavorites)
+    PullToRefreshBox(
+        isRefreshing = isRefreshing,
+        onRefresh = {
+            coroutineScope.launch {
+                isRefreshing = true
+                viewModel.refresh()
+                delay(800)
+                isRefreshing = false
+            }
+        },
+        modifier = Modifier.fillMaxSize()
+    ) {
+        Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(vertical = 12.dp)) {
+            HomeHeader(onNotifications, onExplore, onFavorites)
 
-        // 5 Parent Categories per page
-        if (categoryPages.isNotEmpty()) {
-            HorizontalPager(
-                state = categoryPagerState,
-                modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp)
-            ) { pageIndex ->
-                val pageItems = categoryPages.getOrNull(pageIndex).orEmpty()
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp),
-                    horizontalArrangement = Arrangement.SpaceEvenly,
-                    verticalAlignment = Alignment.Top
-                ) {
-                    pageItems.forEach { cat ->
-                        CategoryItem(cat, onClick = { onCategoryClick(cat) })
+            // 5 Parent Categories per page
+            if (categoryPages.isNotEmpty()) {
+                HorizontalPager(
+                    state = categoryPagerState,
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp)
+                ) { pageIndex ->
+                    val pageItems = categoryPages.getOrNull(pageIndex).orEmpty()
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp),
+                        horizontalArrangement = Arrangement.SpaceEvenly,
+                        verticalAlignment = Alignment.Top
+                    ) {
+                        pageItems.forEach { cat ->
+                            CategoryItem(cat, onClick = { onCategoryClick(cat) })
+                        }
+                    }
+                }
+                if (categoryPages.size > 1) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp),
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        repeat(categoryPages.size) { iteration ->
+                            val color = if (categoryPagerState.currentPage == iteration) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant
+                            Box(modifier = Modifier.padding(2.dp).size(6.dp).clip(CircleShape).background(color))
+                        }
                     }
                 }
             }
-            if (categoryPages.size > 1) {
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp),
-                    horizontalArrangement = Arrangement.Center
-                ) {
-                    repeat(categoryPages.size) { iteration ->
-                        val color = if (categoryPagerState.currentPage == iteration) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant
-                        Box(modifier = Modifier.padding(2.dp).size(6.dp).clip(CircleShape).background(color))
-                    }
-                }
-            }
+
+            SectionHeader("Sản phẩm gần bạn", "Xem tất cả", onExplore)
+            ProductPager(
+                products = state.nearby,
+                favoriteIds = favoriteIds,
+                onProductClick = onProduct,
+                onFavoriteClick = { productViewModel.toggleFavorite(it) }
+            )
+
+            Spacer(Modifier.height(20.dp))
+
+            SectionHeader("Mới đăng hôm nay", "Xem tất cả", onExplore)
+            ProductPager(
+                products = state.nearby.reversed(),
+                favoriteIds = favoriteIds,
+                onProductClick = onProduct,
+                onFavoriteClick = { productViewModel.toggleFavorite(it) }
+            )
+
+            Spacer(Modifier.height(24.dp))
         }
-
-        SectionHeader("Sản phẩm gần bạn", "Xem tất cả", onExplore)
-        ProductPager(
-            products = state.nearby,
-            favoriteIds = favoriteIds,
-            onProductClick = onProduct,
-            onFavoriteClick = { productViewModel.toggleFavorite(it) }
-        )
-
-        Spacer(Modifier.height(20.dp))
-
-        SectionHeader("Mới đăng hôm nay", "Xem tất cả", onExplore)
-        ProductPager(
-            products = state.nearby.reversed(),
-            favoriteIds = favoriteIds,
-            onProductClick = onProduct,
-            onFavoriteClick = { productViewModel.toggleFavorite(it) }
-        )
-
-        Spacer(Modifier.height(24.dp))
     }
 }
 

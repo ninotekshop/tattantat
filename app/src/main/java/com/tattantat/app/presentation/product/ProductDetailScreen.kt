@@ -1,7 +1,17 @@
 package com.tattantat.app.presentation.product
 
+import android.content.ContentValues
+import android.content.Context
 import android.content.Intent
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.os.Build
+import android.os.Environment
+import android.provider.MediaStore
+import android.widget.Toast
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
@@ -11,6 +21,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.outlined.Favorite
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.Share
@@ -22,12 +34,22 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.tattantat.app.domain.product.Product
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.net.HttpURLConnection
+import java.net.URL
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun ProductDetailScreen(
     productId: String,
@@ -46,7 +68,11 @@ fun ProductDetailScreen(
     val reportMessage by vm.reportMessage.collectAsState()
     var reporting by remember { mutableStateOf(false) }
     var blocking by remember { mutableStateOf(false) }
+    var viewingImageIndex by remember { mutableStateOf<Int?>(null) }
+    var showDownloadConfirmUrl by remember { mutableStateOf<String?>(null) }
+    
     val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
 
     LaunchedEffect(productId) { vm.loadDetail(productId) }
     LaunchedEffect(openedChatId) { openedChatId?.let { onChat(it); vm.consumedOpenedChat() } }
@@ -62,6 +88,7 @@ fun ProductDetailScreen(
         return
     }
 
+    val isFav = shown.id in favoriteIds
     val albumImages = remember(shown) {
         if (shown.images.isNotEmpty()) shown.images else listOf(shown.imageUrl)
     }
@@ -81,9 +108,17 @@ fun ProductDetailScreen(
                 ) {
                     OutlinedButton(
                         onClick = { vm.openChat(shown.id) },
-                        modifier = Modifier.weight(1f).height(48.dp)
+                        modifier = Modifier.weight(1f).height(48.dp),
+                        contentPadding = PaddingValues(horizontal = 4.dp)
                     ) {
-                        Text("Chat với người bán", fontWeight = FontWeight.Bold)
+                        Text(
+                            text = "Chat với người bán",
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 1,
+                            fontSize = 12.sp,
+                            softWrap = false,
+                            overflow = TextOverflow.Ellipsis
+                        )
                     }
                     Button(
                         onClick = onBuy,
@@ -110,7 +145,12 @@ fun ProductDetailScreen(
                     AsyncImage(
                         model = albumImages[page],
                         contentDescription = "${shown.title} - Ảnh ${page + 1}",
-                        modifier = Modifier.fillMaxSize(),
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .combinedClickable(
+                                onClick = { viewingImageIndex = page },
+                                onLongClick = { showDownloadConfirmUrl = albumImages[page] }
+                            ),
                         contentScale = ContentScale.Crop
                     )
                 }
@@ -164,24 +204,20 @@ fun ProductDetailScreen(
                     )
                     IconButton({ vm.toggleFavorite(shown.id) }) {
                         Icon(
-                            if (shown.id in favoriteIds) Icons.Outlined.Favorite else Icons.Outlined.FavoriteBorder,
+                            if (isFav) Icons.Outlined.Favorite else Icons.Outlined.FavoriteBorder,
                             "Yêu thích",
-                            tint = if (shown.id in favoriteIds) Color.Red else MaterialTheme.colorScheme.onSurface
+                            tint = if (isFav) Color.Red else MaterialTheme.colorScheme.onSurface
                         )
                     }
                     IconButton({
-                        context.startActivity(
-                            Intent.createChooser(
-                                Intent(Intent.ACTION_SEND).apply {
-                                    type = "text/plain"
-                                    putExtra(
-                                        Intent.EXTRA_TEXT,
-                                        "${shown.title} · ${shown.price}\n${shown.description.orEmpty()}\nTất Tần Tật"
-                                    )
-                                },
-                                "Chia sẻ sản phẩm",
-                            ),
-                        )
+                        val shareUrl = "https://tattantat.vn/product/${shown.id}"
+                        val shareText = "${shown.title}\nGiá: ${shown.price}\nXem chi tiết tại: $shareUrl"
+                        val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                            type = "text/plain"
+                            putExtra(Intent.EXTRA_SUBJECT, shown.title)
+                            putExtra(Intent.EXTRA_TEXT, shareText)
+                        }
+                        context.startActivity(Intent.createChooser(shareIntent, "Chia sẻ tin đăng"))
                     }) {
                         Icon(Icons.Outlined.Share, "Chia sẻ")
                     }
@@ -194,8 +230,9 @@ fun ProductDetailScreen(
                     fontWeight = FontWeight.Bold
                 )
 
+                val conditionVi = formatConditionVietnamese(shown.condition)
                 Text(
-                    "${shown.condition ?: "Chưa cập nhật"} · ${shown.location} · ${shown.postedAt}",
+                    "$conditionVi · ${shown.location} · ${shown.postedAt}",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -230,6 +267,91 @@ fun ProductDetailScreen(
         }
     }
 
+    // Full Screen Image Viewer Dialog
+    if (viewingImageIndex != null) {
+        val modalPagerState = rememberPagerState(initialPage = viewingImageIndex ?: 0) { albumImages.size }
+        Dialog(
+            onDismissRequest = { viewingImageIndex = null },
+            properties = DialogProperties(usePlatformDefaultWidth = false)
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black)
+            ) {
+                HorizontalPager(
+                    state = modalPagerState,
+                    modifier = Modifier.fillMaxSize()
+                ) { page ->
+                    AsyncImage(
+                        model = albumImages[page],
+                        contentDescription = "Ảnh phóng to ${page + 1}",
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .combinedClickable(
+                                onClick = {},
+                                onLongClick = { showDownloadConfirmUrl = albumImages[page] }
+                            ),
+                        contentScale = ContentScale.Fit
+                    )
+                }
+
+                // Top Controls
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp)
+                        .align(Alignment.TopCenter),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    IconButton(
+                        onClick = { viewingImageIndex = null },
+                        modifier = Modifier.background(Color.Black.copy(alpha = 0.5f), CircleShape)
+                    ) {
+                        Icon(Icons.Default.Close, contentDescription = "Đóng", tint = Color.White)
+                    }
+
+                    Text(
+                        text = "${modalPagerState.currentPage + 1}/${albumImages.size}",
+                        color = Color.White,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+
+                    IconButton(
+                        onClick = { showDownloadConfirmUrl = albumImages[modalPagerState.currentPage] },
+                        modifier = Modifier.background(Color.Black.copy(alpha = 0.5f), CircleShape)
+                    ) {
+                        Icon(Icons.Default.Download, contentDescription = "Tải ảnh", tint = Color.White)
+                    }
+                }
+            }
+        }
+    }
+
+    // Confirm Download Dialog
+    showDownloadConfirmUrl?.let { url ->
+        AlertDialog(
+            onDismissRequest = { showDownloadConfirmUrl = null },
+            title = { Text("Tải ảnh về máy?") },
+            text = { Text("Bạn có muốn lưu bức ảnh này vào thư viện hình ảnh của thiết bị?") },
+            confirmButton = {
+                TextButton(onClick = {
+                    saveImageToGallery(context, url, coroutineScope)
+                    showDownloadConfirmUrl = null
+                }) {
+                    Text("Tải về")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDownloadConfirmUrl = null }) {
+                    Text("Hủy")
+                }
+            }
+        )
+    }
+
     if (reporting) {
         AlertDialog(
             onDismissRequest = { reporting = false },
@@ -247,5 +369,59 @@ fun ProductDetailScreen(
             confirmButton = { TextButton(onClick = { vm.blockSeller(shown.sellerId); blocking = false }) { Text("Chặn") } },
             dismissButton = { TextButton(onClick = { blocking = false }) { Text("Hủy") } }
         )
+    }
+}
+
+fun formatConditionVietnamese(condition: String?): String {
+    if (condition.isNullOrBlank()) return "Chưa cập nhật"
+    return when (condition.uppercase()) {
+        "NEW", "NEW_FULLBOX" -> "Mới 100%"
+        "LIKE_NEW", "USED_LIKE_NEW" -> "Như mới (99%)"
+        "USED_GOOD", "GOOD" -> "Đã sử dụng (Còn tốt)"
+        "USED_FAIR", "FAIR" -> "Đã sử dụng (Khá)"
+        "REFURBISHED" -> "Đã tân trang / Sửa chữa"
+        else -> condition
+    }
+}
+
+private fun saveImageToGallery(context: Context, imageUrl: String, coroutineScope: CoroutineScope) {
+    coroutineScope.launch(Dispatchers.IO) {
+        try {
+            val url = URL(imageUrl)
+            val connection = url.openConnection() as HttpURLConnection
+            connection.doInput = true
+            connection.connect()
+            val input = connection.inputStream
+            val bitmap = BitmapFactory.decodeStream(input)
+
+            val filename = "TTT_${System.currentTimeMillis()}.jpg"
+            val contentValues = ContentValues().apply {
+                put(MediaStore.MediaColumns.DISPLAY_NAME, filename)
+                put(MediaStore.MediaColumns.MIME_TYPE, "image/jpeg")
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_PICTURES + "/TatTanTat")
+                }
+            }
+
+            val resolver = context.contentResolver
+            val imageUri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues)
+            if (imageUri != null) {
+                resolver.openOutputStream(imageUri)?.use { out ->
+                    bitmap.compress(Bitmap.CompressFormat.JPEG, 100, out)
+                }
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(context, "Đã lưu ảnh vào thư viện!", Toast.LENGTH_SHORT).show()
+                }
+            } else {
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(context, "Không thể lưu ảnh", Toast.LENGTH_SHORT).show()
+                }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            withContext(Dispatchers.Main) {
+                Toast.makeText(context, "Lỗi tải ảnh: ${e.message}", Toast.LENGTH_SHORT).show()
+            }
+        }
     }
 }

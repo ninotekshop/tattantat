@@ -73,7 +73,7 @@ fun SubCategoriesScreen(
                             Modifier.fillMaxWidth().padding(12.dp),
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
-                            val iconRes = cat.iconRes ?: CategoryIcons.getDrawableRes(cat.slug.ifBlank { cat.id })
+                            val iconRes = cat.iconRes ?: CategoryIcons.getDrawableRes(cat.slug.ifBlank { cat.id }, isSubCategory = true)
                             Image(
                                 painter = painterResource(id = iconRes),
                                 contentDescription = cat.name,

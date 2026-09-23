@@ -34,12 +34,12 @@ export class AdminPostsController {
     const offset = (page - 1) * limit;
 
     const searchTerm = query?.trim() ? `%${query.trim()}%` : null;
-    const filterStatus = status?.toUpperCase() || null;
-    const filterCategory = categoryId || null;
+    const filterStatus = status?.trim() ? status.trim().toUpperCase() : null;
+    const filterCategory = categoryId?.trim() ? categoryId.trim() : null;
 
     const [items, count] = await Promise.all([
       this.db.query(
-        `SELECT p.id, p.title, p.price, p.status,
+        `SELECT p.id, p.title, p.price, p.status::text AS status,
                 (SELECT url FROM product_images WHERE product_id = p.id ORDER BY sort_order LIMIT 1) AS image_url,
                 p.description, p.created_at, p.updated_at,
                 COALESCE(cat.name, 'Khác') AS category_name,
@@ -49,7 +49,7 @@ export class AdminPostsController {
          LEFT JOIN users u ON u.id = p.seller_id
          WHERE p.deleted_at IS NULL
            AND ($1::text IS NULL OR p.title ILIKE $1 OR p.id::text ILIKE $1 OR u.full_name ILIKE $1)
-           AND ($2::text IS NULL OR p.status = $2)
+           AND ($2::text IS NULL OR p.status::text = $2)
            AND ($3::text IS NULL OR p.category_id::text = $3)
          ORDER BY p.created_at DESC
          LIMIT $4 OFFSET $5`,
@@ -61,7 +61,7 @@ export class AdminPostsController {
          LEFT JOIN users u ON u.id = p.seller_id
          WHERE p.deleted_at IS NULL
            AND ($1::text IS NULL OR p.title ILIKE $1 OR p.id::text ILIKE $1 OR u.full_name ILIKE $1)
-           AND ($2::text IS NULL OR p.status = $2)
+           AND ($2::text IS NULL OR p.status::text = $2)
            AND ($3::text IS NULL OR p.category_id::text = $3)`,
         [searchTerm, filterStatus, filterCategory],
       ),

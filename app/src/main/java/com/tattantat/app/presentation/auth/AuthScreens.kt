@@ -114,22 +114,15 @@ import com.tattantat.app.R
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             HorizontalDivider()
-            Text("Đăng nhập nhanh thử nghiệm (Real Backend)", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-                Button(
-                    onClick = { vm.login(BuildConfig.DEMO_USER_EMAIL, BuildConfig.DEMO_PASSWORD) },
-                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondaryContainer, contentColor = MaterialTheme.colorScheme.onSecondaryContainer),
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Text("User Demo")
-                }
-                Button(
-                    onClick = { vm.login(BuildConfig.DEMO_ADMIN_EMAIL, BuildConfig.DEMO_PASSWORD) },
-                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.tertiaryContainer, contentColor = MaterialTheme.colorScheme.onTertiaryContainer),
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Text("Admin Demo")
-                }
+            OutlinedButton(
+                onClick = {
+                    identity = "user@tattantat.vn"
+                    password = "Demo@123"
+                    vm.login("user@tattantat.vn", "Demo@123")
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("🔑 Tự động điền & Đăng nhập Demo (`user@tattantat.vn`)", style = MaterialTheme.typography.labelMedium)
             }
         }
     }

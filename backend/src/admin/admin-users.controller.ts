@@ -30,19 +30,19 @@ export class AdminUsersController {
     const offset = (page - 1) * limit;
 
     const searchTerm = query?.trim() ? `%${query.trim()}%` : null;
-    const filterStatus = status?.toUpperCase() || null;
-    const filterVerification = verification?.toUpperCase() || null;
+    const filterStatus = status?.trim() ? status.trim().toUpperCase() : null;
+    const filterVerification = verification?.trim() ? verification.trim().toUpperCase() : null;
 
     const [items, count] = await Promise.all([
       this.db.query(
-        `SELECT u.id, u.full_name, u.email, u.phone, u.avatar_url, u.status,
+        `SELECT u.id, u.full_name, u.email, u.phone, u.avatar_url, u.status::text AS status,
                 CASE WHEN u.is_verified THEN 'VERIFIED' ELSE 'UNVERIFIED' END AS verification_status,
                 u.created_at,
                 (SELECT COUNT(*)::int FROM products p WHERE p.seller_id = u.id AND p.deleted_at IS NULL) AS posts_count,
                 (SELECT COUNT(*)::int FROM orders o WHERE o.buyer_id = u.id) AS orders_count
          FROM users u
          WHERE ($1::text IS NULL OR u.full_name ILIKE $1 OR u.email ILIKE $1 OR u.phone ILIKE $1 OR u.id::text ILIKE $1)
-           AND ($2::text IS NULL OR u.status = $2)
+           AND ($2::text IS NULL OR u.status::text = $2)
            AND ($3::text IS NULL OR (CASE WHEN u.is_verified THEN 'VERIFIED' ELSE 'UNVERIFIED' END) = $3)
          ORDER BY u.created_at DESC
          LIMIT $4 OFFSET $5`,
@@ -52,7 +52,7 @@ export class AdminUsersController {
         `SELECT COUNT(*)::int AS total
          FROM users u
          WHERE ($1::text IS NULL OR u.full_name ILIKE $1 OR u.email ILIKE $1 OR u.phone ILIKE $1 OR u.id::text ILIKE $1)
-           AND ($2::text IS NULL OR u.status = $2)
+           AND ($2::text IS NULL OR u.status::text = $2)
            AND ($3::text IS NULL OR (CASE WHEN u.is_verified THEN 'VERIFIED' ELSE 'UNVERIFIED' END) = $3)`,
         [searchTerm, filterStatus, filterVerification],
       ),
