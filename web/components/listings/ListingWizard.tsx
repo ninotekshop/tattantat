@@ -519,7 +519,7 @@ export function ListingWizard() {
               {step === 1 && template && (
                 <>
                   {(() => {
-                    const placeholders = getCategoryPlaceholders(selectedParentKey, template.category?.name || activeParent?.label, selectedIntent);
+                    const placeholders = getCategoryPlaceholders(selectedParentKey, template.name || activeParent?.label, selectedIntent);
                     return (
                       <>
                         <div className="lf-field">

@@ -53,12 +53,20 @@ import com.tattantat.app.domain.product.Product
 import com.tattantat.app.presentation.product.ProductViewModel
 
 @Composable
-fun HomeScreen(onProduct: (String) -> Unit = {}, onNotifications: () -> Unit = {}, onExplore: () -> Unit = {}, onCategory: (Long) -> Unit = {}, onSell: () -> Unit = {}, viewModel: HomeViewModel = hiltViewModel()) {
+fun HomeScreen(
+    onProduct: (String) -> Unit = {},
+    onNotifications: () -> Unit = {},
+    onExplore: () -> Unit = {},
+    onCategory: (Long) -> Unit = {},
+    onSell: () -> Unit = {},
+    onFavorites: () -> Unit = {},
+    viewModel: HomeViewModel = hiltViewModel()
+) {
     val state by viewModel.state.collectAsState()
     val productViewModel: ProductViewModel = hiltViewModel()
     val favoriteIds by productViewModel.favoriteIds.collectAsState()
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(vertical = 12.dp)) {
-        HomeHeader(onNotifications, onExplore)
+        HomeHeader(onNotifications, onExplore, onFavorites)
         PromoBanner(onSell)
         SectionHeader("Danh mục nổi bật", "Xem tất cả", onExplore)
         LazyRow(contentPadding = PaddingValues(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -78,12 +86,13 @@ fun HomeScreen(onProduct: (String) -> Unit = {}, onNotifications: () -> Unit = {
     }
 }
 
-@Composable private fun HomeHeader(onNotifications: () -> Unit, onExplore: () -> Unit) = Column(Modifier.padding(horizontal = 16.dp)) {
+@Composable private fun HomeHeader(onNotifications: () -> Unit, onExplore: () -> Unit, onFavorites: () -> Unit = {}) = Column(Modifier.padding(horizontal = 16.dp)) {
     Row(verticalAlignment = Alignment.CenterVertically) {
         Column(Modifier.weight(1f)) {
             Text("Tất Tần Tật", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
             Text("Mua gì cũng có - Bán gì cũng dễ", style = MaterialTheme.typography.labelSmall)
         }
+        IconButton(onClick = onFavorites) { Icon(Icons.Outlined.FavoriteBorder, "Yêu thích") }
         IconButton(onClick = onNotifications) { Icon(Icons.Outlined.NotificationsNone, "Thông báo") }
     }
     OutlinedTextField(value = "", onValueChange = {}, modifier = Modifier.fillMaxWidth().padding(top = 12.dp).clickable(onClick = onExplore), readOnly = true, singleLine = true,

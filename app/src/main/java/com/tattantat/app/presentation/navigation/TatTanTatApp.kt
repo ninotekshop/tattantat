@@ -1,25 +1,46 @@
 package com.tattantat.app.presentation.navigation
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.Message
-import androidx.compose.material.icons.outlined.AccountCircle
-import androidx.compose.material.icons.outlined.AddCircle
-import androidx.compose.material.icons.outlined.Explore
+import androidx.compose.material.icons.automirrored.filled.Chat
+import androidx.compose.material.icons.automirrored.filled.FormatListBulleted
+import androidx.compose.material.icons.automirrored.outlined.Chat
+import androidx.compose.material.icons.automirrored.outlined.FormatListBulleted
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -33,9 +54,11 @@ import com.tattantat.app.presentation.admin.AdminScreen
 import com.tattantat.app.presentation.admin.AdminServicesScreen
 import com.tattantat.app.presentation.admin.AdminTransactionsScreen
 import com.tattantat.app.presentation.admin.FinancialAuditScreen
+import com.tattantat.app.presentation.admin.ModerationReportsScreen
 import com.tattantat.app.presentation.auth.LoginScreen
 import com.tattantat.app.presentation.auth.OtpScreen
 import com.tattantat.app.presentation.auth.RegisterScreen
+import com.tattantat.app.presentation.chat.ChatDetailScreen
 import com.tattantat.app.presentation.chat.ChatListScreen
 import com.tattantat.app.presentation.home.HomeScreen
 import com.tattantat.app.presentation.notification.NotificationsScreen
@@ -45,6 +68,7 @@ import com.tattantat.app.presentation.order.OrdersScreen
 import com.tattantat.app.presentation.product.FavoritesScreen
 import com.tattantat.app.presentation.product.ProductDetailScreen
 import com.tattantat.app.presentation.product.ProductViewModel
+import com.tattantat.app.presentation.profile.BlockedUsersScreen
 import com.tattantat.app.presentation.profile.ProfileScreen
 import com.tattantat.app.presentation.profile.SubscriptionScreen
 import com.tattantat.app.presentation.profile.WalletScreen
@@ -53,21 +77,24 @@ import com.tattantat.app.presentation.search.SearchScreen
 import com.tattantat.app.presentation.sell.AdvertisingScreen
 import com.tattantat.app.presentation.sell.MyListingsScreen
 import com.tattantat.app.presentation.sell.PromotionScreen
+import com.tattantat.app.presentation.sell.dynamic.ListingEditorScreen
 import com.tattantat.app.presentation.sell.dynamic.DynamicListingScreen as SellScreen
 import kotlinx.coroutines.delay
 
-private data class Tab(
+private data class NavTab(
     val route: String,
     val label: String,
-    val icon: androidx.compose.ui.graphics.vector.ImageVector,
+    val unselectedIcon: ImageVector,
+    val selectedIcon: ImageVector,
+    val isCenter: Boolean = false,
 )
 
-private val tabs = listOf(
-    Tab("home", "Trang chủ", Icons.Outlined.Home),
-    Tab("explore", "Khám phá", Icons.Outlined.Explore),
-    Tab("sell", "Đăng bán", Icons.Outlined.AddCircle),
-    Tab("chat", "Tin nhắn", Icons.AutoMirrored.Outlined.Message),
-    Tab("profile", "Cá nhân", Icons.Outlined.AccountCircle),
+private val mainTabs = listOf(
+    NavTab("home", "Trang chủ", Icons.Outlined.Home, Icons.Filled.Home),
+    NavTab("my-listings", "Quản lý tin", Icons.AutoMirrored.Outlined.FormatListBulleted, Icons.AutoMirrored.Filled.FormatListBulleted),
+    NavTab("sell", "Đăng tin", Icons.Filled.Add, Icons.Filled.Add, isCenter = true),
+    NavTab("chat", "Liên hệ", Icons.AutoMirrored.Outlined.Chat, Icons.AutoMirrored.Filled.Chat),
+    NavTab("profile", "Tài khoản", Icons.Outlined.Person, Icons.Filled.Person),
 )
 
 @Composable
@@ -75,7 +102,7 @@ fun TatTanTatApp() {
     val nav = rememberNavController()
     NavHost(nav, "splash") {
         composable("splash") {
-            Splash { nav.navigate("login") { popUpTo("splash") { inclusive = true } } }
+            Splash { nav.navigate("main") { popUpTo("splash") { inclusive = true } } }
         }
         composable("login") {
             LoginScreen(
@@ -100,9 +127,12 @@ fun TatTanTatApp() {
 
 @Composable
 private fun Splash(done: () -> Unit) {
-    androidx.compose.runtime.LaunchedEffect(Unit) { delay(750); done() }
+    LaunchedEffect(Unit) { delay(750); done() }
     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Text("Tất Tần Tật", style = MaterialTheme.typography.headlineLarge, color = MaterialTheme.colorScheme.primary)
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Text("Tất Tần Tật", style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+            Text("Mua gì cũng có - Bán gì cũng dễ", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
     }
 }
 
@@ -111,17 +141,90 @@ private fun MainTabs(onLoggedOut: () -> Unit) {
     val nav = rememberNavController()
     val current by nav.currentBackStackEntryAsState()
     val route = current?.destination?.route
+
     Scaffold(
         bottomBar = {
-            if (route?.startsWith("product/") != true) {
-                NavigationBar {
-                    tabs.forEach { tab ->
-                        NavigationBarItem(
-                            selected = route == tab.route,
-                            onClick = { nav.navigate(tab.route) { launchSingleTop = true } },
-                            icon = { Icon(tab.icon, tab.label) },
-                            label = { Text(tab.label) },
-                        )
+            if (route?.startsWith("product/") != true && route?.startsWith("checkout/") != true && route?.startsWith("chat-detail/") != true) {
+                Surface(
+                    shadowElevation = 8.dp,
+                    color = MaterialTheme.colorScheme.surface,
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(64.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        mainTabs.forEach { tab ->
+                            val isSelected = route == tab.route
+                            if (tab.isCenter) {
+                                Box(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .clickable {
+                                            nav.navigate(tab.route) { launchSingleTop = true }
+                                        },
+                                    contentAlignment = Alignment.Center,
+                                ) {
+                                    Column(
+                                        horizontalAlignment = Alignment.CenterHorizontally,
+                                        modifier = Modifier.offset(y = (-6).dp),
+                                    ) {
+                                        Box(
+                                            modifier = Modifier
+                                                .size(48.dp)
+                                                .clip(CircleShape)
+                                                .background(MaterialTheme.colorScheme.primary),
+                                            contentAlignment = Alignment.Center,
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Filled.Add,
+                                                contentDescription = "Đăng tin",
+                                                tint = Color.White,
+                                                modifier = Modifier.size(28.dp),
+                                            )
+                                        }
+                                        Text(
+                                            text = tab.label,
+                                            style = MaterialTheme.typography.labelSmall,
+                                            fontWeight = FontWeight.Bold,
+                                            color = MaterialTheme.colorScheme.primary,
+                                            fontSize = 10.sp,
+                                            modifier = Modifier.padding(top = 2.dp),
+                                        )
+                                    }
+                                }
+                            } else {
+                                NavigationBarItem(
+                                    modifier = Modifier.weight(1f),
+                                    selected = isSelected,
+                                    onClick = {
+                                        nav.navigate(tab.route) { launchSingleTop = true }
+                                    },
+                                    icon = {
+                                        Icon(
+                                            imageVector = if (isSelected) tab.selectedIcon else tab.unselectedIcon,
+                                            contentDescription = tab.label,
+                                            modifier = Modifier.size(22.dp),
+                                        )
+                                    },
+                                    label = {
+                                        Text(
+                                            text = tab.label,
+                                            fontSize = 11.sp,
+                                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                        )
+                                    },
+                                    colors = NavigationBarItemDefaults.colors(
+                                        selectedIconColor = MaterialTheme.colorScheme.primary,
+                                        selectedTextColor = MaterialTheme.colorScheme.primary,
+                                        unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        indicatorColor = MaterialTheme.colorScheme.primaryContainer,
+                                    ),
+                                )
+                            }
+                        }
                     }
                 }
             }
@@ -129,7 +232,14 @@ private fun MainTabs(onLoggedOut: () -> Unit) {
     ) { padding ->
         NavHost(nav, "home", Modifier.padding(padding)) {
             composable("home") {
-                HomeScreen(onProduct = { nav.navigate("product/$it") }, onNotifications = { nav.navigate("notifications") }, onExplore = { nav.navigate("explore") }, onCategory = { nav.navigate("explore?categoryId=$it") }, onSell = { nav.navigate("sell") })
+                HomeScreen(
+                    onProduct = { nav.navigate("product/$it") },
+                    onNotifications = { nav.navigate("notifications") },
+                    onExplore = { nav.navigate("explore") },
+                    onCategory = { nav.navigate("explore?categoryId=$it") },
+                    onSell = { nav.navigate("sell") },
+                    onFavorites = { nav.navigate("favorites") },
+                )
             }
             composable("explore?categoryId={categoryId}", arguments = listOf(navArgument("categoryId") { type = NavType.LongType; defaultValue = -1L })) { entry ->
                 val categoryId = entry.arguments?.getLong("categoryId")?.takeIf { it > 0L }
@@ -143,11 +253,11 @@ private fun MainTabs(onLoggedOut: () -> Unit) {
             }
             composable("sell") { SellScreen(onMyListings = { nav.navigate("my-listings") }) }
             composable("my-listings") { MyListingsScreen(onPromote = { nav.navigate("promotions/$it") }, onAdvertise = { nav.navigate("advertising/$it") }, onEdit = { nav.navigate("edit-listing/$it") }) }
-            composable("edit-listing/{id}") { entry -> com.tattantat.app.presentation.sell.dynamic.ListingEditorScreen(id = entry.arguments?.getString("id").orEmpty(), onDone = { nav.popBackStack(); Unit }) }
+            composable("edit-listing/{id}") { entry -> ListingEditorScreen(id = entry.arguments?.getString("id").orEmpty(), onDone = { nav.popBackStack(); Unit }) }
             composable("promotions/{id}") { entry -> PromotionScreen(entry.arguments?.getString("id").orEmpty()) }
             composable("advertising/{id}") { entry -> AdvertisingScreen(entry.arguments?.getString("id").orEmpty()) }
             composable("chat") { ChatListScreen(onOpen = { nav.navigate("chat-detail/$it") }) }
-            composable("chat-detail/{id}") { entry -> com.tattantat.app.presentation.chat.ChatDetailScreen(entry.arguments?.getString("id").orEmpty()) }
+            composable("chat-detail/{id}") { entry -> ChatDetailScreen(entry.arguments?.getString("id").orEmpty()) }
             composable("profile") {
                 ProfileScreen(
                     onOrders = { nav.navigate("orders") },
@@ -167,14 +277,14 @@ private fun MainTabs(onLoggedOut: () -> Unit) {
             composable("favorites") { FavoritesScreen(onProduct = { nav.navigate("product/$it") }) }
             composable("notifications") { NotificationsScreen() }
             composable("seller-reviews") { SellerReviewsScreen() }
-            composable("blocked-users") { com.tattantat.app.presentation.profile.BlockedUsersScreen() }
+            composable("blocked-users") { BlockedUsersScreen() }
             composable("admin") { AdminScreen(onPricing = { nav.navigate("admin-pricing") }, onServices = { nav.navigate("admin-services") }, onTransactions = { nav.navigate("admin-transactions") }, onAudit = { nav.navigate("admin-audit") }, onReports = { nav.navigate("admin-reports") }) }
             composable("admin-pricing") { AdminPricingScreen() }
             composable("admin-services") { AdminServicesScreen(onCreate = { nav.navigate("admin-create-service") }) }
             composable("admin-create-service") { AdminCreateServiceScreen() }
             composable("admin-transactions") { AdminTransactionsScreen() }
             composable("admin-audit") { FinancialAuditScreen() }
-            composable("admin-reports") { com.tattantat.app.presentation.admin.ModerationReportsScreen() }
+            composable("admin-reports") { ModerationReportsScreen() }
             composable("orders") { OrdersScreen() }
             composable("checkout/{id}") { entry ->
                 CheckoutScreen(
