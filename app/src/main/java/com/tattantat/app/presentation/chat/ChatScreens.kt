@@ -163,7 +163,7 @@ fun ChatDetailScreen(
                 Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp)) {
                     // Quick Reply Chips (Horizontal Paging Row)
                     val quickReplies = listOf(
-                        "📞 SĐT người chat",
+                        "📞 SĐT của tôi",
                         "Cảm ơn bạn",
                         "Tôi sẽ tham khảo thêm",
                         "Hẹn gặp bạn sau nhé",
@@ -306,12 +306,65 @@ fun ChatDetailScreen(
                             color = if (mine) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
                             modifier = Modifier.widthIn(max = 280.dp)
                         ) {
-                            Column(Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) {
-                                Text(
-                                    text = message.content,
-                                    color = if (mine) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
-                                    fontSize = 14.sp
-                                )
+                            Column(Modifier.padding(horizontal = 10.dp, vertical = 8.dp)) {
+                                val content = message.content
+                                when {
+                                    content.startsWith("[Hình ảnh]") -> {
+                                        val imgUrl = content.removePrefix("[Hình ảnh]").trim()
+                                        AsyncImage(
+                                            model = imgUrl,
+                                            contentDescription = "Hình ảnh gửi",
+                                            modifier = Modifier.fillMaxWidth().height(180.dp).clip(RoundedCornerShape(8.dp)),
+                                            contentScale = ContentScale.Crop
+                                        )
+                                    }
+                                    content.startsWith("[Video]") -> {
+                                        Box(
+                                            modifier = Modifier.fillMaxWidth().height(160.dp).clip(RoundedCornerShape(8.dp)).background(Color.Black.copy(alpha = 0.8f)),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.Videocam,
+                                                contentDescription = "Video",
+                                                tint = Color.White,
+                                                modifier = Modifier.size(48.dp)
+                                            )
+                                            Text(
+                                                "Video tin nhắn",
+                                                color = Color.White,
+                                                style = MaterialTheme.typography.labelMedium,
+                                                modifier = Modifier.align(Alignment.BottomCenter).padding(8.dp)
+                                            )
+                                        }
+                                    }
+                                    content.startsWith("📍 Vị trí GPS") -> {
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            modifier = Modifier.padding(4.dp)
+                                        ) {
+                                            Icon(
+                                                Icons.Default.LocationOn,
+                                                contentDescription = "GPS",
+                                                tint = if (mine) Color.White else MaterialTheme.colorScheme.primary,
+                                                modifier = Modifier.size(24.dp)
+                                            )
+                                            Spacer(Modifier.width(6.dp))
+                                            Text(
+                                                content,
+                                                color = if (mine) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
+                                                fontSize = 13.sp,
+                                                fontWeight = FontWeight.Medium
+                                            )
+                                        }
+                                    }
+                                    else -> {
+                                        Text(
+                                            text = content,
+                                            color = if (mine) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
+                                            fontSize = 14.sp
+                                        )
+                                    }
+                                }
                                 Text(
                                     text = message.created_at.takeLast(5).ifBlank { "Vừa xong" },
                                     fontSize = 10.sp,

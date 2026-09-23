@@ -20,13 +20,14 @@ class RemoteHomeRepository @Inject constructor(
         val listingCategories = runCatching { listingApi.categories().data.orEmpty() }.getOrNull()
         if (!listingCategories.isNullOrEmpty()) {
             emit(listingCategories.map {
+                val isSub = it.parentId != null
                 Category(
                     id = it.id,
                     name = it.name,
                     emoji = "🏷️",
                     slug = it.slug,
                     iconUrl = null,
-                    iconRes = CategoryIcons.getDrawableRes(it.slug.ifBlank { it.id }),
+                    iconRes = if (isSub) null else CategoryIcons.getDrawableRes(it.slug.ifBlank { it.id }),
                     parentId = it.parentId
                 )
             })

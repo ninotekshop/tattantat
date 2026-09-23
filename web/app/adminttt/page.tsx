@@ -13,6 +13,7 @@ import {
   Server, Sliders, Shield, EyeOff, CheckSquare
 } from 'lucide-react';
 import { TemplateAdmin } from '../../components/listings/TemplateAdmin';
+import { ListingManagementPage } from '../../components/admin/listing/ListingManagementPage';
 import { saveSession, readSession } from '../../lib/auth';
 import '../admin.css';
 
@@ -206,6 +207,20 @@ export default function AdminDashboardPage() {
   const [selectedCssFile, setSelectedCssFile] = useState('dog-theme.css');
   const [cssCode, setCssCode] = useState('/* Đang tải nội dung CSS... */');
   const [cssLoading, setCssLoading] = useState(false);
+
+  // CATEGORIES STATE
+  const [categories, setCategories] = useState<{ id: string; name: string }[]>([]);
+
+  useEffect(() => {
+    fetch('/api/v1/listing-categories')
+      .then(r => r.json())
+      .then(res => {
+        if (res.data) {
+          setCategories(res.data.map((c: any) => ({ id: String(c.id), name: c.name })));
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   // CLICK OUTSIDE TO CLOSE DROPDOWNS
   useEffect(() => {
@@ -1712,98 +1727,32 @@ export default function AdminDashboardPage() {
               </div>
             </>
           ) : activeNav === 'tin-dang' ? (
-            /* POSTS MANAGEMENT MODULE */
-            <div className="dashboard-card">
-              <div className="card-header-flex" style={{gap:12, flexWrap:'wrap'}}>
-                <h3>Quản lý danh sách tin đăng ({posts.length})</h3>
-                <div style={{display:'flex', gap:10, alignItems:'center', flexWrap:'wrap'}}>
-                  <input
-                    type="text"
-                    placeholder="Tìm theo tiêu đề, ID..."
-                    value={postSearch}
-                    onChange={e => setPostSearch(e.target.value)}
-                    style={{padding:'6px 12px', borderRadius:8, border:'1px solid #cbd5e1', fontSize:13}}
-                  />
-                  <select
-                    value={postStatusFilter}
-                    onChange={e => setPostStatusFilter(e.target.value)}
-                    style={{padding:'6px 12px', borderRadius:8, border:'1px solid #cbd5e1', fontSize:13}}
-                  >
-                    <option value="">Tất cả trạng thái</option>
-                    <option value="PENDING">Chờ duyệt</option>
-                    <option value="ACTIVE">Đã duyệt (Active)</option>
-                    <option value="REJECTED">Đã từ chối</option>
-                    <option value="HIDDEN">Tạm ẩn</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="table-responsive" style={{marginTop:16}}>
-                <table className="admin-table">
-                  <thead>
-                    <tr>
-                      <th>Hình ảnh</th>
-                      <th>Tiêu đề</th>
-                      <th>Người bán</th>
-                      <th>Giá</th>
-                      <th>Danh mục</th>
-                      <th>Ngày đăng</th>
-                      <th>Trạng thái</th>
-                      <th>Thao tác</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {posts.length > 0 ? (
-                      posts.map(p => (
-                        <tr key={p.id}>
-                          <td><img src={p.image_url || '/assets/product-1.jpg'} alt="" style={{width:42, height:42, borderRadius:8, objectFit:'cover'}} /></td>
-                          <td>
-                            <div style={{fontWeight:600, color:'#0f172a'}}>{p.title}</div>
-                            <div style={{fontSize:11, color:'#64748b'}}>ID: {p.id.slice(0, 8)}</div>
-                          </td>
-                          <td>
-                            <div style={{fontSize:13, fontWeight:500}}>{p.seller_name}</div>
-                            <div style={{fontSize:11, color:'#64748b'}}>{p.seller_email}</div>
-                          </td>
-                          <td style={{fontWeight:700, color:'#00a65a'}}>{formatVnd(p.price)}</td>
-                          <td>{p.category_name}</td>
-                          <td style={{fontSize:12, color:'#64748b'}}>{new Date(p.created_at).toLocaleDateString('vi-VN')}</td>
-                          <td>
-                            <span className={`status-badge ${p.status === 'ACTIVE' ? 'approved' : p.status === 'PENDING' ? 'pending' : 'danger'}`}>
-                              {p.status === 'ACTIVE' ? 'Đã duyệt' : p.status === 'PENDING' ? 'Chờ duyệt' : p.status === 'REJECTED' ? 'Đã từ chối' : 'Tạm ẩn'}
-                            </span>
-                          </td>
-                          <td>
-                            <div style={{display:'flex', gap:6, flexWrap:'wrap'}}>
-                              {p.status === 'PENDING' && (
-                                <button onClick={() => handleApprovePost(p.id)} style={{background:'#d1fae5', color:'#059669', border:'none', padding:'4px 8px', borderRadius:6, fontSize:12, fontWeight:600, cursor:'pointer'}}>Duyệt</button>
-                              )}
-                              {p.status === 'HIDDEN' ? (
-                                <button onClick={() => handleUnhidePost(p.id)} style={{background:'#d1fae5', color:'#059669', border:'none', padding:'4px 8px', borderRadius:6, fontSize:12, fontWeight:600, cursor:'pointer', display:'flex', alignItems:'center', gap:4}}>
-                                  <Eye size={12} /> Hiện lại
-                                </button>
-                              ) : p.status === 'ACTIVE' ? (
-                                <button onClick={() => handleHidePost(p.id)} style={{background:'#f1f5f9', color:'#475569', border:'none', padding:'4px 8px', borderRadius:6, fontSize:12, fontWeight:600, cursor:'pointer', display:'flex', alignItems:'center', gap:4}}>
-                                  <EyeOff size={12} /> Ẩn tin
-                                </button>
-                              ) : null}
-                              <button onClick={() => handleOpenEditPost(p)} style={{background:'#e0f2fe', color:'#0284c7', border:'none', padding:'4px 8px', borderRadius:6, fontSize:12, fontWeight:600, cursor:'pointer', display:'flex', alignItems:'center', gap:4}}>
-                                <Edit size={12} /> Sửa
-                              </button>
-                              <button onClick={() => handleDeletePost(p.id)} style={{background:'#fee2e2', color:'#dc2626', border:'none', padding:'4px 8px', borderRadius:6, fontSize:12, fontWeight:600, cursor:'pointer', display:'flex', alignItems:'center', gap:4}}>
-                                <Trash2 size={12} /> Xóa
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))
-                    ) : (
-                      <tr><td colSpan={8} style={{textAlign:'center', color:'#64748b', padding:24}}>Không có tin đăng phù hợp.</td></tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </div>
+            /* REDESIGNED LISTING MANAGEMENT MODULE */
+            <ListingManagementPage
+              posts={posts}
+              categories={categories}
+              onRefresh={fetchPostsData}
+              onApprove={handleApprovePost}
+              onUnhide={handleUnhidePost}
+              onHide={handleHidePost}
+              onSaveEdit={(id, form) => {
+                fetch(`/api/v1/admin/posts/${id}`, {
+                  method: 'PATCH',
+                  headers: getAuthHeaders(),
+                  body: JSON.stringify(form),
+                })
+                  .then(r => r.json())
+                  .then(res => {
+                    if (res.success) {
+                      showToast('Đã cập nhật tin đăng thành công!');
+                      fetchPostsData();
+                    }
+                  });
+              }}
+              onDelete={handleDeletePost}
+              onToast={showToast}
+              getAuthHeaders={getAuthHeaders}
+            />
           ) : activeNav === 'nguoi-dung' ? (
             /* USERS MANAGEMENT MODULE */
             <div className="dashboard-card">
