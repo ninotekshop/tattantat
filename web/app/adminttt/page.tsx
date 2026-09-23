@@ -205,7 +205,7 @@ export default function AdminDashboardPage() {
     return headers;
   };
 
-  // ADMIN LOGIN SUBMIT HANDLER WITH OFFICIAL ROLE-BASED ACCESS CONTROL
+  // ADMIN LOGIN SUBMIT HANDLER WITH OFFICIAL REAL API AUTHENTICATION
   const handleAdminLogin = (e: React.FormEvent) => {
     e.preventDefault();
     setLoginError(null);
@@ -234,34 +234,11 @@ export default function AdminDashboardPage() {
           localStorage.setItem('tattantat_adminttt_session', JSON.stringify(sessionData));
           showToast('Đăng nhập Quản trị viên thành công!');
         } else {
-          // Demo fallback check
-          if (loginEmail.trim().toLowerCase() === 'admin@tattantat.vn' && loginPassword === 'Demo@123') {
-            const sessionData: AdminSession = {
-              email: 'admin@tattantat.vn',
-              fullName: 'Super Admin',
-              role: 'SUPER_ADMIN'
-            };
-            setAdminSession(sessionData);
-            localStorage.setItem('tattantat_adminttt_session', JSON.stringify(sessionData));
-            showToast('Đăng nhập Quản trị viên Demo thành công!');
-          } else {
-            setLoginError(res.message || 'Mật khẩu hoặc email Admin chưa chính xác');
-          }
+          setLoginError(res.message || 'Mật khẩu hoặc email Admin chưa chính xác');
         }
       })
-      .catch(() => {
-        if (loginEmail.trim().toLowerCase() === 'admin@tattantat.vn' && loginPassword === 'Demo@123') {
-          const sessionData: AdminSession = {
-            email: 'admin@tattantat.vn',
-            fullName: 'Super Admin',
-            role: 'SUPER_ADMIN'
-          };
-          setAdminSession(sessionData);
-          localStorage.setItem('tattantat_adminttt_session', JSON.stringify(sessionData));
-          showToast('Đăng nhập Quản trị viên Demo thành công!');
-        } else {
-          setLoginError('Lỗi kết nối máy chủ xác thực');
-        }
+      .catch((err) => {
+        setLoginError('Lỗi kết nối máy chủ xác thực: ' + (err instanceof Error ? err.message : 'Không thể kết nối'));
       })
       .finally(() => setLoginLoading(false));
   };
@@ -665,17 +642,6 @@ export default function AdminDashboardPage() {
                 </button>
               </div>
             </div>
-
-            <button
-              type="button"
-              className="admin-demo-autofill-btn"
-              onClick={() => {
-                setLoginEmail('admin@tattantat.vn');
-                setLoginPassword('Demo@123');
-              }}
-            >
-              🔑 Tự động điền tài khoản Admin Demo (`admin@tattantat.vn` / `Demo@123`)
-            </button>
 
             <button type="submit" className="admin-submit-btn" disabled={loginLoading}>
               {loginLoading ? 'Đang xác thực...' : 'XÁC THỰC BẢO MẬT & ĐĂNG NHẬP'}
