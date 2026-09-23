@@ -308,7 +308,14 @@ private fun MainTabs(onLoggedOut: () -> Unit) {
             composable("promotions/{id}") { entry -> PromotionScreen(entry.arguments?.getString("id").orEmpty()) }
             composable("advertising/{id}") { entry -> AdvertisingScreen(entry.arguments?.getString("id").orEmpty()) }
             composable("chat") { ChatListScreen(onOpen = { nav.navigate("chat-detail/$it") }) }
-            composable("chat-detail/{id}") { entry -> ChatDetailScreen(entry.arguments?.getString("id").orEmpty()) }
+            composable("chat-detail/{id}") { entry ->
+                val chatId = entry.arguments?.getString("id").orEmpty()
+                ChatDetailScreen(
+                    chatId = chatId,
+                    onBack = { nav.popBackStack() },
+                    onProductClick = { nav.navigate("product/$it") }
+                )
+            }
             composable("profile") {
                 ProfileScreen(
                     onOrders = { nav.navigate("orders") },

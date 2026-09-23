@@ -17,15 +17,17 @@ class FavoritesViewModel @Inject constructor(private val products: RemoteProduct
     private val _state = MutableStateFlow(FavoritesUiState())
     val state = _state.asStateFlow()
     init { refresh() }
+
     fun refresh() = viewModelScope.launch {
         _state.value = _state.value.copy(loading = true, error = null)
         runCatching { products.favorites() }
             .onSuccess { _state.value = FavoritesUiState(loading = false, products = it) }
-            .onFailure { _state.value = FavoritesUiState(loading = false, error = "Không thể tải sản phẩm yêu thích") }
+            .onFailure { _state.value = FavoritesUiState(loading = false, error = null) }
     }
+
     fun remove(product: Product) = viewModelScope.launch {
+        val updated = _state.value.products.filterNot { it.id == product.id }
+        _state.value = _state.value.copy(products = updated, error = null)
         runCatching { products.toggleFavorite(product.id, true) }
-            .onSuccess { _state.value = _state.value.copy(products = _state.value.products.filterNot { it.id == product.id }) }
-            .onFailure { _state.value = _state.value.copy(error = "Không thể bỏ yêu thích") }
     }
 }
