@@ -80,7 +80,12 @@ function startBackendProcess() {
   });
 }
 
-startBackendProcess();
+// Ensure the backend isn't started multiple times during Hostinger's pre-flight checks
+if (process.env.NODE_ENV === 'production' && !process.env.LSNODE_PID) {
+  startBackendProcess();
+} else if (process.env.NODE_ENV !== 'production') {
+  startBackendProcess();
+}
 
 const next = require('next');
 
