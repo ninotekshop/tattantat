@@ -21,11 +21,32 @@ import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.HttpUrl.Companion.toHttpUrl
 import com.tattantat.app.BuildConfig
 
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+
 @Singleton
 class RemoteProductRepository @Inject constructor(private val api: ProductApi, @ApplicationContext private val context: Context) : ProductRepository {
+    private val _favoriteIds = MutableStateFlow<Set<String>>(emptySet())
+    val favoriteIds: StateFlow<Set<String>> = _favoriteIds.asStateFlow()
+
     suspend fun mine(): List<Product> = api.mine().data.orEmpty().map { it.toDomain() }
-    suspend fun favorites(): List<Product> = api.favorites().data.orEmpty().map { it.toDomain() }
-    suspend fun toggleFavorite(id:String, saved:Boolean) { if(saved) api.unfavorite(id) else api.favorite(id) }
+    
+    suspend fun favorites(): List<Product> {
+        val list = runCatching { api.favorites().data.orEmpty().map { it.toDomain() } }.getOrDefault(emptyList())
+        _favoriteIds.value = list.map { it.id }.toSet()
+        return list
+    }
+
+    suspend fun toggleFavorite(id: String, saved: Boolean) {
+        if (saved) {
+            _favoriteIds.value = _favoriteIds.value - id
+            runCatching { api.unfavorite(id) }
+        } else {
+            _favoriteIds.value = _favoriteIds.value + id
+            runCatching { api.favorite(id) }
+        }
+    }
     suspend fun categories() = api.categories().data.orEmpty()
     suspend fun create(title: String, price: Long, description: String, images: List<Uri>, categoryId: Long, condition: String): Result<String> = runCatching {
         val keys = images.map { uri ->

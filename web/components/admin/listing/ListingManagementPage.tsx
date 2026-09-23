@@ -35,6 +35,26 @@ function formatVnd(val: string | number) {
   return new Intl.NumberFormat('vi-VN').format(num) + ' ₫';
 }
 
+function formatStatusBadge(status: string) {
+  const upper = (status || '').toUpperCase();
+  if (upper === 'ACTIVE') {
+    return { label: 'Đã duyệt', bg: '#d1fae5', color: '#059669' };
+  }
+  if (upper === 'PENDING') {
+    return { label: 'Chờ duyệt', bg: '#fef3c7', color: '#d97706' };
+  }
+  if (upper === 'HIDDEN') {
+    return { label: 'Đã ẩn', bg: '#f1f5f9', color: '#475569' };
+  }
+  if (['COMPLETED', 'SOLD', 'RESERVED', 'DELIVERED'].includes(upper)) {
+    return { label: 'Đã bán', bg: '#dbeafe', color: '#2563eb' };
+  }
+  if (upper === 'REJECTED') {
+    return { label: 'Từ chối', bg: '#fee2e2', color: '#dc2626' };
+  }
+  return { label: status, bg: '#f1f5f9', color: '#475569' };
+}
+
 export function ListingManagementPage({
   posts,
   categories,
@@ -636,21 +656,22 @@ export function ListingManagementPage({
                       </td>
 
                       {/* TRẠNG THÁI */}
-                      <td style={{ padding: '12px 16px' }}>
+                      <td style={{ padding: '12px 16px', textAlign: 'center' }}>
                         <span
                           style={{
-                            padding: '4px 10px',
+                            padding: '4px 12px',
                             borderRadius: 999,
                             fontSize: 12,
                             fontWeight: 600,
                             display: 'inline-flex',
                             alignItems: 'center',
-                            gap: 4,
-                            background: p.status === 'ACTIVE' ? '#d1fae5' : p.status === 'PENDING' ? '#fef3c7' : p.status === 'HIDDEN' ? '#f1f5f9' : '#fee2e2',
-                            color: p.status === 'ACTIVE' ? '#059669' : p.status === 'PENDING' ? '#d97706' : p.status === 'HIDDEN' ? '#475569' : '#dc2626'
+                            justifyContent: 'center',
+                            textAlign: 'center',
+                            background: formatStatusBadge(p.status).bg,
+                            color: formatStatusBadge(p.status).color
                           }}
                         >
-                          {p.status === 'ACTIVE' ? '● Đã duyệt' : p.status === 'PENDING' ? '● Chờ duyệt' : p.status === 'HIDDEN' ? '● Đã ẩn' : '⚠ Từ chối'}
+                          {formatStatusBadge(p.status).label}
                         </span>
                       </td>
 
@@ -666,7 +687,7 @@ export function ListingManagementPage({
                           </button>
 
                           <button
-                            onClick={() => onSaveEdit(p.id, p)}
+                            onClick={() => setEditingPost(p)}
                             style={{ background: '#e0f2fe', border: 'none', padding: '6px 8px', borderRadius: 6, cursor: 'pointer', color: '#0284c7' }}
                             title="Chỉnh sửa"
                           >

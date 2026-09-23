@@ -36,6 +36,26 @@ function formatVnd(val: string | number) {
   return new Intl.NumberFormat('vi-VN').format(num) + ' ₫';
 }
 
+function formatStatusBadge(status: string) {
+  const upper = (status || '').toUpperCase();
+  if (upper === 'ACTIVE') {
+    return { label: 'Đã duyệt', bg: '#059669', color: '#ffffff' };
+  }
+  if (upper === 'PENDING') {
+    return { label: 'Chờ duyệt', bg: '#d97706', color: '#ffffff' };
+  }
+  if (upper === 'HIDDEN') {
+    return { label: 'Đã ẩn', bg: '#64748b', color: '#ffffff' };
+  }
+  if (['COMPLETED', 'SOLD', 'RESERVED', 'DELIVERED'].includes(upper)) {
+    return { label: 'Đã bán', bg: '#2563eb', color: '#ffffff' };
+  }
+  if (upper === 'REJECTED') {
+    return { label: 'Từ chối', bg: '#dc2626', color: '#ffffff' };
+  }
+  return { label: status, bg: '#64748b', color: '#ffffff' };
+}
+
 export function ListingQuickViewDrawer({
   post,
   isOpen,
@@ -143,11 +163,11 @@ export function ListingQuickViewDrawer({
                   borderRadius: 999,
                   fontSize: 12,
                   fontWeight: 600,
-                  color: '#fff',
-                  background: isActive ? '#059669' : isPending ? '#d97706' : isHidden ? '#64748b' : '#dc2626'
+                  color: formatStatusBadge(post.status).color,
+                  background: formatStatusBadge(post.status).bg
                 }}
               >
-                ● {isActive ? 'Đã duyệt' : isPending ? 'Chờ duyệt' : isHidden ? 'Đã ẩn' : 'Từ chối / Vi phạm'}
+                {formatStatusBadge(post.status).label}
               </span>
             </div>
           </div>

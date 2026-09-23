@@ -1332,51 +1332,51 @@ export default function AdminDashboardPage() {
 
         {/* CONTENT */}
         <div className="admin-content">
-          <div className="admin-page-header">
-            <div className="admin-page-title">
-              <div style={{display:'flex', alignItems:'center', gap:12}}>
-                <h1>
-                  {activeNav === 'banners' ? 'Quản lý Banner hệ thống'
-                    : activeNav === 'tin-dang' ? 'Quản lý Tin đăng Marketplace'
-                    : activeNav === 'nguoi-dung' ? 'Quản lý Người dùng & Xác minh'
-                    : activeNav === 'danh-muc' ? 'Quản lý Danh mục & form'
-                    : activeNav === 'don-hang' ? 'Quản lý Đơn hàng'
-                    : activeNav === 'reports' ? 'Báo cáo vi phạm & Moderation'
-                    : activeNav === 'css-editor' ? 'Chỉnh sửa Giao diện CSS'
-                    : activeNav === 'ho-so' ? 'Hồ sơ cá nhân Admin'
-                    : activeNav === 'cai-dat' ? 'Cài đặt hệ thống'
-                    : 'Tổng quan hệ thống Quản trị'}
-                </h1>
+          {activeNav !== 'tin-dang' && (
+            <div className="admin-page-header">
+              <div className="admin-page-title">
+                <div style={{display:'flex', alignItems:'center', gap:12}}>
+                  <h1>
+                    {activeNav === 'banners' ? 'Quản lý Banner hệ thống'
+                      : activeNav === 'nguoi-dung' ? 'Quản lý Người dùng & Xác minh'
+                      : activeNav === 'danh-muc' ? 'Quản lý Danh mục & form'
+                      : activeNav === 'don-hang' ? 'Quản lý Đơn hàng'
+                      : activeNav === 'reports' ? 'Báo cáo vi phạm & Moderation'
+                      : activeNav === 'css-editor' ? 'Chỉnh sửa Giao diện CSS'
+                      : activeNav === 'ho-so' ? 'Hồ sơ cá nhân Admin'
+                      : activeNav === 'cai-dat' ? 'Cài đặt hệ thống'
+                      : 'Tổng quan hệ thống Quản trị'}
+                  </h1>
+                </div>
+                <p>
+                  {activeNav === 'banners' ? 'Thêm mới, tải ảnh từ máy tính, bật/tắt và quản lý thời hạn hiển thị của các Banner quảng cáo.'
+                    : activeNav === 'nguoi-dung' ? 'Quản lý danh sách thành viên, xác minh tài khoản và khóa tài khoản vi phạm.'
+                    : activeNav === 'danh-muc' ? 'Thiết lập danh mục, tạo thuộc tính động và quản lý phiên bản biểu mẫu đăng tin.'
+                    : activeNav === 'don-hang' ? 'Theo dõi danh sách đơn hàng mua bán và trạng thái giao dịch.'
+                    : activeNav === 'reports' ? 'Xử lý các báo cáo vi phạm sản phẩm và người dùng từ cộng đồng.'
+                    : activeNav === 'css-editor' ? 'Chỉnh sửa trực tiếp style CSS của các trang giao diện trong hệ thống Tất Tần Tật.'
+                    : activeNav === 'ho-so' ? 'Thông tin cá nhân thành viên và đổi mật khẩu quản trị.'
+                    : activeNav === 'cai-dat' ? 'Cấu hình các tham số vận hành toàn hệ thống.'
+                    : 'Theo dõi hoạt động và các công việc cần xử lý của Tất Tần Tật.'}
+                </p>
               </div>
-              <p>
-                {activeNav === 'banners' ? 'Thêm mới, tải ảnh từ máy tính, bật/tắt và quản lý thời hạn hiển thị của các Banner quảng cáo.'
-                  : activeNav === 'tin-dang' ? 'Duyệt, từ chối, ẩn, chỉnh sửa và quản lý danh sách tin đăng sản phẩm từ người bán.'
-                  : activeNav === 'nguoi-dung' ? 'Quản lý danh sách thành viên, xác minh tài khoản và khóa tài khoản vi phạm.'
-                  : activeNav === 'danh-muc' ? 'Thiết lập danh mục, tạo thuộc tính động và quản lý phiên bản biểu mẫu đăng tin.'
-                  : activeNav === 'don-hang' ? 'Theo dõi danh sách đơn hàng mua bán và trạng thái giao dịch.'
-                  : activeNav === 'reports' ? 'Xử lý các báo cáo vi phạm sản phẩm và người dùng từ cộng đồng.'
-                  : activeNav === 'css-editor' ? 'Chỉnh sửa trực tiếp style CSS của các trang giao diện trong hệ thống Tất Tần Tật.'
-                  : activeNav === 'ho-so' ? 'Thông tin cá nhân thành viên và đổi mật khẩu quản trị.'
-                  : activeNav === 'cai-dat' ? 'Cấu hình các tham số vận hành toàn hệ thống.'
-                  : 'Theo dõi hoạt động và các công việc cần xử lý của Tất Tần Tật.'}
-              </p>
-            </div>
 
-            <div className="admin-filters">
-              {activeNav === 'tong-quan' && ['Hôm nay', '7 ngày', '30 ngày', '12 tháng'].map((range) => (
-                <button
-                  key={range}
-                  className={`admin-filter-btn ${dateRange === range ? 'active' : ''}`}
-                  onClick={() => setDateRange(range)}
-                >
-                  {range}
+              <div className="admin-filters">
+                {activeNav === 'tong-quan' && ['Hôm nay', '7 ngày', '30 ngày', '12 tháng'].map((range) => (
+                  <button
+                    key={range}
+                    className={`admin-filter-btn ${dateRange === range ? 'active' : ''}`}
+                    onClick={() => setDateRange(range)}
+                  >
+                    {range}
+                  </button>
+                ))}
+                <button className="admin-filter-btn" onClick={() => { fetchDashboardData(); showToast('Đã làm mới dữ liệu!'); }}>
+                  <RefreshCw size={15} color="#64748b" /> Làm mới
                 </button>
-              ))}
-              <button className="admin-filter-btn" onClick={() => { fetchDashboardData(); showToast('Đã làm mới dữ liệu!'); }}>
-                <RefreshCw size={15} color="#64748b" /> Làm mới
-              </button>
+              </div>
             </div>
-          </div>
+          )}
 
           {/* EMBEDDED CATEGORY & LISTING TEMPLATES MANAGEMENT */}
           {activeNav === 'danh-muc' ? (

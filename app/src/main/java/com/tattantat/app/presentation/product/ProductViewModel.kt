@@ -45,7 +45,7 @@ class ProductViewModel @Inject constructor(private val repository: ProductReposi
     val reportMessage = _reportMessage.asStateFlow()
     private var searchJob: Job? = null
     private val _favoriteIds = MutableStateFlow<Set<String>>(emptySet())
-    val favoriteIds = _favoriteIds.asStateFlow()
+    val favoriteIds: StateFlow<Set<String>> = remote?.favoriteIds ?: _favoriteIds.asStateFlow()
     private val _categories = MutableStateFlow<List<CategoryPayload>>(emptyList())
     val categories = _categories.asStateFlow()
 
@@ -57,16 +57,12 @@ class ProductViewModel @Inject constructor(private val repository: ProductReposi
 
     fun refreshFavorites() = viewModelScope.launch {
         remote ?: return@launch
-        runCatching { remote.favorites().map { it.id }.toSet() }.onSuccess { _favoriteIds.value = it }
+        runCatching { remote.favorites() }
     }
 
     fun toggleFavorite(id: String) = viewModelScope.launch {
-        val saved = id in _favoriteIds.value
-        // Optimistic rendering keeps the heart responsive; restore its previous
-        // state if the authenticated API request does not complete.
-        _favoriteIds.value = if (saved) _favoriteIds.value - id else _favoriteIds.value + id
-        runCatching { remote?.toggleFavorite(id, saved) }
-            .onFailure { _favoriteIds.value = if (saved) _favoriteIds.value + id else _favoriteIds.value - id }
+        val saved = id in favoriteIds.value
+        remote?.toggleFavorite(id, saved)
     }
     fun openChat(productId: String) { viewModelScope.launch {
         _chatError.value = null

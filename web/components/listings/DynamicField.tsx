@@ -51,15 +51,20 @@ export function DynamicField({
   const isInteger =
     field.type === 'year' ||
     fieldKeyLower.includes('nam_san_xuat') ||
+    fieldKeyLower.includes('so_cho') ||
     fieldKeyLower.includes('so_cho_ngoi') ||
     fieldKeyLower.includes('so_phong') ||
     fieldKeyLower.includes('so_tang') ||
     fieldKeyLower.includes('so_km') ||
-    fieldLabelLower.includes('năm sản xuất') ||
-    fieldLabelLower.includes('chỗ ngồi') ||
+    fieldKeyLower.includes('so_luong') ||
+    fieldKeyLower.includes('bao_hanh') ||
+    fieldLabelLower.includes('năm') ||
+    fieldLabelLower.includes('chỗ') ||
     fieldLabelLower.includes('số phòng') ||
     fieldLabelLower.includes('số tầng') ||
-    fieldLabelLower.includes('số km');
+    fieldLabelLower.includes('số km') ||
+    fieldLabelLower.includes('bảo hành') ||
+    fieldLabelLower.includes('số lượng');
 
   const isDecimal =
     !isInteger &&

@@ -1,5 +1,7 @@
 package com.tattantat.app.presentation.chat
 
+import android.content.Intent
+import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -14,8 +16,11 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Send
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.Map
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Videocam
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -24,10 +29,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 
@@ -111,6 +119,8 @@ fun ChatDetailScreen(
     val state by vm.state.collectAsState()
     var text by remember { mutableStateOf("") }
     val listState = rememberLazyListState()
+    val context = LocalContext.current
+    var viewingImageModalUrl by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(chatId) { vm.load(chatId) }
     LaunchedEffect(state.messages.size) {
@@ -314,23 +324,41 @@ fun ChatDetailScreen(
                                         AsyncImage(
                                             model = imgUrl,
                                             contentDescription = "Hình ảnh gửi",
-                                            modifier = Modifier.fillMaxWidth().height(180.dp).clip(RoundedCornerShape(8.dp)),
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .height(180.dp)
+                                                .clip(RoundedCornerShape(8.dp))
+                                                .clickable { viewingImageModalUrl = imgUrl },
                                             contentScale = ContentScale.Crop
                                         )
                                     }
                                     content.startsWith("[Video]") -> {
+                                        val videoUrl = content.removePrefix("[Video]").trim()
                                         Box(
-                                            modifier = Modifier.fillMaxWidth().height(160.dp).clip(RoundedCornerShape(8.dp)).background(Color.Black.copy(alpha = 0.8f)),
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .height(160.dp)
+                                                .clip(RoundedCornerShape(8.dp))
+                                                .background(Color.Black.copy(alpha = 0.8f))
+                                                .clickable {
+                                                    val intent = Intent(Intent.ACTION_VIEW).apply {
+                                                        setDataAndType(Uri.parse(videoUrl), "video/*")
+                                                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                                    }
+                                                    runCatching { context.startActivity(intent) }.onFailure {
+                                                        context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(videoUrl)))
+                                                    }
+                                                },
                                             contentAlignment = Alignment.Center
                                         ) {
                                             Icon(
-                                                imageVector = Icons.Default.Videocam,
-                                                contentDescription = "Video",
+                                                imageVector = Icons.Default.PlayArrow,
+                                                contentDescription = "Phát Video",
                                                 tint = Color.White,
-                                                modifier = Modifier.size(48.dp)
+                                                modifier = Modifier.size(52.dp)
                                             )
                                             Text(
-                                                "Video tin nhắn",
+                                                "Xem Video 🎥",
                                                 color = Color.White,
                                                 style = MaterialTheme.typography.labelMedium,
                                                 modifier = Modifier.align(Alignment.BottomCenter).padding(8.dp)
@@ -338,23 +366,42 @@ fun ChatDetailScreen(
                                         }
                                     }
                                     content.startsWith("📍 Vị trí GPS") -> {
-                                        Row(
-                                            verticalAlignment = Alignment.CenterVertically,
+                                        val locText = content.removePrefix("📍 Vị trí GPS:").trim()
+                                        Column(
                                             modifier = Modifier.padding(4.dp)
                                         ) {
-                                            Icon(
-                                                Icons.Default.LocationOn,
-                                                contentDescription = "GPS",
-                                                tint = if (mine) Color.White else MaterialTheme.colorScheme.primary,
-                                                modifier = Modifier.size(24.dp)
-                                            )
-                                            Spacer(Modifier.width(6.dp))
+                                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                                Icon(
+                                                    Icons.Default.LocationOn,
+                                                    contentDescription = "GPS",
+                                                    tint = if (mine) Color.White else MaterialTheme.colorScheme.primary,
+                                                    modifier = Modifier.size(24.dp)
+                                                )
+                                                Spacer(Modifier.width(6.dp))
+                                                Text(
+                                                    text = "Vị trí GPS",
+                                                    color = if (mine) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
+                                                    fontWeight = FontWeight.Bold,
+                                                    fontSize = 14.sp
+                                                )
+                                            }
                                             Text(
-                                                content,
-                                                color = if (mine) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
-                                                fontSize = 13.sp,
-                                                fontWeight = FontWeight.Medium
+                                                text = locText,
+                                                color = if (mine) Color.White.copy(alpha = 0.9f) else MaterialTheme.colorScheme.onSurfaceVariant,
+                                                fontSize = 12.sp,
+                                                modifier = Modifier.padding(vertical = 4.dp)
                                             )
+                                            ElevatedButton(
+                                                onClick = {
+                                                    val mapsUrl = "https://www.google.com/maps/search/?api=1&query=" + Uri.encode(locText)
+                                                    context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(mapsUrl)))
+                                                },
+                                                modifier = Modifier.fillMaxWidth().padding(top = 4.dp)
+                                            ) {
+                                                Icon(Icons.Default.Map, contentDescription = null, modifier = Modifier.size(16.dp))
+                                                Spacer(Modifier.width(4.dp))
+                                                Text("Mở Google Maps", fontSize = 12.sp)
+                                            }
                                         }
                                     }
                                     else -> {
@@ -374,6 +421,29 @@ fun ChatDetailScreen(
                             }
                         }
                     }
+                }
+            }
+        }
+    }
+
+    // Modal view for sent images
+    viewingImageModalUrl?.let { imgUrl ->
+        Dialog(
+            onDismissRequest = { viewingImageModalUrl = null },
+            properties = DialogProperties(usePlatformDefaultWidth = false)
+        ) {
+            Box(Modifier.fillMaxSize().background(Color.Black)) {
+                AsyncImage(
+                    model = imgUrl,
+                    contentDescription = "Ảnh phóng to",
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Fit
+                )
+                IconButton(
+                    onClick = { viewingImageModalUrl = null },
+                    modifier = Modifier.align(Alignment.TopEnd).padding(16.dp).background(Color.Black.copy(alpha = 0.5f), CircleShape)
+                ) {
+                    Icon(Icons.Default.Close, contentDescription = "Đóng", tint = Color.White)
                 }
             }
         }

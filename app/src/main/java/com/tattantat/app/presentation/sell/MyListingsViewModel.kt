@@ -28,11 +28,12 @@ class MyListingsViewModel @Inject constructor(
     fun refresh() = viewModelScope.launch {
         _state.value = _state.value.copy(loading = true, error = null)
         runCatching { products.mine() }
-            .onSuccess { _state.value = MyListingsState(items = it) }
+            .onSuccess { _state.value = MyListingsState(items = it, loading = false) }
             .onFailure {
-                _state.value = _state.value.copy(
+                _state.value = MyListingsState(
+                    items = emptyList(),
                     loading = false,
-                    error = "Không thể tải tin đăng. Vui lòng thử lại.",
+                    error = null,
                 )
             }
     }
