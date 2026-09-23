@@ -14,37 +14,70 @@ if (BACKEND_INTERNAL_PORT === (process.env.PORT || '3000')) {
 }
 process.env.API_INTERNAL_BASE_URL = `http://127.0.0.1:${BACKEND_INTERNAL_PORT}/api/v1`;
 
+const net = require('net');
+
+function checkPortInUse(port, callback) {
+  const client = new net.Socket();
+  let connected = false;
+  client.setTimeout(400);
+  client.on('connect', () => {
+    connected = true;
+    client.destroy();
+  });
+  client.on('timeout', () => client.destroy());
+  client.on('error', () => {});
+  client.on('close', () => callback(connected));
+  client.connect(Number(port), '127.0.0.1');
+}
+
 function startBackendProcess() {
-  const backendDist = path.join(__dirname, '..', 'backend', 'dist', 'main.js');
-  if (fs.existsSync(backendDist)) {
-    console.log(`[Hostinger Web] Starting NestJS Backend process on internal port ${BACKEND_INTERNAL_PORT}...`);
+  if (global.__HOSTINGER_WEB_BACKEND_STARTED__) return;
+  global.__HOSTINGER_WEB_BACKEND_STARTED__ = true;
 
-    const nodePaths = [
-      path.resolve(__dirname, 'node_modules'),
-      path.resolve(__dirname, '..', 'node_modules'),
-      path.resolve(__dirname, '..', 'backend', 'node_modules'),
-      path.resolve(process.cwd(), 'node_modules'),
-      path.resolve(process.cwd(), 'backend', 'node_modules'),
-    ].filter(p => fs.existsSync(p)).join(path.delimiter);
+  checkPortInUse(BACKEND_INTERNAL_PORT, (inUse) => {
+    if (inUse) {
+      console.log(`[Hostinger Web] NestJS Backend already active on port ${BACKEND_INTERNAL_PORT}. Skipping fork.`);
+      return;
+    }
 
-    const backendEnv = Object.assign({}, process.env, {
-      PORT: BACKEND_INTERNAL_PORT,
-      NODE_PATH: nodePaths + (process.env.NODE_PATH ? path.delimiter + process.env.NODE_PATH : '')
-    });
+    const backendDist = path.join(__dirname, '..', 'backend', 'dist', 'main.js');
+    if (fs.existsSync(backendDist)) {
+      console.log(`[Hostinger Web] Starting NestJS Backend process on internal port ${BACKEND_INTERNAL_PORT}...`);
 
-    const backendProc = fork(backendDist, [], { env: backendEnv, stdio: 'inherit' });
+      const nodePaths = [
+        path.resolve(__dirname, 'node_modules'),
+        path.resolve(__dirname, '..', 'node_modules'),
+        path.resolve(__dirname, '..', 'backend', 'node_modules'),
+        path.resolve(process.cwd(), 'node_modules'),
+        path.resolve(process.cwd(), 'backend', 'node_modules'),
+      ].filter(p => fs.existsSync(p)).join(path.delimiter);
 
-    backendProc.on('error', (err) => {
-      console.error('[Hostinger Web] Backend process error:', err);
-    });
+      const backendEnv = Object.assign({}, process.env, {
+        PORT: BACKEND_INTERNAL_PORT,
+        NODE_PATH: nodePaths + (process.env.NODE_PATH ? path.delimiter + process.env.NODE_PATH : '')
+      });
 
-    backendProc.on('exit', (code, signal) => {
-      console.warn(`[Hostinger Web] Backend process exited (code ${code}, signal ${signal}). Restarting in 2s...`);
-      setTimeout(startBackendProcess, 2000);
-    });
-  } else {
-    console.warn('[Hostinger Web] backend/dist/main.js not found at:', backendDist);
-  }
+      const backendProc = fork(backendDist, [], { env: backendEnv, stdio: 'inherit' });
+
+      backendProc.on('error', (err) => {
+        console.error('[Hostinger Web] Backend process error:', err);
+      });
+
+      backendProc.on('exit', (code, signal) => {
+        checkPortInUse(BACKEND_INTERNAL_PORT, (stillInUse) => {
+          if (stillInUse) {
+            console.log(`[Hostinger Web] Backend exited (code ${code}), but port ${BACKEND_INTERNAL_PORT} is active. Will not restart duplicated process.`);
+          } else {
+            console.warn(`[Hostinger Web] Backend process exited (code ${code}, signal ${signal}). Restarting in 2s...`);
+            global.__HOSTINGER_WEB_BACKEND_STARTED__ = false;
+            setTimeout(startBackendProcess, 2000);
+          }
+        });
+      });
+    } else {
+      console.warn('[Hostinger Web] backend/dist/main.js not found at:', backendDist);
+    }
+  });
 }
 
 startBackendProcess();

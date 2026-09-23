@@ -54,55 +54,94 @@ function patchStandaloneServer(serverFilePath) {
 const _path = require('path');
 const _fs = require('fs');
 const _cp = require('child_process');
+const _net = require('net');
 
-try {
-  const _candidates = [
-    _path.resolve(__dirname, 'backend', 'dist', 'main.js'),
-    _path.resolve(__dirname, '..', 'backend', 'dist', 'main.js'),
-    _path.resolve(__dirname, '..', '..', 'backend', 'dist', 'main.js'),
-    _path.resolve(__dirname, '..', '..', '..', 'backend', 'dist', 'main.js'),
-    _path.resolve(__dirname, '..', '..', '..', '..', 'backend', 'dist', 'main.js'),
-    _path.resolve(process.cwd(), 'backend', 'dist', 'main.js'),
-    _path.resolve(process.cwd(), '..', 'backend', 'dist', 'main.js'),
-    _path.resolve(process.cwd(), '..', '..', 'backend', 'dist', 'main.js'),
-  ];
-  const _targetBackend = _candidates.find((c) => _fs.existsSync(c)) || null;
+if (!global.__HOSTINGER_BACKEND_INIT__) {
+  global.__HOSTINGER_BACKEND_INIT__ = true;
 
-  if (_targetBackend) {
-    const _backendPort = process.env.BACKEND_PORT || '3009';
-    console.log('[Hostinger Standalone] Launching NestJS Backend process on internal port ' + _backendPort + ' from ' + _targetBackend + '...');
+  try {
+    const _candidates = [
+      _path.resolve(__dirname, 'backend', 'dist', 'main.js'),
+      _path.resolve(__dirname, '..', 'backend', 'dist', 'main.js'),
+      _path.resolve(__dirname, '..', '..', 'backend', 'dist', 'main.js'),
+      _path.resolve(__dirname, '..', '..', '..', 'backend', 'dist', 'main.js'),
+      _path.resolve(__dirname, '..', '..', '..', '..', 'backend', 'dist', 'main.js'),
+      _path.resolve(process.cwd(), 'backend', 'dist', 'main.js'),
+      _path.resolve(process.cwd(), '..', 'backend', 'dist', 'main.js'),
+      _path.resolve(process.cwd(), '..', '..', 'backend', 'dist', 'main.js'),
+    ];
+    const _targetBackend = _candidates.find((c) => _fs.existsSync(c)) || null;
 
-    const _nodePaths = [
-      _path.resolve(__dirname, 'node_modules'),
-      _path.resolve(__dirname, 'backend', 'node_modules'),
-      _path.resolve(__dirname, '..', 'node_modules'),
-      _path.resolve(__dirname, '..', 'backend', 'node_modules'),
-      _path.resolve(__dirname, '..', '..', 'node_modules'),
-      _path.resolve(__dirname, '..', '..', 'backend', 'node_modules'),
-      _path.resolve(__dirname, '..', '..', '..', 'node_modules'),
-      _path.resolve(__dirname, '..', '..', '..', 'backend', 'node_modules'),
-      _path.resolve(process.cwd(), 'node_modules'),
-      _path.resolve(process.cwd(), 'backend', 'node_modules'),
-      _path.resolve(process.cwd(), '..', 'node_modules'),
-      _path.resolve(process.cwd(), '..', 'backend', 'node_modules'),
-    ].filter(p => _fs.existsSync(p)).join(_path.delimiter);
+    if (_targetBackend) {
+      const _backendPort = process.env.BACKEND_PORT || '3009';
+      process.env.API_INTERNAL_BASE_URL = 'http://127.0.0.1:' + _backendPort + '/api/v1';
 
-    const _backendEnv = Object.assign({}, process.env, {
-      PORT: _backendPort,
-      NODE_PATH: _nodePaths + (process.env.NODE_PATH ? _path.delimiter + process.env.NODE_PATH : '')
-    });
+      const _checkPortInUse = (port, callback) => {
+        const client = new _net.Socket();
+        let connected = false;
+        client.setTimeout(400);
+        client.on('connect', () => {
+          connected = true;
+          client.destroy();
+        });
+        client.on('timeout', () => client.destroy());
+        client.on('error', () => {});
+        client.on('close', () => callback(connected));
+        client.connect(Number(port), '127.0.0.1');
+      };
 
-    const _startBackend = () => {
-      const _backendProc = _cp.fork(_targetBackend, [], { env: _backendEnv, stdio: 'inherit' });
-      _backendProc.on('error', (err) => console.error('[Hostinger Standalone] Backend process error:', err));
-      _backendProc.on('exit', (code, signal) => {
-        console.warn('[Hostinger Standalone] Backend process exited with code ' + code + ', signal ' + signal + '. Restarting in 2s...');
-        setTimeout(_startBackend, 2000);
+      const _nodePaths = [
+        _path.resolve(__dirname, 'node_modules'),
+        _path.resolve(__dirname, 'backend', 'node_modules'),
+        _path.resolve(__dirname, '..', 'node_modules'),
+        _path.resolve(__dirname, '..', 'backend', 'node_modules'),
+        _path.resolve(__dirname, '..', '..', 'node_modules'),
+        _path.resolve(__dirname, '..', '..', 'backend', 'node_modules'),
+        _path.resolve(__dirname, '..', '..', '..', 'node_modules'),
+        _path.resolve(__dirname, '..', '..', '..', 'backend', 'node_modules'),
+        _path.resolve(process.cwd(), 'node_modules'),
+        _path.resolve(process.cwd(), 'backend', 'node_modules'),
+        _path.resolve(process.cwd(), '..', 'node_modules'),
+        _path.resolve(process.cwd(), '..', 'backend', 'node_modules'),
+      ].filter(p => _fs.existsSync(p)).join(_path.delimiter);
+
+      const _backendEnv = Object.assign({}, process.env, {
+        PORT: _backendPort,
+        NODE_PATH: _nodePaths + (process.env.NODE_PATH ? _path.delimiter + process.env.NODE_PATH : '')
       });
-    };
-    _startBackend();
 
-    // Tell Next.js SSR to fetch from this backend port
+      const _startBackend = () => {
+        _checkPortInUse(_backendPort, (inUse) => {
+          if (inUse) {
+            console.log('[Hostinger Standalone] NestJS Backend is already active on port ' + _backendPort + '. Skipping fork.');
+            return;
+          }
+
+          console.log('[Hostinger Standalone] Launching NestJS Backend process on internal port ' + _backendPort + ' from ' + _targetBackend + '...');
+          const _backendProc = _cp.fork(_targetBackend, [], { env: _backendEnv, stdio: 'inherit' });
+
+          _backendProc.on('error', (err) => console.error('[Hostinger Standalone] Backend process error:', err));
+          _backendProc.on('exit', (code, signal) => {
+            _checkPortInUse(_backendPort, (stillInUse) => {
+              if (stillInUse) {
+                console.log('[Hostinger Standalone] Backend exited (code ' + code + '), but port ' + _backendPort + ' is active. Will not restart duplicated process.');
+              } else {
+                console.warn('[Hostinger Standalone] Backend process exited (code ' + code + ', signal ' + signal + '). Restarting in 2s...');
+                setTimeout(_startBackend, 2000);
+              }
+            });
+          });
+        });
+      };
+
+      _startBackend();
+    } else {
+      console.error('[Hostinger Standalone] ERROR: Could not locate backend/dist/main.js in standalone environment! Tried:', _candidates);
+    }
+  } catch (e) {
+    console.warn('[Hostinger Standalone] Could not auto-launch backend process:', e.message);
+  }
+}
     process.env.API_INTERNAL_BASE_URL = 'http://127.0.0.1:' + _backendPort + '/api/v1';
   } else {
     console.error('[Hostinger Standalone] ERROR: Could not locate backend/dist/main.js in standalone environment! Tried:', _candidates);

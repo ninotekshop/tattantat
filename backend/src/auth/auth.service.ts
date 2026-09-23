@@ -195,6 +195,20 @@ export class AuthService {
       } catch (err) {}
     }
 
+    // 3. Decode Apple ID Token if provided
+    if (body.provider === 'apple' && body.idToken) {
+      try {
+        const payloadBase64 = body.idToken.split('.')[1];
+        if (payloadBase64) {
+          const payloadJson = Buffer.from(payloadBase64, 'base64').toString('utf8');
+          const applePayload = JSON.parse(payloadJson);
+          if (applePayload?.email) {
+            email = applePayload.email.toLowerCase();
+          }
+        }
+      } catch (err) {}
+    }
+
     let user: UserRow | null = null;
 
     if (email) {

@@ -261,6 +261,19 @@ export function AuthModal({ isOpen, onClose, initialMode = 'LOGIN', onSuccess }:
     }
   }, []);
 
+  // Load Apple JS SDK dynamically
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (!document.getElementById('apple-auth-script')) {
+      const script = document.createElement('script');
+      script.id = 'apple-auth-script';
+      script.src = 'https://appleid.cdn-apple.com/appleauth/static/jsapi/appleid/1/en_US/appleid.auth.js';
+      script.async = true;
+      script.defer = true;
+      document.body.appendChild(script);
+    }
+  }, []);
+
   const handleGoogleAuth = () => {
     const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '927392714442-7s4c7vca99p1rtr9jvd3ken6ctinut9v.apps.googleusercontent.com';
     if ((window as any).google?.accounts?.id) {
@@ -339,6 +352,53 @@ export function AuthModal({ isOpen, onClose, initialMode = 'LOGIN', onSuccess }:
       );
     } else {
       handleSocialLogin('facebook');
+    }
+  };
+
+  const handleAppleAuth = async () => {
+    const appleClientId = process.env.NEXT_PUBLIC_APPLE_CLIENT_ID;
+    if ((window as any).AppleID && appleClientId) {
+      try {
+        (window as any).AppleID.auth.init({
+          clientId: appleClientId,
+          scope: 'name email',
+          redirectURI: window.location.origin + '/',
+          usePopup: true,
+        });
+        const response = await (window as any).AppleID.auth.signIn();
+        if (response?.authorization?.id_token) {
+          setLoading(true);
+          try {
+            const res = await fetch('/api/v1/auth/social', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                provider: 'apple',
+                providerAccountId: 'apple_oauth_2026',
+                idToken: response.authorization.id_token,
+                name: response.user ? `${response.user.name?.firstName || ''} ${response.user.name?.lastName || ''}`.trim() : undefined,
+                email: response.user?.email,
+              }),
+            });
+            const data = await res.json();
+            if (data.success && data.data) {
+              saveSession(data.data);
+              onClose();
+              if (onSuccess) onSuccess();
+            } else {
+              setError(data.message || 'Lỗi xác thực Apple ID.');
+            }
+          } catch (err) {
+            setError('Lỗi kết nối Apple ID.');
+          } finally {
+            setLoading(false);
+          }
+        }
+      } catch (err) {
+        setError('Đã hủy đăng nhập Apple.');
+      }
+    } else {
+      handleSocialLogin('apple');
     }
   };
 
@@ -603,7 +663,7 @@ export function AuthModal({ isOpen, onClose, initialMode = 'LOGIN', onSuccess }:
                 <button type="button" onClick={handleFacebookAuth} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '10px', borderRadius: 10, border: '1px solid #cbd5e1', background: '#fff', cursor: 'pointer', fontSize: 13, fontWeight: 600, color: '#334155' }}>
                   <FacebookIcon /> Facebook
                 </button>
-                <button type="button" onClick={() => handleSocialLogin('apple')} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '10px', borderRadius: 10, border: '1px solid #cbd5e1', background: '#fff', cursor: 'pointer', fontSize: 13, fontWeight: 600, color: '#334155' }}>
+                <button type="button" onClick={handleAppleAuth} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '10px', borderRadius: 10, border: '1px solid #cbd5e1', background: '#fff', cursor: 'pointer', fontSize: 13, fontWeight: 600, color: '#334155' }}>
                   <AppleIcon /> Apple
                 </button>
               </div>
