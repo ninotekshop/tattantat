@@ -30,5 +30,6 @@ firebase-service-account*.json
 resources/Hostinger/
 resources/Supabase/
 resources/Domain/
+resources/Login Social/
 pass.txt
 API.txt

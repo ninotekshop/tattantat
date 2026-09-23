@@ -217,8 +217,56 @@ export function AuthModal({ isOpen, onClose, initialMode = 'LOGIN', onSuccess }:
       setSuccessMsg(data.message || 'Nếu email này được đăng ký tại Tất Tần Tật, bạn sẽ nhận được hướng dẫn đặt lại mật khẩu trong ít phút.');
     } catch (err) {
       setError('Lỗi kết nối máy chủ.');
-    } finally {
-      setLoading(false);
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const scriptId = 'google-gsi-client-script';
+    if (!document.getElementById(scriptId)) {
+      const script = document.createElement('script');
+      script.id = scriptId;
+      script.src = 'https://accounts.google.com/gsi/client';
+      script.async = true;
+      script.defer = true;
+      document.body.appendChild(script);
+    }
+  }, []);
+
+  const handleGoogleAuth = () => {
+    const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '927392714442-7s4c7vca99p1rtr9jvd3ken6ctinut9v.apps.googleusercontent.com';
+    if ((window as any).google?.accounts?.id) {
+      (window as any).google.accounts.id.initialize({
+        client_id: googleClientId,
+        callback: async (response: any) => {
+          if (response?.credential) {
+            setLoading(true);
+            try {
+              const res = await fetch('/api/v1/auth/social', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  provider: 'google',
+                  providerAccountId: 'google_oauth_2026',
+                  idToken: response.credential,
+                }),
+              });
+              const data = await res.json();
+              if (data.success && data.data) {
+                saveSession(data.data);
+                onClose();
+                if (onSuccess) onSuccess();
+              } else {
+                setError(data.message || 'Lỗi xác thực Google.');
+              }
+            } catch (err) {
+              setError('Lỗi kết nối với Google.');
+            } finally {
+              setLoading(false);
+            }
+          }
+        },
+      });
+      (window as any).google.accounts.id.prompt();
+    } else {
+      handleSocialLogin('google');
     }
   };
 
@@ -477,7 +525,7 @@ export function AuthModal({ isOpen, onClose, initialMode = 'LOGIN', onSuccess }:
               </div>
 
               <div style={{ display: 'flex', gap: 10 }}>
-                <button type="button" onClick={() => handleSocialLogin('google')} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '10px', borderRadius: 10, border: '1px solid #cbd5e1', background: '#fff', cursor: 'pointer', fontSize: 13, fontWeight: 600, color: '#334155' }}>
+                <button type="button" onClick={handleGoogleAuth} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '10px', borderRadius: 10, border: '1px solid #cbd5e1', background: '#fff', cursor: 'pointer', fontSize: 13, fontWeight: 600, color: '#334155' }}>
                   <GoogleIcon /> Google
                 </button>
                 <button type="button" onClick={() => handleSocialLogin('facebook')} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '10px', borderRadius: 10, border: '1px solid #cbd5e1', background: '#fff', cursor: 'pointer', fontSize: 13, fontWeight: 600, color: '#334155' }}>

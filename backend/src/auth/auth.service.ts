@@ -156,7 +156,25 @@ export class AuthService {
   }
 
   async socialLogin(body: SocialLoginDto) {
-    const email = body.email?.trim().toLowerCase() || null;
+    let email = body.email?.trim().toLowerCase() || null;
+    let name = body.name || 'Thành viên Google';
+    let avatarUrl = body.avatarUrl || null;
+
+    // Verify Google ID Token if provided
+    if (body.provider === 'google' && body.idToken) {
+      try {
+        const verifyRes = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${body.idToken}`);
+        if (verifyRes.ok) {
+          const googlePayload = await verifyRes.json();
+          if (googlePayload?.email) {
+            email = googlePayload.email.toLowerCase();
+            name = googlePayload.name || name;
+            avatarUrl = googlePayload.picture || avatarUrl;
+          }
+        }
+      } catch (err) {}
+    }
+
     let user: UserRow | null = null;
 
     if (email) {
@@ -172,15 +190,17 @@ export class AuthService {
         `INSERT INTO users (email, full_name, avatar_url, email_verified)
          VALUES ($1, $2, $3, TRUE)
          RETURNING id, phone, email, password_hash, full_name, avatar_url, role, status`,
-        [email, body.name || 'Thành viên mới', body.avatarUrl || null],
+        [email, name, avatarUrl],
       );
       user = createRes.rows[0];
       if (email) {
         this.mailService.sendWelcomeEmail(email, user.full_name).catch(() => {});
       }
+    } else if (avatarUrl && !user.avatar_url) {
+      await this.database.query('UPDATE users SET avatar_url = $1 WHERE id = $2', [avatarUrl, user.id]);
     }
 
-    return this.envelope(await this.tokensFor(user));
+    return this.envelope(await this.tokensFor(user), `Đăng nhập ${body.provider === 'google' ? 'Google' : body.provider} thành công!`);
   }
 
   async refresh(body: RefreshDto) {

@@ -88,6 +88,10 @@ export class SocialLoginDto {
   @IsString()
   @IsOptional()
   avatarUrl?: string;
+
+  @IsString()
+  @IsOptional()
+  idToken?: string;
 }
 
 export class RefreshDto {
