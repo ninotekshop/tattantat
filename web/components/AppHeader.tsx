@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useState, useSyncExternalStore } from 'react';
+import { useState, useEffect, useSyncExternalStore } from 'react';
 import { useRouter } from 'next/navigation';
 import { clearSession, readSessionSnapshot } from '../lib/auth';
 import { Home, PlusCircle, Heart, MessageSquare, User, Bell, LogOut, FileText } from 'lucide-react';
@@ -19,8 +19,14 @@ function subscribeSession(listener: () => void) {
 
 export function AppHeader() {
   const router = useRouter();
+  const [mounted, setMounted] = useState(false);
   const session = useSyncExternalStore(subscribeSession, readSessionSnapshot, () => null);
-  const name = session?.user.fullName ?? '';
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const name = mounted && session?.user.fullName ? session.user.fullName : '';
 
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [authMode, setAuthMode] = useState<'LOGIN' | 'REGISTER' | 'PHONE'>('LOGIN');
