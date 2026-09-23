@@ -15,6 +15,10 @@ function FacebookIcon() {
   return <svg width="18" height="18" viewBox="0 0 24 24" fill="#1877F2"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>;
 }
 
+function AppleIcon() {
+  return <svg width="18" height="18" viewBox="0 0 24 24" fill="#000"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 2.1-3.09 1.82-2.58 6.13.56 7.42-.64 1.28-1.51 2.54-2.41 3.64zM15.97 6.13c.66-.82 1.11-1.96.99-3.1-.96.04-2.12.64-2.8 1.44-.61.71-1.14 1.87-1 2.99 1.07.08 2.16-.51 2.81-1.33z"/></svg>;
+}
+
 function LoginContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -26,13 +30,53 @@ function LoginContent() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Load Google & Facebook SDKs
+  // Load Google SDK
   useEffect(() => {
     if (typeof window === 'undefined') return;
     if (!document.getElementById('google-gsi-client-script')) {
       const script = document.createElement('script');
       script.id = 'google-gsi-client-script';
       script.src = 'https://accounts.google.com/gsi/client';
+      script.async = true;
+      script.defer = true;
+      document.body.appendChild(script);
+    }
+  }, []);
+
+  // Load Facebook SDK
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const fbAppId = process.env.NEXT_PUBLIC_FACEBOOK_APP_ID;
+    if (!fbAppId) return;
+
+    if (!document.getElementById('facebook-jssdk')) {
+      const script = document.createElement('script');
+      script.id = 'facebook-jssdk';
+      script.src = 'https://connect.facebook.net/vi_VN/sdk.js';
+      script.async = true;
+      script.defer = true;
+      script.crossOrigin = 'anonymous';
+      script.onload = () => {
+        if ((window as any).FB) {
+          (window as any).FB.init({
+            appId: fbAppId,
+            cookie: true,
+            xfbml: true,
+            version: 'v19.0',
+          });
+        }
+      };
+      document.body.appendChild(script);
+    }
+  }, []);
+
+  // Load Apple JS SDK
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (!document.getElementById('apple-auth-script')) {
+      const script = document.createElement('script');
+      script.id = 'apple-auth-script';
+      script.src = 'https://appleid.cdn-apple.com/appleauth/static/jsapi/appleid/1/en_US/appleid.auth.js';
       script.async = true;
       script.defer = true;
       document.body.appendChild(script);
@@ -174,7 +218,53 @@ function LoginContent() {
     }
   };
 
-  const handleSocialLogin = async (provider: 'google' | 'facebook') => {
+  const handleAppleAuth = async () => {
+    const appleClientId = process.env.NEXT_PUBLIC_APPLE_CLIENT_ID;
+    if ((window as any).AppleID && appleClientId) {
+      try {
+        (window as any).AppleID.auth.init({
+          clientId: appleClientId,
+          scope: 'name email',
+          redirectURI: window.location.origin + '/',
+          usePopup: true,
+        });
+        const response = await (window as any).AppleID.auth.signIn();
+        if (response?.authorization?.id_token) {
+          setLoading(true);
+          try {
+            const res = await fetch('/api/v1/auth/social', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                provider: 'apple',
+                providerAccountId: 'apple_oauth_2026',
+                idToken: response.authorization.id_token,
+                name: response.user ? `${response.user.name?.firstName || ''} ${response.user.name?.lastName || ''}`.trim() : undefined,
+                email: response.user?.email,
+              }),
+            });
+            const data = await res.json();
+            if (data.success && data.data) {
+              saveSession(data.data);
+              router.replace(safeReturnPath(nextParam));
+            } else {
+              setError(data.message || 'Lỗi xác thực Apple ID.');
+            }
+          } catch (err) {
+            setError('Lỗi kết nối Apple ID.');
+          } finally {
+            setLoading(false);
+          }
+        }
+      } catch (err) {
+        setError('Đã hủy đăng nhập Apple.');
+      }
+    } else {
+      handleSocialLogin('apple');
+    }
+  };
+
+  const handleSocialLogin = async (provider: 'google' | 'facebook' | 'apple') => {
     setLoading(true);
     try {
       const res = await fetch('/api/v1/auth/social', {
@@ -301,6 +391,13 @@ function LoginContent() {
             style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '11px', borderRadius: 12, border: '1px solid #cbd5e1', background: '#ffffff', cursor: 'pointer', fontSize: 13.5, fontWeight: 600, color: '#334155' }}
           >
             <FacebookIcon /> Facebook
+          </button>
+          <button
+            type="button"
+            onClick={handleAppleAuth}
+            style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '11px', borderRadius: 12, border: '1px solid #cbd5e1', background: '#ffffff', cursor: 'pointer', fontSize: 13.5, fontWeight: 600, color: '#334155' }}
+          >
+            <AppleIcon /> Apple
           </button>
         </div>
 
