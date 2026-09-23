@@ -60,6 +60,7 @@ export function AuthModal({ isOpen, onClose, initialMode = 'LOGIN', onSuccess }:
     return () => clearInterval(timer);
   }, [mode, countdown]);
 
+  // Load Google GSI Client Script
   useEffect(() => {
     if (typeof window === 'undefined') return;
     const scriptId = 'google-gsi-client-script';
@@ -73,11 +74,10 @@ export function AuthModal({ isOpen, onClose, initialMode = 'LOGIN', onSuccess }:
     }
   }, []);
 
-  // Load Facebook SDK Script dynamically
+  // Load Facebook SDK Script
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    const fbAppId = process.env.NEXT_PUBLIC_FACEBOOK_APP_ID;
-    if (!fbAppId) return;
+    const fbAppId = process.env.NEXT_PUBLIC_FACEBOOK_APP_ID || '2833629363678891';
 
     if (!document.getElementById('facebook-jssdk')) {
       const script = document.createElement('script');
@@ -100,7 +100,7 @@ export function AuthModal({ isOpen, onClose, initialMode = 'LOGIN', onSuccess }:
     }
   }, []);
 
-  // Load Apple JS SDK dynamically
+  // Load Apple JS SDK
   useEffect(() => {
     if (typeof window === 'undefined') return;
     if (!document.getElementById('apple-auth-script')) {
@@ -316,8 +316,8 @@ export function AuthModal({ isOpen, onClose, initialMode = 'LOGIN', onSuccess }:
   };
 
   const handleFacebookAuth = () => {
-    const fbAppId = process.env.NEXT_PUBLIC_FACEBOOK_APP_ID;
-    if ((window as any).FB && fbAppId) {
+    const fbAppId = process.env.NEXT_PUBLIC_FACEBOOK_APP_ID || '2833629363678891';
+    if ((window as any).FB) {
       (window as any).FB.login(
         async (response: any) => {
           if (response?.authResponse?.accessToken) {
@@ -346,7 +346,7 @@ export function AuthModal({ isOpen, onClose, initialMode = 'LOGIN', onSuccess }:
               setLoading(false);
             }
           } else {
-            setError('Người dùng đã hủy đăng nhập Facebook.');
+            setError('Người dùng đã hủy hoặc chưa hoàn tất đăng nhập Facebook.');
           }
         },
         { scope: 'public_profile,email' }
@@ -357,8 +357,8 @@ export function AuthModal({ isOpen, onClose, initialMode = 'LOGIN', onSuccess }:
   };
 
   const handleAppleAuth = async () => {
-    const appleClientId = process.env.NEXT_PUBLIC_APPLE_CLIENT_ID;
-    if ((window as any).AppleID && appleClientId) {
+    const appleClientId = process.env.NEXT_PUBLIC_APPLE_CLIENT_ID || 'vn.tattantat.web.signin';
+    if ((window as any).AppleID) {
       try {
         (window as any).AppleID.auth.init({
           clientId: appleClientId,
@@ -396,7 +396,7 @@ export function AuthModal({ isOpen, onClose, initialMode = 'LOGIN', onSuccess }:
           }
         }
       } catch (err) {
-        setError('Đã hủy đăng nhập Apple.');
+        setError('Cần hoàn tất cấu hình Services ID trên Apple Developer Console.');
       }
     } else {
       handleSocialLogin('apple');
@@ -580,7 +580,7 @@ export function AuthModal({ isOpen, onClose, initialMode = 'LOGIN', onSuccess }:
 
               <label style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: 12, color: '#475569', marginTop: 4, cursor: 'pointer' }}>
                 <input type="checkbox" checked={termsAgreed} onChange={e => setTermsAgreed(e.target.checked)} style={{ marginTop: 2 }} />
-                <span>Tôi đồng ý với <Link href="/" style={{ color: '#00a65a', textDecoration: 'underline' }}>Điều khoản sử dụng</Link> và <Link href="/" style={{ color: '#00a65a', textDecoration: 'underline' }}>Chính sách bảo mật</Link> của Tất Tần Tật.</span>
+                <span>Tôi đồng ý với <Link href="/terms" style={{ color: '#00a65a', textDecoration: 'underline' }}>Điều khoản sử dụng</Link> và <Link href="/privacy" style={{ color: '#00a65a', textDecoration: 'underline' }}>Chính sách bảo mật</Link> của Tất Tần Tật.</span>
               </label>
 
               <button type="submit" disabled={loading} style={{ background: '#00a65a', color: '#ffffff', padding: '12px', borderRadius: 12, border: 'none', fontSize: 15, fontWeight: 700, cursor: 'pointer', marginTop: 8, boxShadow: '0 4px 12px rgba(0,166,90,0.25)' }}>
