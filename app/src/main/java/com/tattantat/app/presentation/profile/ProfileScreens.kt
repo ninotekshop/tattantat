@@ -41,6 +41,7 @@ fun ProfileScreen(
     onNotifications: () -> Unit = {},
     onReviews: () -> Unit = {},
     onBlockedUsers: () -> Unit = {},
+    onTransactionHistory: () -> Unit = {},
     onLogout: () -> Unit = {},
     vm: ProfileViewModel = hiltViewModel(),
 ) {
@@ -78,6 +79,8 @@ fun ProfileScreen(
         }
         Spacer(Modifier.height(12.dp))
         ListItem(headlineContent = { Text("Tin đăng của tôi") }, trailingContent = { TextButton(onListings) { Text("Xem") } })
+        HorizontalDivider()
+        ListItem(headlineContent = { Text("Lịch sử giao dịch") }, trailingContent = { TextButton(onTransactionHistory) { Text("Xem") } })
         HorizontalDivider()
         ListItem(headlineContent = { Text("Sản phẩm yêu thích") }, trailingContent = { TextButton(onFavorites) { Text("Xem") } })
         HorizontalDivider()

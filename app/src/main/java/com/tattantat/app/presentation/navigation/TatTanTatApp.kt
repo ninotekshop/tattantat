@@ -1,6 +1,7 @@
 package com.tattantat.app.presentation.navigation
 
 import com.tattantat.app.BuildConfig
+import com.tattantat.app.presentation.profile.TransactionHistoryScreen
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -305,7 +306,13 @@ private fun MainTabs(onLoggedOut: () -> Unit) {
             composable("sell") { SellScreen(onMyListings = { nav.navigate("my-listings") }) }
             composable("my-listings") { MyListingsScreen(onPromote = { nav.navigate("promotions/$it") }, onAdvertise = { nav.navigate("advertising/$it") }, onEdit = { nav.navigate("edit-listing/$it") }) }
             composable("edit-listing/{id}") { entry -> ListingEditorScreen(id = entry.arguments?.getString("id").orEmpty(), onDone = { nav.popBackStack(); Unit }) }
-            composable("promotions/{id}") { entry -> PromotionScreen(entry.arguments?.getString("id").orEmpty()) }
+            composable("promotions/{id}") { entry ->
+                val productId = entry.arguments?.getString("id").orEmpty()
+                PromotionScreen(
+                    productId = productId,
+                    onBackToMyListings = { nav.popBackStack() }
+                )
+            }
             composable("advertising/{id}") { entry -> AdvertisingScreen(entry.arguments?.getString("id").orEmpty()) }
             composable("chat") { ChatListScreen(onOpen = { nav.navigate("chat-detail/$it") }) }
             composable("chat-detail/{id}") { entry ->
@@ -327,8 +334,12 @@ private fun MainTabs(onLoggedOut: () -> Unit) {
                     onNotifications = { nav.navigate("notifications") },
                     onReviews = { nav.navigate("seller-reviews") },
                     onBlockedUsers = { nav.navigate("blocked-users") },
+                    onTransactionHistory = { nav.navigate("transaction-history") },
                     onLogout = onLoggedOut,
                 )
+            }
+            composable("transaction-history") {
+                TransactionHistoryScreen(onBack = { nav.popBackStack() })
             }
             composable("wallet") { WalletScreen() }
             composable("subscriptions") { SubscriptionScreen() }

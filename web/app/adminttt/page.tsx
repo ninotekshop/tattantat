@@ -506,6 +506,32 @@ export default function AdminDashboardPage() {
       .finally(() => setLoading(false));
   }, [adminSession]);
 
+  // FETCH SUBSCRIPTIONS (GÓI ĐẨY TIN)
+  const [subscriptions, setSubscriptions] = useState<any[]>([]);
+  const fetchSubscriptionsData = useCallback(() => {
+    setLoading(true);
+    fetch('/api/v1/admin/orders/subscriptions/list', { headers: getAuthHeaders() })
+      .then(r => r.json())
+      .then(res => {
+        if (res.success && res.data) setSubscriptions(res.data);
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, [adminSession]);
+
+  // FETCH ADVERTISING (GÓI QUẢNG CÁO)
+  const [advertising, setAdvertising] = useState<any[]>([]);
+  const fetchAdvertisingData = useCallback(() => {
+    setLoading(true);
+    fetch('/api/v1/admin/orders/advertising/list', { headers: getAuthHeaders() })
+      .then(r => r.json())
+      .then(res => {
+        if (res.success && res.data) setAdvertising(res.data);
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, [adminSession]);
+
   useEffect(() => {
     if (!adminSession) return;
     if (activeNav === 'tong-quan') fetchDashboardData();
@@ -514,7 +540,9 @@ export default function AdminDashboardPage() {
     else if (activeNav === 'banners') fetchBannersData();
     else if (activeNav === 'don-hang') fetchOrdersData();
     else if (activeNav === 'reports') fetchReportsData();
-  }, [adminSession, activeNav, fetchDashboardData, fetchPostsData, fetchUsersData, fetchBannersData, fetchOrdersData, fetchReportsData]);
+    else if (activeNav === 'goi-dich-vu') fetchSubscriptionsData();
+    else if (activeNav === 'goi-quang-cao') fetchAdvertisingData();
+  }, [adminSession, activeNav, fetchDashboardData, fetchPostsData, fetchUsersData, fetchBannersData, fetchOrdersData, fetchReportsData, fetchSubscriptionsData, fetchAdvertisingData]);
 
   // GLOBAL SEARCH SHORTCUT & COMMAND PALETTE
   useEffect(() => {
@@ -1252,6 +1280,17 @@ export default function AdminDashboardPage() {
             <div className="admin-nav-left"><ShoppingCart size={18} />{!sidebarCollapsed && <span>Quản lý đơn hàng</span>}</div>
           </button>
 
+          <div style={{fontSize:11, fontWeight:700, color:'#64748b', padding:'16px 16px 8px', letterSpacing:'0.5px'}}>GÓI DỊCH VỤ & QUẢNG CÁO</div>
+          <button className={`admin-nav-item ${activeNav === 'goi-dich-vu' ? 'active' : ''}`} onClick={() => setActiveNav('goi-dich-vu')}>
+            <div className="admin-nav-left"><PackageCheck size={18} />{!sidebarCollapsed && <span>Khách hàng mua Gói</span>}</div>
+            {!sidebarCollapsed && <span className="admin-badge green">{subscriptions.length}</span>}
+          </button>
+
+          <button className={`admin-nav-item ${activeNav === 'goi-quang-cao' ? 'active' : ''}`} onClick={() => setActiveNav('goi-quang-cao')}>
+            <div className="admin-nav-left"><Megaphone size={18} />{!sidebarCollapsed && <span>Khách hàng Quảng cáo</span>}</div>
+            {!sidebarCollapsed && <span className="admin-badge blue">{advertising.length}</span>}
+          </button>
+
           <button className={`admin-nav-item ${activeNav === 'banners' ? 'active' : ''}`} onClick={() => setActiveNav('banners')}>
             <div className="admin-nav-left"><ImageIcon size={18} />{!sidebarCollapsed && <span>Quản lý Banner</span>}</div>
             {!sidebarCollapsed && <span className="admin-badge green">{banners.length}</span>}
@@ -1443,6 +1482,8 @@ export default function AdminDashboardPage() {
                       : activeNav === 'nguoi-dung' ? 'Quản lý Người dùng & Xác minh'
                       : activeNav === 'danh-muc' ? 'Quản lý Danh mục & form'
                       : activeNav === 'don-hang' ? 'Quản lý Đơn hàng giao dịch thành công'
+                      : activeNav === 'goi-dich-vu' ? 'Khách hàng mua Gói Đẩy tin & Đăng tin'
+                      : activeNav === 'goi-quang-cao' ? 'Khách hàng mua Gói Quảng cáo & Banner'
                       : activeNav === 'reports' ? 'Báo cáo vi phạm & Moderation'
                       : activeNav === 'css-editor' ? 'Chỉnh sửa Giao diện CSS'
                       : activeNav === 'ho-so' ? 'Hồ sơ cá nhân Admin'
@@ -1455,6 +1496,8 @@ export default function AdminDashboardPage() {
                     : activeNav === 'nguoi-dung' ? 'Quản lý danh sách thành viên, xác minh tài khoản, sửa và xóa tài khoản vi phạm.'
                     : activeNav === 'danh-muc' ? 'Thiết lập danh mục, tạo thuộc tính động và quản lý phiên bản biểu mẫu đăng tin.'
                     : activeNav === 'don-hang' ? 'Theo dõi danh sách đơn hàng đã giao dịch thành công, giá trị, phí nền tảng, số tiền thực nhận và xem nội dung chat.'
+                    : activeNav === 'goi-dich-vu' ? 'Quản lý danh sách khách hàng và các shop đã mua gói đẩy tin, tăng hạn mức đăng tin trên nền tảng.'
+                    : activeNav === 'goi-quang-cao' ? 'Quản lý danh sách nhà quảng cáo mua gói Banner VIP, ưu tiên hiển thị sản phẩm trên ứng dụng.'
                     : activeNav === 'reports' ? 'Xử lý các báo cáo vi phạm sản phẩm và người dùng từ cộng đồng.'
                     : activeNav === 'css-editor' ? 'Chỉnh sửa trực tiếp style CSS của các trang giao diện trong hệ thống Tất Tần Tật.'
                     : activeNav === 'ho-so' ? 'Thông tin cá nhân thành viên và đổi mật khẩu quản trị.'

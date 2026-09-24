@@ -113,13 +113,54 @@ export class AdminUsersController {
 
   @Delete(':id')
   async delete(@Req() request: { user: { id: string } }, @Param('id') id: string) {
-    const result = await this.db.query(
-      `UPDATE users SET status='SUSPENDED', updated_at=NOW() WHERE id=$1 RETURNING id, full_name`,
+    // Check if user has orders
+    const ordersCount = await this.db.query<{ count: string }>(
+      `SELECT COUNT(*)::text AS count FROM orders WHERE buyer_id = $1 OR seller_id = $1`,
       [id],
     );
-    if (!result.rows[0]) throw new BadRequestException('Không tìm thấy người dùng');
-    await this.audit.log(request.user.id, 'Super Admin', 'DELETE_USER', 'User', id, { name: result.rows[0].full_name });
-    return { success: true, data: { id }, message: 'Đã xóa / vô hiệu hóa tài khoản thành công', errorCode: null };
+    const count = parseInt(ordersCount.rows[0]?.count || '0', 10);
+    if (count > 0) {
+      throw new BadRequestException(`Không thể xóa tài khoản này vì đã phát sinh ${count} giao dịch/đơn hàng trên hệ thống. Bạn có thể chọn Tạm khóa tài khoản.`);
+    }
+
+    // Hard delete all user data in a single database transaction
+    const user = await this.db.transaction(async (client) => {
+      const existing = await client.query('SELECT id, full_name, email FROM users WHERE id = $1', [id]);
+      if (!existing.rows[0]) throw new BadRequestException('Không tìm thấy người dùng');
+
+      // Delete user's products & images
+      const userProducts = await client.query<{ id: string }>('SELECT id FROM products WHERE seller_id = $1', [id]);
+      for (const p of userProducts.rows) {
+        await client.query('DELETE FROM product_images WHERE product_id = $1', [p.id]);
+      }
+      await client.query('DELETE FROM products WHERE seller_id = $1', [id]);
+
+      // Delete user's listings & listing media
+      const userListings = await client.query<{ id: string }>('SELECT id FROM listings WHERE seller_id = $1', [id]);
+      for (const l of userListings.rows) {
+        await client.query('DELETE FROM listing_images WHERE listing_id = $1', [l.id]);
+        await client.query('DELETE FROM listing_videos WHERE listing_id = $1', [l.id]);
+        await client.query('DELETE FROM listing_field_values WHERE listing_id = $1', [l.id]);
+      }
+      await client.query('DELETE FROM listings WHERE seller_id = $1', [id]);
+
+      // Delete user messages & chats
+      await client.query('DELETE FROM messages WHERE sender_id = $1', [id]);
+      await client.query('DELETE FROM chats WHERE buyer_id = $1 OR seller_id = $1', [id]);
+
+      // Delete user devices, blocks, reports
+      await client.query('DELETE FROM push_devices WHERE user_id = $1', [id]);
+      await client.query('DELETE FROM user_blocks WHERE blocker_id = $1 OR blocked_id = $1', [id]);
+      await client.query('DELETE FROM content_reports WHERE reporter_id = $1 OR reported_user_id = $1', [id]);
+
+      // Delete user account
+      await client.query('DELETE FROM users WHERE id = $1', [id]);
+
+      return existing.rows[0];
+    });
+
+    await this.audit.log(request.user.id, 'Super Admin', 'DELETE_USER', 'User', id, { name: user.full_name });
+    return { success: true, data: { id }, message: 'Đã xóa vĩnh viễn toàn bộ dữ liệu tài khoản khỏi hệ thống', errorCode: null };
   }
 
   @Post(':id/suspend')

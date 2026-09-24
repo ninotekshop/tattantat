@@ -47,4 +47,9 @@ class MyListingsViewModel @Inject constructor(
             }
             .onFailure { _state.value = _state.value.copy(error = "Không thể cập nhật trạng thái tin. Vui lòng thử lại.") }
     }
+
+    fun deleteListings(ids: List<String>) = viewModelScope.launch {
+        val remaining = _state.value.items.filterNot { it.id in ids }
+        _state.value = _state.value.copy(items = remaining)
+    }
 }

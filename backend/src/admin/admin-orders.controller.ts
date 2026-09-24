@@ -67,6 +67,35 @@ export class AdminOrdersController {
     };
   }
 
+  @Get('subscriptions/list')
+  async listSubscriptions() {
+    const result = await this.db.query(
+      `SELECT s.id, s.seller_id, COALESCE(u.full_name, 'Khách hàng / Shop') AS seller_name,
+              u.email AS seller_email, u.phone AS seller_phone,
+              COALESCE(s.billing_cycle_snapshot, 'Gói Đẩy tin VIP') AS plan_name,
+              s.price_snapshot::text AS price, COALESCE(s.max_listings_snapshot, 50) AS max_listings,
+              s.status, s.starts_at, s.ends_at, s.created_at
+       FROM subscriptions s
+       LEFT JOIN users u ON u.id = s.seller_id
+       ORDER BY s.created_at DESC`,
+    );
+    return { success: true, data: result.rows, message: null, errorCode: null };
+  }
+
+  @Get('advertising/list')
+  async listAdvertising() {
+    const result = await this.db.query(
+      `SELECT a.id, a.seller_id, COALESCE(u.full_name, 'Nhà quảng cáo') AS user_name,
+              u.email AS user_email, u.phone AS user_phone,
+              a.campaign_type AS ad_type, a.budget::text AS price,
+              a.pricing_model, a.created_at
+       FROM advertising_campaigns a
+       LEFT JOIN users u ON u.id = a.seller_id
+       ORDER BY a.created_at DESC`,
+    );
+    return { success: true, data: result.rows, message: null, errorCode: null };
+  }
+
   @Get(':id')
   async detail(@Param('id') id: string) {
     const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id);
@@ -118,10 +147,12 @@ export class AdminOrdersController {
       const chatRes = await this.db.query(
         `SELECT m.id, m.sender_id, m.content, m.created_at,
                 COALESCE(u.full_name, 'Thành viên') AS sender_name
-         FROM chat_messages m
+         FROM messages m
+         LEFT JOIN chats c ON c.id = m.chat_id
          LEFT JOIN users u ON u.id = m.sender_id
-         WHERE (m.sender_id = $1 AND m.recipient_id = $2)
-            OR (m.sender_id = $2 AND m.recipient_id = $1)
+         WHERE (c.buyer_id = $1 AND c.seller_id = $2)
+            OR (c.buyer_id = $2 AND c.seller_id = $1)
+            OR m.sender_id = $1 OR m.sender_id = $2
          ORDER BY m.created_at ASC
          LIMIT 100`,
         [buyerId, sellerId],
