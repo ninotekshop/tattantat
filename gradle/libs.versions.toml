@@ -1,8 +1,8 @@
 [versions]
-agp = "8.13.2"
-kotlin = "2.0.21"
+agp = "9.4.1"
+kotlin = "2.2.10"
 hilt = "2.52"
-ksp = "2.0.21-1.0.28"
+ksp = "2.3.6"
 composeBom = "2024.12.01"
 coreKtx = "1.15.0"
 lifecycle = "2.8.7"
