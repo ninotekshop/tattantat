@@ -32,9 +32,11 @@ workflows:
           xcode-project use-profiles
       - name: Build iOS IPA package
         script: |
+          WORKSPACE=$(find mobile/ios -name "*.xcworkspace" | head -n 1)
+          SCHEME=$(basename "$WORKSPACE" .xcworkspace)
           xcode-project build-ipa \
-            --workspace "mobile/ios/*.xcworkspace" \
-            --scheme "tattantatmobile"
+            --workspace "$WORKSPACE" \
+            --scheme "$SCHEME"
     artifacts:
       - build/ios/ipa/*.ipa
       - /tmp/xcodebuild_logs/*.log
