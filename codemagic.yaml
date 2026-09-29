@@ -1,0 +1,44 @@
+workflows:
+  react-native-ios:
+    name: React Native iOS App Store Build
+    max_build_duration: 120
+    instance_type: mac_mini_m1
+    environment:
+      node: 20.x
+      xcode: latest
+      cocoapods: default
+      groups:
+        - app_store_credentials
+      vars:
+        BUNDLE_ID: "com.tattantat.app"
+    scripts:
+      - name: Install dependencies
+        script: |
+          cd mobile
+          npm install
+      - name: Expo Prebuild (Generate native iOS code)
+        script: |
+          cd mobile
+          npx expo prebuild --platform ios
+      - name: Install CocoaPods
+        script: |
+          cd mobile/ios
+          pod install
+      - name: Set up code signing
+        script: |
+          keychain initialize
+          app-store-connect fetch-signing-files "$BUNDLE_ID" --type IOS_APP_STORE --create
+          keychain add-certificates
+          xcode-project use-profiles
+      - name: Build iOS IPA package
+        script: |
+          xcode-project build-ipa \
+            --workspace "mobile/ios/*.xcworkspace" \
+            --scheme "tattantatmobile"
+    artifacts:
+      - build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+    publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: true
