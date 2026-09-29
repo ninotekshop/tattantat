@@ -1,6 +1,6 @@
 workflows:
   react-native-ios:
-    name: React Native iOS App Store Build
+    name: React Native iOS App Store Build (.ipa)
     max_build_duration: 120
     instance_type: mac_mini_m1
     integrations:
@@ -48,3 +48,35 @@ workflows:
         key_id: $APP_STORE_CONNECT_KEY_IDENTIFIER
         issuer_id: $APP_STORE_CONNECT_ISSUER_ID
         submit_to_testflight: true
+
+  react-native-android:
+    name: React Native Android App Bundle (.aab) Build
+    max_build_duration: 120
+    instance_type: mac_mini_m1
+    environment:
+      node: 20.x
+      java: 17
+      groups:
+        - google_play_credentials
+      vars:
+        PACKAGE_NAME: "com.tattantat.app"
+    scripts:
+      - name: Install dependencies
+        script: |
+          cd mobile
+          npm install
+      - name: Expo Prebuild (Generate native Android code)
+        script: |
+          cd mobile
+          npx expo prebuild --platform android
+      - name: Build Android App Bundle (.aab)
+        script: |
+          cd mobile/android
+          ./gradlew bundleRelease
+    artifacts:
+      - mobile/android/app/build/outputs/bundle/release/*.aab
+      - mobile/android/app/build/outputs/apk/release/*.apk
+    publishing:
+      google_play:
+        credentials: $GCP_SERVICE_ACCOUNT_KEY
+        track: internal
