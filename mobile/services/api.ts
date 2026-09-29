@@ -1,4 +1,7 @@
-const API_BASE_URL = 'http://localhost:3000/api/v1';
+import { Platform } from 'react-native';
+
+const LOCAL_HOST = Platform.OS === 'android' ? '10.0.2.2' : 'localhost';
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || `http://${LOCAL_HOST}:3000/api/v1`;
 
 export interface Product {
   id: string;
