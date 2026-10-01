@@ -39,10 +39,16 @@ async function bootstrap() {
     res.status(503).json({ success: false, message: 'Máy chủ đang khởi động, vui lòng thử lại sau vài giây.', errorCode: 'STARTING' });
   });
 
-  // Call listen() IMMEDIATELY so Hostinger Node.js supervisor detects listen() in < 100ms
-  httpServer.listen(port, '0.0.0.0', () => {
-    console.log(`[Hostinger] Backend HTTP server listening immediately on port ${port}`);
-  });
+  if (process.env.TTT_EMBED_BACKEND === '1') {
+    // Chạy nhúng trong tiến trình Next.js (Hostinger): không mở cổng, Next giao /api/v1/* cho handler này.
+    (global as any).__TTT_BACKEND_HANDLER__ = server;
+    console.log('[Hostinger] Backend embedded in web process (no separate port).');
+  } else {
+    // Call listen() IMMEDIATELY so Hostinger Node.js supervisor detects listen() in < 100ms
+    httpServer.listen(port, '0.0.0.0', () => {
+      console.log(`[Hostinger] Backend HTTP server listening immediately on port ${port}`);
+    });
+  }
 
   try {
     const app = await NestFactory.create<NestExpressApplication>(AppModule, new ExpressAdapter(server));
