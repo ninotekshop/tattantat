@@ -39,10 +39,10 @@ export class NotificationsService implements OnModuleInit {
   private async sendPush(userId: string, title: string, body: string, referenceType?: string, referenceId?: string) {
     const keyPath = process.env.FIREBASE_SERVICE_ACCOUNT_PATH ?? `${process.cwd()}/firebase-service-account.json`;
     if (!existsSync(keyPath)) return;
-    if (!getApps().length) initializeApp({ credential: cert(JSON.parse(readFileSync(keyPath, 'utf8'))) });
+    const app = getApps().find(a => a.name === '[DEFAULT]') ?? initializeApp({ credential: cert(JSON.parse(readFileSync(keyPath, 'utf8'))) });
     const devices = await this.db.query<{ token: string }>('SELECT token FROM push_devices WHERE user_id=$1 AND active=TRUE', [userId]);
     if (!devices.rows.length) return;
-    const result = await getMessaging().sendEachForMulticast({ tokens: devices.rows.map((d) => d.token), notification: { title, body }, data: { referenceType: referenceType ?? '', referenceId: referenceId ?? '' }, android: { priority: 'high' } });
+    const result = await getMessaging(app).sendEachForMulticast({ tokens: devices.rows.map((d) => d.token), notification: { title, body }, data: { referenceType: referenceType ?? '', referenceId: referenceId ?? '' }, android: { priority: 'high' } });
     const invalid = result.responses.flatMap((response, index) => !response.success && ['messaging/registration-token-not-registered', 'messaging/invalid-registration-token'].includes(response.error?.code ?? '') ? [devices.rows[index].token] : []);
     if (invalid.length) await this.db.query('UPDATE push_devices SET active=FALSE,updated_at=NOW() WHERE token=ANY($1::text[])', [invalid]);
   }

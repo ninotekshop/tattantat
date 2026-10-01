@@ -26,7 +26,7 @@ backend/*.log
 .env
 *.env
 google-services*.json
-firebase-service-account*.json
+firebase-*service-account*.json
 resources/Hostinger/
 resources/Supabase/
 resources/Domain/
