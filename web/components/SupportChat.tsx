@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
-import { Bot, Send, X } from 'lucide-react';
+import { Send, X } from 'lucide-react';
 import { memberRequest } from '../lib/api';
 import { readSession } from '../lib/auth';
 import './support-chat.css';
@@ -12,7 +12,20 @@ const SUGGEST = ['Thanh toán QR hoạt động thế nào?', 'Tiền được g
 export function SupportChat() {
   const [open, setOpen] = useState(false), [logged, setLogged] = useState(false);
   const [msgs, setMsgs] = useState<Msg[]>([HELLO]), [text, setText] = useState(''), [busy, setBusy] = useState(false);
-  const end = useRef<HTMLDivElement>(null);
+  const end = useRef<HTMLDivElement>(null), box = useRef<HTMLElement>(null), fab = useRef<HTMLButtonElement>(null);
+  // Bấm chuột ra ngoài bảng hoặc nhấn Esc thì đóng bảng chat.
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e: PointerEvent) => {
+      const t = e.target as Node;
+      if (box.current?.contains(t) || fab.current?.contains(t)) return;
+      setOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false); };
+    document.addEventListener('pointerdown', onDown);
+    document.addEventListener('keydown', onKey);
+    return () => { document.removeEventListener('pointerdown', onDown); document.removeEventListener('keydown', onKey); };
+  }, [open]);
   useEffect(() => { setLogged(!!readSession()); }, [open]);
   useEffect(() => { end.current?.scrollIntoView({ block: 'end' }); }, [msgs, busy, open]);
 
@@ -28,9 +41,15 @@ export function SupportChat() {
   }
 
   return <>
-    {!open && <button type="button" className="sc-fab" aria-label="Mở trợ lý hỗ trợ" onClick={() => setOpen(true)}><Bot size={24}/></button>}
-    {open && <section className="sc-box" role="dialog" aria-label="Trợ lý hỗ trợ khách hàng">
-      <header><span><Bot size={18}/> Trợ lý Tất Tần Tật</span><button type="button" aria-label="Đóng" onClick={() => setOpen(false)}><X size={18}/></button></header>
+    <button ref={fab} type="button" className={'sc-fab' + (open ? ' is-open' : '')} aria-label={open ? 'Đóng trợ lý hỗ trợ' : 'Mở trợ lý hỗ trợ'} aria-expanded={open} onClick={() => setOpen(o => !o)}>
+      <img src="/chatbot-shipper.png" alt="" width={64} height={64}/>
+      {open && <span className="sc-fab-x" aria-hidden="true"><X size={14}/></span>}
+    </button>
+    {open && <section ref={box} className="sc-box" role="dialog" aria-label="Trợ lý hỗ trợ khách hàng">
+      <div className="sc-head">
+        <span className="sc-title"><img src="/chatbot-shipper.png" alt="" width={32} height={32}/> Trợ lý Tất Tần Tật</span>
+        <button type="button" className="sc-close" aria-label="Đóng bảng chat" title="Đóng" onClick={() => setOpen(false)}><X size={20}/></button>
+      </div>
       {!logged ? <div className="sc-login"><p>Vui lòng đăng nhập để chat với trợ lý hỗ trợ.</p><a href="/login">Đăng nhập</a></div> : <>
         <div className="sc-list">
           {msgs.map((m, i) => <div key={i} className={'sc-m ' + m.role}>{m.content}</div>)}
