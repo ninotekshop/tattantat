@@ -10,7 +10,7 @@ process.chdir(__dirname);
 // Choose an open port for the backend to avoid 3000 collision on Hostinger
 let BACKEND_INTERNAL_PORT = process.env.BACKEND_PORT || '3009';
 if (BACKEND_INTERNAL_PORT === (process.env.PORT || '3000')) {
-  BACKEND_INTERNAL_PORT = '3009';
+  BACKEND_INTERNAL_PORT = String(Number(process.env.PORT || 3000) + 10);
 }
 process.env.API_INTERNAL_BASE_URL = `http://127.0.0.1:${BACKEND_INTERNAL_PORT}/api/v1`;
 
