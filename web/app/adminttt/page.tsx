@@ -69,6 +69,7 @@ interface BannerItem {
   targetUrl: string;
   expiryDate: string;
   status: 'ACTIVE' | 'INACTIVE' | 'EXPIRED';
+  sortOrder?: number;
 }
 
 interface PostItem {
@@ -181,6 +182,17 @@ export default function AdminDashboardPage() {
       .then(r => r.json()).then(j => { if (!stop && j?.success && j.data) setDisputeOpen((Number(j.data.open) || 0) + (Number(j.data.reviewing) || 0)); }).catch(() => undefined);
     void load();
     const t = setInterval(load, 60_000);
+    return () => { stop = true; clearInterval(t); };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Số việc cần xử lý theo từng mục menu (xác minh, thanh toán lỗi, đơn/người dùng mới…)
+  const [navCounts, setNavCounts] = useState<Record<string, number>>({});
+  useEffect(() => {
+    let stop = false;
+    const load = () => fetch('/api/v1/admin/alerts/counts', { headers: getAuthHeaders() })
+      .then(r => r.json()).then(j => { if (!stop && j?.success && j.data) setNavCounts(j.data as Record<string, number>); }).catch(() => undefined);
+    void load();
+    const t = setInterval(load, 30_000);
     return () => { stop = true; clearInterval(t); };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -898,6 +910,38 @@ export default function AdminDashboardPage() {
       .catch(() => showToast('Không thể kết nối máy chủ. Hãy thử lại.'));
   };
 
+  // Đổi thứ tự banner trong cùng vị trí (ảnh Hero chạy slide theo thứ tự này)
+  const handleMoveBanner = (id: string, dir: -1 | 1) => {
+    const target = banners.find(b => b.id === id);
+    if (!target) return;
+    const group = banners.filter(b => b.position === target.position);
+    const from = group.findIndex(b => b.id === id);
+    const to = from + dir;
+    if (to < 0 || to >= group.length) return;
+    const newGroup = [...group];
+    [newGroup[from], newGroup[to]] = [newGroup[to], newGroup[from]];
+    // Giữ nguyên các nhóm khác, thay nhóm này bằng thứ tự mới
+    let k = 0;
+    const next = banners.map(b => (b.position === target.position ? newGroup[k++] : b));
+    setBanners(next);
+    fetch('/api/v1/admin/banners/reorder', {
+      method: 'POST',
+      headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ids: newGroup.map(b => b.id) }),
+    })
+      .then(r => r.json())
+      .then(res => {
+        if (res.success) {
+          showToast('Đã đổi thứ tự Banner!');
+          window.dispatchEvent(new Event('tattantat-banner-change'));
+        } else {
+          showToast(res.message || 'Không đổi được thứ tự');
+          fetchBannersData();
+        }
+      })
+      .catch(() => fetchBannersData());
+  };
+
   const handleDeleteBanner = (id: string) => {
     if (confirm(`Bạn có chắc chắn muốn xóa Banner này khỏi hệ thống?`)) {
       fetch(`/api/v1/admin/banners/${id}`, { method: 'DELETE', headers: getAuthHeaders() })
@@ -1377,6 +1421,7 @@ export default function AdminDashboardPage() {
 
           <button className={`admin-nav-item ${activeNav === 'nguoi-dung' ? 'active' : ''}`} onClick={() => setActiveNav('nguoi-dung')}>
             <div className="admin-nav-left"><Users size={18} />{!sidebarCollapsed && <span>Quản lý người dùng</span>}</div>
+            {!sidebarCollapsed && navCounts['nguoi-dung'] > 0 && <span className="admin-badge green">{navCounts['nguoi-dung']}</span>}
           </button>
 
           <button className={`admin-nav-item ${activeNav === 'danh-muc' ? 'active' : ''}`} onClick={() => setActiveNav('danh-muc')}>
@@ -1385,6 +1430,7 @@ export default function AdminDashboardPage() {
 
           <button className={`admin-nav-item ${activeNav === 'don-hang' ? 'active' : ''}`} onClick={() => setActiveNav('don-hang')}>
             <div className="admin-nav-left"><ShoppingCart size={18} />{!sidebarCollapsed && <span>Quản lý đơn hàng</span>}</div>
+            {!sidebarCollapsed && navCounts['don-hang'] > 0 && <span className="admin-badge green">{navCounts['don-hang']}</span>}
           </button>
 
           <button className={`admin-nav-item ${activeNav === 'khieu-nai' ? 'active' : ''}`} onClick={() => setActiveNav('khieu-nai')}>
@@ -1398,10 +1444,12 @@ export default function AdminDashboardPage() {
 
           <button className={`admin-nav-item ${activeNav === 'thanh-toan-online' ? 'active' : ''}`} onClick={() => setActiveNav('thanh-toan-online')}>
             <div className="admin-nav-left"><Wallet size={18} />{!sidebarCollapsed && <span>Thanh toán đảm bảo</span>}</div>
+            {!sidebarCollapsed && navCounts['thanh-toan-online'] > 0 && <span className="admin-badge red">{navCounts['thanh-toan-online']}</span>}
           </button>
 
           <button className={`admin-nav-item ${activeNav === 'xac-minh' ? 'active' : ''}`} onClick={() => setActiveNav('xac-minh')}>
             <div className="admin-nav-left"><UserCheck size={18} />{!sidebarCollapsed && <span>Xác minh danh tính</span>}</div>
+            {!sidebarCollapsed && navCounts['xac-minh'] > 0 && <span className="admin-badge amber">{navCounts['xac-minh']}</span>}
           </button>
 
           <button className={`admin-nav-item ${activeNav === 'rui-ro' ? 'active' : ''}`} onClick={() => setActiveNav('rui-ro')}>
@@ -1807,6 +1855,7 @@ export default function AdminDashboardPage() {
                 <table className="admin-table">
                   <thead>
                     <tr>
+                      <th>Thứ tự</th>
                       <th>Hình ảnh</th>
                       <th>Tên Banner</th>
                       <th>Vị trí</th>
@@ -1818,8 +1867,21 @@ export default function AdminDashboardPage() {
                   </thead>
                   <tbody>
                     {banners.length > 0 ? (
-                      banners.map(b => (
+                      banners.map(b => {
+                        const group = banners.filter(x => x.position === b.position);
+                        const gi = group.findIndex(x => x.id === b.id);
+                        const arrow = (disabled: boolean) => ({ background: disabled ? '#f8fafc' : '#e2e8f0', border: 'none', borderRadius: 4, width: 26, height: 20, lineHeight: '20px', fontSize: 11, cursor: disabled ? 'not-allowed' : 'pointer', color: disabled ? '#cbd5e1' : '#334155', padding: 0 });
+                        return (
                         <tr key={b.id}>
+                          <td>
+                            <div style={{display:'flex', alignItems:'center', gap:6}}>
+                              <span style={{fontWeight:700, color:'#0f172a', minWidth:16, textAlign:'center'}}>{gi + 1}</span>
+                              <div style={{display:'flex', flexDirection:'column', gap:2}}>
+                                <button onClick={() => handleMoveBanner(b.id, -1)} disabled={gi === 0} style={arrow(gi === 0)} title="Đưa lên trước">▲</button>
+                                <button onClick={() => handleMoveBanner(b.id, 1)} disabled={gi === group.length - 1} style={arrow(gi === group.length - 1)} title="Đưa xuống sau">▼</button>
+                              </div>
+                            </div>
+                          </td>
                           <td><img src={b.imageUrl} alt="" style={{height:40, maxWidth:100, borderRadius:6, objectFit:'cover', border:'1px solid #cbd5e1'}} /></td>
                           <td style={{fontWeight:600, color:'#0f172a'}}>{b.title}</td>
                           <td><span className="admin-badge blue">{b.position}</span></td>
@@ -1837,9 +1899,10 @@ export default function AdminDashboardPage() {
                             </div>
                           </td>
                         </tr>
-                      ))
+                        );
+                      })
                     ) : (
-                      <tr><td colSpan={7} style={{textAlign:'center', color:'#64748b', padding:24}}>Chưa có banner nào. Hãy tạo banner đầu tiên.</td></tr>
+                      <tr><td colSpan={8} style={{textAlign:'center', color:'#64748b', padding:24}}>Chưa có banner nào. Hãy tạo banner đầu tiên.</td></tr>
                     )}
                   </tbody>
                 </table>

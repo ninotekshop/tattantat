@@ -5,6 +5,7 @@ import '../goi-dich-vu/billing.css';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
+import { Captcha, type CaptchaValue } from '../../components/Captcha';
 import { MemberArea } from '../../components/MemberArea';
 import { memberRequest, sessionFetch } from '../../lib/api';
 import { readSession } from '../../lib/auth';
@@ -18,6 +19,7 @@ function Verify() {
   const router = useRouter();
   const [st, setSt] = useState<Status | null>(null);
   const [phone, setPhone] = useState('');
+  const [capPhone, setCapPhone] = useState<CaptchaValue>({ token: '', answer: '' }); const [capId, setCapId] = useState<CaptchaValue>({ token: '', answer: '' }); const [capKey, setCapKey] = useState(0);
   const [name, setName] = useState(''); const [idNo, setIdNo] = useState(''); const [files, setFiles] = useState<{ front?: File; back?: File; selfie?: File }>({});
   const [busy, setBusy] = useState(false); const [error, setError] = useState(''); const [ok, setOk] = useState('');
 
@@ -26,15 +28,15 @@ function Verify() {
 
   async function run(fn: () => Promise<string | void>) {
     setBusy(true); setError(''); setOk('');
-    try { const m = await fn(); if (m) setOk(m); await load(); } catch (e) { setError(e instanceof Error ? e.message : 'Có lỗi xảy ra.'); } finally { setBusy(false); }
+    try { const m = await fn(); if (m) setOk(m); await load(); } catch (e) { setError(e instanceof Error ? e.message : 'Có lỗi xảy ra.'); } finally { setBusy(false); setCapKey(k => k + 1); }
   }
   const requestPhone = () => run(async () => {
-    const r = await memberRequest<{ status: string }>('/me/verification/phone/request', 'POST', { phone });
+    const r = await memberRequest<{ status: string }>('/me/verification/phone/request', 'POST', { phone, captchaToken: capPhone.token, captchaAnswer: capPhone.answer });
     return r && 'Đã gửi yêu cầu. Quản trị viên sẽ duyệt và thông báo kết quả cho bạn.';
   });
   const submitId = () => run(async () => {
     if (!files.front || !files.back || !files.selfie) throw new Error('Vui lòng chọn đủ 3 ảnh.');
-    const fd = new FormData(); fd.set('fullName', name); fd.set('idNumber', idNo); fd.set('front', files.front); fd.set('back', files.back); fd.set('selfie', files.selfie);
+    const fd = new FormData(); fd.set('fullName', name); fd.set('idNumber', idNo); fd.set('front', files.front); fd.set('back', files.back); fd.set('selfie', files.selfie); fd.set('captchaToken', capId.token); fd.set('captchaAnswer', capId.answer);
     const res = await sessionFetch('/me/verification/identity', { method: 'POST', body: fd }, readSession()?.accessToken);
     const j = await res.json().catch(() => null);
     if (!res.ok || !j?.success) throw new Error(Array.isArray(j?.message) ? j.message.join('. ') : j?.message || 'Không gửi được hồ sơ.');
@@ -54,7 +56,8 @@ function Verify() {
             {st.phoneRequest?.status === 'REJECTED' && <div className="bl-msg err">Yêu cầu trước cho số {st.phoneRequest.phone} bị từ chối: {st.phoneRequest.rejectReason}. Bạn có thể kiểm tra lại số và gửi lại.</div>}
             <input style={inp} inputMode="tel" placeholder="Số điện thoại, ví dụ 0912345678" value={phone} onChange={e => setPhone(e.target.value)} />
             <small style={{ color: '#71817b' }}>Quản trị viên sẽ kiểm tra và duyệt thủ công, không cần nhập mã OTP.</small>
-            <div><button className="bl-btn" disabled={busy || !phone.trim()} onClick={() => void requestPhone()}>Gửi yêu cầu xác minh</button></div>
+            <Captcha value={capPhone} onChange={setCapPhone} resetKey={capKey} />
+            <div><button className="bl-btn" disabled={busy || !phone.trim() || capPhone.answer.length < 5} onClick={() => void requestPhone()}>Gửi yêu cầu xác minh</button></div>
           </div>}
       </div>
       <div className="bl-card"><h3 style={{ marginTop: 0 }}>2. Danh tính (CMND/CCCD) {st.identityVerified && <span style={{ color: '#1c7c4a', fontSize: 14 }}><Ic i={BadgeCheck}/>Đã xác thực</span>}</h3>
@@ -66,7 +69,8 @@ function Verify() {
             <input style={inp} inputMode="numeric" placeholder="Số CMND (9 số) hoặc CCCD (12 số)" value={idNo} onChange={e => setIdNo(e.target.value)} />
             {pick('front', 'Ảnh mặt trước giấy tờ')}{pick('back', 'Ảnh mặt sau giấy tờ')}{pick('selfie', 'Ảnh chân dung cầm giấy tờ')}
             <small style={{ color: '#71817b' }}>Ảnh được lưu riêng tư, chỉ quản trị viên xác minh xem được và không hiển thị công khai.</small>
-            <div><button className="bl-btn" disabled={busy} onClick={() => void submitId()}>Gửi hồ sơ</button></div>
+            <Captcha value={capId} onChange={setCapId} resetKey={capKey} />
+            <div><button className="bl-btn" disabled={busy || capId.answer.length < 5} onClick={() => void submitId()}>Gửi hồ sơ</button></div>
           </div>}
       </div></>}
     <p><Link href="/"><Ic i={ArrowLeft}/>Về trang chủ</Link></p>

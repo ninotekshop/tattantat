@@ -25,6 +25,21 @@ export class AdminAlertsController {
     }
   }
 
+  /** Số việc cần xử lý theo từng mục menu quản trị. */
+  @Get('counts')
+  async counts() {
+    const n = async (sql: string) => { try { return Number((await this.db.query(sql)).rows[0]?.n ?? 0); } catch { return 0; } };
+    const [listings, verify, reports, payments, orders, users] = await Promise.all([
+      n(`SELECT COUNT(*)::int AS n FROM products WHERE status='PENDING' AND deleted_at IS NULL`),
+      n(`SELECT ((SELECT COUNT(*) FROM phone_verifications WHERE status='PENDING') + (SELECT COUNT(*) FROM identity_verifications WHERE status='PENDING'))::int AS n`),
+      n(`SELECT COUNT(*)::int AS n FROM content_reports WHERE status IN ('OPEN','REVIEWING')`),
+      n(`SELECT COUNT(*)::int AS n FROM ledger_transactions WHERE status='FAILED'`),
+      n(`SELECT COUNT(*)::int AS n FROM orders WHERE created_at > NOW()-INTERVAL '24 hours'`),
+      n(`SELECT COUNT(*)::int AS n FROM users WHERE created_at > NOW()-INTERVAL '24 hours'`),
+    ]);
+    return { success: true, data: { 'tin-dang': listings, 'xac-minh': verify, reports, 'thanh-toan-online': payments, 'don-hang': orders, 'nguoi-dung': users }, message: null, errorCode: null };
+  }
+
   @Get()
   async alerts() {
     const lists = await Promise.all([
@@ -37,9 +52,12 @@ export class AdminAlertsController {
       this.run('DISPUTE', `SELECT d.id, d.opened_role, d.reason_code, d.created_at, d.status, u.full_name, COUNT(*) OVER() AS total
         FROM order_disputes d LEFT JOIN users u ON u.id=d.opened_by WHERE d.status IN ('OPEN','REVIEWING') ORDER BY d.created_at DESC LIMIT 8`,
         (r) => ({ id: `D${r.id}`, from: r.opened_role === 'SELLER' ? 'SELLER' : 'BUYER', title: r.opened_role === 'SELLER' ? 'Người bán mở khiếu nại' : 'Người mua mở khiếu nại', detail: `${r.full_name ?? ''} · lý do ${r.reason_code}`, createdAt: r.created_at, nav: 'khieu-nai' })),
-      this.run('VERIFY', `SELECT u.id, u.full_name, u.updated_at, u.created_at, COUNT(*) OVER() AS total
-        FROM users u WHERE u.verification_status='PENDING' ORDER BY COALESCE(u.updated_at,u.created_at) DESC LIMIT 8`,
-        (r) => ({ id: `V${r.id}`, from: 'SELLER', title: 'Yêu cầu xác minh tài khoản', detail: r.full_name ?? 'Người dùng', createdAt: r.updated_at ?? r.created_at, nav: 'xac-minh' })),
+      this.run('VERIFY', `SELECT id, title, detail, created_at, COUNT(*) OVER() AS total FROM (
+          SELECT v.id::text AS id, 'Yêu cầu xác minh số điện thoại' AS title, COALESCE(u.full_name,'Người dùng') || ' · ' || v.phone AS detail, v.created_at FROM phone_verifications v LEFT JOIN users u ON u.id=v.user_id WHERE v.status='PENDING'
+          UNION ALL
+          SELECT i.id::text, 'Hồ sơ xác minh CCCD', COALESCE(i.full_name,'Người dùng') || ' · ••••' || i.id_last4, i.created_at FROM identity_verifications i WHERE i.status='PENDING'
+        ) x ORDER BY created_at DESC LIMIT 8`,
+        (r) => ({ id: `V${r.id}`, from: 'SELLER', title: r.title, detail: r.detail, createdAt: r.created_at, nav: 'xac-minh' })),
       this.run('ORDER', `SELECT o.id, COALESCE(to_jsonb(o)->>'order_code', LEFT(o.id::text,8)) AS code, o.total_amount::text AS amount, o.created_at, bu.full_name, COUNT(*) OVER() AS total
         FROM orders o LEFT JOIN users bu ON bu.id=o.buyer_id WHERE o.created_at > NOW()-INTERVAL '24 hours' ORDER BY o.created_at DESC LIMIT 8`,
         (r) => ({ id: `O${r.id}`, from: 'BUYER', title: 'Đơn hàng mới', detail: `${r.full_name ?? 'Người mua'} · ${r.code} · ${Number(r.amount).toLocaleString('vi-VN')} đ`, createdAt: r.created_at, nav: 'don-hang' })),
