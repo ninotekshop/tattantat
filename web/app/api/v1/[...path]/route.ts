@@ -4,6 +4,7 @@ const BACKEND_URLS = [
   process.env.BACKEND_URL,
   process.env.API_URL,
   process.env.BACKEND_PORT ? `http://127.0.0.1:${process.env.BACKEND_PORT}` : null,
+  'http://127.0.0.1:3019',
   'http://127.0.0.1:3009',
   'http://127.0.0.1:3000',
   'http://127.0.0.1:8080',

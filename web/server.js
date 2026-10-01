@@ -8,7 +8,7 @@ const { fork } = require('child_process');
 process.chdir(__dirname);
 
 // Choose an open port for the backend to avoid 3000 collision on Hostinger
-let BACKEND_INTERNAL_PORT = process.env.BACKEND_PORT || '3009';
+let BACKEND_INTERNAL_PORT = process.env.BACKEND_PORT || '3019';
 if (BACKEND_INTERNAL_PORT === (process.env.PORT || '3000')) {
   BACKEND_INTERNAL_PORT = String(Number(process.env.PORT || 3000) + 10);
 }

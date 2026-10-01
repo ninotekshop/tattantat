@@ -73,7 +73,7 @@ if (!global.__HOSTINGER_BACKEND_INIT__) {
     const _targetBackend = _candidates.find((c) => _fs.existsSync(c)) || null;
 
     if (_targetBackend) {
-      let _backendPort = process.env.BACKEND_PORT || '3009';
+      let _backendPort = process.env.BACKEND_PORT || '3019';
       if (String(_backendPort) === String(process.env.PORT)) _backendPort = String(Number(process.env.PORT) + 10);
       process.env.API_INTERNAL_BASE_URL = 'http://127.0.0.1:' + _backendPort + '/api/v1';
 
