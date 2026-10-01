@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
 import { Send, X } from 'lucide-react';
-import { memberRequest } from '../lib/api';
+import { apiRequest, memberRequest } from '../lib/api';
 import { readSession } from '../lib/auth';
 import './support-chat.css';
 
@@ -34,7 +34,11 @@ export function SupportChat() {
     const next: Msg[] = [...msgs, { role: 'user', content }];
     setMsgs(next); setText(''); setBusy(true);
     try {
-      const r = await memberRequest<{ reply: string }>('/ai/support-chat', 'POST', { messages: next.slice(-10) });
+      const body = { messages: next.slice(-10) };
+      // Đã đăng nhập: dùng hạn mức tài khoản; chưa đăng nhập: hỏi nhanh (giới hạn theo IP).
+      const r = readSession()
+        ? await memberRequest<{ reply: string }>('/ai/support-chat', 'POST', body)
+        : await apiRequest<{ reply: string }>('/ai/support-chat/guest', 'POST', body);
       setMsgs([...next, { role: 'assistant', content: r.reply }]);
     } catch (e) { setMsgs([...next, { role: 'assistant', content: e instanceof Error ? e.message : 'Chưa trả lời được lúc này, bạn thử lại sau nhé.' }]); }
     finally { setBusy(false); }
@@ -43,6 +47,7 @@ export function SupportChat() {
   return <>
     <button ref={fab} type="button" className={'sc-fab' + (open ? ' is-open' : '')} aria-label={open ? 'Đóng trợ lý hỗ trợ' : 'Mở trợ lý hỗ trợ'} aria-expanded={open} onClick={() => setOpen(o => !o)}>
       <img src="/chatbot-shipper.png" alt="" width={64} height={64}/>
+      <span className="sc-fab-label">Trợ lý TTT</span>
       {open && <span className="sc-fab-x" aria-hidden="true"><X size={14}/></span>}
     </button>
     {open && <section ref={box} className="sc-box" role="dialog" aria-label="Trợ lý hỗ trợ khách hàng">
@@ -50,7 +55,8 @@ export function SupportChat() {
         <span className="sc-title"><img src="/chatbot-shipper.png" alt="" width={32} height={32}/> Trợ lý Tất Tần Tật</span>
         <button type="button" className="sc-close" aria-label="Đóng bảng chat" title="Đóng" onClick={() => setOpen(false)}><X size={20}/></button>
       </div>
-      {!logged ? <div className="sc-login"><p>Vui lòng đăng nhập để chat với trợ lý hỗ trợ.</p><a href="/login">Đăng nhập</a></div> : <>
+      {<>
+        {!logged && <div className="sc-guest">Bạn đang hỏi nhanh với tư cách khách. <a href="/login">Đăng nhập</a> để hỏi nhiều hơn.</div>}
         <div className="sc-list">
           {msgs.map((m, i) => <div key={i} className={'sc-m ' + m.role}>{m.content}</div>)}
           {busy && <div className="sc-m assistant sc-typing">Đang trả lời…</div>}

@@ -16,6 +16,8 @@ export async function sendFirebaseOtp(phone: string, container: string): Promise
   try { return await signInWithPhoneNumber(auth, toE164(phone), verifier); }
   catch (e) { verifier?.clear(); verifier = null; throw e; }
 }
+/** Đăng xuất phiên Firebase tạm sau khi đã lấy ID token (phiên đăng nhập chính do backend cấp). */
+export async function signOutFirebase() { try { await getAuth(app()).signOut(); } catch { /* bỏ qua */ } }
 export function firebaseErrorMessage(e: unknown): string {
   const code = (e as { code?: string })?.code ?? '';
   if (code.includes('invalid-phone-number')) return 'Số điện thoại không hợp lệ.';

@@ -6,6 +6,8 @@ export type DraftInput = { title?: string; condition?: string; category?: string
 export type Draft = { title: string; description: string; provider: 'mock' | 'anthropic' };
 const DAILY_LIMIT = 20;
 const CHAT_LIMIT = 40;
+/** Khách chưa đăng nhập: giới hạn số câu hỏi mỗi IP trong 24 giờ (giữ trong bộ nhớ). */
+const GUEST_CHAT_LIMIT = 15;
 const SUPPORT_SYSTEM = `Bạn là trợ lý hỗ trợ khách hàng của sàn mua bán "Tất Tần Tật" (Việt Nam). Trả lời bằng tiếng Việt, thân thiện, ngắn gọn (tối đa khoảng 120 từ), không dùng tiêu đề.
 Thông tin về sàn:
 - Người bán đăng tin ở mục Đăng tin (6 bước: danh mục, thông tin, ảnh/video, giá, vị trí, xem lại). Tin có thể được duyệt tự động hoặc chờ quản trị viên duyệt. Không được ghi số điện thoại, link, Zalo/Facebook trong tin; không kêu gọi giao dịch ngoài sàn.
@@ -50,12 +52,35 @@ export class AiService implements OnModuleInit {
 
   /** Chatbot hỗ trợ khách hàng. `history` là lịch sử hội thoại (tối đa 10 lượt gần nhất, tin cuối là của người dùng). */
   async supportChat(uid: string, history: ChatMsg[]) {
-    const msgs = (Array.isArray(history) ? history : []).filter(m => (m?.role === 'user' || m?.role === 'assistant') && typeof m.content === 'string' && m.content.trim()).slice(-10).map(m => ({ role: m.role, content: m.content.slice(0, 1000) }));
-    while (msgs.length && msgs[0].role !== 'user') msgs.shift();
-    if (!msgs.length || msgs[msgs.length - 1].role !== 'user') throw new BadRequestException('Hãy nhập câu hỏi của bạn.');
+    const msgs = this.cleanChat(history);
     const used = (await this.db.query(`SELECT COUNT(*)::int AS n FROM ai_usage WHERE user_id=$1 AND kind='support-chat' AND created_at > now()-interval '24 hours'`, [uid])).rows[0].n as number;
     if (used >= CHAT_LIMIT) throw new HttpException('Bạn đã hỏi nhiều hôm nay. Vui lòng thử lại vào ngày mai hoặc liên hệ quản trị viên.', 429);
     await this.db.query(`INSERT INTO ai_usage(user_id,kind) VALUES($1,'support-chat')`, [uid]);
+    const { reply, provider } = await this.answer(msgs);
+    return { success: true, data: { reply, provider, remaining: CHAT_LIMIT - used - 1 }, message: null, errorCode: null };
+  }
+
+  private guestUse = new Map<string, number[]>();
+  /** Hỏi đáp nhanh cho khách chưa đăng nhập, giới hạn theo IP. */
+  async supportChatGuest(ip: string, history: ChatMsg[]) {
+    const msgs = this.cleanChat(history);
+    const now = Date.now(), dayAgo = now - 86_400_000, key = ip || 'unknown';
+    const list = (this.guestUse.get(key) ?? []).filter(t => t > dayAgo);
+    if (list.length >= GUEST_CHAT_LIMIT) throw new HttpException('Bạn đã hỏi nhiều hôm nay. Vui lòng đăng nhập để tiếp tục hỏi trợ lý.', 429);
+    list.push(now); this.guestUse.set(key, list);
+    if (this.guestUse.size > 5000) for (const [k, v] of this.guestUse) if (!v.some(t => t > dayAgo)) this.guestUse.delete(k);
+    const { reply, provider } = await this.answer(msgs);
+    return { success: true, data: { reply, provider, remaining: GUEST_CHAT_LIMIT - list.length }, message: null, errorCode: null };
+  }
+
+  private cleanChat(history: ChatMsg[]) {
+    const msgs = (Array.isArray(history) ? history : []).filter(m => (m?.role === 'user' || m?.role === 'assistant') && typeof m.content === 'string' && m.content.trim()).slice(-10).map(m => ({ role: m.role, content: m.content.slice(0, 1000) }));
+    while (msgs.length && msgs[0].role !== 'user') msgs.shift();
+    if (!msgs.length || msgs[msgs.length - 1].role !== 'user') throw new BadRequestException('Hãy nhập câu hỏi của bạn.');
+    return msgs;
+  }
+
+  private async answer(msgs: ChatMsg[]) {
     const last = msgs[msgs.length - 1].content;
     let reply = '', provider: 'mock' | 'anthropic' = 'mock';
     if (aiEnabled()) {
@@ -63,7 +88,7 @@ export class AiService implements OnModuleInit {
       catch (e) { this.log.warn('Chatbot lỗi: ' + (e instanceof Error ? e.message : e)); }
     }
     if (!reply) reply = FAQ.find(([re]) => re.test(last))?.[1] ?? 'Mình chưa trả lời được câu này. Bạn vui lòng nhắn quản trị viên qua mục Tin nhắn hoặc gửi báo cáo trên tin đăng để được hỗ trợ trực tiếp nhé.';
-    return { success: true, data: { reply: scrubContact(reply), provider, remaining: CHAT_LIMIT - used - 1 }, message: null, errorCode: null };
+    return { reply: scrubContact(reply), provider };
   }
 
   mock(i: ReturnType<AiService['normalize']>): Draft {

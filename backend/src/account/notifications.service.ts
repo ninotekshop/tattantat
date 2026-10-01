@@ -1,3 +1,4 @@
+import { firebaseKeyCandidates } from '../auth/firebase-keys';
 import { Injectable, Logger, OnModuleInit, Optional } from '@nestjs/common';
 import { allowed, categoryOf, mergePrefs } from './notification-channels';
 import { MailerService } from './mailer.service';
@@ -18,12 +19,12 @@ export class NotificationsService implements OnModuleInit {
 
   private async deliver(userId: string, type: string, title: string, content: string, referenceType?: string, referenceId?: string) {
     const category = categoryOf(type);
-    const row = (await this.db.query<{ email: string | null; prefs: unknown }>(`SELECT u.email, np.prefs FROM users u LEFT JOIN notification_prefs np ON np.user_id=u.id WHERE u.id=$1`, [userId]).catch(() => ({ rows: [] as { email: string | null; prefs: unknown }[] }))).rows[0];
+    const row = (await this.db.query<{ email: string | null; full_name: string | null; prefs: unknown }>(`SELECT u.email, u.full_name, np.prefs FROM users u LEFT JOIN notification_prefs np ON np.user_id=u.id WHERE u.id=$1`, [userId]).catch(() => ({ rows: [] as { email: string | null; full_name: string | null; prefs: unknown }[] }))).rows[0];
     const prefs = mergePrefs(row?.prefs);
     if (category === null || allowed(prefs, 'push', category)) await this.sendPush(userId, title, content, referenceType, referenceId).catch(() => undefined);
     if (this.mailer?.enabled && row?.email && allowed(prefs, 'email', category)) {
       const link = referenceType === 'ORDER' ? '/orders' : referenceType === 'PRODUCT' && referenceId ? `/products/${referenceId}` : referenceType === 'CHAT' && referenceId ? `/messages?chat=${referenceId}` : referenceType === 'SAVED_SEARCH' ? '/account?section=searches' : null;
-      await this.mailer.send(userId, row.email, title, content, link);
+      await this.mailer.send(userId, row.email, title, content, link, type, row.full_name);
     }
   }
 
@@ -37,7 +38,7 @@ export class NotificationsService implements OnModuleInit {
   }
 
   private async sendPush(userId: string, title: string, body: string, referenceType?: string, referenceId?: string) {
-    const keyPath = process.env.FIREBASE_SERVICE_ACCOUNT_PATH ?? `${process.cwd()}/firebase-service-account.json`;
+    const keyPath = [process.env.FIREBASE_SERVICE_ACCOUNT_PATH, ...firebaseKeyCandidates('firebase-service-account.json')].find(p => p && existsSync(p)) ?? `${process.cwd()}/firebase-service-account.json`;
     if (!existsSync(keyPath)) return;
     const app = getApps().find(a => a.name === '[DEFAULT]') ?? initializeApp({ credential: cert(JSON.parse(readFileSync(keyPath, 'utf8'))) });
     const devices = await this.db.query<{ token: string }>('SELECT token FROM push_devices WHERE user_id=$1 AND active=TRUE', [userId]);

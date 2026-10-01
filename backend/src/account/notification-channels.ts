@@ -9,10 +9,10 @@ export const CATEGORIES: { key: Category; label: string; help: string }[] = [
   { key: 'billing', label: 'Gói dịch vụ & quảng cáo', help: 'Sắp hết hạn, gia hạn, quảng cáo' },
 ];
 export type Prefs = Record<Channel, Partial<Record<Category, boolean>>>;
-/** Mặc định: thông báo đẩy bật hết; email chỉ cho việc quan trọng (đơn hàng, tài khoản, gói dịch vụ). */
+/** Mặc định: thông báo đẩy bật hết; email cho việc quan trọng (đơn hàng, tài khoản, tin đăng, gói dịch vụ). */
 export const DEFAULT_PREFS: Prefs = {
   push: { orders: true, account: true, messages: true, listings: true, alerts: true, billing: true },
-  email: { orders: true, account: true, messages: false, listings: false, alerts: false, billing: true },
+  email: { orders: true, account: true, messages: false, listings: true, alerts: false, billing: true },
 };
 export function categoryOf(type: string): Category | null {
   if (type.startsWith('ADMIN_')) return null; // thông báo nội bộ cho quản trị viên chỉ hiện trong ứng dụng
@@ -21,7 +21,7 @@ export function categoryOf(type: string): Category | null {
   if (/^CHAT_|^MESSAGE/.test(type)) return 'messages';
   if (/^LISTING_/.test(type)) return 'listings';
   if (type === 'SAVED_SEARCH') return 'alerts';
-  if (/^(SUBSCRIPTION_|PROMOTION_|AD_|ADVERTISING)/.test(type)) return 'billing';
+  if (/^(SUBSCRIPTION_|PROMOTION_|AD_|ADVERTISING|TOPUP_)/.test(type)) return 'billing';
   return 'account';
 }
 export function mergePrefs(stored: unknown): Prefs {

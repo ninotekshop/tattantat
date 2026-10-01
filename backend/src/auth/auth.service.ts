@@ -45,6 +45,7 @@ export class AuthService {
       throw new UnauthorizedException('Email/số điện thoại hoặc mật khẩu chưa chính xác.');
     }
     await this.database.query('UPDATE users SET last_login_at = NOW() WHERE id = $1', [user.id]);
+    if (user.email) this.mailService.sendLoginEmail(user.email, user.full_name, input.includes('@') ? 'Email và mật khẩu' : 'Số điện thoại và mật khẩu').catch(() => {});
     return this.envelope(await this.tokensFor(user));
   }
 
@@ -138,7 +139,10 @@ export class AuthService {
     if (user && user.status !== 'ACTIVE') throw new UnauthorizedException('Tài khoản đang bị khóa hoặc chưa hoạt động.');
     if (!user) {
       user = (await this.database.query<UserRow>(`INSERT INTO users (phone, full_name, phone_verified) VALUES ($1, $2, TRUE) RETURNING id, phone, email, password_hash, full_name, avatar_url, role, status`, [local, `Thành viên ${local.slice(-4)}`])).rows[0];
-    } else await this.database.query('UPDATE users SET phone_verified = TRUE, last_login_at = NOW() WHERE id = $1', [user.id]);
+    } else {
+      await this.database.query('UPDATE users SET phone_verified = TRUE, last_login_at = NOW() WHERE id = $1', [user.id]);
+      if (user.email) this.mailService.sendLoginEmail(user.email, user.full_name, 'Mã OTP qua số điện thoại').catch(() => {});
+    }
     return this.envelope(await this.tokensFor(user));
   }
 
@@ -252,8 +256,9 @@ export class AuthService {
       if (email) {
         this.mailService.sendWelcomeEmail(email, user.full_name).catch(() => {});
       }
-    } else if (avatarUrl && !user.avatar_url) {
-      await this.database.query('UPDATE users SET avatar_url = $1 WHERE id = $2', [avatarUrl, user.id]);
+    } else {
+      if (avatarUrl && !user.avatar_url) await this.database.query('UPDATE users SET avatar_url = $1 WHERE id = $2', [avatarUrl, user.id]);
+      if (user.email) this.mailService.sendLoginEmail(user.email, user.full_name, `Tài khoản ${body.provider === 'google' ? 'Google' : body.provider === 'facebook' ? 'Facebook' : 'Apple'}`).catch(() => {});
     }
 
     const providerName = body.provider === 'google' ? 'Google' : body.provider === 'facebook' ? 'Facebook' : 'Apple';

@@ -1,6 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as nodemailer from 'nodemailer';
+import { renderEmail, siteUrl } from './email-template';
+
+const nowVN = () => new Date().toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh', hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric' });
 
 @Injectable()
 export class MailService {
@@ -34,83 +37,73 @@ export class MailService {
     return `"${name}" <${address}>`;
   }
 
+  /** Thư chúc mừng khi đăng ký tài khoản thành công. */
   async sendWelcomeEmail(toEmail: string, name: string): Promise<void> {
-    const subject = 'Chào mừng bạn đến với Tất Tần Tật!';
-    const appUrl = (this.config.get<string>('PUBLIC_WEB_URL') ?? this.config.get<string>('APP_URL', 'https://www.tattantat.vn'));
+    const site = siteUrl();
+    const { html, text } = renderEmail({
+      tone: 'brand', icon: '🎉', eyebrow: 'Chào mừng thành viên mới',
+      title: 'Chúc mừng bạn đã gia nhập Tất Tần Tật!',
+      subtitle: 'Tài khoản của bạn đã sẵn sàng. Mua bán dễ dàng, kết nối mọi người.',
+      preheader: `Chào ${name}, tài khoản Tất Tần Tật của bạn đã được tạo thành công.`,
+      greeting: `Xin chào ${name},`,
+      paragraphs: [
+        'Cảm ơn bạn đã đăng ký tài khoản trên Tất Tần Tật. Từ hôm nay, bạn có thể đăng tin miễn phí, tìm món đồ ưng ý và giao dịch an toàn với hàng nghìn người mua bán khác.',
+      ],
+      details: [['Tài khoản', toEmail], ['Ngày tham gia', nowVN()]],
+      cta: { label: 'Đăng tin đầu tiên', url: `${site}/sell` },
+      secondary: { label: 'Hoặc khám phá các tin đăng mới nhất', url: site },
+      tips: { title: 'Bắt đầu thật nhanh với 3 bước', items: [
+        'Hoàn thiện hồ sơ và ảnh đại diện để người mua tin tưởng hơn.',
+        'Xác minh số điện thoại để nhận huy hiệu “Đã xác thực”.',
+        'Thanh toán qua mã QR trên Tất Tần Tật — tiền được giữ an toàn đến khi bạn nhận hàng.',
+      ] },
+      footerNote: 'Bạn nhận được email này vì vừa đăng ký tài khoản trên Tất Tần Tật.',
+    });
+    await this.sendMail(toEmail, `🎉 Chào mừng ${name} đến với Tất Tần Tật!`, html, text);
+  }
 
-    const html = `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 16px; background-color: #ffffff;">
-        <div style="text-align: center; margin-bottom: 24px;">
-          <h1 style="color: #00a65a; margin: 0; font-size: 24px;">Tất Tần Tật</h1>
-          <p style="color: #64748b; font-size: 14px; margin-top: 4px;">Mua bán dễ dàng – Kết nối mọi người</p>
-        </div>
-        <p style="font-size: 16px; color: #1e293b;">Xin chào <strong>${name}</strong>,</p>
-        <p style="font-size: 15px; color: #334155; line-height: 1.6;">Chúc mừng bạn đã đăng ký tài khoản Tất Tần Tật thành công!</p>
-        <p style="font-size: 15px; color: #334155; line-height: 1.6;">Từ bây giờ, bạn có thể khám phá, mua bán và kết nối thuận tiện hơn trên Tất Tần Tật:</p>
-        <ul style="font-size: 14px; color: #475569; line-height: 1.8;">
-          <li>Đăng tin mua bán miễn phí</li>
-          <li>Lưu tin đăng yêu thích</li>
-          <li>Quản lý bài đăng của tôi</li>
-          <li>Nhắn tin và giao dịch an toàn</li>
-        </ul>
-        <div style="text-align: center; margin: 32px 0;">
-          <a href="${appUrl}" style="background-color: #00a65a; color: #ffffff; padding: 12px 28px; text-decoration: none; border-radius: 999px; font-weight: bold; font-size: 15px; display: inline-block;">Khám phá Tất Tần Tật ngay</a>
-        </div>
-        <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 24px 0;" />
-        <p style="font-size: 12px; color: #94a3b8; text-align: center;">Tất Tần Tật · hotro@tattantat.vn</p>
-      </div>
-    `;
-
-    const text = `
-Xin chào ${name},
-
-Chúc mừng bạn đã đăng ký tài khoản Tất Tần Tật thành công!
-
-Từ bây giờ, bạn có thể khám phá, mua bán và kết nối thuận tiện hơn trên Tất Tần Tật.
-
-Khám phá Tất Tần Tật: ${appUrl}
-
-Tất Tần Tật
-hotro@tattantat.vn
-    `;
-
-    await this.sendMail(toEmail, subject, html, text);
+  private lastLoginMail = new Map<string, number>();
+  /** Thư thông báo đăng nhập thành công (tối đa 1 thư / 30 phút / tài khoản để tránh làm phiền). */
+  async sendLoginEmail(toEmail: string, name: string, method: string): Promise<void> {
+    const key = toEmail.toLowerCase(), now = Date.now();
+    if (now - (this.lastLoginMail.get(key) ?? 0) < 30 * 60_000) return;
+    this.lastLoginMail.set(key, now);
+    if (this.lastLoginMail.size > 20_000) this.lastLoginMail.clear();
+    const site = siteUrl();
+    const { html, text } = renderEmail({
+      tone: 'success', icon: '👋', eyebrow: 'Đăng nhập thành công',
+      title: `Chào mừng ${name} quay lại!`,
+      subtitle: 'Bạn vừa đăng nhập vào Tất Tần Tật. Chúc bạn mua bán thuận lợi hôm nay.',
+      preheader: `Tài khoản của bạn vừa đăng nhập lúc ${nowVN()}.`,
+      greeting: `Xin chào ${name},`,
+      paragraphs: ['Chúng tôi ghi nhận một lượt đăng nhập thành công vào tài khoản của bạn với thông tin bên dưới.'],
+      details: [['Thời gian', nowVN()], ['Phương thức', method], ['Tài khoản', toEmail]],
+      cta: { label: 'Vào Tất Tần Tật', url: site },
+      tips: { title: 'Không phải bạn đăng nhập?', items: [
+        'Đổi mật khẩu ngay trong mục Tài khoản → Hồ sơ.',
+        `Liên hệ hotro@tattantat.vn để được hỗ trợ khóa tài khoản tạm thời.`,
+      ] },
+      footerNote: 'Email bảo mật này được gửi tự động mỗi khi tài khoản của bạn đăng nhập.',
+    });
+    await this.sendMail(toEmail, '👋 Đăng nhập thành công vào Tất Tần Tật', html, text);
   }
 
   async sendPasswordResetEmail(toEmail: string, name: string, resetToken: string): Promise<void> {
-    const subject = 'Đặt lại mật khẩu Tất Tần Tật';
-    const appUrl = (this.config.get<string>('PUBLIC_WEB_URL') ?? this.config.get<string>('APP_URL', 'https://www.tattantat.vn'));
-    const resetUrl = `${appUrl}/reset-password?token=${resetToken}`;
-
-    const html = `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 16px; background-color: #ffffff;">
-        <div style="text-align: center; margin-bottom: 24px;">
-          <h1 style="color: #00a65a; margin: 0; font-size: 24px;">Tất Tần Tật</h1>
-        </div>
-        <p style="font-size: 16px; color: #1e293b;">Xin chào <strong>${name}</strong>,</p>
-        <p style="font-size: 15px; color: #334155; line-height: 1.6;">Tất Tần Tật nhận được yêu cầu đặt lại mật khẩu cho tài khoản của bạn.</p>
-        <div style="text-align: center; margin: 28px 0;">
-          <a href="${resetUrl}" style="background-color: #00a65a; color: #ffffff; padding: 12px 28px; text-decoration: none; border-radius: 999px; font-weight: bold; font-size: 15px; display: inline-block;">ĐẶT LẠI MẬT KHẨU</a>
-        </div>
-        <p style="font-size: 13px; color: #64748b; line-height: 1.5;">Liên kết này sẽ hết hạn sau 15 phút. Nếu bạn không thực hiện yêu cầu này, bạn có thể an tâm bỏ qua email này.</p>
-        <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 24px 0;" />
-        <p style="font-size: 12px; color: #94a3b8; text-align: center;">Tất Tần Tật · hotro@tattantat.vn</p>
-      </div>
-    `;
-
-    const text = `
-Xin chào ${name},
-
-Tất Tần Tật nhận được yêu cầu đặt lại mật khẩu cho tài khoản của bạn.
-Đặt lại mật khẩu: ${resetUrl}
-
-Liên kết hết hạn sau 15 phút.
-
-Tất Tần Tật
-hotro@tattantat.vn
-    `;
-
-    await this.sendMail(toEmail, subject, html, text);
+    const resetUrl = `${siteUrl()}/reset-password?token=${encodeURIComponent(resetToken)}`;
+    const { html, text } = renderEmail({
+      tone: 'info', icon: '🔐', eyebrow: 'Bảo mật tài khoản',
+      title: 'Đặt lại mật khẩu của bạn',
+      subtitle: 'Liên kết chỉ có hiệu lực trong 15 phút.',
+      greeting: `Xin chào ${name},`,
+      paragraphs: ['Tất Tần Tật nhận được yêu cầu đặt lại mật khẩu cho tài khoản của bạn. Bấm nút bên dưới để tạo mật khẩu mới.'],
+      cta: { label: 'Đặt lại mật khẩu', url: resetUrl },
+      tips: { title: 'Lưu ý an toàn', items: [
+        'Nếu bạn không yêu cầu, hãy bỏ qua email này — mật khẩu hiện tại vẫn giữ nguyên.',
+        'Không chuyển tiếp email này cho bất kỳ ai.',
+      ] },
+      footerNote: 'Email này được gửi vì có yêu cầu đặt lại mật khẩu cho tài khoản của bạn.',
+    });
+    await this.sendMail(toEmail, '🔐 Đặt lại mật khẩu Tất Tần Tật', html, text);
   }
 
   private async sendMail(to: string, subject: string, html: string, text: string): Promise<void> {

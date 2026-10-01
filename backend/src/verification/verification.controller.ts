@@ -7,6 +7,7 @@ import { VerificationService } from './verification.service';
 
 class PhoneDto { @IsString() @MaxLength(20) phone!: string; }
 class CodeDto { @IsString() @MaxLength(10) code!: string; }
+class FirebaseTokenDto { @IsString() @MaxLength(4096) idToken!: string; }
 class ReviewDto { @IsIn(['APPROVE', 'REJECT']) action!: 'APPROVE' | 'REJECT'; @IsOptional() @IsString() @MaxLength(500) reason?: string; }
 type Img = { buffer: Buffer; mimetype: string };
 const uuid = (id: string) => { if (!/^[0-9a-f-]{36}$/i.test(id)) throw new BadRequestException('Mã hồ sơ không hợp lệ'); return id; };
@@ -17,6 +18,7 @@ export class VerificationController {
   constructor(private readonly svc: VerificationService) {}
   @Get() status(@Req() r: { user: { id: string } }) { return this.svc.status(r.user.id); }
   @Post('phone/send') send(@Req() r: { user: { id: string } }, @Body() b: PhoneDto) { return this.svc.sendPhoneOtp(r.user.id, b.phone); }
+  @Post('phone/firebase-confirm') firebaseConfirm(@Req() r: { user: { id: string } }, @Body() b: FirebaseTokenDto) { return this.svc.confirmPhoneFirebase(r.user.id, b.idToken); }
   @Post('phone/confirm') confirm(@Req() r: { user: { id: string } }, @Body() b: CodeDto) { return this.svc.confirmPhone(r.user.id, b.code); }
   @Post('identity')
   @UseInterceptors(FileFieldsInterceptor([{ name: 'front', maxCount: 1 }, { name: 'back', maxCount: 1 }, { name: 'selfie', maxCount: 1 }], { limits: { fileSize: 8 * 1024 * 1024 } }))

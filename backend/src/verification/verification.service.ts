@@ -73,7 +73,21 @@ export class VerificationService implements OnModuleInit {
       await c.query(`UPDATE phone_otps SET consumed_at=now() WHERE id=$1`, [row.id]);
       await c.query(`UPDATE users SET phone=$1, phone_verified=true, updated_at=now() WHERE id=$2`, [row.phone, uid]);
     });
+    void this.notifications.create(uid, 'ACCOUNT_PHONE_VERIFIED', 'Đã xác minh số điện thoại', `Số điện thoại ${row.phone} đã được xác minh cho tài khoản của bạn. Hoàn tất xác minh CCCD để nhận huy hiệu “Đã xác thực”.`, 'ACCOUNT', uid).catch(() => undefined);
     return ok({ phone: row.phone, phoneVerified: true }, 'Đã xác minh số điện thoại.');
+  }
+
+  /** Xác minh SĐT bằng Firebase Phone Auth: trình duyệt đã nhập đúng mã SMS, gửi lên ID token. */
+  async confirmPhoneFirebase(uid: string, idToken: string) {
+    // Nạp firebase-admin khi cần, tránh kéo thư viện nặng vào mọi nơi dùng VerificationService.
+    const { toLocalPhone, verifyFirebasePhone } = await import('../auth/firebase-phone');
+    const phone = normalizePhone(toLocalPhone(await verifyFirebasePhone(idToken)));
+    if (!phone) throw new BadRequestException('Số điện thoại không hợp lệ.');
+    const taken = (await this.db.query(`SELECT 1 FROM users WHERE phone=$1 AND id<>$2 AND COALESCE(phone_verified,false) LIMIT 1`, [phone, uid])).rowCount;
+    if (taken) throw new BadRequestException('Số điện thoại này đã được xác minh bởi tài khoản khác.');
+    await this.db.query(`UPDATE users SET phone=$1, phone_verified=true, updated_at=now() WHERE id=$2`, [phone, uid]);
+    void this.notifications.create(uid, 'ACCOUNT_PHONE_VERIFIED', 'Đã xác minh số điện thoại', `Số điện thoại ${phone} đã được xác minh cho tài khoản của bạn. Hoàn tất xác minh CCCD để nhận huy hiệu “Đã xác thực”.`, 'ACCOUNT', uid).catch(() => undefined);
+    return ok({ phone, phoneVerified: true }, 'Đã xác minh số điện thoại.');
   }
 
   // ---------- CCCD ----------

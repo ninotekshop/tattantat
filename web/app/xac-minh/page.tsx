@@ -4,7 +4,9 @@ import { BadgeCheck, ArrowLeft } from 'lucide-react';
 import '../goi-dich-vu/billing.css';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import type { ConfirmationResult } from 'firebase/auth';
+import { firebaseErrorMessage, firebasePhoneEnabled, sendFirebaseOtp, signOutFirebase } from '../../lib/firebase-phone';
 import { MemberArea } from '../../components/MemberArea';
 import { memberRequest, sessionFetch } from '../../lib/api';
 import { readSession } from '../../lib/auth';
@@ -20,6 +22,7 @@ function Verify() {
   const [phone, setPhone] = useState(''); const [code, setCode] = useState(''); const [sent, setSent] = useState(false);
   const [name, setName] = useState(''); const [idNo, setIdNo] = useState(''); const [files, setFiles] = useState<{ front?: File; back?: File; selfie?: File }>({});
   const [busy, setBusy] = useState(false); const [error, setError] = useState(''); const [ok, setOk] = useState('');
+  const confirmation = useRef<ConfirmationResult | null>(null);
 
   const load = useCallback(() => memberRequest<Status>('/me/verification').then(s => { setSt(s); if (s.phone && !phone) setPhone(s.phone); }).catch(e => setError(e instanceof Error ? e.message : 'Không tải được trạng thái.')), [phone]);
   useEffect(() => { if (!readSession()) { router.replace('/login'); return; } void load(); }, [router]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -29,10 +32,25 @@ function Verify() {
     try { const m = await fn(); if (m) setOk(m); await load(); } catch (e) { setError(e instanceof Error ? e.message : 'Có lỗi xảy ra.'); } finally { setBusy(false); }
   }
   const sendOtp = () => run(async () => {
+    if (firebasePhoneEnabled) {
+      // Gửi SMS thật qua Firebase Phone Auth.
+      try { confirmation.current = await sendFirebaseOtp(phone, 'recaptcha-verify'); }
+      catch (e) { throw new Error(firebaseErrorMessage(e)); }
+      setSent(true); return `Đã gửi mã xác minh qua SMS tới ${phone}.`;
+    }
     const r = await memberRequest<{ devCode?: string }>('/me/verification/phone/send', 'POST', { phone }); setSent(true);
     return r.devCode ? `Chế độ thử nghiệm (chưa cấu hình SMS): mã của bạn là ${r.devCode}` : 'Đã gửi mã xác minh qua SMS.';
   });
-  const confirm = () => run(async () => { await memberRequest('/me/verification/phone/confirm', 'POST', { code }); setSent(false); setCode(''); return 'Đã xác minh số điện thoại.'; });
+  const confirm = () => run(async () => {
+    if (firebasePhoneEnabled) {
+      if (!confirmation.current) throw new Error('Hãy bấm gửi mã xác minh trước.');
+      let idToken: string;
+      try { const cred = await confirmation.current.confirm(code.trim()); idToken = await cred.user.getIdToken(); await signOutFirebase(); }
+      catch (e) { throw new Error(firebaseErrorMessage(e)); }
+      await memberRequest('/me/verification/phone/firebase-confirm', 'POST', { idToken });
+    } else await memberRequest('/me/verification/phone/confirm', 'POST', { code });
+    confirmation.current = null; setSent(false); setCode(''); return 'Đã xác minh số điện thoại.';
+  });
   const submitId = () => run(async () => {
     if (!files.front || !files.back || !files.selfie) throw new Error('Vui lòng chọn đủ 3 ảnh.');
     const fd = new FormData(); fd.set('fullName', name); fd.set('idNumber', idNo); fd.set('front', files.front); fd.set('back', files.back); fd.set('selfie', files.selfie);
@@ -53,6 +71,7 @@ function Verify() {
           <input style={inp} inputMode="tel" placeholder="Số điện thoại, ví dụ 0912345678" value={phone} onChange={e => setPhone(e.target.value)} />
           <div><button className="bl-btn" disabled={busy || !phone.trim()} onClick={() => void sendOtp()}>{sent ? 'Gửi lại mã' : 'Gửi mã xác minh'}</button></div>
           {sent && <><input style={inp} inputMode="numeric" maxLength={6} placeholder="Nhập mã 6 số" value={code} onChange={e => setCode(e.target.value)} /><div><button className="bl-btn" disabled={busy || code.length < 6} onClick={() => void confirm()}>Xác nhận</button></div></>}
+          <div id="recaptcha-verify"/>
         </div>}
       </div>
       <div className="bl-card"><h3 style={{ marginTop: 0 }}>2. Danh tính (CMND/CCCD) {st.identityVerified && <span style={{ color: '#1c7c4a', fontSize: 14 }}><Ic i={BadgeCheck}/>Đã xác thực</span>}</h3>
