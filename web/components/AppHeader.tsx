@@ -106,7 +106,7 @@ export function AppHeader() {
                   onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
                   title="Tài khoản cá nhân"
                 >
-                  {name.substring(0, 2).toUpperCase()}
+                  {session?.user.avatarUrl ? <img src={session.user.avatarUrl} alt={name} className="user-avatar-img" /> : name.substring(0, 2).toUpperCase()}
                 </button>
 
                 {profileDropdownOpen && (

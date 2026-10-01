@@ -25,5 +25,12 @@ export function firebaseErrorMessage(e: unknown): string {
   if (code.includes('invalid-verification-code')) return 'Mã OTP không chính xác.';
   if (code.includes('code-expired')) return 'Mã OTP đã hết hạn. Hãy gửi lại mã.';
   if (code.includes('quota-exceeded')) return 'Hệ thống tạm hết lượt gửi SMS. Vui lòng thử lại sau.';
-  return 'Chưa gửi/xác nhận được mã OTP. Vui lòng thử lại.';
+  if (code.includes('unauthorized-domain')) return 'Tên miền web chưa được thêm vào Firebase (Authentication > Settings > Authorized domains).';
+  if (code.includes('operation-not-allowed')) return 'Firebase chưa bật đăng nhập bằng Số điện thoại, hoặc chưa cho phép vùng Việt Nam.';
+  if (code.includes('captcha-check-failed') || code.includes('invalid-app-credential')) return 'Xác thực reCAPTCHA không thành công. Hãy tải lại trang và thử lại.';
+  if (code.includes('billing-not-enabled')) return 'Dự án Firebase cần bật gói Blaze để gửi SMS thật.';
+  if (code.includes('api-key-not-valid') || code.includes('invalid-api-key')) return 'Khóa API Firebase không hợp lệ.';
+  if (code.includes('network-request-failed')) return 'Lỗi kết nối mạng. Vui lòng thử lại.';
+  if (typeof console !== 'undefined') console.error('[firebase-otp]', code || e);
+  return `Chưa gửi/xác nhận được mã OTP${code ? ' (' + code.replace('auth/', '') + ')' : ''}. Vui lòng thử lại.`;
 }

@@ -1939,3 +1939,5 @@ body {
 .hero-banner-container.hero-flush-top > .hero-banner-overlay { width: 100%; margin-left: auto; margin-right: auto; }
 /* Đang mở bảng chat thì ẩn nút Về đầu trang để không đè lên bảng */
 body:has(.sc-box) .back-to-top-btn { display: none !important; }
+
+.user-avatar{overflow:hidden;padding:0}.user-avatar-img{width:100%;height:100%;object-fit:cover;display:block;border-radius:50%}

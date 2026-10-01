@@ -1,5 +1,5 @@
 import { BadRequestException, Body, Controller, Delete, Get, Param, ParseUUIDPipe, Patch, Post, Req, UseGuards, Query } from '@nestjs/common';
-import { IsIn, IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
+import { IsIn, IsOptional, IsString, Matches, MaxLength, MinLength } from 'class-validator';
 import { Transform } from 'class-transformer';
 import * as bcrypt from 'bcryptjs';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -12,7 +12,7 @@ class RegisterPushDeviceDto {
 
 export class UpdateProfileDto {
   @IsOptional() @Transform(({ value }) => typeof value === 'string' ? value.trim() : value) @IsString() @MinLength(2) @MaxLength(120) fullName?: string;
-  @IsOptional() @IsString() @MaxLength(500000) avatarUrl?: string;
+  @IsOptional() @IsString() @MaxLength(500000) @Matches(/^(data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+|https:\/\/\S+)$/, { message: 'Ảnh đại diện không hợp lệ (chỉ JPG, PNG, WebP).' }) avatarUrl?: string;
 }
 
 export class DeleteAccountDto {

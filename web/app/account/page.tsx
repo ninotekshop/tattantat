@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useState, type FormEvent } from 'react';
 import './account.css';
+import { fileToAvatarDataUrl } from '../../lib/avatar';
 import { BadgeCheck, Ban, Bell, BellOff, BellRing, Bookmark, ChevronRight, Eye, EyeOff, FileText, Heart, BarChart3, Mail, MessageCircle, Pencil, Phone, PlusCircle, Search, ShieldCheck, ShoppingBag, SlidersHorizontal, Trash2, User, Wallet, ExternalLink, MapPin } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
@@ -9,7 +10,7 @@ import { MemberArea } from '../../components/MemberArea';
 import { memberRequest, type Product } from '../../lib/api';
 import { readSession, saveSession, type WebSession } from '../../lib/auth';
 import { listingPrice, type ListingSummary } from '../../lib/listings';
-type Profile = { id: string; full_name: string; email: string | null; phone: string | null; phone_verified: boolean };
+type Profile = { id: string; full_name: string; avatar_url?: string | null; email: string | null; phone: string | null; phone_verified: boolean };
 type Notice = { id: string; type?: string; title: string; content: string; is_read: boolean; created_at: string; reference_type: string; reference_id: string };
 type Block = { id: string; full_name: string };
 const sections = { profile: 'Hồ sơ', listings: 'Tin đã đăng', notifications: 'Thông báo', searches: 'Tìm kiếm đã lưu', prefs: 'Cài đặt thông báo', blocks: 'Đã chặn' };
@@ -51,6 +52,18 @@ function Account({ session }: { session: WebSession }) {
     catch (e) { setError(e instanceof Error ? e.message : 'Thao tác chưa thành công.'); }
     finally { setBusy(false); }
   }
+  async function uploadAvatar(file?: File) {
+    if (!file) return; setBusy(true); setError(''); setMessage('');
+    try {
+      const avatarUrl = await fileToAvatarDataUrl(file);
+      const value = await memberRequest<{ avatar_url: string | null }>('/me', 'PATCH', { avatarUrl });
+      setProfile(p => p ? { ...p, avatar_url: value.avatar_url } : p);
+      const current = readSession();
+      if (current?.user.id === session.user.id) saveSession({ ...current, user: { ...current.user, avatarUrl: value.avatar_url } });
+      window.dispatchEvent(new Event('tt-profile-updated'));
+      setMessage('Đã cập nhật ảnh đại diện.');
+    } catch (e) { setError(e instanceof Error ? e.message : 'Không thể cập nhật ảnh đại diện.'); } finally { setBusy(false); }
+  }
   async function save(event: FormEvent) {
     event.preventDefault(); setBusy(true); setError(''); setMessage('');
     try {
@@ -69,6 +82,10 @@ function Account({ session }: { session: WebSession }) {
 
           {section === 'profile' && profile && <form className="ac-card" onSubmit={save}>
             <div className="ac-card-h"><h2><User size={19} />Hồ sơ cá nhân</h2><p>Thông tin hiển thị với người mua và người bán khi giao dịch.</p></div>
+            <div className="ac-avatar-edit">
+              <div className="ac-avatar lg">{profile.avatar_url ? <img src={profile.avatar_url} alt="Ảnh đại diện" /> : (name.trim()[0] || 'T').toUpperCase()}</div>
+              <div><label className="ac-btn"><Pencil size={15} />Đổi ảnh đại diện<input type="file" accept="image/jpeg,image/png,image/webp" hidden disabled={busy} onChange={e => { void uploadAvatar(e.target.files?.[0]); e.target.value = ''; }} /></label><p className="ac-hint">JPG, PNG hoặc WebP. Ảnh sẽ được cắt vuông tự động.</p></div>
+            </div>
             <label className="ac-field"><span>Họ và tên</span><input value={name} onChange={e => setName(e.target.value)} minLength={2} maxLength={120} required /></label>
             <div className="ac-info">
               <div><span>Email</span><b>{profile.email || 'Chưa cập nhật'}</b></div>

@@ -7,7 +7,7 @@ import { BadgeCheck, Ban, Bell, BarChart3, Bookmark, ChevronRight, FileText, Hea
 import { memberRequest } from '../lib/api';
 import type { WebSession } from '../lib/auth';
 
-type Me = { full_name: string; email: string | null; phone: string | null; phone_verified: boolean };
+type Me = { full_name: string; avatar_url?: string | null; email: string | null; phone: string | null; phone_verified: boolean };
 type Item = { key: string; href: string; label: string; icon: LucideIcon };
 const GROUPS: { title: string; items: Item[] }[] = [
   { title: 'Tài khoản', items: [
@@ -34,7 +34,7 @@ function Inner({ session, children }: { session: WebSession; children: ReactNode
   const path = usePathname() ?? '';
   const sp = useSearchParams();
   const [me, setMe] = useState<Me | null>(null);
-  useEffect(() => { memberRequest<Me>('/me').then(setMe).catch(() => undefined); }, []);
+  useEffect(() => { const load = () => memberRequest<Me>('/me').then(setMe).catch(() => undefined); load(); window.addEventListener('tt-profile-updated', load); return () => window.removeEventListener('tt-profile-updated', load); }, []);
   const active = path.startsWith('/account') ? 'account:' + (sp.get('section') || 'profile') : path.replace(/\/$/, '');
   const shown = me?.full_name || session.user.fullName || '';
   const initials = shown.trim().split(/\s+/).slice(-2).map(w => w[0]?.toUpperCase()).join('') || 'TT';
@@ -45,7 +45,7 @@ function Inner({ session, children }: { session: WebSession; children: ReactNode
   const toggleMenu = () => { const next = collapsed ? 'open' : 'collapsed'; setPref(next); try { localStorage.setItem('tt-account-menu', next); } catch { /* bỏ qua */ } };
   return <div className={'ac-page' + (compact ? ' ac-compact' : '') + (collapsed ? ' ac-collapsed' : '')}>
     {!compact && <header className="ac-hero ac-hero-slim">
-      <div className="ac-avatar" aria-hidden="true">{initials}</div>
+      <div className="ac-avatar" aria-hidden="true">{(me?.avatar_url ?? session.user.avatarUrl) ? <img src={(me?.avatar_url ?? session.user.avatarUrl) as string} alt="" /> : initials}</div>
       <div className="ac-who">
         <p className="ac-hello">Xin chào,</p>
         <h1>{shown || 'Tài khoản của bạn'}</h1>
