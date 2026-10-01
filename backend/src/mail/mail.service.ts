@@ -12,7 +12,8 @@ export class MailService {
 
   constructor(private readonly config: ConfigService) {
     const host = this.config.get<string>('SMTP_HOST');
-    const port = this.config.get<number>('SMTP_PORT', 587);
+    // Biến môi trường luôn là chuỗi: phải đổi sang số, nếu không cổng 465 sẽ không bật SSL và gửi thất bại.
+    const port = Number(this.config.get<string>('SMTP_PORT') ?? 587) || 587;
     const user = this.config.get<string>('SMTP_USER') ?? this.config.get<string>('SMTP_USERNAME');
     const pass = this.config.get<string>('SMTP_PASS') ?? this.config.get<string>('SMTP_PASSWORD');
 
@@ -138,7 +139,7 @@ export class MailService {
         });
         this.logger.log(`Sent email "${subject}" to ${to}`);
       } catch (err: any) {
-        this.logger.error(`Failed to send email to ${to}: ${err.message}`);
+        this.logger.error(`Gửi email thất bại tới ${to}: ${err.message}`);
       }
     } else {
       this.logger.log(`[SIMULATED EMAIL] To: ${to} | Subject: ${subject}`);
