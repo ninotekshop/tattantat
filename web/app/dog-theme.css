@@ -206,6 +206,20 @@ body {
 }
 
 .hero-banner-container.hero-flush-top {
+  /* Kích thước cố định cho ảnh banner hero: 1248 × 250 px */
+  width: 100%;
+  max-width: 1248px;
+  height: 250px;
+  box-sizing: border-box;
+  margin-left: auto;
+  margin-right: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background-size: cover !important;
+  background-position: center !important;
+  background-repeat: no-repeat !important;
   border-top-left-radius: 0 !important;
   border-top-right-radius: 0 !important;
   border-bottom-left-radius: 24px !important;
@@ -1917,3 +1931,11 @@ body {
   border-color: #00a65a;
 }
 
+
+
+/* Nút Về đầu trang nằm phía trên bong bóng chatbot (Trợ lý TTT ở góc dưới cùng) */
+.back-to-top-btn { bottom: 122px; right: 25px; }
+@media (max-width: 768px) { .back-to-top-btn { bottom: 172px; right: 21px; } }
+.hero-banner-container.hero-flush-top > .hero-banner-overlay { width: 100%; margin-left: auto; margin-right: auto; }
+/* Đang mở bảng chat thì ẩn nút Về đầu trang để không đè lên bảng */
+body:has(.sc-box) .back-to-top-btn { display: none !important; }

@@ -106,6 +106,26 @@ export class MailService {
     await this.sendMail(toEmail, '🔐 Đặt lại mật khẩu Tất Tần Tật', html, text);
   }
 
+  /** Xác nhận mật khẩu đã được thay đổi. */
+  async sendPasswordChangedEmail(toEmail: string, name: string): Promise<void> {
+    const site = siteUrl();
+    const { html, text } = renderEmail({
+      tone: 'success', icon: '✅', eyebrow: 'Bảo mật tài khoản',
+      title: 'Mật khẩu đã được thay đổi',
+      subtitle: 'Từ giờ hãy dùng mật khẩu mới để đăng nhập.',
+      greeting: `Xin chào ${name},`,
+      paragraphs: ['Mật khẩu tài khoản Tất Tần Tật của bạn vừa được đặt lại thành công.'],
+      details: [['Thời gian', nowVN()], ['Tài khoản', toEmail]],
+      cta: { label: 'Đăng nhập ngay', url: `${site}/login` },
+      tips: { title: 'Không phải bạn thực hiện?', items: [
+        'Dùng chức năng Quên mật khẩu để lấy lại quyền truy cập ngay.',
+        'Liên hệ hotro@tattantat.vn để được hỗ trợ khóa tài khoản tạm thời.',
+      ] },
+      footerNote: 'Email bảo mật này được gửi tự động khi mật khẩu tài khoản của bạn thay đổi.',
+    });
+    await this.sendMail(toEmail, '✅ Mật khẩu Tất Tần Tật đã được thay đổi', html, text);
+  }
+
   private async sendMail(to: string, subject: string, html: string, text: string): Promise<void> {
     if (this.transporter) {
       try {

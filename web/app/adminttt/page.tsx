@@ -133,6 +133,14 @@ function formatVnd(val: string | number) {
   return num.toLocaleString('de-DE') + '\u00a0₫';
 }
 
+/** Kích thước ảnh chuẩn cho từng vị trí banner. */
+const BANNER_SIZES: { value: string; label: string; w: number; h: number; note: string }[] = [
+  { value: 'Hero Banner (Trang chủ)', label: 'Hero Banner (Trang chủ)', w: 1248, h: 250, note: 'Ảnh nền phía sau ô tìm kiếm đầu trang chủ. Đặt chữ/nội dung chính ở giữa vì hai bên có thể bị cắt trên màn hình nhỏ.' },
+  { value: 'Floating Left Banner (Mép ngoài trái)', label: 'Floating Left Banner (Mép ngoài trái)', w: 300, h: 600, note: 'Banner dọc bên trái, chỉ hiện trên màn hình máy tính rộng (trên 1320px).' },
+  { value: 'Floating Right Banner (Mép ngoài phải)', label: 'Floating Right Banner (Mép ngoài phải)', w: 300, h: 600, note: 'Banner dọc bên phải, chỉ hiện trên màn hình máy tính rộng (trên 1320px).' },
+];
+const bannerSize = (position: string) => BANNER_SIZES.find(b => b.value === position);
+
 export default function AdminDashboardPage() {
   // ADMIN AUTH SESSION STATE
   const [adminSession, setAdminSession] = useState<AdminSession | null>(null);
@@ -230,6 +238,7 @@ export default function AdminDashboardPage() {
   // BANNERS MODULE STATE
   const [banners, setBanners] = useState<BannerItem[]>([]);
   const [bannerModalOpen, setBannerModalOpen] = useState(false);
+  const [bannerImgSize, setBannerImgSize] = useState<{ w: number; h: number } | null>(null);
   const [editingBanner, setEditingBanner] = useState<BannerItem | null>(null);
   const [formBanner, setFormBanner] = useState<{ title: string; position: string; imageUrl: string; targetUrl: string; expiryDate: string; status: 'ACTIVE' | 'INACTIVE' }>({
     title: '',
@@ -838,10 +847,11 @@ export default function AdminDashboardPage() {
   // BANNER ACTIONS
   const handleOpenAddBanner = () => {
     setEditingBanner(null);
+    setBannerImgSize(null);
     setFormBanner({
       title: '',
       position: 'Hero Banner (Trang chủ)',
-      imageUrl: '/assets/banner_right.png',
+      imageUrl: '',
       targetUrl: '/sell',
       expiryDate: '2026-12-31',
       status: 'ACTIVE',
@@ -1212,12 +1222,15 @@ export default function AdminDashboardPage() {
               <div>
                 <label style={{display:'block', fontSize:13, fontWeight:600, marginBottom:4, color:'#334155'}}>Vị trí hiển thị *</label>
                 <select value={formBanner.position} onChange={e => setFormBanner({...formBanner, position:e.target.value})} style={{width:'100%', padding:'10px 12px', borderRadius:8, border:'1px solid #cbd5e1', fontSize:14}}>
-                  <option value="Hero Banner (Trang chủ)">Hero Banner (Trang chủ)</option>
-                  <option value="Floating Left Banner (Mép ngoài trái)">Floating Left Banner (Mép ngoài trái)</option>
-                  <option value="Floating Right Banner (Mép ngoài phải)">Floating Right Banner (Mép ngoài phải)</option>
-                  <option value="Sidebar Banner (Cột phải)">Sidebar Banner (Cột phải)</option>
-                  <option value="Category Banner">Category Banner (Trang danh mục)</option>
+                  {BANNER_SIZES.map(b => <option key={b.value} value={b.value}>{b.label} — {b.w} × {b.h} px</option>)}
                 </select>
+                {bannerSize(formBanner.position) && (() => { const b = bannerSize(formBanner.position)!; return (
+                  <div style={{marginTop:8, display:'flex', gap:10, alignItems:'flex-start', background:'#ecfdf5', border:'1px solid #bbf7d0', borderRadius:10, padding:'10px 12px'}}>
+                    <div style={{flex:'none', width:Math.round(44 * Math.min(1, b.w / b.h)), height:Math.round(44 * Math.min(1, b.h / b.w)), minWidth:10, minHeight:10, background:'#00a65a', borderRadius:4, opacity:.85, marginTop:2}} aria-hidden />
+                    <div style={{fontSize:12.5, lineHeight:1.5, color:'#065f46'}}>
+                      <b>Kích thước ảnh chuẩn: {b.w} × {b.h} px</b> (tỉ lệ {(b.w / b.h).toFixed(2).replace(/\.?0+$/, '')}:1). Định dạng JPG, PNG hoặc WebP.<br />{b.note}
+                    </div>
+                  </div>); })()}
               </div>
 
               <div style={{background:'#f8fafc', padding:14, borderRadius:10, border:'1px dashed #cbd5e1'}}>
@@ -1228,14 +1241,21 @@ export default function AdminDashboardPage() {
                 {formBanner.imageUrl && (
                   <div style={{marginTop:10, textAlign:'center'}}>
                     <div style={{fontSize:11, color:'#64748b', marginBottom:4}}>Xem trước hình ảnh:</div>
-                    <img src={formBanner.imageUrl} alt="Preview" style={{maxHeight:100, maxWidth:'100%', borderRadius:8, border:'1px solid #e2e8f0', objectFit:'contain'}} />
+                    <img src={formBanner.imageUrl} alt="Preview" onLoad={e => setBannerImgSize({ w: e.currentTarget.naturalWidth, h: e.currentTarget.naturalHeight })} onError={() => setBannerImgSize(null)} style={{maxHeight:100, maxWidth:'100%', borderRadius:8, border:'1px solid #e2e8f0', objectFit:'contain'}} />
+                    {bannerImgSize && (() => { const b = bannerSize(formBanner.position); const okRatio = !b || Math.abs(bannerImgSize.w / bannerImgSize.h - b.w / b.h) / (b.w / b.h) <= 0.05; const small = !!b && bannerImgSize.w < b.w; return (
+                      <div style={{marginTop:6, fontSize:12, color: okRatio && !small ? '#047857' : '#b45309'}}>
+                        Ảnh đã chọn: <b>{bannerImgSize.w} × {bannerImgSize.h} px</b>
+                        {b && okRatio && !small && ' — đúng kích thước chuẩn ✓'}
+                        {b && !okRatio && ` — khác tỉ lệ chuẩn ${b.w} × ${b.h} px, ảnh có thể bị cắt khi hiển thị.`}
+                        {b && okRatio && small && ` — nhỏ hơn chuẩn ${b.w} px, ảnh có thể bị mờ.`}
+                      </div>); })()}
                   </div>
                 )}
               </div>
 
               <div>
                 <label style={{display:'block', fontSize:13, fontWeight:600, marginBottom:4, color:'#334155'}}>Hoặc nhập đường dẫn ảnh (Image URL)</label>
-                <input type="text" value={formBanner.imageUrl} onChange={e => setFormBanner({...formBanner, imageUrl:e.target.value})} placeholder="/assets/banner_right.png" style={{width:'100%', padding:'10px 12px', borderRadius:8, border:'1px solid #cbd5e1', fontSize:14}} />
+                <input type="text" value={formBanner.imageUrl} onChange={e => setFormBanner({...formBanner, imageUrl:e.target.value})} placeholder="https://… hoặc /assets/ten-anh.png" style={{width:'100%', padding:'10px 12px', borderRadius:8, border:'1px solid #cbd5e1', fontSize:14}} />
               </div>
 
               <div>

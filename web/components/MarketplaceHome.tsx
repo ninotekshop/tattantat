@@ -285,12 +285,11 @@ export function MarketplaceHome({ query = '', group = '', sort = '', view = '' }
   const [activeTab, setActiveTab] = useState<'FOR_YOU' | 'MOST_VIEWED' | 'VIP' | 'NEARBY' | 'TODAY_DEALS' | 'VERIFIED' | 'GIVEAWAY'>('FOR_YOU');
 
   // Ảnh nền mặc định cho form tìm kiếm khi chưa cấu hình banner Hero trong trang quản trị
-  const DEFAULT_HERO_BANNER = '/assets/hero-dog-banner.png';
   const [activeBanners, setActiveBanners] = useState<{
     leftBanner?: string;
     rightBanner?: string;
     heroBanner?: string;
-  }>({ heroBanner: DEFAULT_HERO_BANNER });
+  }>({});
 
   useEffect(() => {
     const handleScroll = () => {
@@ -320,10 +319,11 @@ export function MarketplaceHome({ query = '', group = '', sort = '', view = '' }
         const json = await res.json();
         if (cancelled || !Array.isArray(json?.data)) return;
         const picked = pickBanners(json.data);
-        setActiveBanners({ ...picked, heroBanner: picked.heroBanner ?? DEFAULT_HERO_BANNER });
+        // Không có Hero banner đang hoạt động → dùng nền xanh thương hiệu (CSS .hero-banner-container)
+        setActiveBanners(picked);
       } catch {
-        // Backend chưa sẵn sàng: giữ ảnh nền mặc định cho form tìm kiếm
-        if (!cancelled) setActiveBanners({ heroBanner: DEFAULT_HERO_BANNER });
+        // Backend chưa sẵn sàng: dùng nền xanh thương hiệu cho form tìm kiếm
+        if (!cancelled) setActiveBanners({});
       }
     };
 
@@ -428,10 +428,10 @@ export function MarketplaceHome({ query = '', group = '', sort = '', view = '' }
         <button
           onClick={scrollToTop}
           title="Quay lại đầu trang"
+          aria-label="Quay lại đầu trang"
+          className="back-to-top-btn"
           style={{
             position: 'fixed',
-            bottom: 32,
-            right: 28,
             width: 46,
             height: 46,
             borderRadius: '50%',
@@ -472,7 +472,7 @@ export function MarketplaceHome({ query = '', group = '', sort = '', view = '' }
         <div className="shell" style={{ padding: '0 8px' }}>
           <div
             className="hero-banner-container hero-flush-top"
-            style={activeBanners.heroBanner ? { backgroundImage: `url(${activeBanners.heroBanner})` } : { backgroundImage: 'none' }}
+            style={activeBanners.heroBanner ? { backgroundImage: `url(${activeBanners.heroBanner})` } : undefined}
           >
             <div className="hero-banner-bg" />
             <div className="hero-banner-overlay" style={{ maxWidth: 660 }}>

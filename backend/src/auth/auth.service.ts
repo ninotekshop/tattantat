@@ -21,7 +21,7 @@ type UserRow = {
   status: 'ACTIVE' | 'INACTIVE' | 'SUSPENDED' | 'BANNED' | 'DELETED';
 };
 
-const resetTokens = new Map<string, { userId: string; email: string; expiresAt: number }>();
+const sha256 = (v: string) => crypto.createHash('sha256').update(v).digest('hex');
 const otpStore = new Map<string, { phone: string; otp: string; expiresAt: number }>();
 
 @Injectable()
@@ -146,19 +146,27 @@ export class AuthService {
     return this.envelope(await this.tokensFor(user));
   }
 
+  /** Mã đặt lại mật khẩu lưu trong DB (chỉ lưu hash) để mọi tiến trình máy chủ đều dùng được. */
+  private resetTableReady?: Promise<unknown>;
+  private ensureResetTable() {
+    this.resetTableReady ??= this.database.query(`CREATE TABLE IF NOT EXISTS password_resets (token_hash TEXT PRIMARY KEY, user_id UUID NOT NULL, expires_at TIMESTAMPTZ NOT NULL, used_at TIMESTAMPTZ, created_at TIMESTAMPTZ NOT NULL DEFAULT now())`)
+      .catch(e => { this.resetTableReady = undefined; throw e; });
+    return this.resetTableReady;
+  }
+
   async forgotPassword(body: ForgotPasswordDto) {
     const email = body.email.trim().toLowerCase();
     const result = await this.database.query<UserRow>(
-      `SELECT id, email, full_name FROM users WHERE LOWER(email) = $1 LIMIT 1`,
+      `SELECT id, email, full_name, status FROM users WHERE LOWER(email) = $1 LIMIT 1`,
       [email],
     );
     const user = result.rows[0];
 
-    if (user && user.email) {
+    if (user && user.email && user.status === 'ACTIVE') {
+      await this.ensureResetTable();
       const token = crypto.randomBytes(32).toString('hex');
-      const expiresAt = Date.now() + 15 * 60 * 1000;
-      resetTokens.set(token, { userId: user.id, email: user.email, expiresAt });
-
+      await this.database.query(`DELETE FROM password_resets WHERE user_id = $1 OR expires_at < now() - interval '1 day'`, [user.id]);
+      await this.database.query(`INSERT INTO password_resets (token_hash, user_id, expires_at) VALUES ($1, $2, now() + interval '15 minutes')`, [sha256(token), user.id]);
       this.mailService.sendPasswordResetEmail(user.email, user.full_name, token).catch(() => {});
     }
 
@@ -168,16 +176,33 @@ export class AuthService {
     );
   }
 
+  /** Kiểm tra mã trước khi hiện form (trang /reset-password). */
+  async checkResetToken(token: string) {
+    await this.ensureResetTable();
+    const row = (await this.database.query<{ email: string | null }>(
+      `SELECT u.email FROM password_resets r JOIN users u ON u.id = r.user_id WHERE r.token_hash = $1 AND r.used_at IS NULL AND r.expires_at > now() LIMIT 1`,
+      [sha256(String(token ?? ''))],
+    )).rows[0];
+    if (!row) throw new BadRequestException('Liên kết đặt lại mật khẩu không hợp lệ hoặc đã hết hạn.');
+    const email = row.email ?? '';
+    const masked = email.replace(/^(.{2})[^@]*(@.*)$/, (_m, a: string, b: string) => a + '***' + b);
+    return this.envelope({ email: masked });
+  }
+
   async resetPassword(body: ResetPasswordDto) {
-    const record = resetTokens.get(body.token);
-    if (!record || record.expiresAt < Date.now()) {
-      throw new BadRequestException('Mã đặt lại mật khẩu không hợp lệ hoặc đã hết hạn.');
-    }
-
+    await this.ensureResetTable();
     const passwordHash = await bcrypt.hash(body.newPassword, 12);
-    await this.database.query('UPDATE users SET password_hash = $1 WHERE id = $2', [passwordHash, record.userId]);
-    resetTokens.delete(body.token);
-
+    const user = await this.database.transaction(async c => {
+      const r = (await c.query<{ user_id: string }>(
+        `UPDATE password_resets SET used_at = now() WHERE token_hash = $1 AND used_at IS NULL AND expires_at > now() RETURNING user_id`,
+        [sha256(String(body.token ?? ''))],
+      )).rows[0];
+      if (!r) throw new BadRequestException('Liên kết đặt lại mật khẩu không hợp lệ hoặc đã hết hạn.');
+      const u = (await c.query<{ email: string | null; full_name: string }>(`UPDATE users SET password_hash = $1, updated_at = now() WHERE id = $2 RETURNING email, full_name`, [passwordHash, r.user_id])).rows[0];
+      await c.query(`DELETE FROM password_resets WHERE user_id = $1 AND used_at IS NULL`, [r.user_id]);
+      return u;
+    });
+    if (user?.email) this.mailService.sendPasswordChangedEmail(user.email, user.full_name).catch(() => {});
     return this.envelope(null, 'Đặt lại mật khẩu thành công! Bạn có thể đăng nhập ngay.');
   }
 

@@ -44,8 +44,14 @@ export class AuthController {
     return this.auth.forgotPassword(body);
   }
 
+  @Post('reset-password/check')
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
+  checkResetToken(@Body() body: { token?: string }) {
+    return this.auth.checkResetToken(String(body?.token ?? '').slice(0, 200));
+  }
+
   @Post('reset-password')
-  @Throttle({ default: { limit: 3, ttl: 60_000 } })
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
   resetPassword(@Body() body: ResetPasswordDto) {
     return this.auth.resetPassword(body);
   }
