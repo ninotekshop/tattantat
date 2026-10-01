@@ -25,7 +25,7 @@ export class ListingMediaService {
     const key = config.get<string>('SUPABASE_SECRET_KEY') || config.get<string>('SUPABASE_PUBLISHABLE_KEY') || process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_PUBLISHABLE_KEY;
     if (!url) throw new Error('Thiếu SUPABASE_URL trong backend/.env.');
     if (!key) throw new Error('Thiếu SUPABASE_SECRET_KEY trong backend/.env (không lưu khóa trong mã nguồn).');
-    this.client=createClient(url, key, {auth:{persistSession:false,autoRefreshToken:false}});
+    this.client=createClient(url, key, {auth:{persistSession:false,autoRefreshToken:false},realtime:{transport:class NoRealtime {} as any}});
   }
   async upload(userId: string, listingId: string, kind: 'images'|'videos', file: {buffer:Buffer;mimetype:string}) {
     const mime=detectMedia(file.buffer,kind);

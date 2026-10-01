@@ -12,7 +12,7 @@ export class StorageService {
     const key = config.get<string>('SUPABASE_SECRET_KEY') || config.get<string>('SUPABASE_PUBLISHABLE_KEY') || process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_PUBLISHABLE_KEY;
     if (!url) throw new Error('Thiếu SUPABASE_URL trong backend/.env.');
     if (!key) throw new Error('Thiếu SUPABASE_SECRET_KEY trong backend/.env (không lưu khóa trong mã nguồn).');
-    this.client = createClient(url, key, { auth: { autoRefreshToken: false, persistSession: false } });
+    this.client = createClient(url, key, { auth: { autoRefreshToken: false, persistSession: false }, realtime: { transport: class NoRealtime {} as any } });
   }
   async uploadProductImage(userId: string, file: { buffer: Buffer; mimetype: string }) {
     if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.mimetype)) throw new BadRequestException('Chỉ hỗ trợ ảnh JPEG, PNG hoặc WebP');
