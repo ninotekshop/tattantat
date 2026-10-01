@@ -1,258 +1,103 @@
-import { useState, useEffect } from 'react';
-import {
-  StyleSheet,
-  View,
-  Text,
-  ScrollView,
-  TextInput,
-  TouchableOpacity,
-  Image,
-  FlatList,
-  SafeAreaView,
-} from 'react-native';
-import { useRouter } from 'expo-router';
-import { Search, MapPin, Bell } from 'lucide-react-native';
-import { COLORS, FONTS } from '../../constants/theme';
-import { apiService, Product, Category } from '../../services/api';
+import { useEffect, useState } from 'react';
+import { FlatList, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Image } from 'expo-image';
+import { router } from 'expo-router';
+import { Bell, Search } from 'lucide-react-native';
+import { api, media } from '@/lib/api';
+import { useAuth } from '@/lib/auth';
+import { C, R, shadow } from '@/lib/theme';
+import type { Category } from '@/lib/types';
+import { useProducts } from '@/lib/useProducts';
+import { ProductCard } from '@/components/ProductCard';
+import { Chip, Empty, ErrorBox, Loading } from '@/components/ui';
 
-export default function HomeScreen() {
-  const router = useRouter();
-  const [products, setProducts] = useState<Product[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [search, setSearch] = useState('');
+const SORTS = [{ key: 'new', label: 'Mới nhất' }, { key: 'price_asc', label: 'Giá thấp' }, { key: 'price_desc', label: 'Giá cao' }];
 
+export default function Home() {
+  const { width } = useWindowDimensions();
+  const { session } = useAuth();
+  const [cats, setCats] = useState<Category[]>([]);
+  const [sort, setSort] = useState('new');
+  const [unread, setUnread] = useState(0);
+  const list = useProducts({ sort });
+  const col = (width - 12 * 3) / 2;
+
+  useEffect(() => { api<Category[]>('/categories').then(c => setCats(c.filter(x => !(x.parent_id ?? x.parentId)))).catch(() => undefined); }, []);
   useEffect(() => {
-    loadData();
-  }, []);
+    if (!session) { setUnread(0); return; }
+    api<{ count?: number; unread?: number }>('/notifications/unread-count', { auth: true }).then(r => setUnread(Number(r.count ?? r.unread ?? 0))).catch(() => undefined);
+  }, [session, list.refreshing]);
 
-  const loadData = async () => {
-    const [prods, cats] = await Promise.all([
-      apiService.getProducts(),
-      apiService.getCategories(),
-    ]);
-    setProducts(prods);
-    setCategories(cats);
-  };
-
-  const formatVnd = (amount: number) => {
-    return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
-  };
-
-  return (
-    <SafeAreaView style={styles.container}>
-      {/* HEADER */}
-      <View style={styles.header}>
-        <View style={styles.locationContainer}>
-          <MapPin size={16} color={COLORS.brand} />
-          <Text style={styles.locationText}>Quy Nhơn, Bình Định</Text>
-        </View>
-        <TouchableOpacity style={styles.iconBtn}>
-          <Bell size={20} color={COLORS.ink} />
-        </TouchableOpacity>
+  const header = (
+    <View>
+      <View style={st.top}>
+        <Image source={require('../../assets/logo.png')} style={{ width: 132, height: 38 }} contentFit="contain" />
+        <Pressable hitSlop={10} onPress={() => router.push(session ? '/notifications' : '/login')} style={st.bell}>
+          <Bell size={22} color={C.ink} />
+          {unread > 0 ? <View style={st.badge}><Text style={st.badgeText}>{unread > 99 ? '99+' : unread}</Text></View> : null}
+        </Pressable>
       </View>
-
-      {/* SEARCH BAR */}
-      <View style={styles.searchSection}>
-        <View style={styles.searchBar}>
-          <Search size={18} color={COLORS.muted} style={{ marginRight: 8 }} />
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Tìm kiếm mọi thứ trên Tất Tần Tật..."
-            value={search}
-            onChangeText={setSearch}
-          />
+      <Pressable onPress={() => router.push('/search')} style={st.search}>
+        <Search size={20} color={C.brand} /><Text style={st.searchText}>Bạn muốn mua gì?</Text>
+      </Pressable>
+      <View style={st.hero}>
+        <View style={{ flex: 1 }}>
+          <Text style={st.heroTitle}>Mua bán dễ dàng</Text>
+          <Text style={st.heroText}>Thanh toán QR an toàn — tiền được giữ đến khi bạn nhận hàng.</Text>
         </View>
+        <Image source={require('../../assets/mascot.png')} style={{ width: 84, height: 84 }} contentFit="contain" />
       </View>
-
-      <ScrollView showsVerticalScrollIndicator={false}>
-        {/* BANNER */}
-        <View style={styles.banner}>
-          <Text style={styles.bannerTitle}>Tất Tần Tật</Text>
-          <Text style={styles.bannerSubtitle}>Mua bán mọi thứ, đơn giản và an toàn gần bạn</Text>
-        </View>
-
-        {/* CATEGORIES */}
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Danh mục nổi bật</Text>
-        </View>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoriesRow}>
-          {categories.map((cat) => (
-            <TouchableOpacity key={cat.id} style={styles.categoryCard}>
-              <View style={styles.categoryIconBg}>
-                <Text style={styles.categoryIconText}>{cat.name[0]}</Text>
-              </View>
-              <Text style={styles.categoryName}>{cat.name}</Text>
-            </TouchableOpacity>
+      {cats.length ? <>
+        <Text style={st.section}>Khám phá danh mục</Text>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 12, gap: 10 }}>
+          {cats.map(c => (
+            <Pressable key={c.id} onPress={() => router.push({ pathname: '/search', params: { categoryId: String(c.id), title: c.name } })} style={st.cat}>
+              <View style={st.catIcon}>{c.icon_url ? <Image source={{ uri: media(c.icon_url) }} style={{ width: 44, height: 44 }} contentFit="contain" /> : <Text style={{ fontSize: 22 }}>🛍️</Text>}</View>
+              <Text numberOfLines={2} style={st.catText}>{c.name}</Text>
+            </Pressable>
           ))}
         </ScrollView>
-
-        {/* PRODUCT LIST */}
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Tin đăng mới nhất</Text>
-        </View>
-
-        <View style={styles.productList}>
-          {products.map((item) => (
-            <TouchableOpacity
-              key={item.id}
-              style={styles.productCard}
-              onPress={() => router.push(`/products/${item.id}`)}
-            >
-              <Image source={{ uri: item.image_url }} style={styles.productImg} />
-              <View style={styles.productInfo}>
-                <Text style={styles.productTitle} numberOfLines={2}>
-                  {item.title}
-                </Text>
-                <Text style={styles.productPrice}>{formatVnd(item.price)}</Text>
-                <Text style={styles.productLocation}>{item.location}</Text>
-              </View>
-            </TouchableOpacity>
-          ))}
-        </View>
+      </> : null}
+      <Text style={st.section}>Tin đăng mới</Text>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 12, gap: 8, paddingBottom: 10 }}>
+        {SORTS.map(s => <Chip key={s.key} label={s.label} active={sort === s.key} onPress={() => setSort(s.key)} />)}
       </ScrollView>
+      {list.error ? <ErrorBox message={list.error} onRetry={list.refresh} /> : null}
+    </View>
+  );
+
+  return (
+    <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: C.paper }}>
+      <FlatList
+        data={list.items}
+        keyExtractor={i => i.id}
+        numColumns={2}
+        columnWrapperStyle={{ gap: 12, paddingHorizontal: 12 }}
+        contentContainerStyle={{ gap: 12, paddingBottom: 24 }}
+        ListHeaderComponent={header}
+        renderItem={({ item }) => <ProductCard p={item} width={col} />}
+        onEndReached={list.more}
+        onEndReachedThreshold={0.6}
+        refreshControl={<RefreshControl refreshing={list.refreshing} onRefresh={list.refresh} tintColor={C.brand} />}
+        ListEmptyComponent={list.loading ? <Loading /> : <Empty title="Chưa có tin đăng" text="Hãy là người đầu tiên đăng tin trên Tất Tần Tật!" />}
+      />
     </SafeAreaView>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: COLORS.paper,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    paddingBottom: 8,
-    backgroundColor: COLORS.white,
-  },
-  locationContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  locationText: {
-    fontFamily: FONTS.bold,
-    fontSize: 14,
-    color: COLORS.ink,
-  },
-  iconBtn: {
-    padding: 6,
-  },
-  searchSection: {
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    backgroundColor: COLORS.white,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.line,
-  },
-  searchBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: COLORS.paper,
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    height: 42,
-  },
-  searchInput: {
-    flex: 1,
-    fontFamily: FONTS.regular,
-    fontSize: 13.5,
-    color: COLORS.ink,
-  },
-  banner: {
-    margin: 16,
-    padding: 20,
-    backgroundColor: COLORS.brand,
-    borderRadius: 16,
-  },
-  bannerTitle: {
-    fontFamily: FONTS.extraBold,
-    fontSize: 22,
-    color: COLORS.white,
-  },
-  bannerSubtitle: {
-    fontFamily: FONTS.medium,
-    fontSize: 13,
-    color: COLORS.brandLight,
-    marginTop: 4,
-  },
-  sectionHeader: {
-    paddingHorizontal: 16,
-    marginTop: 12,
-    marginBottom: 8,
-  },
-  sectionTitle: {
-    fontFamily: FONTS.bold,
-    fontSize: 16,
-    color: COLORS.ink,
-  },
-  categoriesRow: {
-    paddingLeft: 16,
-  },
-  categoryCard: {
-    alignItems: 'center',
-    marginRight: 16,
-    width: 72,
-  },
-  categoryIconBg: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: COLORS.brandLight,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 6,
-  },
-  categoryIconText: {
-    fontFamily: FONTS.bold,
-    fontSize: 20,
-    color: COLORS.brand,
-  },
-  categoryName: {
-    fontFamily: FONTS.medium,
-    fontSize: 11.5,
-    color: COLORS.ink,
-    textAlign: 'center',
-  },
-  productList: {
-    paddingHorizontal: 16,
-    gap: 12,
-    paddingBottom: 24,
-  },
-  productCard: {
-    flexDirection: 'row',
-    backgroundColor: COLORS.white,
-    borderRadius: 12,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: COLORS.line,
-  },
-  productImg: {
-    width: 110,
-    height: 110,
-  },
-  productInfo: {
-    flex: 1,
-    padding: 10,
-    justifyContent: 'space-between',
-  },
-  productTitle: {
-    fontFamily: FONTS.semiBold,
-    fontSize: 13.5,
-    color: COLORS.ink,
-    lineHeight: 18,
-  },
-  productPrice: {
-    fontFamily: FONTS.bold,
-    fontSize: 15,
-    color: COLORS.brand,
-  },
-  productLocation: {
-    fontFamily: FONTS.regular,
-    fontSize: 11.5,
-    color: COLORS.muted,
-  },
+const st = StyleSheet.create({
+  top: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 14, paddingTop: 6 },
+  bell: { width: 42, height: 42, borderRadius: 21, backgroundColor: C.white, alignItems: 'center', justifyContent: 'center', ...shadow },
+  badge: { position: 'absolute', top: 2, right: 2, minWidth: 18, height: 18, borderRadius: 9, backgroundColor: C.danger, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4 },
+  badgeText: { color: C.white, fontSize: 10, fontWeight: '800' },
+  search: { flexDirection: 'row', alignItems: 'center', gap: 10, margin: 12, backgroundColor: C.white, borderRadius: R.pill, paddingHorizontal: 16, height: 50, borderWidth: 1.5, borderColor: C.brand },
+  searchText: { color: C.muted, fontSize: 15 },
+  hero: { marginHorizontal: 12, borderRadius: R.lg, backgroundColor: C.brand, padding: 16, flexDirection: 'row', alignItems: 'center', gap: 8 },
+  heroTitle: { color: C.white, fontSize: 20, fontWeight: '800' },
+  heroText: { color: 'rgba(255,255,255,.92)', fontSize: 13, marginTop: 4, lineHeight: 18 },
+  section: { fontSize: 17, fontWeight: '800', color: C.ink, marginHorizontal: 14, marginTop: 18, marginBottom: 10 },
+  cat: { width: 76, alignItems: 'center', gap: 6 },
+  catIcon: { width: 64, height: 64, borderRadius: 20, backgroundColor: C.white, alignItems: 'center', justifyContent: 'center', ...shadow },
+  catText: { fontSize: 12, color: C.text, textAlign: 'center', fontWeight: '600' },
 });

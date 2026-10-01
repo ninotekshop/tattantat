@@ -1,4 +1,4 @@
-import { BadRequestException, Body, Controller, Get, Param, ParseUUIDPipe, Patch, Post, Req, UseGuards, Query } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Delete, Get, Param, ParseUUIDPipe, Patch, Post, Req, UseGuards, Query } from '@nestjs/common';
 import { IsIn, IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
 import { Transform } from 'class-transformer';
 import * as bcrypt from 'bcryptjs';
@@ -13,6 +13,11 @@ class RegisterPushDeviceDto {
 export class UpdateProfileDto {
   @IsOptional() @Transform(({ value }) => typeof value === 'string' ? value.trim() : value) @IsString() @MinLength(2) @MaxLength(120) fullName?: string;
   @IsOptional() @IsString() @MaxLength(500000) avatarUrl?: string;
+}
+
+export class DeleteAccountDto {
+  @IsOptional() @IsString() @MaxLength(100) password?: string;
+  @IsOptional() @IsString() @MaxLength(10) confirm?: string;
 }
 
 export class ChangePasswordDto {
@@ -77,6 +82,34 @@ export class AccountController {
   async readAll(@Req() request: { user: { id: string } }) {
     const result = await this.db.query('UPDATE notifications SET is_read=true,read_at=COALESCE(read_at,NOW()) WHERE user_id=$1 AND is_read=false', [request.user.id]);
     return { success: true, data: { updated: result.rowCount ?? 0 }, message: null, errorCode: null };
+  }
+
+  /**
+   * Người dùng tự xóa tài khoản (yêu cầu của Google Play / App Store).
+   * Ẩn danh hóa thay vì xóa cứng để giữ lịch sử đơn hàng/giao dịch hợp lệ cho bên còn lại.
+   */
+  @Delete('me')
+  async deleteMe(@Req() request: { user: { id: string } }, @Body() body: DeleteAccountDto) {
+    const uid = request.user.id;
+    const user = (await this.db.query<{ password_hash: string | null; status: string }>('SELECT password_hash, status::text AS status FROM users WHERE id=$1', [uid])).rows[0];
+    if (!user || user.status === 'DELETED') throw new BadRequestException('Tài khoản không tồn tại.');
+    if (user.password_hash) {
+      if (!body?.password) throw new BadRequestException('Vui lòng nhập mật khẩu để xác nhận xóa tài khoản.');
+      if (!(await bcrypt.compare(body.password, user.password_hash))) throw new BadRequestException('Mật khẩu không đúng.');
+    } else if ((body?.confirm ?? '').trim().toUpperCase() !== 'XOA') {
+      throw new BadRequestException('Vui lòng nhập XOA để xác nhận xóa tài khoản.');
+    }
+    const open = (await this.db.query<{ n: number }>(`SELECT COUNT(*)::int AS n FROM orders WHERE (buyer_id=$1 OR seller_id=$1) AND status::text NOT IN ('COMPLETED','CANCELLED','REFUNDED','CLOSED')`, [uid]).catch(() => ({ rows: [{ n: 0 }] }))).rows[0].n;
+    if (open > 0) throw new BadRequestException(`Bạn còn ${open} đơn hàng đang xử lý. Vui lòng hoàn tất hoặc hủy đơn trước khi xóa tài khoản.`);
+    await this.db.transaction(async c => {
+      await c.query(`UPDATE products SET status='DELETED'::product_status, deleted_at=COALESCE(deleted_at,NOW()), updated_at=NOW() WHERE seller_id=$1 AND status::text NOT IN ('SOLD','DELETED')`, [uid]);
+      await c.query(`UPDATE push_devices SET active=FALSE, updated_at=NOW() WHERE user_id=$1`, [uid]);
+      for (const sql of [`DELETE FROM favorites WHERE user_id=$1`, `DELETE FROM saved_searches WHERE user_id=$1`, `DELETE FROM notification_prefs WHERE user_id=$1`]) {
+        await c.query('SAVEPOINT s'); try { await c.query(sql, [uid]); await c.query('RELEASE SAVEPOINT s'); } catch { await c.query('ROLLBACK TO SAVEPOINT s'); }
+      }
+      await c.query(`UPDATE users SET status='DELETED'::user_status, email=NULL, phone=NULL, password_hash=NULL, avatar_url=NULL, full_name='Tài khoản đã xóa', phone_verified=FALSE, email_verified=FALSE, updated_at=NOW() WHERE id=$1`, [uid]);
+    });
+    return { success: true, data: null, message: 'Tài khoản của bạn đã được xóa.', errorCode: null };
   }
 
   @Post('me/push-devices')

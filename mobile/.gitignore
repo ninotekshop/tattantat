@@ -1,0 +1,15 @@
+node_modules/
+.expo/
+dist/
+web-build/
+ios/
+android/
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.keystore
+expo-env.d.ts
+.env*.local
+GoogleService-Info.plist

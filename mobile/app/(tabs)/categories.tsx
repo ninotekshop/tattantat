@@ -1,79 +1,62 @@
-import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
-import { COLORS, FONTS } from '../../constants/theme';
+import { useCallback, useEffect, useState } from 'react';
+import { FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
+import { Image } from 'expo-image';
+import { router } from 'expo-router';
+import { ChevronRight } from 'lucide-react-native';
+import { api, media } from '@/lib/api';
+import { C, R, shadow } from '@/lib/theme';
+import type { Category } from '@/lib/types';
+import { ErrorBox, Loading } from '@/components/ui';
 
-const CATEGORIES = [
-  { id: '1', name: 'Bất động sản', desc: 'Mua bán nhà đất, căn hộ cho thuê' },
-  { id: '2', name: 'Xe cộ', desc: 'Ô tô, xe máy, xe điện, phụ tùng' },
-  { id: '3', name: 'Đồ điện tử', desc: 'Điện thoại, máy tính, máy ảnh, phụ kiện' },
-  { id: '4', name: 'Thú cưng', desc: 'Chó, mèo, thức ăn & phụ kiện thú cưng' },
-  { id: '5', name: 'Đồ gia dụng', desc: 'Bàn ghế, tủ, đồ dùng bếp, máy giặt' },
-  { id: '6', name: 'Thời trang', desc: 'Quần áo, giày dép, túi xách, đồng hồ' },
-];
+const parentOf = (c: Category) => c.parent_id ?? c.parentId ?? null;
 
-export default function CategoriesScreen() {
+export default function Categories() {
+  const [all, setAll] = useState<Category[]>([]);
+  const [open, setOpen] = useState<number | null>(null);
+  const [loading, setLoading] = useState(true), [error, setError] = useState('');
+  const load = useCallback(() => {
+    setError('');
+    api<Category[]>('/categories').then(setAll).catch(e => setError(e.message)).finally(() => setLoading(false));
+  }, []);
+  useEffect(load, [load]);
+  const roots = all.filter(c => !parentOf(c));
+  const go = (c: Category) => router.push({ pathname: '/search', params: { categoryId: String(c.id), title: c.name } });
+
+  if (loading) return <Loading />;
   return (
-    <View style={styles.container}>
-      <FlatList
-        data={CATEGORIES}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={{ padding: 16 }}
-        renderItem={({ item }) => (
-          <TouchableOpacity style={styles.card}>
-            <View style={styles.iconBox}>
-              <Text style={styles.iconText}>{item.name[0]}</Text>
-            </View>
-            <View style={styles.info}>
-              <Text style={styles.title}>{item.name}</Text>
-              <Text style={styles.desc}>{item.desc}</Text>
-            </View>
-          </TouchableOpacity>
-        )}
-      />
-    </View>
+    <FlatList
+      data={roots}
+      keyExtractor={c => String(c.id)}
+      contentContainerStyle={{ padding: 12, gap: 10 }}
+      refreshControl={<RefreshControl refreshing={false} onRefresh={load} tintColor={C.brand} />}
+      ListHeaderComponent={error ? <ErrorBox message={error} onRetry={load} /> : null}
+      renderItem={({ item }) => {
+        const kids = all.filter(c => parentOf(c) === item.id);
+        const expanded = open === item.id;
+        return (
+          <View style={st.card}>
+            <Pressable style={st.row} onPress={() => (kids.length ? setOpen(expanded ? null : item.id) : go(item))}>
+              <View style={st.icon}>{item.icon_url ? <Image source={{ uri: media(item.icon_url) }} style={{ width: 36, height: 36 }} contentFit="contain" /> : <Text style={{ fontSize: 20 }}>🛍️</Text>}</View>
+              <Text style={st.name}>{item.name}</Text>
+              <ChevronRight size={20} color={C.muted} style={{ transform: [{ rotate: expanded ? '90deg' : '0deg' }] }} />
+            </Pressable>
+            {expanded ? <View style={st.kids}>
+              <Pressable onPress={() => go(item)} style={st.kid}><Text style={[st.kidText, { color: C.brand, fontWeight: '700' }]}>Xem tất cả {item.name}</Text></Pressable>
+              {kids.map(k => <Pressable key={k.id} onPress={() => go(k)} style={st.kid}><Text style={st.kidText}>{k.name}</Text></Pressable>)}
+            </View> : null}
+          </View>
+        );
+      }}
+    />
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: COLORS.paper,
-  },
-  card: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: COLORS.white,
-    padding: 14,
-    borderRadius: 12,
-    marginBottom: 10,
-    borderWidth: 1,
-    borderColor: COLORS.line,
-  },
-  iconBox: {
-    width: 44,
-    height: 44,
-    borderRadius: 10,
-    backgroundColor: COLORS.brandLight,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12,
-  },
-  iconText: {
-    fontFamily: FONTS.bold,
-    fontSize: 18,
-    color: COLORS.brand,
-  },
-  info: {
-    flex: 1,
-  },
-  title: {
-    fontFamily: FONTS.bold,
-    fontSize: 14.5,
-    color: COLORS.ink,
-  },
-  desc: {
-    fontFamily: FONTS.regular,
-    fontSize: 12,
-    color: COLORS.muted,
-    marginTop: 2,
-  },
+const st = StyleSheet.create({
+  card: { backgroundColor: C.white, borderRadius: R.lg, overflow: 'hidden', ...shadow },
+  row: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 12 },
+  icon: { width: 48, height: 48, borderRadius: 14, backgroundColor: C.brandSoft, alignItems: 'center', justifyContent: 'center' },
+  name: { flex: 1, fontSize: 16, fontWeight: '700', color: C.ink },
+  kids: { borderTopWidth: 1, borderTopColor: C.line, paddingVertical: 4 },
+  kid: { paddingVertical: 12, paddingHorizontal: 72 },
+  kidText: { fontSize: 15, color: C.text },
 });

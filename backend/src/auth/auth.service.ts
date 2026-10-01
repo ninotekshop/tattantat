@@ -6,6 +6,7 @@ import * as crypto from 'crypto';
 import { DatabaseService } from '../database/database.service';
 import { MailService } from '../mail/mail.service';
 import { toLocalPhone, phoneVariants, verifyFirebasePhone } from './firebase-phone';
+import { SocialIdentity, verifyApple, verifyFacebook, verifyGoogle } from './social-verify';
 import { LoginDto, RegisterDto, RefreshDto, VerifyOtpDto, SendOtpDto, ForgotPasswordDto, ResetPasswordDto, SocialLoginDto } from './dto/auth.dto';
 
 const DEFAULT_JWT_REFRESH = 'tat_tan_tat_jwt_refresh_secret_key_2026';
@@ -207,58 +208,18 @@ export class AuthService {
   }
 
   async socialLogin(body: SocialLoginDto) {
-    let email = body.email?.trim().toLowerCase() || null;
-    let name = body.name || `Thành viên ${body.provider === 'google' ? 'Google' : body.provider === 'facebook' ? 'Facebook' : 'Apple'}`;
-    let avatarUrl = body.avatarUrl || null;
-
-    // 1. Verify Google ID Token if provided
-    if (body.provider === 'google' && body.idToken) {
-      try {
-        const verifyRes = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${body.idToken}`);
-        if (verifyRes.ok) {
-          const googlePayload = await verifyRes.json();
-          if (googlePayload?.email) {
-            email = googlePayload.email.toLowerCase();
-            name = googlePayload.name || name;
-            avatarUrl = googlePayload.picture || avatarUrl;
-          }
-        }
-      } catch (err) {}
-    }
-
-    // 2. Verify Facebook Access Token via Meta Graph API if provided
-    if (body.provider === 'facebook' && (body.accessToken || body.idToken)) {
-      const fbToken = body.accessToken || body.idToken;
-      try {
-        const verifyRes = await fetch(`https://graph.facebook.com/me?fields=id,name,email,picture.type(large)&access_token=${fbToken}`);
-        if (verifyRes.ok) {
-          const fbPayload = await verifyRes.json();
-          if (fbPayload?.email) {
-            email = fbPayload.email.toLowerCase();
-          }
-          if (fbPayload?.name) {
-            name = fbPayload.name;
-          }
-          if (fbPayload?.picture?.data?.url) {
-            avatarUrl = fbPayload.picture.data.url;
-          }
-        }
-      } catch (err) {}
-    }
-
-    // 3. Decode Apple ID Token if provided
-    if (body.provider === 'apple' && body.idToken) {
-      try {
-        const payloadBase64 = body.idToken.split('.')[1];
-        if (payloadBase64) {
-          const payloadJson = Buffer.from(payloadBase64, 'base64').toString('utf8');
-          const applePayload = JSON.parse(payloadJson);
-          if (applePayload?.email) {
-            email = applePayload.email.toLowerCase();
-          }
-        }
-      } catch (err) {}
-    }
+    // Chỉ tin danh tính đã được nhà cung cấp xác thực; KHÔNG tin email/tên do client tự gửi.
+    const token = body.provider === 'facebook' ? (body.accessToken || body.idToken) : body.idToken;
+    let identity: SocialIdentity | null = null;
+    try {
+      if (token) identity = body.provider === 'google' ? await verifyGoogle(token) : body.provider === 'facebook' ? await verifyFacebook(token) : body.provider === 'apple' ? await verifyApple(token) : null;
+    } catch { identity = null; }
+    const demo = process.env.NODE_ENV !== 'production' && process.env.ALLOW_DEMO_SOCIAL_LOGIN === '1';
+    if (!identity && !demo) throw new UnauthorizedException('Không xác thực được tài khoản mạng xã hội. Vui lòng thử lại.');
+    const email = identity ? identity.email : (body.email?.trim().toLowerCase() || null);
+    if (!email) throw new BadRequestException('Tài khoản này chưa có email đã xác minh. Vui lòng đăng nhập bằng cách khác.');
+    const name = (identity?.name || body.name || '').trim() || `Thành viên ${body.provider === 'google' ? 'Google' : body.provider === 'facebook' ? 'Facebook' : 'Apple'}`;
+    const avatarUrl = identity?.avatarUrl || null;
 
     let user: UserRow | null = null;
 
@@ -268,6 +229,7 @@ export class AuthService {
         [email],
       );
       user = res.rows[0] || null;
+      if (user && user.status !== 'ACTIVE') throw new UnauthorizedException('Tài khoản đang bị khóa hoặc chưa hoạt động.');
     }
 
     if (!user) {

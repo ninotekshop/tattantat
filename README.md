@@ -1,18 +1,11 @@
-# Tất Tần Tật – Android UI Starter
+# Tất Tần Tật — Sàn mua bán trực tuyến
 
-Bộ giao diện Android Jetpack Compose, theo hướng UI xanh lá/trắng của Tất Tần Tật.
+| Thư mục | Nội dung |
+|---|---|
+| `web/` | Website Next.js (tattantat.vn) |
+| `backend/` | API NestJS (`/api/v1`), PostgreSQL trên Supabase |
+| `mobile/` | App Android + iOS (Expo / React Native, một mã nguồn) |
+| `docs/` | Hướng dẫn triển khai |
 
-Có sẵn:
-- Trang chủ
-- Danh mục
-- Đăng bán
-- Tin nhắn
-- Tài khoản
-- Bottom navigation
-- Search UI
-- Product cards
-- Form đăng bán
-
-Mở thư mục bằng Android Studio, Sync Gradle và Run.
-
-Đây là UI starter, chưa kết nối backend/API, đăng nhập, upload ảnh, thanh toán hoặc PostgreSQL.
+- Triển khai web lên Hostinger: `docs/HUONG-DAN-DAY-LEN-HOSTINGER.md`
+- Phát hành app lên Google Play / App Store: `docs/HUONG-DAN-PHAT-HANH-APP.md` (build bằng Codemagic, file `codemagic.yaml`)
