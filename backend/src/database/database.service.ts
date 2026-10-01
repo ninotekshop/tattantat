@@ -2,9 +2,6 @@ import { Injectable, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Pool, PoolClient, QueryResultRow } from 'pg';
 
-const DEFAULT_DATABASE_URL =
-  'postgresql://postgres.brabreqaarmuowymfnkl:Zf3Vqufu5lHZycg0@aws-0-ap-southeast-2.pooler.supabase.com:6543/postgres';
-
 @Injectable()
 export class DatabaseService implements OnModuleInit, OnModuleDestroy {
   private readonly pool: Pool;
@@ -12,28 +9,49 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
   constructor(config: ConfigService) {
     let connectionString =
       config.get<string>('DATABASE_URL') ||
-      process.env.DATABASE_URL ||
-      DEFAULT_DATABASE_URL;
+      process.env.DATABASE_URL;
+    if (!connectionString) throw new Error('Thiếu DATABASE_URL. Hãy khai báo trong backend/.env.');
 
     // Sanitize any non-ASCII en-dash or em-dash in hostnames (e.g. Hostinger UI auto-formatting)
     connectionString = connectionString.replace(/[–—]/g, '-');
-
-    if (
-      !connectionString ||
-      connectionString.includes('localhost') ||
-      connectionString.includes('127.0.0.1')
-    ) {
-      connectionString = DEFAULT_DATABASE_URL;
-    }
 
     console.log(
       `[DatabaseService] Connecting to database host: ${connectionString.split('@')[1] || 'Supabase'}`,
     );
 
-    this.pool = new Pool({ connectionString, ssl: { rejectUnauthorized: false } });
+    // Máy chủ DB ở xa (Supabase, Sydney): mỗi lần mở kết nối mới tốn vài lượt TLS, nên giữ kết nối sống lâu thay vì đóng sau 10 giây.
+    this.pool = new Pool({
+      connectionString,
+      ssl: { rejectUnauthorized: false },
+      max: Number(process.env.DB_POOL_MAX) || 10,
+      idleTimeoutMillis: 300_000,
+      connectionTimeoutMillis: 15_000,
+      keepAlive: true,
+      keepAliveInitialDelayMillis: 10_000,
+    });
+  }
+
+  private keepAliveTimer?: NodeJS.Timeout;
+
+  /** Chỉ mục phục vụ các trang quản trị (danh sách tin đăng / người dùng / đếm bài đăng, đơn hàng). Chạy nền, lỗi thì bỏ qua. */
+  private ensurePerformanceIndexes() {
+    const statements = [
+      `CREATE INDEX IF NOT EXISTS idx_products_created_live ON products (created_at DESC) WHERE deleted_at IS NULL`,
+      `CREATE INDEX IF NOT EXISTS idx_products_seller_live ON products (seller_id) WHERE deleted_at IS NULL`,
+      `CREATE INDEX IF NOT EXISTS idx_users_created_at ON users (created_at DESC)`,
+      `CREATE INDEX IF NOT EXISTS idx_orders_buyer ON orders (buyer_id)`,
+      `CREATE INDEX IF NOT EXISTS idx_product_images_product_sort ON product_images (product_id, sort_order)`,
+    ];
+    void (async () => {
+      for (const sql of statements) { try { await this.query(sql); } catch { /* bảng/cột có thể khác nhau giữa các môi trường */ } }
+    })();
   }
 
   async onModuleInit() {
+    // Ping định kỳ để kết nối tới DB không bị ngắt khi vắng người dùng (yêu cầu đầu tiên sẽ không phải bắt tay lại).
+    this.keepAliveTimer = setInterval(() => { void this.pool.query('SELECT 1').catch(() => undefined); }, 60_000);
+    this.keepAliveTimer.unref();
+    this.ensurePerformanceIndexes();
     try {
       await this.query(`
         CREATE TABLE IF NOT EXISTS banners (
@@ -120,6 +138,7 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
   }
 
   async onModuleDestroy() {
+    if (this.keepAliveTimer) clearInterval(this.keepAliveTimer);
     await this.pool.end();
   }
 }

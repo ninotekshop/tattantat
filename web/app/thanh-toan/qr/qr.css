@@ -1,0 +1,13 @@
+.qr-wrap{max-width:720px;margin:0 auto}
+.qr-card{display:grid;gap:18px}
+.qr-box{display:flex;flex-direction:column;align-items:center;gap:10px}
+.qr-box svg{background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:8px;max-width:100%;height:auto}
+.qr-expired{padding:40px 20px;text-align:center;color:#b45309;background:#fffbeb;border-radius:12px}
+.qr-timer{display:flex;align-items:center;gap:6px;color:#6b7280;font-size:14px}
+.qr-info{margin:0;display:grid;gap:8px}
+.qr-info>div{display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px dashed #e5e7eb}
+.qr-info dt{color:#6b7280}.qr-info dd{margin:0;font-weight:600;text-align:right;display:flex;align-items:center;gap:8px}
+.qr-info button{display:inline-flex;align-items:center;gap:4px;font-size:12px;border:1px solid #d1d5db;background:#fff;border-radius:8px;padding:3px 8px;cursor:pointer}
+.qr-amount{color:#00a65a;font-size:20px}
+.qr-acts{display:flex;flex-wrap:wrap;gap:10px;justify-content:center}
+.qr-acts a{display:inline-flex;align-items:center;gap:6px;padding:10px 16px;border:1px solid #d1d5db;border-radius:12px;text-decoration:none;color:#111827;font-weight:600}

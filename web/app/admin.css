@@ -578,3 +578,4 @@
   background: #e0f6e9;
   border-color: #00a65a;
 }
+.lm-menu-item{display:flex;align-items:center;gap:8px;transition:background .12s}.lm-menu-item:hover{background:#eef7f2}

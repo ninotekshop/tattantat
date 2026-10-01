@@ -7,6 +7,1189 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model PricingRule {
+  id        String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  code      String          @unique
+  kind      PricingRuleKind
+  currency  String          @default("VND") @db.Char(3)
+  status    String
+  createdAt DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@map("pricing_rules")
+}
+
+model PricingVersion {
+  id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  ruleId        String    @map("rule_id") @db.Uuid
+  rateBps       Int       @map("rate_bps")
+  fixedAmount   BigInt    @default(0) @map("fixed_amount")
+  effectiveFrom DateTime  @map("effective_from") @db.Timestamptz(6)
+  effectiveTo   DateTime? @map("effective_to") @db.Timestamptz(6)
+  createdBy     String?   @map("created_by") @db.Uuid
+  reason        String
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@unique([ruleId, effectiveFrom], map: "pricing_versions_active_range")
+  @@map("pricing_versions")
+}
+
+model PromotionPackage {
+  id            String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  code          String         @unique
+  name          String
+  price         BigInt
+  durationHours Int            @map("duration_hours")
+  promotionType promotion_type @map("promotion_type")
+  status        String         @default("ACTIVE")
+  effectiveFrom DateTime       @default(now()) @map("effective_from") @db.Timestamptz(6)
+  effectiveTo   DateTime?      @map("effective_to") @db.Timestamptz(6)
+  createdAt     DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
+  updated_at    DateTime       @default(now()) @db.Timestamptz(6)
+
+  @@map("promotion_packages")
+}
+
+model PromotionPackageVersion {
+  id            String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  packageId     String         @map("package_id") @db.Uuid
+  price         BigInt
+  durationHours Int            @map("duration_hours")
+  promotionType promotion_type @map("promotion_type")
+  status        String         @default("ACTIVE")
+  effectiveFrom DateTime       @default(now()) @map("effective_from") @db.Timestamptz(6)
+  effectiveTo   DateTime?      @map("effective_to") @db.Timestamptz(6)
+  createdBy     String?        @map("created_by") @db.Uuid
+  reason        String
+  createdAt     DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([packageId, status, effectiveFrom(sort: Desc)], map: "promotion_package_versions_active_idx")
+  @@map("promotion_package_versions")
+}
+
+model PromotionOrder {
+  id                    String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  sellerId              String         @map("seller_id") @db.Uuid
+  productId             String         @map("product_id") @db.Uuid
+  packageId             String         @map("package_id") @db.Uuid
+  packagePriceSnapshot  BigInt         @map("package_price_snapshot")
+  status                String         @default("PENDING")
+  idempotencyKey        String?        @unique @map("idempotency_key")
+  paidAt                DateTime?      @map("paid_at") @db.Timestamptz(6)
+  createdAt             DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
+  packageVersionId      String         @map("package_version_id") @db.Uuid
+  durationHoursSnapshot Int            @map("duration_hours_snapshot")
+  promotionTypeSnapshot promotion_type @map("promotion_type_snapshot")
+
+  @@index([sellerId, createdAt(sort: Desc)], map: "promotion_orders_seller_idx")
+  @@index([packageVersionId], map: "promotion_orders_version_idx")
+  @@map("promotion_orders")
+}
+
+model SubscriptionPlan {
+  id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  code          String    @unique
+  name          String
+  price         BigInt
+  billingCycle  String    @map("billing_cycle")
+  maxListings   Int?      @map("max_listings")
+  features      Json      @default("[]")
+  status        String    @default("ACTIVE")
+  effectiveFrom DateTime  @default(now()) @map("effective_from") @db.Timestamptz(6)
+  effectiveTo   DateTime? @map("effective_to") @db.Timestamptz(6)
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@map("subscription_plans")
+}
+
+model SubscriptionPlanVersion {
+  id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  planId        String    @map("plan_id") @db.Uuid
+  price         BigInt
+  billingCycle  String    @map("billing_cycle")
+  maxListings   Int?      @map("max_listings")
+  features      Json      @default("[]")
+  status        String    @default("ACTIVE")
+  effectiveFrom DateTime  @default(now()) @map("effective_from") @db.Timestamptz(6)
+  effectiveTo   DateTime? @map("effective_to") @db.Timestamptz(6)
+  createdBy     String?   @map("created_by") @db.Uuid
+  reason        String
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([planId, status, effectiveFrom(sort: Desc)], map: "subscription_plan_versions_active_idx")
+  @@map("subscription_plan_versions")
+}
+
+model Subscription {
+  id                   String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  sellerId             String    @map("seller_id") @db.Uuid
+  planId               String    @map("plan_id") @db.Uuid
+  priceSnapshot        BigInt    @map("price_snapshot")
+  status               String    @default("ACTIVE")
+  startsAt             DateTime  @map("starts_at") @db.Timestamptz(6)
+  endsAt               DateTime? @map("ends_at") @db.Timestamptz(6)
+  createdAt            DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  planVersionId        String    @map("plan_version_id") @db.Uuid
+  billingCycleSnapshot String    @map("billing_cycle_snapshot")
+  maxListingsSnapshot  Int?      @map("max_listings_snapshot")
+  featuresSnapshot     Json      @default("[]") @map("features_snapshot")
+
+  @@index([sellerId, status, endsAt], map: "subscriptions_seller_active_idx")
+  @@index([planVersionId], map: "subscriptions_version_idx")
+  @@map("subscriptions")
+}
+
+model SubscriptionOrder {
+  id                   String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  sellerId             String    @map("seller_id") @db.Uuid
+  planId               String    @map("plan_id") @db.Uuid
+  priceSnapshot        BigInt    @map("price_snapshot")
+  status               String    @default("PENDING")
+  idempotencyKey       String    @unique @map("idempotency_key")
+  ledgerTransactionId  String?   @map("ledger_transaction_id") @db.Uuid
+  subscriptionId       String?   @map("subscription_id") @db.Uuid
+  paidAt               DateTime? @map("paid_at") @db.Timestamptz(6)
+  createdAt            DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt            DateTime  @default(now()) @map("updated_at") @db.Timestamptz(6)
+  planVersionId        String    @map("plan_version_id") @db.Uuid
+  billingCycleSnapshot String    @map("billing_cycle_snapshot")
+  maxListingsSnapshot  Int?      @map("max_listings_snapshot")
+  featuresSnapshot     Json      @default("[]") @map("features_snapshot")
+
+  @@index([sellerId, status, createdAt(sort: Desc)], map: "subscription_orders_seller_status_idx")
+  @@index([planVersionId], map: "subscription_orders_version_idx")
+  @@map("subscription_orders")
+}
+
+model AdvertisingCampaign {
+  id                  String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  sellerId            String    @map("seller_id") @db.Uuid
+  productId           String?   @map("product_id") @db.Uuid
+  campaignType        String    @map("campaign_type")
+  pricingModel        String    @default("FIXED_PRICE") @map("pricing_model")
+  budget              BigInt
+  spent               BigInt    @default(0)
+  status              String    @default("DRAFT")
+  startAt             DateTime? @map("start_at") @db.Timestamptz(6)
+  endAt               DateTime? @map("end_at") @db.Timestamptz(6)
+  createdAt           DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt           DateTime  @default(now()) @map("updated_at") @db.Timestamptz(6)
+  ledgerTransactionId String?   @map("ledger_transaction_id") @db.Uuid
+  paidAt              DateTime? @map("paid_at") @db.Timestamptz(6)
+
+  @@index([sellerId, status], map: "advertising_campaigns_seller_idx")
+  @@map("advertising_campaigns")
+}
+
+model ShippingTransaction {
+  id                  String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  orderId             String    @unique @map("order_id") @db.Uuid
+  customerFee         BigInt    @map("customer_fee")
+  providerCost        BigInt    @map("provider_cost")
+  platformMargin      BigInt    @map("platform_margin")
+  status              String    @default("PENDING")
+  ledgerTransactionId String?   @map("ledger_transaction_id") @db.Uuid
+  settledBy           String?   @map("settled_by") @db.Uuid
+  settledAt           DateTime? @map("settled_at") @db.Timestamptz(6)
+  createdAt           DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt           DateTime  @default(now()) @map("updated_at") @db.Timestamptz(6)
+
+  @@index([status, createdAt(sort: Desc)], map: "shipping_transactions_status_idx")
+  @@map("shipping_transactions")
+}
+
+model LedgerTransaction {
+  id             String                @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  type           LedgerTransactionType
+  orderId        String?               @map("order_id") @db.Uuid
+  paymentId      String?               @map("payment_id") @db.Uuid
+  referenceId    String?               @map("reference_id") @db.Uuid
+  idempotencyKey String?               @unique @map("idempotency_key")
+  status         String
+  createdAt      DateTime              @default(now()) @map("created_at") @db.Timestamptz(6)
+  finalizedAt    DateTime?             @map("finalized_at") @db.Timestamptz(6)
+
+  @@map("ledger_transactions")
+}
+
+model LedgerEntry {
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  transactionId String   @map("transaction_id") @db.Uuid
+  accountCode   String   @map("account_code")
+  amount        BigInt
+  currency      String   @default("VND") @db.Char(3)
+  userId        String?  @map("user_id") @db.Uuid
+  orderId       String?  @map("order_id") @db.Uuid
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([orderId], map: "ledger_entries_order_idx")
+  @@index([transactionId], map: "ledger_entries_transaction_idx")
+  @@map("ledger_entries")
+}
+
+model SellerWallet {
+  sellerId         String   @id @map("seller_id") @db.Uuid
+  pendingBalance   BigInt   @default(0) @map("pending_balance")
+  availableBalance BigInt   @default(0) @map("available_balance")
+  heldBalance      BigInt   @default(0) @map("held_balance")
+  updatedAt        DateTime @default(now()) @map("updated_at") @db.Timestamptz(6)
+
+  @@map("seller_wallets")
+}
+
+model WalletTransaction {
+  id                  String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  sellerId            String            @map("seller_id") @db.Uuid
+  orderId             String?           @map("order_id") @db.Uuid
+  ledgerTransactionId String            @map("ledger_transaction_id") @db.Uuid
+  status              WalletEntryStatus
+  amount              BigInt
+  createdAt           DateTime          @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@map("wallet_transactions")
+}
+
+model SellerBankAccount {
+  id                     String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  sellerId               String   @map("seller_id") @db.Uuid
+  bankName               String   @map("bank_name") @db.VarChar(120)
+  accountHolder          String   @map("account_holder") @db.VarChar(150)
+  accountNumberEncrypted Bytes    @map("account_number_encrypted")
+  accountNumberLast4     String   @map("account_number_last4") @db.Char(4)
+  isDefault              Boolean  @default(false) @map("is_default")
+  status                 String   @default("ACTIVE") @db.VarChar(20)
+  createdAt              DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt              DateTime @default(now()) @map("updated_at") @db.Timestamptz(6)
+
+  @@index([sellerId, status, createdAt(sort: Desc)], map: "seller_bank_accounts_seller_idx")
+  @@map("seller_bank_accounts")
+}
+
+model Payout {
+  id                  String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  sellerId            String       @map("seller_id") @db.Uuid
+  amount              BigInt
+  fee                 BigInt       @default(0)
+  netAmount           BigInt       @map("net_amount")
+  idempotencyKey      String       @unique @map("idempotency_key")
+  status              PayoutStatus @default(REQUESTED)
+  requestedAt         DateTime     @default(now()) @map("requested_at") @db.Timestamptz(6)
+  processedAt         DateTime?    @map("processed_at") @db.Timestamptz(6)
+  bankAccountId       String?      @map("bank_account_id") @db.Uuid
+  ledgerTransactionId String?      @map("ledger_transaction_id") @db.Uuid
+  failureReason       String?      @map("failure_reason")
+  updatedAt           DateTime     @default(now()) @map("updated_at") @db.Timestamptz(6)
+
+  @@index([sellerId, status, requestedAt(sort: Desc)], map: "payouts_seller_status_idx")
+  @@map("payouts")
+}
+
+model Refund {
+  id                           String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  orderId                      String       @map("order_id") @db.Uuid
+  paymentId                    String?      @map("payment_id") @db.Uuid
+  requestedBy                  String       @map("requested_by") @db.Uuid
+  processedBy                  String?      @map("processed_by") @db.Uuid
+  type                         RefundType
+  amount                       BigInt
+  currency                     String       @default("VND") @db.Char(3)
+  reason                       String?
+  status                       RefundStatus @default(REQUESTED)
+  idempotencyKey               String       @unique @map("idempotency_key")
+  originalLedgerTransactionId  String?      @map("original_ledger_transaction_id") @db.Uuid
+  reversingLedgerTransactionId String?      @map("reversing_ledger_transaction_id") @db.Uuid
+  requestedAt                  DateTime     @default(now()) @map("requested_at") @db.Timestamptz(6)
+  processedAt                  DateTime?    @map("processed_at") @db.Timestamptz(6)
+  updatedAt                    DateTime     @default(now()) @map("updated_at") @db.Timestamptz(6)
+
+  @@index([orderId, status, requestedAt(sort: Desc)], map: "refunds_order_status_idx")
+  @@index([requestedBy, requestedAt(sort: Desc)], map: "refunds_requested_by_idx")
+  @@map("refunds")
+}
+
+model PlatformRevenue {
+  id                    String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  revenueDate           DateTime @map("revenue_date") @db.Date
+  currency              String   @default("VND") @db.Char(3)
+  totalOrders           Int      @default(0) @map("total_orders")
+  gmv                   BigInt   @default(0)
+  platformFee           BigInt   @default(0) @map("platform_fee")
+  paymentProcessingCost BigInt   @default(0) @map("payment_processing_cost")
+  sellerPayout          BigInt   @default(0) @map("seller_payout")
+  promotionRevenue      BigInt   @default(0) @map("promotion_revenue")
+  subscriptionRevenue   BigInt   @default(0) @map("subscription_revenue")
+  advertisingRevenue    BigInt   @default(0) @map("advertising_revenue")
+  shippingMargin        BigInt   @default(0) @map("shipping_margin")
+  refundVolume          BigInt   @default(0) @map("refund_volume")
+  netRevenue            BigInt   @default(0) @map("net_revenue")
+  refreshedAt           DateTime @default(now()) @map("refreshed_at") @db.Timestamptz(6)
+  createdAt             DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt             DateTime @default(now()) @map("updated_at") @db.Timestamptz(6)
+
+  @@unique([revenueDate, currency], map: "platform_revenues_date_currency_unique")
+  @@index([currency, revenueDate(sort: Desc)], map: "platform_revenues_currency_date_idx")
+  @@map("platform_revenues")
+}
+
+model IdempotencyKey {
+  key         String   @id
+  actorId     String?  @map("actor_id") @db.Uuid
+  requestHash String   @map("request_hash")
+  response    Json?
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  expiresAt   DateTime @map("expires_at") @db.Timestamptz(6)
+
+  @@map("idempotency_keys")
+}
+
+model FinancialAuditLog {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  actorId    String?  @map("actor_id") @db.Uuid
+  action     String   @db.VarChar(100)
+  entityType String   @map("entity_type") @db.VarChar(50)
+  entityId   String   @map("entity_id") @db.Uuid
+  oldValue   Json?    @map("old_value")
+  newValue   Json?    @map("new_value")
+  reason     String?
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([entityType, entityId, createdAt(sort: Desc)], map: "financial_audit_logs_entity_idx")
+  @@map("financial_audit_logs")
+}
+
+model ContentReport {
+  id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  reporterId     String    @map("reporter_id") @db.Uuid
+  reportedUserId String?   @map("reported_user_id") @db.Uuid
+  productId      String?   @map("product_id") @db.Uuid
+  reason         String    @db.VarChar(80)
+  details        String?   @db.VarChar(1000)
+  status         String    @default("OPEN") @db.VarChar(20)
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  reviewedBy     String?   @map("reviewed_by") @db.Uuid
+  reviewedAt     DateTime? @map("reviewed_at") @db.Timestamptz(6)
+  resolutionNote String?   @map("resolution_note") @db.VarChar(1000)
+
+  @@index([status, createdAt(sort: Desc)], map: "content_reports_status_idx")
+  @@map("content_reports")
+}
+
+model ModerationAuditLog {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  reportId  String   @map("report_id") @db.Uuid
+  actorId   String   @map("actor_id") @db.Uuid
+  oldStatus String   @map("old_status") @db.VarChar(20)
+  newStatus String   @map("new_status") @db.VarChar(20)
+  note      String?  @db.VarChar(1000)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([reportId, createdAt(sort: Desc)], map: "moderation_audit_logs_report_idx")
+  @@map("moderation_audit_logs")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model admin_audit_logs {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  actor_id    String?   @db.Uuid
+  actor_name  String?   @db.VarChar(150)
+  action      String    @db.VarChar(100)
+  entity_type String    @db.VarChar(50)
+  entity_id   String?   @db.VarChar(100)
+  metadata    Json?
+  created_at  DateTime? @default(now()) @db.Timestamptz(6)
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model admin_logs {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  admin_id    String?  @db.Uuid
+  action      String   @db.VarChar(100)
+  target_type String?  @db.VarChar(50)
+  target_id   String?  @db.Uuid
+  old_data    Json?
+  new_data    Json?
+  ip_address  String?  @db.Inet
+  user_agent  String?
+  created_at  DateTime @default(now()) @db.Timestamptz(6)
+
+  @@index([admin_id, created_at(sort: Desc)], map: "idx_admin_logs_admin_created")
+  @@index([target_type, target_id], map: "idx_admin_logs_target")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model admin_users {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id    String   @unique @db.Uuid
+  role       String   @db.VarChar(30)
+  status     String   @default("ACTIVE") @db.VarChar(20)
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+  updated_at DateTime @default(now()) @db.Timestamptz(6)
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model attribute_options {
+  id           BigInt @id @default(autoincrement())
+  attribute_id BigInt
+  label        String @db.VarChar(100)
+  value        String @db.VarChar(100)
+  sort_order   Int    @default(0)
+
+  @@unique([attribute_id, value])
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model attributes {
+  id          BigInt         @id @default(autoincrement())
+  category_id BigInt?
+  name        String         @db.VarChar(100)
+  slug        String         @db.VarChar(120)
+  type        attribute_type
+  unit        String?        @db.VarChar(30)
+  is_required Boolean        @default(false)
+  sort_order  Int            @default(0)
+  created_at  DateTime       @default(now()) @db.Timestamptz(6)
+  updated_at  DateTime       @default(now()) @db.Timestamptz(6)
+
+  @@unique([category_id, slug])
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model banners {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  title       String    @db.VarChar(200)
+  image_url   String
+  link_type   String?   @db.VarChar(30)
+  link_id     String?   @db.Uuid
+  position    String    @db.VarChar(50)
+  start_at    DateTime? @db.Timestamptz(6)
+  end_at      DateTime? @db.Timestamptz(6)
+  status      String    @default("ACTIVE") @db.VarChar(20)
+  sort_order  Int       @default(0)
+  created_at  DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at  DateTime  @default(now()) @db.Timestamptz(6)
+  target_url  String?   @default("/")
+  expiry_date String?   @default("2026-12-31") @db.VarChar(50)
+  code        String?   @default(dbgenerated("(gen_random_uuid())::text")) @db.VarChar(50)
+
+  @@index([position, status, sort_order], map: "idx_banners_position_status")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model brands {
+  id         BigInt   @id @default(autoincrement())
+  name       String   @unique @db.VarChar(100)
+  slug       String   @unique @db.VarChar(120)
+  logo_url   String?
+  status     String   @default("ACTIVE") @db.VarChar(20)
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+  updated_at DateTime @default(now()) @db.Timestamptz(6)
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model categories {
+  id               BigInt   @id @default(autoincrement())
+  parent_id        BigInt?
+  name             String   @db.VarChar(100)
+  slug             String   @unique @db.VarChar(120)
+  description      String?
+  icon_url         String?
+  image_url        String?
+  sort_order       Int      @default(0)
+  status           String   @default("ACTIVE") @db.VarChar(20)
+  created_at       DateTime @default(now()) @db.Timestamptz(6)
+  updated_at       DateTime @default(now()) @db.Timestamptz(6)
+  is_listing_group Boolean  @default(false)
+
+  @@unique([parent_id, name])
+  @@index([parent_id], map: "idx_categories_parent")
+  @@index([status, sort_order], map: "idx_categories_status_sort")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model chats {
+  id              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  buyer_id        String    @db.Uuid
+  seller_id       String    @db.Uuid
+  product_id      String?   @db.Uuid
+  last_message_id String?   @db.Uuid
+  last_message_at DateTime? @db.Timestamptz(6)
+  created_at      DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime  @default(now()) @db.Timestamptz(6)
+
+  @@unique([buyer_id, seller_id, product_id], map: "ux_chat_product_buyer_seller")
+  @@index([buyer_id, updated_at(sort: Desc)], map: "idx_chats_buyer")
+  @@index([seller_id, updated_at(sort: Desc)], map: "idx_chats_seller")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model favorites {
+  user_id    String   @db.Uuid
+  product_id String   @db.Uuid
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+
+  @@id([user_id, product_id])
+  @@index([product_id], map: "idx_favorites_product")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model listing_audit_logs {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  actor_id   String   @db.Uuid
+  action     String
+  entity_id  String
+  detail     Json     @default("{}")
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+
+  @@index([entity_id, created_at], map: "listing_audit_entity")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model listing_engine_migrations {
+  name       String   @id
+  applied_at DateTime @default(now()) @db.Timestamptz(6)
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model listing_field_options {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  field_id   String   @db.Uuid
+  value      String   @db.VarChar(120)
+  label      String   @db.VarChar(150)
+  sort_order Int      @default(0)
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+
+  @@unique([field_id, value])
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model listing_field_values {
+  listing_id String   @db.Uuid
+  field_key  String   @db.VarChar(64)
+  value      Json
+  updated_at DateTime @default(now()) @db.Timestamptz(6)
+
+  @@id([listing_id, field_key])
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model listing_fields {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  template_id String   @db.Uuid
+  key         String   @db.VarChar(64)
+  label       String   @db.VarChar(150)
+  type        String   @db.VarChar(30)
+  required    Boolean  @default(false)
+  enabled     Boolean  @default(true)
+  sort_order  Int      @default(0)
+  config      Json     @default("{}")
+  created_at  DateTime @default(now()) @db.Timestamptz(6)
+
+  @@unique([template_id, key])
+  @@index([template_id, sort_order], map: "listing_fields_order")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model listing_images {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  listing_id  String   @db.Uuid
+  storage_key String   @unique
+  mime_type   String
+  byte_size   Int
+  created_at  DateTime @default(now()) @db.Timestamptz(6)
+
+  @@index([listing_id], map: "listing_images_listing")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model listing_publish_requests {
+  seller_id  String   @db.Uuid
+  key        String   @db.Uuid
+  listing_id String   @db.Uuid
+  revision   Int
+  product_id String   @db.Uuid
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+
+  @@id([seller_id, key])
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model listing_templates {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  category_id BigInt
+  version     Int
+  name        String   @db.VarChar(150)
+  active      Boolean  @default(true)
+  config      Json     @default("{}")
+  created_by  String?  @db.Uuid
+  created_at  DateTime @default(now()) @db.Timestamptz(6)
+
+  @@unique([category_id, version])
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model listing_videos {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  listing_id  String   @db.Uuid
+  storage_key String   @unique
+  mime_type   String
+  byte_size   Int
+  created_at  DateTime @default(now()) @db.Timestamptz(6)
+
+  @@index([listing_id], map: "listing_videos_listing")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model listings {
+  id                 String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  seller_id          String    @db.Uuid
+  category_id        BigInt
+  template_id        String    @db.Uuid
+  template_snapshot  Json
+  data               Json      @default("{}")
+  status             String    @default("DRAFT")
+  revision           Int       @default(0)
+  client_key         String    @db.Uuid
+  product_id         String?   @unique @db.Uuid
+  published_snapshot Json?
+  created_at         DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at         DateTime  @default(now()) @db.Timestamptz(6)
+  published_at       DateTime? @db.Timestamptz(6)
+
+  @@unique([seller_id, client_key])
+  @@index([seller_id, updated_at(sort: Desc)], map: "listings_seller_updated")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model messages {
+  id                    String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  chat_id               String       @db.Uuid
+  sender_id             String       @db.Uuid
+  message_type          message_type @default(TEXT)
+  content               String?
+  attachment_url        String?
+  latitude              Decimal?     @db.Decimal(10, 7)
+  longitude             Decimal?     @db.Decimal(10, 7)
+  referenced_product_id String?      @db.Uuid
+  referenced_order_id   String?      @db.Uuid
+  is_read               Boolean      @default(false)
+  created_at            DateTime     @default(now()) @db.Timestamptz(6)
+  deleted_at            DateTime?    @db.Timestamptz(6)
+
+  @@index([chat_id, created_at(sort: Desc)], map: "idx_messages_chat_created")
+  @@index([sender_id], map: "idx_messages_sender")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model notifications {
+  id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id        String    @db.Uuid
+  type           String    @db.VarChar(50)
+  title          String    @db.VarChar(200)
+  content        String
+  reference_type String?   @db.VarChar(30)
+  reference_id   String?   @db.Uuid
+  is_read        Boolean   @default(false)
+  created_at     DateTime  @default(now()) @db.Timestamptz(6)
+  read_at        DateTime? @db.Timestamptz(6)
+
+  @@index([user_id, is_read, created_at(sort: Desc)], map: "idx_notifications_user_read_created")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model order_items {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  order_id     String   @db.Uuid
+  product_id   String?  @db.Uuid
+  seller_id    String   @db.Uuid
+  product_name String   @db.VarChar(200)
+  unit_price   Decimal  @db.Decimal(15, 2)
+  quantity     Int
+  subtotal     Decimal  @db.Decimal(15, 2)
+  created_at   DateTime @default(now()) @db.Timestamptz(6)
+
+  @@index([order_id], map: "idx_order_items_order")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model order_status_history {
+  id         String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  order_id   String       @db.Uuid
+  status     order_status
+  changed_by String?      @db.Uuid
+  note       String?
+  created_at DateTime     @default(now()) @db.Timestamptz(6)
+
+  @@index([order_id, created_at], map: "idx_order_history_order_created")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model orders {
+  id                             String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  order_code                     String          @unique @db.VarChar(30)
+  buyer_id                       String          @db.Uuid
+  seller_id                      String          @db.Uuid
+  product_id                     String?         @db.Uuid
+  quantity                       Int             @default(1)
+  product_price                  Decimal         @db.Decimal(15, 2)
+  shipping_fee                   Decimal         @default(0) @db.Decimal(15, 2)
+  discount_amount                Decimal         @default(0) @db.Decimal(15, 2)
+  total_amount                   Decimal         @db.Decimal(15, 2)
+  payment_method                 payment_method?
+  payment_status                 payment_status  @default(PENDING)
+  shipping_method                String?         @db.VarChar(30)
+  shipping_status                shipment_status @default(PENDING)
+  order_status                   order_status    @default(PENDING)
+  shipping_address_id            String?         @db.Uuid
+  note                           String?
+  confirmed_at                   DateTime?       @db.Timestamptz(6)
+  completed_at                   DateTime?       @db.Timestamptz(6)
+  cancelled_at                   DateTime?       @db.Timestamptz(6)
+  created_at                     DateTime        @default(now()) @db.Timestamptz(6)
+  updated_at                     DateTime        @default(now()) @db.Timestamptz(6)
+  pricing_version_id             String?         @db.Uuid
+  platform_fee_rate_bps_snapshot Int             @default(0)
+  platform_fee_amount            BigInt          @default(0)
+  payment_fee_amount             BigInt          @default(0)
+  seller_payout_amount           BigInt          @default(0)
+  subtotal_amount                BigInt          @default(0)
+  shipping_fee_amount            BigInt          @default(0)
+
+  @@index([buyer_id, created_at(sort: Desc)], map: "idx_orders_buyer_created")
+  @@index([product_id], map: "idx_orders_product")
+  @@index([seller_id, created_at(sort: Desc)], map: "idx_orders_seller_created")
+  @@index([order_status], map: "idx_orders_status")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model payments {
+  id                String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  order_id          String         @db.Uuid
+  user_id           String         @db.Uuid
+  payment_code      String         @unique @db.VarChar(100)
+  provider          String         @db.VarChar(30)
+  amount            Decimal        @db.Decimal(15, 2)
+  currency          String         @default("VND") @db.VarChar(10)
+  status            payment_status @default(PENDING)
+  transaction_id    String?        @db.VarChar(150)
+  provider_response Json?
+  paid_at           DateTime?      @db.Timestamptz(6)
+  created_at        DateTime       @default(now()) @db.Timestamptz(6)
+  updated_at        DateTime       @default(now()) @db.Timestamptz(6)
+
+  @@index([order_id], map: "idx_payments_order")
+  @@index([status], map: "idx_payments_status")
+  @@index([transaction_id], map: "idx_payments_transaction")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model payout_events {
+  id          String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  payout_id   String        @db.Uuid
+  actor_id    String?       @db.Uuid
+  from_status PayoutStatus?
+  to_status   PayoutStatus
+  reason      String?
+  metadata    Json?
+  created_at  DateTime      @default(now()) @db.Timestamptz(6)
+
+  @@index([payout_id, created_at], map: "payout_events_payout_idx")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model product_attributes {
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  product_id    String   @db.Uuid
+  attribute_id  BigInt
+  value_text    String?
+  value_number  Decimal? @db.Decimal
+  value_boolean Boolean?
+  option_id     BigInt?
+  created_at    DateTime @default(now()) @db.Timestamptz(6)
+
+  @@unique([product_id, attribute_id])
+  @@index([attribute_id], map: "idx_product_attributes_attribute")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model product_images {
+  id            String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  product_id    String     @db.Uuid
+  url           String
+  thumbnail_url String?
+  type          media_type @default(IMAGE)
+  sort_order    Int        @default(0)
+  width         Int?
+  height        Int?
+  created_at    DateTime   @default(now()) @db.Timestamptz(6)
+
+  @@index([product_id, sort_order], map: "idx_product_images_product_sort")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model product_status_history {
+  id         String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  product_id String         @db.Uuid
+  status     product_status
+  changed_by String?        @db.Uuid
+  reason     String?
+  created_at DateTime       @default(now()) @db.Timestamptz(6)
+
+  @@index([product_id, created_at], map: "idx_product_history_product_created")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model products {
+  id                 String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  seller_id          String            @db.Uuid
+  category_id        BigInt
+  brand_id           BigInt?
+  title              String            @db.VarChar(200)
+  slug               String            @unique @db.VarChar(250)
+  description        String?
+  price              Decimal           @db.Decimal(15, 2)
+  original_price     Decimal?          @db.Decimal(15, 2)
+  condition          product_condition @default(USED_GOOD)
+  quantity           Int               @default(1)
+  quantity_available Int               @default(1)
+  province_id        BigInt?
+  district_id        BigInt?
+  ward_id            BigInt?
+  address            String?
+  latitude           Decimal?          @db.Decimal(10, 7)
+  longitude          Decimal?          @db.Decimal(10, 7)
+  status             product_status    @default(DRAFT)
+  view_count         BigInt            @default(0)
+  favorite_count     Int               @default(0)
+  message_count      Int               @default(0)
+  is_featured        Boolean           @default(false)
+  is_verified        Boolean           @default(false)
+  published_at       DateTime?         @db.Timestamptz(6)
+  sold_at            DateTime?         @db.Timestamptz(6)
+  created_at         DateTime          @default(now()) @db.Timestamptz(6)
+  updated_at         DateTime          @default(now()) @db.Timestamptz(6)
+  deleted_at         DateTime?         @db.Timestamptz(6)
+  listing_price_mode String            @default("FIXED")
+  listing_negotiable Boolean           @default(false)
+
+  @@index([brand_id], map: "idx_products_brand")
+  @@index([category_id], map: "idx_products_category")
+  @@index([category_id, status], map: "idx_products_category_status")
+  @@index([created_at(sort: Desc)], map: "idx_products_created_at")
+  @@index([latitude, longitude], map: "idx_products_lat_lon")
+  @@index([province_id, district_id, ward_id], map: "idx_products_location")
+  @@index([price], map: "idx_products_price")
+  @@index([seller_id], map: "idx_products_seller")
+  @@index([status], map: "idx_products_status")
+  @@index([status, created_at(sort: Desc)], map: "idx_products_status_created")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model promotion_activations {
+  id                 String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  promotion_order_id String         @unique @db.Uuid
+  product_id         String         @db.Uuid
+  promotion_type     promotion_type
+  starts_at          DateTime       @db.Timestamptz(6)
+  ends_at            DateTime       @db.Timestamptz(6)
+  status             String         @default("ACTIVE")
+  created_at         DateTime       @default(now()) @db.Timestamptz(6)
+
+  @@index([product_id, status, ends_at], map: "promotion_activations_product_active_idx")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model promotions {
+  id         String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  product_id String           @db.Uuid
+  user_id    String           @db.Uuid
+  type       promotion_type
+  start_at   DateTime         @db.Timestamptz(6)
+  end_at     DateTime         @db.Timestamptz(6)
+  budget     Decimal          @default(0) @db.Decimal(15, 2)
+  amount     Decimal          @default(0) @db.Decimal(15, 2)
+  status     promotion_status @default(PENDING)
+  created_at DateTime         @default(now()) @db.Timestamptz(6)
+  updated_at DateTime         @default(now()) @db.Timestamptz(6)
+
+  @@index([status, start_at, end_at], map: "idx_promotions_active_window")
+  @@index([product_id, status], map: "idx_promotions_product_status")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model push_devices {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id      String   @db.Uuid
+  token        String   @unique
+  platform     String   @db.VarChar(16)
+  active       Boolean  @default(true)
+  last_seen_at DateTime @default(now()) @db.Timestamptz(6)
+  created_at   DateTime @default(now()) @db.Timestamptz(6)
+  updated_at   DateTime @default(now()) @db.Timestamptz(6)
+
+  @@index([user_id, active], map: "push_devices_user_active_idx")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model refund_events {
+  id          String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  refund_id   String        @db.Uuid
+  actor_id    String?       @db.Uuid
+  from_status RefundStatus?
+  to_status   RefundStatus
+  reason      String?
+  metadata    Json?
+  created_at  DateTime      @default(now()) @db.Timestamptz(6)
+
+  @@index([refund_id, created_at], map: "refund_events_refund_idx")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model reports {
+  id          String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  reporter_id String             @db.Uuid
+  target_type report_target_type
+  target_id   String             @db.Uuid
+  reason      String             @db.VarChar(50)
+  description String?
+  status      report_status      @default(PENDING)
+  admin_id    String?            @db.Uuid
+  resolution  String?
+  created_at  DateTime           @default(now()) @db.Timestamptz(6)
+  resolved_at DateTime?          @db.Timestamptz(6)
+
+  @@index([status, created_at(sort: Desc)], map: "idx_reports_status_created")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model review_images {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  review_id  String   @db.Uuid
+  image_url  String
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model reviews {
+  id               String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  order_id         String   @db.Uuid
+  reviewer_id      String   @db.Uuid
+  reviewed_user_id String   @db.Uuid
+  product_id       String?  @db.Uuid
+  rating           Int      @db.SmallInt
+  comment          String?
+  created_at       DateTime @default(now()) @db.Timestamptz(6)
+  updated_at       DateTime @default(now()) @db.Timestamptz(6)
+
+  @@unique([order_id, reviewer_id])
+  @@index([product_id], map: "idx_reviews_product")
+  @@index([reviewed_user_id, created_at(sort: Desc)], map: "idx_reviews_reviewed_user")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model search_history {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id     String   @db.Uuid
+  keyword     String   @db.VarChar(255)
+  category_id BigInt?
+  created_at  DateTime @default(now()) @db.Timestamptz(6)
+
+  @@index([user_id, created_at(sort: Desc)], map: "idx_search_history_user_created")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model seller_reviews {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  order_id   String   @unique @db.Uuid
+  buyer_id   String   @db.Uuid
+  seller_id  String   @db.Uuid
+  rating     Int      @db.SmallInt
+  comment    String?  @db.VarChar(1000)
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+  updated_at DateTime @default(now()) @db.Timestamptz(6)
+
+  @@index([seller_id, created_at(sort: Desc)], map: "seller_reviews_seller_created_idx")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model shipment_tracking {
+  id          String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  shipment_id String          @db.Uuid
+  status      shipment_status
+  location    String?         @db.VarChar(255)
+  description String?
+  created_at  DateTime        @default(now()) @db.Timestamptz(6)
+
+  @@index([shipment_id, created_at], map: "idx_tracking_shipment_created")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model shipments {
+  id             String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  order_id       String          @unique @db.Uuid
+  carrier        String?         @db.VarChar(50)
+  tracking_code  String?         @db.VarChar(100)
+  sender_name    String?         @db.VarChar(150)
+  sender_phone   String?         @db.VarChar(20)
+  receiver_name  String?         @db.VarChar(150)
+  receiver_phone String?         @db.VarChar(20)
+  shipping_fee   Decimal         @default(0) @db.Decimal(15, 2)
+  status         shipment_status @default(PENDING)
+  picked_up_at   DateTime?       @db.Timestamptz(6)
+  delivered_at   DateTime?       @db.Timestamptz(6)
+  created_at     DateTime        @default(now()) @db.Timestamptz(6)
+  updated_at     DateTime        @default(now()) @db.Timestamptz(6)
+
+  @@index([status], map: "idx_shipments_status")
+  @@index([tracking_code], map: "idx_shipments_tracking")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model system_css_overrides {
+  filename   String    @id @db.VarChar(100)
+  content    String
+  updated_at DateTime? @default(now()) @db.Timestamptz(6)
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model user_addresses {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id        String   @db.Uuid
+  receiver_name  String   @db.VarChar(150)
+  receiver_phone String   @db.VarChar(20)
+  address_line   String
+  province_id    BigInt?
+  district_id    BigInt?
+  ward_id        BigInt?
+  latitude       Decimal? @db.Decimal(10, 7)
+  longitude      Decimal? @db.Decimal(10, 7)
+  is_default     Boolean  @default(false)
+  created_at     DateTime @default(now()) @db.Timestamptz(6)
+  updated_at     DateTime @default(now()) @db.Timestamptz(6)
+
+  @@index([user_id], map: "idx_user_addresses_user")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model user_blocks {
+  blocker_id String   @db.Uuid
+  blocked_id String   @db.Uuid
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+
+  @@id([blocker_id, blocked_id])
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model user_devices {
+  id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id        String    @db.Uuid
+  platform       String    @db.VarChar(20)
+  device_token   String
+  app_version    String?   @db.VarChar(30)
+  is_active      Boolean   @default(true)
+  last_active_at DateTime? @db.Timestamptz(6)
+  created_at     DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at     DateTime  @default(now()) @db.Timestamptz(6)
+
+  @@unique([platform, device_token])
+  @@index([user_id, is_active], map: "idx_devices_user_active")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model user_follows {
+  follower_id  String   @db.Uuid
+  following_id String   @db.Uuid
+  created_at   DateTime @default(now()) @db.Timestamptz(6)
+
+  @@id([follower_id, following_id])
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model user_profiles {
+  user_id           String   @id @db.Uuid
+  display_name      String?  @db.VarChar(150)
+  bio               String?
+  avatar_url        String?
+  cover_url         String?
+  province_id       BigInt?
+  district_id       BigInt?
+  ward_id           BigInt?
+  address           String?
+  latitude          Decimal? @db.Decimal(10, 7)
+  longitude         Decimal? @db.Decimal(10, 7)
+  rating_avg        Decimal  @default(0) @db.Decimal(3, 2)
+  rating_count      Int      @default(0)
+  transaction_count Int      @default(0)
+  response_rate     Decimal  @default(0) @db.Decimal(5, 2)
+  created_at        DateTime @default(now()) @db.Timestamptz(6)
+  updated_at        DateTime @default(now()) @db.Timestamptz(6)
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model user_verifications {
+  id                   String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id              String              @db.Uuid
+  verification_type    verification_type
+  document_type        String?             @db.VarChar(30)
+  document_number_hash String?
+  front_image_url      String?
+  back_image_url       String?
+  selfie_image_url     String?
+  status               verification_status @default(PENDING)
+  verified_at          DateTime?           @db.Timestamptz(6)
+  rejected_reason      String?
+  created_at           DateTime            @default(now()) @db.Timestamptz(6)
+  updated_at           DateTime            @default(now()) @db.Timestamptz(6)
+
+  @@index([user_id, status], map: "idx_verifications_user_status")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model users {
+  id             String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  phone          String?     @unique @db.VarChar(20)
+  email          String?     @unique @db.Citext
+  password_hash  String?
+  full_name      String      @db.VarChar(150)
+  username       String?     @unique @db.Citext
+  avatar_url     String?
+  date_of_birth  DateTime?   @db.Date
+  gender         Int?        @db.SmallInt
+  status         user_status @default(ACTIVE)
+  role           user_role   @default(USER)
+  phone_verified Boolean     @default(false)
+  email_verified Boolean     @default(false)
+  is_verified    Boolean     @default(false)
+  last_login_at  DateTime?   @db.Timestamptz(6)
+  created_at     DateTime    @default(now()) @db.Timestamptz(6)
+  updated_at     DateTime    @default(now()) @db.Timestamptz(6)
+  deleted_at     DateTime?   @db.Timestamptz(6)
+
+  @@index([created_at], map: "idx_users_created_at")
+  @@index([status], map: "idx_users_status")
+}
+
 enum PricingRuleKind {
   PLATFORM_FEE
   PAYMENT_FEE
@@ -66,376 +1249,139 @@ enum RefundStatus {
   @@map("refund_status")
 }
 
-model PricingRule {
-  id        String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  code      String            @unique
-  kind      PricingRuleKind
-  currency  String            @default("VND") @db.Char(3)
-  status    String
-  createdAt DateTime          @default(now()) @map("created_at")
-  versions  PricingVersion[]
-
-  @@map("pricing_rules")
+enum attribute_type {
+  TEXT
+  NUMBER
+  BOOLEAN
+  SELECT
 }
 
-model PricingVersion {
-  id            String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  ruleId        String      @map("rule_id") @db.Uuid
-  rateBps       Int         @map("rate_bps")
-  fixedAmount   BigInt      @default(0) @map("fixed_amount")
-  effectiveFrom DateTime    @map("effective_from")
-  effectiveTo   DateTime?   @map("effective_to")
-  createdBy     String?     @map("created_by") @db.Uuid
-  reason        String
-  createdAt     DateTime    @default(now()) @map("created_at")
-  rule          PricingRule @relation(fields: [ruleId], references: [id])
-
-  @@map("pricing_versions")
+enum media_type {
+  IMAGE
+  VIDEO
 }
 
-model PromotionPackage {
-  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  code          String   @unique
-  name          String
-  price         BigInt
-  durationHours Int      @map("duration_hours")
-  promotionType String   @map("promotion_type")
-  status        String   @default("ACTIVE")
-  effectiveFrom DateTime @default(now()) @map("effective_from")
-  effectiveTo   DateTime? @map("effective_to")
-  createdAt     DateTime @default(now()) @map("created_at")
-  @@map("promotion_packages")
+enum message_type {
+  TEXT
+  IMAGE
+  VIDEO
+  LOCATION
+  PRODUCT
+  ORDER
+  SYSTEM
 }
 
-model PromotionPackageVersion {
-  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  packageId     String   @map("package_id") @db.Uuid
-  price         BigInt
-  durationHours Int      @map("duration_hours")
-  promotionType String   @map("promotion_type")
-  status        String   @default("ACTIVE")
-  effectiveFrom DateTime @map("effective_from")
-  effectiveTo   DateTime? @map("effective_to")
-  createdBy     String?  @map("created_by") @db.Uuid
-  reason        String
-  createdAt     DateTime @default(now()) @map("created_at")
-
-  @@index([packageId, status, effectiveFrom])
-  @@map("promotion_package_versions")
+enum order_status {
+  PENDING
+  CONFIRMED
+  PREPARING
+  SHIPPING
+  DELIVERED
+  COMPLETED
+  CANCELLED
+  DISPUTED
 }
 
-model PromotionOrder {
-  id                   String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  sellerId             String   @map("seller_id") @db.Uuid
-  productId            String   @map("product_id") @db.Uuid
-  packageId            String   @map("package_id") @db.Uuid
-  packageVersionId     String   @map("package_version_id") @db.Uuid
-  packagePriceSnapshot BigInt   @map("package_price_snapshot")
-  durationHoursSnapshot Int     @map("duration_hours_snapshot")
-  promotionTypeSnapshot String  @map("promotion_type_snapshot")
-  status               String   @default("PENDING")
-  idempotencyKey       String?  @unique @map("idempotency_key")
-  paidAt               DateTime? @map("paid_at")
-  createdAt            DateTime @default(now()) @map("created_at")
-  @@index([sellerId, createdAt])
-  @@map("promotion_orders")
+enum payment_method {
+  COD
+  BANK_TRANSFER
+  VNPAY
+  MOMO
+  ZALOPAY
+  OTHER
 }
 
-model SubscriptionPlan {
-  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  code          String   @unique
-  name          String
-  price         BigInt
-  billingCycle  String   @map("billing_cycle")
-  maxListings   Int?     @map("max_listings")
-  features      Json     @default("[]")
-  status        String   @default("ACTIVE")
-  effectiveFrom DateTime @default(now()) @map("effective_from")
-  effectiveTo   DateTime? @map("effective_to")
-  createdAt     DateTime @default(now()) @map("created_at")
-  @@map("subscription_plans")
+enum payment_status {
+  PENDING
+  PROCESSING
+  PAID
+  FAILED
+  CANCELLED
+  REFUNDED
+  PARTIALLY_REFUNDED
 }
 
-model SubscriptionPlanVersion {
-  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  planId        String   @map("plan_id") @db.Uuid
-  price         BigInt
-  billingCycle  String   @map("billing_cycle")
-  maxListings   Int?     @map("max_listings")
-  features      Json     @default("[]")
-  status        String   @default("ACTIVE")
-  effectiveFrom DateTime @map("effective_from")
-  effectiveTo   DateTime? @map("effective_to")
-  createdBy     String?  @map("created_by") @db.Uuid
-  reason        String
-  createdAt     DateTime @default(now()) @map("created_at")
-
-  @@index([planId, status, effectiveFrom])
-  @@map("subscription_plan_versions")
+enum product_condition {
+  NEW
+  LIKE_NEW
+  USED_GOOD
+  USED_FAIR
+  FOR_PARTS
 }
 
-model Subscription {
-  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  sellerId      String   @map("seller_id") @db.Uuid
-  planId        String   @map("plan_id") @db.Uuid
-  planVersionId String   @map("plan_version_id") @db.Uuid
-  priceSnapshot BigInt   @map("price_snapshot")
-  billingCycleSnapshot String @map("billing_cycle_snapshot")
-  maxListingsSnapshot Int? @map("max_listings_snapshot")
-  featuresSnapshot Json @default("[]") @map("features_snapshot")
-  status        String   @default("ACTIVE")
-  startsAt      DateTime @map("starts_at")
-  endsAt        DateTime? @map("ends_at")
-  createdAt     DateTime @default(now()) @map("created_at")
-  @@index([sellerId, status, endsAt])
-  @@map("subscriptions")
+enum product_status {
+  DRAFT
+  PENDING_REVIEW
+  ACTIVE
+  RESERVED
+  SOLD
+  EXPIRED
+  REJECTED
+  HIDDEN
+  DELETED
 }
 
-model SubscriptionOrder {
-  id                  String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  sellerId            String   @map("seller_id") @db.Uuid
-  planId              String   @map("plan_id") @db.Uuid
-  planVersionId       String   @map("plan_version_id") @db.Uuid
-  priceSnapshot       BigInt   @map("price_snapshot")
-  billingCycleSnapshot String  @map("billing_cycle_snapshot")
-  maxListingsSnapshot Int?     @map("max_listings_snapshot")
-  featuresSnapshot    Json     @default("[]") @map("features_snapshot")
-  status              String   @default("PENDING")
-  idempotencyKey      String   @unique @map("idempotency_key")
-  ledgerTransactionId String?  @map("ledger_transaction_id") @db.Uuid
-  subscriptionId      String?  @map("subscription_id") @db.Uuid
-  paidAt              DateTime? @map("paid_at")
-  createdAt           DateTime @default(now()) @map("created_at")
-  updatedAt           DateTime @default(now()) @map("updated_at")
-  @@index([sellerId, status, createdAt])
-  @@map("subscription_orders")
+enum promotion_status {
+  PENDING
+  ACTIVE
+  EXPIRED
+  CANCELLED
 }
 
-model AdvertisingCampaign {
-  id                  String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  sellerId            String   @map("seller_id") @db.Uuid
-  productId           String?  @map("product_id") @db.Uuid
-  campaignType        String   @map("campaign_type")
-  pricingModel        String   @default("FIXED_PRICE") @map("pricing_model")
-  budget              BigInt
-  spent               BigInt   @default(0)
-  status              String   @default("DRAFT")
-  startAt             DateTime? @map("start_at")
-  endAt               DateTime? @map("end_at")
-  ledgerTransactionId String?  @map("ledger_transaction_id") @db.Uuid
-  paidAt              DateTime? @map("paid_at")
-  createdAt           DateTime @default(now()) @map("created_at")
-  updatedAt           DateTime @default(now()) @map("updated_at")
-  @@index([sellerId, status])
-  @@map("advertising_campaigns")
+enum promotion_type {
+  FEATURED
+  BOOST
+  TOP_SEARCH
 }
 
-model ShippingTransaction {
-  id                  String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  orderId             String   @unique @map("order_id") @db.Uuid
-  customerFee         BigInt   @map("customer_fee")
-  providerCost        BigInt   @map("provider_cost")
-  platformMargin      BigInt   @map("platform_margin")
-  status              String   @default("PENDING")
-  ledgerTransactionId String?  @map("ledger_transaction_id") @db.Uuid
-  settledBy           String?  @map("settled_by") @db.Uuid
-  settledAt           DateTime? @map("settled_at")
-  createdAt           DateTime @default(now()) @map("created_at")
-  updatedAt           DateTime @default(now()) @map("updated_at")
-  @@index([status, createdAt])
-  @@map("shipping_transactions")
+enum report_status {
+  PENDING
+  REVIEWING
+  RESOLVED
+  REJECTED
 }
 
-model LedgerTransaction {
-  id             String                @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  type           LedgerTransactionType
-  orderId        String?               @map("order_id") @db.Uuid
-  paymentId      String?               @map("payment_id") @db.Uuid
-  referenceId    String?               @map("reference_id") @db.Uuid
-  idempotencyKey String?               @unique @map("idempotency_key")
-  status         String
-  createdAt      DateTime              @default(now()) @map("created_at")
-  finalizedAt    DateTime?             @map("finalized_at")
-  entries        LedgerEntry[]
-
-  @@map("ledger_transactions")
+enum report_target_type {
+  USER
+  PRODUCT
+  MESSAGE
+  REVIEW
+  ORDER
 }
 
-model LedgerEntry {
-  id            String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  transactionId String            @map("transaction_id") @db.Uuid
-  accountCode   String            @map("account_code")
-  amount        BigInt
-  currency      String            @default("VND") @db.Char(3)
-  userId        String?           @map("user_id") @db.Uuid
-  orderId       String?           @map("order_id") @db.Uuid
-  createdAt     DateTime          @default(now()) @map("created_at")
-  transaction   LedgerTransaction @relation(fields: [transactionId], references: [id])
-
-  @@index([transactionId])
-  @@index([orderId])
-  @@map("ledger_entries")
+enum shipment_status {
+  PENDING
+  PICKED_UP
+  IN_TRANSIT
+  OUT_FOR_DELIVERY
+  DELIVERED
+  RETURNED
+  CANCELLED
 }
 
-model SellerWallet {
-  sellerId         String   @id @map("seller_id") @db.Uuid
-  pendingBalance   BigInt   @default(0) @map("pending_balance")
-  availableBalance BigInt   @default(0) @map("available_balance")
-  heldBalance      BigInt   @default(0) @map("held_balance")
-  updatedAt        DateTime @default(now()) @map("updated_at")
-
-  @@map("seller_wallets")
+enum user_role {
+  USER
+  ADMIN
+  SUPER_ADMIN
 }
 
-model WalletTransaction {
-  id                  String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  sellerId            String            @map("seller_id") @db.Uuid
-  orderId             String?           @map("order_id") @db.Uuid
-  ledgerTransactionId String            @map("ledger_transaction_id") @db.Uuid
-  status              WalletEntryStatus
-  amount              BigInt
-  createdAt           DateTime          @default(now()) @map("created_at")
-
-  @@map("wallet_transactions")
+enum user_status {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+  BANNED
+  DELETED
 }
 
-model SellerBankAccount {
-  id                     String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  sellerId               String   @map("seller_id") @db.Uuid
-  bankName               String   @map("bank_name") @db.VarChar(120)
-  accountHolder          String   @map("account_holder") @db.VarChar(150)
-  accountNumberEncrypted Bytes    @map("account_number_encrypted")
-  accountNumberLast4     String   @map("account_number_last4") @db.Char(4)
-  isDefault              Boolean  @default(false) @map("is_default")
-  status                 String   @default("ACTIVE")
-  createdAt              DateTime @default(now()) @map("created_at")
-  updatedAt              DateTime @default(now()) @map("updated_at")
-
-  @@index([sellerId, status, createdAt])
-  @@map("seller_bank_accounts")
+enum verification_status {
+  PENDING
+  VERIFIED
+  REJECTED
+  EXPIRED
 }
 
-model Payout {
-  id                  String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  sellerId            String       @map("seller_id") @db.Uuid
-  amount              BigInt
-  fee                 BigInt       @default(0)
-  netAmount           BigInt       @map("net_amount")
-  bankAccountId       String?      @map("bank_account_id") @db.Uuid
-  ledgerTransactionId String?      @map("ledger_transaction_id") @db.Uuid
-  idempotencyKey      String       @unique @map("idempotency_key")
-  status              PayoutStatus @default(REQUESTED)
-  requestedAt         DateTime     @default(now()) @map("requested_at")
-  processedAt         DateTime?    @map("processed_at")
-  failureReason       String?      @map("failure_reason")
-  updatedAt           DateTime     @default(now()) @map("updated_at")
-
-  @@index([sellerId, status, requestedAt])
-  @@map("payouts")
-}
-
-model Refund {
-  id                           String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  orderId                      String       @map("order_id") @db.Uuid
-  paymentId                    String?      @map("payment_id") @db.Uuid
-  requestedBy                  String       @map("requested_by") @db.Uuid
-  processedBy                  String?      @map("processed_by") @db.Uuid
-  type                         RefundType
-  amount                       BigInt
-  currency                     String       @default("VND") @db.Char(3)
-  reason                       String?
-  status                       RefundStatus @default(REQUESTED)
-  idempotencyKey               String       @unique @map("idempotency_key")
-  originalLedgerTransactionId  String?      @map("original_ledger_transaction_id") @db.Uuid
-  reversingLedgerTransactionId String?      @map("reversing_ledger_transaction_id") @db.Uuid
-  requestedAt                  DateTime     @default(now()) @map("requested_at")
-  processedAt                  DateTime?    @map("processed_at")
-  updatedAt                    DateTime     @default(now()) @map("updated_at")
-
-  @@index([orderId, status, requestedAt])
-  @@index([requestedBy, requestedAt])
-  @@map("refunds")
-}
-
-// A replaceable, derived daily reporting projection. Source-of-truth remains
-// the append-only ledger, orders and refunds; this table only makes dashboard
-// and export queries fast without weakening financial auditability.
-model PlatformRevenue {
-  id                    String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  revenueDate           DateTime @map("revenue_date") @db.Date
-  currency              String   @default("VND") @db.Char(3)
-  totalOrders           Int      @default(0) @map("total_orders")
-  gmv                   BigInt   @default(0)
-  platformFee           BigInt   @default(0) @map("platform_fee")
-  paymentProcessingCost BigInt   @default(0) @map("payment_processing_cost")
-  sellerPayout          BigInt   @default(0) @map("seller_payout")
-  promotionRevenue      BigInt   @default(0) @map("promotion_revenue")
-  subscriptionRevenue   BigInt   @default(0) @map("subscription_revenue")
-  advertisingRevenue    BigInt   @default(0) @map("advertising_revenue")
-  shippingMargin        BigInt   @default(0) @map("shipping_margin")
-  refundVolume          BigInt   @default(0) @map("refund_volume")
-  netRevenue            BigInt   @default(0) @map("net_revenue")
-  refreshedAt           DateTime @default(now()) @map("refreshed_at")
-  createdAt             DateTime @default(now()) @map("created_at")
-  updatedAt             DateTime @default(now()) @map("updated_at")
-
-  @@unique([revenueDate, currency])
-  @@index([currency, revenueDate])
-  @@map("platform_revenues")
-}
-
-model IdempotencyKey {
-  key         String   @id
-  actorId     String?  @map("actor_id") @db.Uuid
-  requestHash String   @map("request_hash")
-  response    Json?
-  createdAt   DateTime @default(now()) @map("created_at")
-  expiresAt   DateTime @map("expires_at")
-
-  @@map("idempotency_keys")
-}
-
-model FinancialAuditLog {
-  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  actorId    String?  @map("actor_id") @db.Uuid
-  action     String   @db.VarChar(100)
-  entityType String   @map("entity_type") @db.VarChar(50)
-  entityId   String   @map("entity_id") @db.Uuid
-  oldValue   Json?    @map("old_value")
-  newValue   Json?    @map("new_value")
-  reason     String?
-  createdAt  DateTime @default(now()) @map("created_at")
-
-  @@index([entityType, entityId, createdAt])
-  @@map("financial_audit_logs")
-}
-
-model ContentReport {
-  id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  reporterId     String    @map("reporter_id") @db.Uuid
-  reportedUserId String?   @map("reported_user_id") @db.Uuid
-  productId      String?   @map("product_id") @db.Uuid
-  reason         String    @db.VarChar(80)
-  details        String?   @db.VarChar(1000)
-  status         String    @default("OPEN") @db.VarChar(20)
-  reviewedBy     String?   @map("reviewed_by") @db.Uuid
-  reviewedAt     DateTime? @map("reviewed_at")
-  resolutionNote String?   @map("resolution_note") @db.VarChar(1000)
-  createdAt      DateTime  @default(now()) @map("created_at")
-
-  @@index([status, createdAt])
-  @@map("content_reports")
-}
-
-model ModerationAuditLog {
-  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  reportId  String   @map("report_id") @db.Uuid
-  actorId   String   @map("actor_id") @db.Uuid
-  oldStatus String   @map("old_status") @db.VarChar(20)
-  newStatus String   @map("new_status") @db.VarChar(20)
-  note      String?  @db.VarChar(1000)
-  createdAt DateTime @default(now()) @map("created_at")
-
-  @@index([reportId, createdAt])
-  @@map("moderation_audit_logs")
+enum verification_type {
+  PHONE
+  EMAIL
+  IDENTITY
 }

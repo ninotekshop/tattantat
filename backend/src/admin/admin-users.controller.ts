@@ -4,6 +4,7 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { DatabaseService } from '../database/database.service';
 import { FinanceAdminGuard } from '../finance/finance-admin.guard';
 import { AdminAuditLogService } from './admin-audit-log.service';
+import { NotificationsService } from '../account/notifications.service';
 
 class SuspendUserDto {
   @IsString() @MaxLength(500) reason!: string;
@@ -23,6 +24,7 @@ export class AdminUsersController {
   constructor(
     private readonly db: DatabaseService,
     private readonly audit: AdminAuditLogService,
+    private readonly notifications: NotificationsService,
   ) {}
 
   @Get()
@@ -193,6 +195,7 @@ export class AdminUsersController {
     );
     if (!result.rows[0]) throw new BadRequestException('Không tìm thấy người dùng');
     await this.audit.log(request.user.id, 'Super Admin', 'USER_VERIFIED', 'User', id, { name: result.rows[0].full_name });
+    void this.notifications.create(id, 'ACCOUNT_VERIFIED', 'Tài khoản đã được xác minh', 'Chúc mừng! Tài khoản của bạn đã được xác minh và hiển thị huy hiệu Đã xác thực.', 'USER', id).catch(() => undefined);
     return { success: true, data: result.rows[0], message: 'Đã xác minh tài khoản thành công', errorCode: null };
   }
 }

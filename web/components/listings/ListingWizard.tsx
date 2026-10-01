@@ -1,12 +1,14 @@
 'use client';
 
+import { Ic } from '../Ic';
 import Link from 'next/link';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ArrowLeft, ArrowRight, Check, CheckCircle2, Cloud, MapPin, ShieldCheck, FileText, AlertTriangle, Trash2, X } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Check, CheckCircle2, Cloud, MapPin, ShieldCheck, FileText, AlertTriangle, Trash2, X, BadgeCheck, Lock, TriangleAlert, Sparkles } from 'lucide-react';
 import { readSession } from '../../lib/auth';
-import { Listing, ListingCategory, ListingData, ListingError, ListingMedia, ListingSummary, Template, conditionLabels, listingPrice, listingRequest, priceLabels, publicData, validateListing, visible } from '../../lib/listings';
+import { memberRequest } from '../../lib/api';
+import { Listing, ListingCategory, ListingData, ListingError, ListingMedia, ListingSummary, Template, conditionLabels, listingPrice, listingRequest, priceLabels, publicData, validateListing, visible, looksLikeStreetAddress, DEFAULT_MIN_PRICE } from '../../lib/listings';
 import { CATEGORY_ENGINE_TAXONOMY, LISTING_INTENTS, ParentCategorySpec, SubCategorySpec, getCategoryPlaceholders } from '../../lib/marketplace';
-import { ALL_PROVINCES } from '../../lib/locations';
+import { ALL_PROVINCES, removeAccents } from '../../lib/locations';
 import { DynamicField } from './DynamicField';
 import { MediaPicker } from './MediaPicker';
 import { LocationMap } from './LocationMap';
@@ -39,17 +41,35 @@ export function ListingWizard() {
   const [selectedParentKey, setSelectedParentKey] = useState<string>('property');
   const [selectedSubSlug, setSelectedSubSlug] = useState<string>('ban-nha');
   const [categoryId, setCategoryId] = useState<string>('47');
+  const [aiBusy, setAiBusy] = useState(false), [aiMsg, setAiMsg] = useState('');
   const [template, setTemplate] = useState<Template | null>(null);
+  const [unsupportedCategory, setUnsupportedCategory] = useState(false);
 
   const [listing, setListing] = useState<Listing | null>(null);
   const [data, setData] = useState<ListingData>({});
+  const [pendingReview, setPendingReview] = useState(false);
   const [media, setMedia] = useState<ListingMedia[]>([]);
   const [step, setStep] = useState(0);
+  const panelRef = useRef<HTMLElement | null>(null);
+  const firstStep = useRef(true);
+  useEffect(() => {
+    if (firstStep.current) { firstStep.current = false; return; }
+    const el = panelRef.current;
+    if (!el) return;
+    const raf = requestAnimationFrame(() => {
+      const top = el.getBoundingClientRect().top + window.scrollY - 80;
+      window.scrollTo({ top: Math.max(0, top), behavior: 'auto' });
+      el.focus({ preventScroll: true });
+    });
+    return () => cancelAnimationFrame(raf);
+  }, [step]);
 
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [mediaBusy, setMediaBusy] = useState(false);
   const [error, setError] = useState('');
+  type LocInfo = { state: 'loading' | 'ok' | 'error'; lat?: number; lng?: number; accuracy?: number; address?: string; filled?: string; note?: string };
+  const [locInfo, setLocInfo] = useState<LocInfo | null>(null);
   const [contactWarning, setContactWarning] = useState<string | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [saveState, setSaveState] = useState('');
@@ -84,11 +104,30 @@ export function ListingWizard() {
       matched = categories.find(c => c.slug === parentSlug || c.slug === selectedParentKey);
     }
 
-    if (matched && matched.id !== categoryId) {
-      setCategoryId(matched.id);
-      change({ ...current.current, values: {} });
+    if (matched) {
+      setUnsupportedCategory(false);
+      if (matched.id !== categoryId) {
+        setCategoryId(matched.id);
+        change({ ...current.current, values: {} });
+      }
+    } else {
+      // Không có chuyên mục khớp: bỏ biểu mẫu cũ để không hiện nhầm form của chuyên mục khác.
+      setUnsupportedCategory(true);
+      if (categoryId) {
+        setCategoryId('');
+        setTemplate(null);
+        change({ ...current.current, values: {} });
+      }
     }
   }, [selectedSubSlug, selectedParentKey, categories, listing, categoryId]);
+
+  // Chuyên mục chỉ có một cách tính giá (VD: Tặng miễn phí) thì tự chọn, không bắt người dùng chọn.
+  useEffect(() => {
+    const modes = template?.config.priceModes;
+    if (!modes || modes.length !== 1 || listing === null) return;
+    if (current.current.priceMode !== modes[0]) patch({ priceMode: modes[0], ...(modes[0] === 'FREE' ? { price: '0' } : {}) });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [template, listing]);
 
   useEffect(() => {
     const session = readSession();
@@ -187,6 +226,16 @@ export function ListingWizard() {
     setContactWarning(titleWarn || descWarn);
   }
 
+  async function aiWrite() {
+    if (aiBusy) return; setAiBusy(true); setAiMsg('');
+    try {
+      const cur = current.current;
+      const r = await memberRequest<{ title: string; description: string; provider: string; remaining: number }>('/ai/listing-draft', 'POST', { title: cur.title || undefined, condition: cur.condition || undefined, price: cur.price ? String(cur.price) : undefined, notes: cur.description || undefined });
+      patch({ description: r.description, ...(cur.title ? {} : { title: r.title }) });
+      setAiMsg(`Đã viết xong — hãy đọc lại và chỉnh cho đúng thực tế. Còn ${r.remaining} lượt hôm nay${r.provider === 'mock' ? ' (chế độ mẫu, chưa bật AI)' : ''}.`);
+    } catch (e) { setAiMsg(e instanceof Error ? e.message : 'Không tạo được nội dung.'); } finally { setAiBusy(false); }
+  }
+
   function patch(next: Partial<ListingData>) {
     change({ ...current.current, ...next });
   }
@@ -261,6 +310,14 @@ export function ListingWizard() {
 
   async function nextStep() {
     if (step === 0) {
+      if (unsupportedCategory || !categoryId) {
+        setError('Chuyên mục này chưa hỗ trợ đăng tin. Vui lòng chọn chuyên mục khác.');
+        return;
+      }
+      if (selectedIntent === 'giveaway' && template && !template.config.priceModes.includes('FREE')) {
+        setError('Chuyên mục này không hỗ trợ tin tặng miễn phí. Hãy chọn nhóm "Tặng miễn phí" hoặc đổi mục đích đăng tin.');
+        return;
+      }
       if (selectedIntent === 'giveaway') {
         patch({ priceMode: 'FREE', price: '0' });
       }
@@ -278,8 +335,7 @@ export function ListingWizard() {
     // Street address check in Description
     if (step === 1) {
       const desc = current.current.description || '';
-      const addressRegex = /(số\s+\d+|đường\s+|phường\s+|quận\s+|huyện\s+|ngõ\s+|ngách\s+|hẻm\s+|xã\s+|thôn\s+)/i;
-      if (addressRegex.test(desc)) {
+      if (looksLikeStreetAddress(desc)) {
         setError('Vui lòng không nhập địa chỉ giao dịch chi tiết vào phần Mô tả chi tiết. Hãy chọn tỉnh/thành, quận/huyện ở bước Giá & Vị trí để bảo mật thông tin cá nhân và định vị tin đăng chính xác nhất.');
         return;
       }
@@ -328,10 +384,11 @@ export function ListingWizard() {
     try {
       await flush();
       if (publishKey.current?.revision !== revision.current) publishKey.current = { revision: revision.current, key: crypto.randomUUID() };
-      const result = await listingRequest<{ productId: string }>(`/listings/${listing.id}/publish`, 'POST', { revision: revision.current }, publishKey.current.key);
+      const result = await listingRequest<{ productId: string; moderation?: string }>(`/listings/${listing.id}/publish`, 'POST', { revision: revision.current }, publishKey.current.key);
       setListing({ ...listing, productId: result.productId, status: 'PUBLISHED' });
+      setPendingReview(result.moderation === 'PENDING_REVIEW');
       setStep(6);
-      setSaveState('Tin đã được đăng công khai!');
+      setSaveState(result.moderation === 'PENDING_REVIEW' ? 'Tin đã được gửi và đang chờ duyệt.' : 'Tin đã được đăng công khai!');
     } catch (err) {
       fail(err);
     } finally {
@@ -357,13 +414,34 @@ export function ListingWizard() {
   function locate() {
     setError('');
     if (!navigator.geolocation) {
-      setError('Trình duyệt không hỗ trợ định vị. Bạn có thể nhập địa chỉ.');
+      setLocInfo({ state: 'error', note: 'Trình duyệt không hỗ trợ định vị. Bạn có thể nhập địa chỉ.' });
       return;
     }
+    setLocInfo({ state: 'loading' });
     navigator.geolocation.getCurrentPosition(
-      pos => patch({ location: { ...current.current.location, latitude: pos.coords.latitude, longitude: pos.coords.longitude } }),
-      () => setError('Chưa lấy được vị trí. Hãy chọn tỉnh/thành, quận/huyện bên dưới.'),
-      { timeout: 10000 }
+      async pos => {
+        const { latitude, longitude, accuracy } = pos.coords;
+        patch({ location: { ...current.current.location, latitude, longitude } });
+        setLocInfo({ state: 'ok', lat: latitude, lng: longitude, accuracy: Math.round(accuracy), note: 'Đang tra địa chỉ từ tọa độ…' });
+        try {
+          const r = await memberRequest<{ displayName: string; road: string; houseNumber: string; ward: string; district: string; province: string }>(`/geo/reverse?lat=${latitude}&lng=${longitude}`);
+          const norm = (t: string) => removeAccents((t || '').toLowerCase()).replace(/^(tinh|thanh pho|tp\.?|quan|huyen|thi xa|thi tran|phuong|xa)\s+/, '').replace(/\s+/g, ' ').trim();
+          const province = ALL_PROVINCES.find((p: any) => norm(p.name) === norm(r.province));
+          const district = province?.children?.find((d: any) => norm(d.name) === norm(r.district));
+          const street = [r.houseNumber, r.road].filter(Boolean).join(' ');
+          const loc: any = { ...current.current.location, latitude, longitude };
+          const filled: string[] = [];
+          if (province) { loc.province = province.name; loc.district = district?.name ?? ''; filled.push(province.name); if (district) filled.push(district.name); }
+          if (r.ward && (!loc.ward || !String(loc.ward).trim())) { loc.ward = r.ward; filled.push(r.ward); }
+          if (street && !(loc.address && String(loc.address).trim())) loc.address = street;
+          patch({ location: loc });
+          setLocInfo({ state: 'ok', lat: latitude, lng: longitude, accuracy: Math.round(accuracy), address: r.displayName, filled: filled.length ? filled.reverse().join(', ') : undefined, note: province ? undefined : 'Chưa khớp được tỉnh/thành tự động, vui lòng chọn bên dưới.' });
+        } catch {
+          setLocInfo({ state: 'ok', lat: latitude, lng: longitude, accuracy: Math.round(accuracy), note: 'Đã lấy được tọa độ nhưng chưa tra được địa chỉ. Vui lòng chọn tỉnh/thành, quận/huyện bên dưới.' });
+        }
+      },
+      err => setLocInfo({ state: 'error', note: err.code === 1 ? 'Bạn chưa cho phép truy cập vị trí. Hãy bật quyền vị trí cho trang web trong trình duyệt rồi thử lại, hoặc chọn tỉnh/thành bên dưới.' : 'Chưa lấy được vị trí. Hãy chọn tỉnh/thành, quận/huyện bên dưới.' }),
+      { timeout: 10000, enableHighAccuracy: true },
     );
   }
 
@@ -391,7 +469,7 @@ export function ListingWizard() {
   }
 
   return (
-    <main id="main-content" className="lf-page">
+    <main id="main-content" className={step === 6 ? 'lf-page lf-done' : 'lf-page'}>
       {/* CENTERED POPUP MODAL FOR ERROR NOTIFICATIONS */}
       {error && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.6)', backdropFilter: 'blur(4px)', zIndex: 99999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
@@ -438,7 +516,7 @@ export function ListingWizard() {
       </nav>
 
       <div className="lf-layout">
-        <section className="lf-panel">
+        <section className="lf-panel" ref={panelRef} tabIndex={-1} style={{ outline: 'none' }}>
           <div className="lf-panel-heading">
             <div>
               <p className="lf-eyebrow">BƯỚC {step + 1} / 7</p>
@@ -618,6 +696,7 @@ export function ListingWizard() {
                           {fieldError('title')}
                         </div>
 
+                        {template.config.condition !== 'none' && (
                         <div className="lf-field">
                           <label htmlFor="listing-condition">Tình trạng *</label>
                           <select id="listing-condition" value={data.condition ?? ''} onChange={e => patch({ condition: e.target.value })}>
@@ -628,12 +707,14 @@ export function ListingWizard() {
                           </select>
                           {fieldError('condition')}
                         </div>
+                        )}
 
                         <h3>Thông tin thuộc tính động theo danh mục</h3>
                         <div className="lf-fields-grid">{dynamicFields(false)}</div>
 
                         <div className="lf-field">
                           <label htmlFor="listing-description">Mô tả chi tiết *</label>
+                          <div style={{ margin: '4px 0' }}><button type="button" disabled={aiBusy} onClick={() => void aiWrite()} style={{ padding: '6px 12px', border: '1px solid #00a65a', color: '#00a65a', background: '#fff', borderRadius: 8, fontWeight: 600, cursor: 'pointer' }}>{aiBusy ? 'Đang viết…' : <><Ic i={Sparkles}/>AI viết giúp mô tả</>}</button> {aiMsg && <small role="status" style={{ color: '#0f766e' }}>{aiMsg}</small>}</div>
                           <textarea
                             id="listing-description"
                             rows={6}
@@ -643,7 +724,7 @@ export function ListingWizard() {
                             onChange={e => patch({ description: e.target.value })}
                           />
                           <small style={{ color: '#00a65a', fontSize: 11.5, marginTop: 4, display: 'block' }}>
-                            🔒 Lưu ý: Không ghi địa chỉ giao dịch cụ thể vào Mô tả chi tiết. Vui lòng chọn khu vực ở bước Giá & Vị trí.
+                            <Ic i={Lock}/>Lưu ý: Không ghi địa chỉ giao dịch cụ thể vào Mô tả chi tiết. Vui lòng chọn khu vực ở bước Giá & Vị trí.
                           </small>
                           {fieldError('description')}
                         </div>
@@ -693,13 +774,13 @@ export function ListingWizard() {
                         <input
                           id="listing-price"
                           inputMode="numeric"
-                          maxLength={13}
+                          maxLength={17}
                           placeholder="Nhập số tiền (VND)"
-                          value={data.price ?? ''}
-                          onChange={e => patch({ price: e.target.value.replace(/[^0-9]/g, '') })}
+                          value={String(data.price ?? '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')}
+                          onChange={e => patch({ price: e.target.value.replace(/[^0-9]/g, '').slice(0, 13) })}
                         />
                         {fieldError('price')}
-                        <small>{listingPrice(data)}</small>
+                        <small>{listingPrice(data)} · Tối thiểu {(template.config.minPrice ?? DEFAULT_MIN_PRICE).toLocaleString('vi-VN')} đ{template.config.maxPrice ? ` · Tối đa ${template.config.maxPrice.toLocaleString('vi-VN')} đ` : ''}</small>
                       </div>
                     )}
                   </div>
@@ -773,8 +854,19 @@ export function ListingWizard() {
                   </label>
 
                   <button type="button" className="lf-secondary" onClick={locate}>
-                    <MapPin size={17} /> Lấy vị trí hiện tại
+                    <MapPin size={17} /> {locInfo?.state === 'loading' ? 'Đang lấy vị trí…' : 'Lấy vị trí hiện tại'}
                   </button>
+                  {locInfo && <div role="status" aria-live="polite" className="lf-callout" style={{ fontSize: 13, display: 'block', background: locInfo.state === 'error' ? '#fff4f2' : '#eef7f1' }}>
+                    {locInfo.state === 'loading' && <>Đang xác định vị trí của bạn… Hãy chọn "Cho phép" nếu trình duyệt hỏi.</>}
+                    {locInfo.state === 'error' && <><Ic i={TriangleAlert}/>{locInfo.note}</>}
+                    {locInfo.state === 'ok' && <>
+                      <strong><Ic i={BadgeCheck}/>Đã lấy vị trí hiện tại</strong><br />
+                      Tọa độ: {locInfo.lat?.toFixed(6)}, {locInfo.lng?.toFixed(6)}{locInfo.accuracy ? ` (sai số khoảng ${locInfo.accuracy} m)` : ''}<br />
+                      {locInfo.address && <>Địa chỉ: {locInfo.address}<br /></>}
+                      {locInfo.filled && <>Đã điền: {locInfo.filled}<br /></>}
+                      {locInfo.note && <em>{locInfo.note}</em>}
+                    </>}
+                  </div>}
 
                   <LocationMap
                     latitude={data.location?.latitude}
@@ -838,7 +930,7 @@ export function ListingWizard() {
                         <img key={id} src={media.find(item => item.id === id)?.url} alt="Ảnh sản phẩm xem trước" />
                       ))}
                     </div>
-                    <p className="lf-eyebrow">{activeParent.label} · {conditionLabels[data.condition ?? '']}</p>
+                    <p className="lf-eyebrow">{activeParent.label}{data.condition ? ' · ' + conditionLabels[data.condition] : ''}</p>
                     <h2>{data.title}</h2>
                     <strong className="lf-price">{listingPrice(data)}</strong>
                     <p>
@@ -853,19 +945,32 @@ export function ListingWizard() {
 
               {/* BƯỚC 7: HOÀN TẤT */}
               {step === 6 && (
-                <div className="lf-callout">
-                  <CheckCircle2 size={32} color="#00a65a" />
-                  <div>
-                    <strong>ĐĂNG TIN THÀNH CÔNG!</strong>
-                    <p>Tin đăng của bạn đã sẵn sàng tiếp cận hàng ngàn người mua trên Tất Tần Tật.</p>
-                    {listing?.productId && (
-                      <p style={{ marginTop: 12 }}>
-                        <Link href={`/products/${listing.productId}`} className="lf-button" style={{ textDecoration: 'none', display: 'inline-flex' }}>
-                          Xem tin vừa đăng →
-                        </Link>
-                      </p>
+                <div className="lf-win">
+                  <div className="lf-confetti" aria-hidden="true">{Array.from({ length: 18 }).map((_, i) => <i key={i} />)}</div>
+                  <div className="lf-win-badge"><Ic i={CheckCircle2} size={44} tone="inherit" /></div>
+                  <p className="lf-win-eyebrow">{pendingReview ? 'ĐÃ GỬI TIN' : 'CHÚC MỪNG BẠN!'}</p>
+                  <h2>{pendingReview ? 'Tin của bạn đang chờ duyệt' : 'Đăng tin thành công rồi!'}</h2>
+                  {data.title && <p className="lf-win-title">“{data.title}”</p>}
+                  <p className="lf-win-msg">
+                    {pendingReview
+                      ? 'Tin đăng đã được gửi tới quản trị viên kiểm duyệt. Tin sẽ hiển thị công khai ngay khi được duyệt, bạn sẽ nhận thông báo qua biểu tượng chuông.'
+                      : 'Tin đăng của bạn đã sẵn sàng tiếp cận hàng ngàn người mua trên Tất Tần Tật.'}
+                  </p>
+                  <p className="lf-win-wish">Chúc bạn mua may bán đắt, chốt đơn thật nhanh và gặp thật nhiều khách hàng tốt!</p>
+                  <div className="lf-win-actions">
+                    {!pendingReview && listing?.productId && (
+                      <Link href={`/products/${listing.productId}`} className="lf-primary" style={{ textDecoration: 'none' }}>Xem tin vừa đăng <Ic i={ArrowRight} after /></Link>
                     )}
+                    {pendingReview && (
+                      <Link href="/account?section=listings" className="lf-primary" style={{ textDecoration: 'none' }}>Xem tin của tôi <Ic i={ArrowRight} after /></Link>
+                    )}
+                    <Link href="/sell" className="lf-secondary" style={{ textDecoration: 'none' }} onClick={() => { if (typeof window !== 'undefined') window.setTimeout(() => window.location.reload(), 0); }}>Đăng thêm tin nữa</Link>
                   </div>
+                  <ul className="lf-win-tips">
+                    <li><Ic i={Sparkles} size={16} /> Đăng nhiều tin hơn để khách hàng dễ tìm thấy bạn — người bán đăng đều đặn thường bán nhanh hơn.</li>
+                    <li><Ic i={ShieldCheck} size={16} /> Trả lời tin nhắn sớm để giữ uy tín và tăng tỷ lệ chốt đơn.</li>
+                  </ul>
+                  <p className="lf-win-thanks">Cảm ơn bạn đã đồng hành cùng Tất Tần Tật!</p>
                 </div>
               )}
 

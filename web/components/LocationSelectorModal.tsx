@@ -1,7 +1,8 @@
 'use client';
 
+import { Ic } from './Ic';
 import React, { useState, useMemo } from 'react';
-import { Search, MapPin, Navigation, ChevronRight, ArrowLeft, X, Check } from 'lucide-react';
+import { Search, MapPin, Navigation, ChevronRight, ArrowLeft, X, Check, Globe, TriangleAlert } from 'lucide-react';
 import {
   LocationNode,
   LocationSelection,
@@ -107,10 +108,10 @@ export function LocationSelectorModal({
 
         {/* SEARCH INPUT */}
         <div className="location-search-box">
-          <Search size={18} color="#64748b" />
+          <Search size={18} color="#00a65a" />
           <input
             type="text"
-            placeholder="🔎 Tìm tỉnh, thành phố, quận/huyện..."
+            placeholder="Tìm tỉnh, thành phố, quận/huyện..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             autoFocus
@@ -124,7 +125,7 @@ export function LocationSelectorModal({
 
         {gpsError && (
           <div className="location-gps-error">
-            ⚠️ {gpsError}
+            <Ic i={TriangleAlert}/>{gpsError}
           </div>
         )}
 
@@ -139,7 +140,7 @@ export function LocationSelectorModal({
                   onClick={handleSelectNationwide}
                 >
                   <div className="opt-left">
-                    <span className="opt-icon">🌐</span>
+                    <span className="opt-icon"><Ic i={Globe}/></span>
                     <div>
                       <strong>Toàn quốc</strong>
                       <small>Tìm kiếm trên tất cả tỉnh thành Việt Nam</small>
@@ -194,7 +195,7 @@ export function LocationSelectorModal({
                       className={`popular-chip ${currentSelection?.locationId === pop.id ? 'active' : ''}`}
                       onClick={() => handleSelectNode(pop)}
                     >
-                      📍 {pop.name}
+                      <Ic i={MapPin}/>{pop.name}
                     </button>
                   ))}
                 </div>
@@ -247,12 +248,12 @@ export function LocationSelectorModal({
                     }
                   }}
                 >
-                  <span className="row-title">📍 {prov.name}</span>
+                  <span className="row-title"><Ic i={MapPin}/>{prov.name}</span>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                     {prov.children && prov.children.length > 0 && (
                       <span className="child-badge">{prov.children.length} quận/huyện</span>
                     )}
-                    <ChevronRight size={18} color="#94a3b8" />
+                    <ChevronRight size={18} />
                   </div>
                 </button>
               ))}

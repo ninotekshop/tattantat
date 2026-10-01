@@ -57,6 +57,6 @@ NEXT_PUBLIC_API_URL=https://tattantat.vn/api/v1
 Tạo file `backend/.env` nếu chưa có:
 ```env
 PORT=3000
-DATABASE_URL=postgresql://postgres.brabreqaarmuowymfnkl:PASSWORD@aws-0-ap-southeast-2.pooler.supabase.com:5432/postgres
+DATABASE_URL=postgresql://postgres.MA-DU-AN:PASSWORD@aws-0-REGION.pooler.supabase.com:5432/postgres
 JWT_SECRET=tat_tan_tat_secret_key_2026
 ```

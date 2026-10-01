@@ -1,4 +1,5 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException, Optional } from '@nestjs/common';
+import { ModerationPolicyService } from '../moderation/moderation-policy.service';
 import { DatabaseService } from '../database/database.service';
 import { CreateProductDto, UpdateProductDto } from './dto/products.dto';
 import { ModerationService } from '../admin/moderation.service';
@@ -11,6 +12,7 @@ export class ProductsService {
   constructor(
     private readonly database: DatabaseService,
     private readonly moderation: ModerationService,
+    @Optional() private readonly policy?: ModerationPolicyService,
   ) {}
 
   async categories() { return this.envelope((await this.database.query('SELECT id, name, slug, icon_url FROM categories WHERE status = $1 ORDER BY sort_order, name', ['ACTIVE'])).rows); }
@@ -21,7 +23,8 @@ export class ProductsService {
     }
     const result = await this.database.query<ProductRow>(
       `SELECT p.id, p.title, p.price::text, p.address, p.created_at, p.status::text, p.seller_id, p.listing_price_mode, u.full_name AS seller_name,
-       (SELECT url FROM product_images WHERE product_id = p.id ORDER BY sort_order LIMIT 1) AS image_url
+       (SELECT url FROM product_images WHERE product_id = p.id ORDER BY sort_order LIMIT 1) AS image_url,
+       EXISTS(SELECT 1 FROM listings lv WHERE lv.product_id=p.id AND CASE WHEN jsonb_typeof(lv.published_snapshot->'data'->'videos')='array' THEN jsonb_array_length(lv.published_snapshot->'data'->'videos')>0 ELSE false END) AS has_video
        FROM products p JOIN users u ON u.id = p.seller_id
        WHERE p.status = 'ACTIVE' AND p.deleted_at IS NULL AND ($1 = '' OR p.title ILIKE '%' || $1 || '%')
          AND ($2::bigint IS NULL OR p.category_id IN (WITH RECURSIVE tree AS (SELECT id FROM categories WHERE id=$2::bigint UNION SELECT c.id FROM categories c JOIN tree t ON c.parent_id=t.id) SELECT id FROM tree))
@@ -31,16 +34,32 @@ export class ProductsService {
     return this.envelope(result.rows.map((row) => this.productPayload(row)));
   }
 
-  async detail(id: string, viewerId?: string) {
+  private readonly seenViews = new Map<string, number>();
+  /** Đếm lượt xem: mỗi người/thiết bị tối đa 1 lần / 30 phút cho một tin, không tính chủ tin. */
+  private countView(productId: string, sellerId: string | undefined, viewerKey: string) {
+    if (!viewerKey || sellerId === viewerKey) return;
+    const key = `${productId}:${viewerKey}`; const now = Date.now();
+    if ((this.seenViews.get(key) ?? 0) > now - 30 * 60_000) return;
+    if (this.seenViews.size > 20_000) this.seenViews.clear();
+    this.seenViews.set(key, now);
+    void this.database.query('UPDATE products SET view_count=view_count+1 WHERE id=$1', [productId]).catch(() => undefined);
+  }
+
+  async detail(id: string, viewerId?: string, viewerKey?: string) {
     const result = await this.database.query<ProductRow & { images: string[] }>(
-      `SELECT p.id, p.title, p.price::text, p.address, p.created_at, p.status::text, p.seller_id, p.description, p.condition, p.category_id, p.listing_price_mode, (SELECT l.id FROM listings l WHERE l.product_id=p.id) AS listing_id, u.full_name AS seller_name,
+      `SELECT p.id, p.title, p.price::text, p.address, p.created_at, p.status::text, p.seller_id, p.description,
+       CASE WHEN EXISTS(SELECT 1 FROM listings lc WHERE lc.product_id=p.id) THEN (SELECT lc.published_snapshot->'data'->>'condition' FROM listings lc WHERE lc.product_id=p.id LIMIT 1) ELSE p.condition::text END AS condition,
+       p.category_id, p.listing_price_mode, (SELECT l.id FROM listings l WHERE l.product_id=p.id) AS listing_id, u.full_name AS seller_name,
        (SELECT url FROM product_images WHERE product_id = p.id ORDER BY sort_order LIMIT 1) AS image_url,
-       COALESCE((SELECT jsonb_agg(url ORDER BY sort_order) FROM product_images WHERE product_id = p.id), '[]'::jsonb) AS images
+       COALESCE((SELECT jsonb_agg(url ORDER BY sort_order) FROM product_images WHERE product_id = p.id), '[]'::jsonb) AS images,
+       COALESCE((SELECT lc.published_snapshot->'data'->'videos' FROM listings lc WHERE lc.product_id=p.id LIMIT 1), '[]'::jsonb) AS video_ids,
+       EXISTS(SELECT 1 FROM listings lv WHERE lv.product_id=p.id AND CASE WHEN jsonb_typeof(lv.published_snapshot->'data'->'videos')='array' THEN jsonb_array_length(lv.published_snapshot->'data'->'videos')>0 ELSE false END) AS has_video
        FROM products p JOIN users u ON u.id = p.seller_id
-       WHERE p.id = $1 AND p.status = 'ACTIVE' AND p.deleted_at IS NULL
+       WHERE p.id = $1 AND (p.status = 'ACTIVE' OR p.seller_id = $2::uuid) AND p.deleted_at IS NULL
          AND NOT EXISTS (SELECT 1 FROM user_blocks b WHERE $2::uuid IS NOT NULL AND ((b.blocker_id=$2::uuid AND b.blocked_id=p.seller_id) OR (b.blocker_id=p.seller_id AND b.blocked_id=$2::uuid)))`, [id, viewerId ?? null],
     );
     if (!result.rows[0]) throw new NotFoundException('Không tìm thấy sản phẩm');
+    this.countView(id, result.rows[0].seller_id, viewerId ?? viewerKey ?? '');
     return this.envelope(this.productPayload(result.rows[0]));
   }
 
@@ -68,7 +87,12 @@ export class ProductsService {
       });
     }
 
-    const initialStatus = modResult.action === 'AUTO_APPROVE' ? 'ACTIVE' : 'PENDING';
+    // Nếu có chính sách do Admin cấu hình thì dùng chính sách đó để quyết định duyệt tự động hay thủ công.
+    const policyDecision = this.policy ? await this.policy.decide({ sellerId, categoryId: body.categoryId == null ? null : String(body.categoryId), title: body.title, description: body.description, price: body.price }) : null;
+    if (policyDecision && (policyDecision.action === 'NEEDS_CHANGES' || policyDecision.action === 'REJECT')) {
+      throw new BadRequestException({ success: false, errorCode: policyDecision.code, message: policyDecision.reasons[0] || 'Nội dung tin đăng không hợp lệ.' });
+    }
+    const initialStatus = policyDecision ? (policyDecision.action === 'PENDING_REVIEW' ? 'PENDING_REVIEW' : 'ACTIVE') : (modResult.action === 'AUTO_APPROVE' ? 'ACTIVE' : 'PENDING_REVIEW');
 
     const id = await this.database.transaction(async (client) => {
       const seller = await client.query('SELECT id FROM users WHERE id=$1 FOR UPDATE', [sellerId]);
@@ -148,6 +172,8 @@ export class ProductsService {
   }
 
   private productPayload(row: ProductRow & { images?: string[] }) {
+    const videoIds = Array.isArray((row as any).video_ids) ? ((row as any).video_ids as string[]) : [];
+    const prefix = process.env.API_PREFIX ?? 'api/v1';
     return {
       id: row.id,
       title: row.title,
@@ -160,6 +186,8 @@ export class ProductsService {
       sellerName: row.seller_name,
       imageUrl: row.image_url ?? '',
       images: row.images && row.images.length > 0 ? row.images : (row.image_url ? [row.image_url] : []),
+      hasVideo: !!(row as any).has_video || videoIds.length > 0,
+      videos: row.listing_id ? videoIds.filter(v => typeof v === 'string').map(v => `/${prefix}/listings/${row.listing_id}/media/${v}`) : [],
       description: row.description ?? null,
       condition: row.condition ?? null,
       categoryId: row.category_id ?? null,

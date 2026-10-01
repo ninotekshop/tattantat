@@ -1,6 +1,6 @@
 'use client';
-import { useRef, useState } from 'react';
-import { Camera, Film, ArrowLeft, ArrowRight, Trash2 } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { Camera, Film, ArrowLeft, ArrowRight, Trash2, X } from 'lucide-react';
 import { ListingMedia, uploadListingMedia } from '../../lib/listings';
 
 async function prepareImage(file: File, square: boolean): Promise<File> {
@@ -31,6 +31,9 @@ export function MediaPicker({ listingId, images, videos, media, disabled, onAdd,
   const [pending,setPending] = useState<File[]>([]), [previewUrl,setPreviewUrl] = useState('');
   const [uploadKind,setUploadKind] = useState<'images'|'videos'>('images');
   const busy = progress !== null;
+  const [pendingUrls,setPendingUrls] = useState<string[]>([]);
+  useEffect(()=>{ const urls = pending.map(f=>URL.createObjectURL(f)); setPendingUrls(urls); return ()=>urls.forEach(u=>URL.revokeObjectURL(u)); },[pending]);
+  function removePending(index:number){ const next = pending.filter((_,i)=>i!==index); if(!next.length){ clearPending(); } else setPending(next); }
   function pick(files: FileList|null, kind:'images'|'videos') {
     setError('');
     const selection = Array.from(files??[]);
@@ -59,7 +62,7 @@ export function MediaPicker({ listingId, images, videos, media, disabled, onAdd,
     <input ref={videoInput} hidden type="file" accept="video/mp4,video/webm" multiple onChange={event=>{pick(event.target.files,'videos');event.target.value='';}} />
     <div className="lf-media-actions"><button type="button" className="lf-secondary" disabled={disabled||busy||pending.length>0} onClick={()=>input.current?.click()}><Camera size={18}/>Thêm ảnh ({images.length}/20)</button><button type="button" className="lf-secondary" disabled={disabled||busy||pending.length>0} onClick={()=>videoInput.current?.click()}><Film size={18}/>Thêm video ({videos.length}/3)</button></div>
     <small>Ảnh tối đa 10 MB, tự nén xuống cạnh dài 1.800 px. Video tối đa 50 MB.</small>
-    {pending.length>0 && <div className="lf-upload-review"><h3>Xem trước tệp tải lên</h3>{uploadKind==='images' ? <img src={previewUrl} alt="Ảnh được chọn" style={{width:220,height:square?220:160,objectFit:square?'cover':'contain'}}/> : <video src={previewUrl} controls style={{maxWidth:'100%',height:180}}/>}<p>{pending.length} tệp đã chọn</p>{uploadKind==='images' && <label className="lf-check"><input type="checkbox" checked={square} disabled={busy} onChange={event=>setSquare(event.target.checked)}/>Cắt vuông từ tâm cho các ảnh đã chọn</label>}<div className="lf-media-actions"><button type="button" className="lf-primary" disabled={busy} onClick={upload}>Tải lên</button><button type="button" className="lf-secondary" disabled={busy} onClick={clearPending}>Hủy</button></div></div>}
+    {pending.length>0 && <div className="lf-upload-review"><h3>Xem trước tệp tải lên</h3><div className="lf-pending-grid">{pending.map((file,i)=><div key={file.name+i} className="lf-pending-tile">{uploadKind==='images' ? <img src={pendingUrls[i]} alt={file.name} style={{objectFit:square?'cover':'contain'}}/> : <video src={pendingUrls[i]} muted />}<button type="button" className="lf-pending-x" disabled={busy} onClick={()=>removePending(i)} aria-label={`Bỏ ${file.name}`}><X size={14}/></button></div>)}</div><p>{pending.length} tệp đã chọn</p>{uploadKind==='images' && <label className="lf-check"><input type="checkbox" checked={square} disabled={busy} onChange={event=>setSquare(event.target.checked)}/>Cắt vuông từ tâm cho các ảnh đã chọn</label>}<div className="lf-media-actions"><button type="button" className="lf-primary" disabled={busy} onClick={upload}>Tải lên</button><button type="button" className="lf-secondary" disabled={busy} onClick={clearPending}>Hủy</button></div></div>}
     {busy && <div role="status"><progress max={100} value={progress??0}/><p>Đang tải lên… {progress}%</p></div>}
     {error && <p role="alert" className="lf-error">{error}</p>}
     {(['images','videos'] as const).map(kind=><div key={kind} className="lf-media-grid">{(kind==='images'?images:videos).map((id,index,ids)=>{

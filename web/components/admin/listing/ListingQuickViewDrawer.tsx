@@ -143,7 +143,7 @@ export function ListingQuickViewDrawer({
             onClick={onClose}
             style={{ background: '#e2e8f0', border: 'none', width: 32, height: 32, borderRadius: '50%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
           >
-            <X size={18} color="#475569" />
+            <X size={18} />
           </button>
         </div>
 

@@ -14,6 +14,15 @@ import { PricingModule } from './pricing/pricing.module';
 import { FinanceModule } from './finance/finance.module';
 import { PromotionsModule } from './promotions/promotions.module';
 import { SubscriptionsModule } from './subscriptions/subscriptions.module';
+import { BillingModule } from './billing/billing.module';
+import { DisputesModule } from './disputes/disputes.module';
+import { FraudModule } from './fraud/fraud.module';
+import { VerificationModule } from './verification/verification.module';
+import { SearchModule } from './search/search.module';
+import { AiModule } from './ai/ai.module';
+import { StatsModule } from './stats/stats.module';
+import { GeoModule } from './geo/geo.module';
+import { ModerationPolicyModule } from './moderation/moderation-policy.module';
 import { AdminModule } from './admin/admin.module';
 import { AdvertisingModule } from './advertising/advertising.module';
 import { PaymentsModule } from './payments/payments.module';
@@ -36,6 +45,15 @@ import { ListingsModule } from './listings/listings.module';
     FinanceModule,
     PromotionsModule,
     SubscriptionsModule,
+    BillingModule,
+    DisputesModule,
+    FraudModule,
+    VerificationModule,
+    SearchModule,
+    AiModule,
+    StatsModule,
+    GeoModule,
+    ModerationPolicyModule,
     AdminModule,
     AdvertisingModule,
     PaymentsModule,

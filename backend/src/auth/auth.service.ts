@@ -5,6 +5,7 @@ import * as bcrypt from 'bcryptjs';
 import * as crypto from 'crypto';
 import { DatabaseService } from '../database/database.service';
 import { MailService } from '../mail/mail.service';
+import { toLocalPhone, phoneVariants, verifyFirebasePhone } from './firebase-phone';
 import { LoginDto, RegisterDto, RefreshDto, VerifyOtpDto, SendOtpDto, ForgotPasswordDto, ResetPasswordDto, SocialLoginDto } from './dto/auth.dto';
 
 const DEFAULT_JWT_REFRESH = 'tat_tan_tat_jwt_refresh_secret_key_2026';
@@ -79,7 +80,15 @@ export class AuthService {
     }
   }
 
+  /** Đăng nhập bằng OTP hiện chỉ có mã thử nghiệm cố định → TUYỆT ĐỐI không bật ở production (ai cũng vào được tài khoản của người khác). */
+  private assertOtpLoginAllowed() {
+    if (process.env.NODE_ENV === 'production') {
+      throw new BadRequestException('Đăng nhập bằng mã OTP chưa được hỗ trợ. Vui lòng đăng nhập bằng email/mật khẩu hoặc tài khoản mạng xã hội.');
+    }
+  }
+
   async sendOtp(body: SendOtpDto) {
+    this.assertOtpLoginAllowed();
     const phone = body.phone.trim();
     const otp = this.config.get<string>('DEV_OTP_CODE') || '123456';
     const expiresAt = Date.now() + 5 * 60 * 1000;
@@ -89,6 +98,7 @@ export class AuthService {
   }
 
   async verifyOtp(body: VerifyOtpDto) {
+    this.assertOtpLoginAllowed();
     const phone = body.phone?.trim();
     const expectedOtp = this.config.get<string>('DEV_OTP_CODE') || '123456';
 
@@ -117,6 +127,18 @@ export class AuthService {
 
     if (!user) throw new BadRequestException('Xác thực OTP không thành công');
 
+    return this.envelope(await this.tokensFor(user));
+  }
+
+  /** Đăng nhập bằng số điện thoại đã được Firebase xác minh qua SMS OTP. */
+  async firebasePhoneLogin(idToken: string) {
+    const local = toLocalPhone(await verifyFirebasePhone(idToken));
+    const found = await this.database.query<UserRow>(`SELECT id, phone, email, password_hash, full_name, avatar_url, role, status FROM users WHERE phone = ANY($1::text[]) LIMIT 1`, [phoneVariants(local)]);
+    let user = found.rows[0];
+    if (user && user.status !== 'ACTIVE') throw new UnauthorizedException('Tài khoản đang bị khóa hoặc chưa hoạt động.');
+    if (!user) {
+      user = (await this.database.query<UserRow>(`INSERT INTO users (phone, full_name, phone_verified) VALUES ($1, $2, TRUE) RETURNING id, phone, email, password_hash, full_name, avatar_url, role, status`, [local, `Thành viên ${local.slice(-4)}`])).rows[0];
+    } else await this.database.query('UPDATE users SET phone_verified = TRUE, last_login_at = NOW() WHERE id = $1', [user.id]);
     return this.envelope(await this.tokensFor(user));
   }
 

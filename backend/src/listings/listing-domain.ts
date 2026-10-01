@@ -3,10 +3,14 @@ export type FieldType = typeof fieldTypes[number];
 export type Field = {
   key: string; label: string; type: FieldType; required: boolean; enabled: boolean;
   options: { value: string; label: string; parentOptionId?: string }[];
-  config: { min?: number; max?: number; minLength?: number; maxLength?: number; unit?: string; placeholder?: string; help?: string;
+  config: { min?: number; max?: number; minLength?: number; maxLength?: number; integer?: boolean; unit?: string; placeholder?: string; help?: string;
     visibleWhen?: { field: string; operator: 'eq' | 'ne' | 'in'; value: unknown } };
 };
-export type Template = { id: string; categoryId: string; version: number; name: string; fields: Field[]; config: { priceModes: string[] } };
+/**
+ * config.condition: 'required' (mặc định) bắt chọn tình trạng hàng; 'none' cho chuyên mục không có khái niệm hàng mới/cũ (dịch vụ, bất động sản, thú cưng...).
+ * config.minPrice / maxPrice: giới hạn giá (VND) áp dụng cho các chế độ giá có nhập số tiền; mặc định tối thiểu 1.000 đ.
+ */
+export type Template = { id: string; categoryId: string; version: number; name: string; fields: Field[]; config: { priceModes: string[]; condition?: 'required' | 'none'; minPrice?: number; maxPrice?: number } };
 export type ListingData = {
   title?: string; description?: string; condition?: string; priceMode?: string; price?: string; negotiable?: boolean;
   location?: { province?: string; district?: string; ward?: string; address?: string; hideExact?: boolean; latitude?: number; longitude?: number };
@@ -15,6 +19,22 @@ export type ListingData = {
 };
 export const priceModes = ['FIXED','CONTACT','FREE','HOUR','DAY','MONTH','M2'];
 export const conditions = ['NEW','LIKE_NEW','USED_GOOD','USED_FAIR','FOR_PARTS'];
+export const DEFAULT_MIN_PRICE = 1000;
+const MAX_PRICE = 9999999999999;
+
+/**
+ * Nhận diện địa chỉ giao dịch chi tiết (số nhà + tên đường, ngõ/hẻm số...) để không lộ vị trí chính xác trong mô tả.
+ * Chỉ bắt mẫu địa chỉ thật; các từ chung như "gần đường lớn" hay "số 2 phòng ngủ" không bị chặn.
+ */
+export function looksLikeStreetAddress(text: string): boolean {
+  const t = (text ?? '').normalize('NFC');
+  const patterns = [
+    /(?<![\p{L}\d])(?:số nhà|nhà số|sn)\s*\.?\s*\d+[a-z]?/iu,
+    /(?<![\p{L}\d\/])\d{1,4}[a-z]?(?:[\/\-]\d{1,4}[a-z]?)*\s+(?:đường|phố|ngõ|ngách|hẻm|kiệt)\s+\p{L}{2,}/iu,
+    /(?<![\p{L}\d])(?:ngõ|ngách|hẻm|kiệt)\s*\.?\s*\d+/iu,
+  ];
+  return patterns.some(pattern => pattern.test(t));
+}
 const record = (value: unknown): value is Record<string, unknown> => !!value && typeof value === 'object' && !Array.isArray(value);
 const blank = (value: unknown) => value === undefined || value === null || value === '' || (Array.isArray(value) && !value.length);
 export const uuid = (value: unknown): value is string => typeof value === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
@@ -34,6 +54,12 @@ export function visible(field: Field, values: Record<string, unknown>, fields: F
 export function validateTemplate(input: unknown): string | null {
   if (!record(input) || typeof input.name !== 'string' || !input.name.trim() || input.name.length > 150 || !Array.isArray(input.fields) || input.fields.length > 80) return 'Cấu hình biểu mẫu không hợp lệ.';
   if (!record(input.config) || !Array.isArray(input.config.priceModes) || !input.config.priceModes.length || input.config.priceModes.some(mode => !priceModes.includes(mode as string))) return 'Chế độ giá không hợp lệ.';
+  if (input.config.condition!==undefined && !['required','none'].includes(input.config.condition as string)) return 'Cấu hình tình trạng hàng không hợp lệ.';
+  for (const key of ['minPrice','maxPrice']) {
+    const value = input.config[key];
+    if (value!==undefined && (typeof value!=='number' || !Number.isFinite(value) || value<0 || value>MAX_PRICE)) return 'Giới hạn giá không hợp lệ.';
+  }
+  if (typeof input.config.minPrice==='number' && typeof input.config.maxPrice==='number' && input.config.minPrice>input.config.maxPrice) return 'Giá tối thiểu lớn hơn giá tối đa.';
   const keys = new Set<string>();
   for (const raw of input.fields) {
     if (!record(raw) || typeof raw.key !== 'string' || !/^[a-z][a-z0-9_]{0,63}$/.test(raw.key) || keys.has(raw.key)) return 'Mã trường không hợp lệ hoặc bị trùng.';
@@ -48,6 +74,8 @@ export function validateTemplate(input: unknown): string | null {
     for (const [key,value] of Object.entries(raw.config)) {
       if (['min','max','minLength','maxLength'].includes(key)) {
         if (typeof value!=='number' || !Number.isFinite(value) || Math.abs(value)>1e13 || (key.includes('Length') && (!Number.isInteger(value) || value<0 || value>10000))) return 'Giới hạn trường không hợp lệ.';
+      } else if (key === 'integer') {
+        if (typeof value!=='boolean') return 'Thuộc tính số nguyên không hợp lệ.';
       } else if (['unit','placeholder','help'].includes(key)) {
         if (typeof value!=='string' || value.length>500) return 'Nội dung hướng dẫn quá dài.';
       } else if (key === 'visibleWhen') {
@@ -72,10 +100,16 @@ export function validateListing(data: unknown, template: Template, publish: bool
   };
   text('title',data.title,true,200,'tiêu đề tin đăng');
   text('description',data.description,true,10000,'mô tả');
-  if ((publish || !blank(data.condition)) && !conditions.includes(data.condition as string)) errors.condition='Vui lòng chọn tình trạng.';
+  // Chuyên mục không có khái niệm "mới/cũ" (config.condition='none') thì không bắt chọn tình trạng.
+  if (template.config.condition==='none' ? !blank(data.condition) && !conditions.includes(data.condition as string) : (publish || !blank(data.condition)) && !conditions.includes(data.condition as string)) errors.condition='Vui lòng chọn tình trạng.';
   if ((publish || !blank(data.priceMode)) && !template.config.priceModes.includes(data.priceMode as string)) errors.priceMode='Vui lòng chọn cách tính giá hợp lệ.';
   if ((!['CONTACT','FREE'].includes(data.priceMode as string) && publish) || !blank(data.price)) {
     if (typeof data.price!=='string' || !/^\d{1,13}$/.test(data.price) || BigInt(data.price)>9999999999999n) errors.price='Giá bán không hợp lệ (số nguyên VND, tối đa 13 chữ số).';
+    else if (!['CONTACT','FREE'].includes(data.priceMode as string)) {
+      const min = template.config.minPrice ?? DEFAULT_MIN_PRICE, max = template.config.maxPrice ?? MAX_PRICE, amount = Number(data.price);
+      if (publish && amount<min) errors.price='Giá tối thiểu của chuyên mục này là '+min.toLocaleString('vi-VN')+' đ.';
+      else if (amount>max) errors.price='Giá tối đa của chuyên mục này là '+max.toLocaleString('vi-VN')+' đ.';
+    }
   }
   if (data.negotiable!==undefined && typeof data.negotiable!=='boolean') errors.negotiable='Lựa chọn thương lượng không hợp lệ.';
   const location = data.location;
@@ -116,6 +150,7 @@ export function validateListing(data: unknown, template: Template, publish: bool
       case 'number': case 'year': case 'range': {
         valid=typeof value==='number' && Number.isFinite(value) && Math.abs(value)<=1e13;
         if (valid && field.type==='year') valid=Number.isInteger(value) && Number(value)>=1800 && Number(value)<=new Date().getFullYear()+1;
+        if (valid && field.config.integer) valid=Number.isInteger(value);
         if (valid && field.config.min!==undefined) valid=Number(value)>=field.config.min;
         if (valid && field.config.max!==undefined) valid=Number(value)<=field.config.max;
         break;

@@ -12,6 +12,8 @@ interface CompletedOrder {
   payment_fee_amount: string;
   seller_payout_amount: string;
   shipping_fee_amount: string;
+  payment_plan?: string | null;
+  deposit_amount?: string | null;
 }
 
 @Injectable()
@@ -24,7 +26,8 @@ export class LedgerService {
     return this.db.transaction(async (client) => {
       const order = await client.query<CompletedOrder>(
         `SELECT id, seller_id, product_id, total_amount::text, platform_fee_amount::text,
-                payment_fee_amount::text, seller_payout_amount::text, shipping_fee_amount::text
+                payment_fee_amount::text, seller_payout_amount::text, shipping_fee_amount::text,
+                payment_plan, deposit_amount::text
          FROM orders WHERE id=$1 FOR UPDATE`,
         [orderId],
       );
@@ -50,11 +53,23 @@ export class LedgerService {
       if (!eligible.rows[0]) throw new BadRequestException('Đơn hàng chưa đủ điều kiện hoàn tất');
       await client.query(`UPDATE products SET status='SOLD',updated_at=NOW() WHERE id=$1 AND status='RESERVED'`, [row.product_id]);
 
-      const gross = decimalToVnd(row.total_amount, 'Tổng đơn hàng');
-      const platformFee = decimalToVnd(row.platform_fee_amount, 'Phí nền tảng');
-      const paymentFee = decimalToVnd(row.payment_fee_amount, 'Phí thanh toán');
-      const sellerPayout = decimalToVnd(row.seller_payout_amount, 'Khoản trả người bán');
-      const shipping = decimalToVnd(row.shipping_fee_amount, 'Phí vận chuyển');
+      let gross = decimalToVnd(row.total_amount, 'Tổng đơn hàng');
+      let platformFee = decimalToVnd(row.platform_fee_amount, 'Phí nền tảng');
+      let paymentFee = decimalToVnd(row.payment_fee_amount, 'Phí thanh toán');
+      let sellerPayout = decimalToVnd(row.seller_payout_amount, 'Khoản trả người bán');
+      let shipping = decimalToVnd(row.shipping_fee_amount, 'Phí vận chuyển');
+      if (row.payment_plan === 'DEPOSIT') {
+        // Đơn đặt cọc: nền tảng chỉ giữ khoản cọc. Phần còn lại người mua trả trực tiếp cho người bán khi nhận hàng
+        // (ngoài hệ thống), nên ví người bán chỉ nhận cọc trừ phí; phí bị chặn ở mức không vượt quá số tiền đang giữ.
+        const held = decimalToVnd(row.deposit_amount ?? '0', 'Tiền cọc');
+        if (held <= 0n || held > gross) throw new BadRequestException('RECONCILIATION_ERROR: khoản cọc của đơn không hợp lệ');
+        gross = held;
+        paymentFee = paymentFee < gross ? paymentFee : gross;
+        platformFee = platformFee < gross - paymentFee ? platformFee : gross - paymentFee;
+        sellerPayout = gross - paymentFee - platformFee;
+        shipping = 0n;
+        await client.query(`UPDATE orders SET platform_fee_amount=$2, payment_fee_amount=$3, seller_payout_amount=$4, shipping_fee_amount=0, updated_at=NOW() WHERE id=$1`, [orderId, platformFee.toString(), paymentFee.toString(), sellerPayout.toString()]);
+      }
       const payment = await client.query<{ id: string; provider: string; status: string }>(
         `SELECT id, provider, status::text FROM payments
          WHERE order_id=$1 ORDER BY created_at DESC LIMIT 1 FOR UPDATE`,
@@ -82,7 +97,7 @@ export class LedgerService {
       await client.query(`UPDATE orders SET payment_status='PAID', updated_at=NOW() WHERE id=$1`, [orderId]);
       const lines: LedgerLine[] = [
         { accountCode: 'CASH_CLEARING', amount: gross, orderId },
-        { accountCode: 'SELLER_PAYABLE', amount: -sellerPayout, userId: row.seller_id, orderId },
+        ...(sellerPayout > 0n ? [{ accountCode: 'SELLER_PAYABLE', amount: -sellerPayout, userId: row.seller_id, orderId }] : []),
         ...(platformFee > 0n ? [{ accountCode: 'PLATFORM_REVENUE', amount: -platformFee, orderId }] : []),
         ...(paymentFee > 0n ? [{ accountCode: 'PAYMENT_PROCESSING_FEE', amount: -paymentFee, orderId }] : []),
         ...(shipping > 0n ? [{ accountCode: 'SHIPPING_CLEARING', amount: -shipping, orderId }] : []),

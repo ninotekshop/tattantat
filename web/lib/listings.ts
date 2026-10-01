@@ -1,7 +1,7 @@
 import { readSession } from './auth';
 import { sessionFetch } from './api';
 // Pure, framework-free contract shared with the API: validation cannot drift.
-export { visible, validateListing, publicData, fieldTypes } from '../../backend/src/listings/listing-domain';
+export { visible, validateListing, publicData, fieldTypes, looksLikeStreetAddress, DEFAULT_MIN_PRICE } from '../../backend/src/listings/listing-domain';
 export type { Field, Template, ListingData } from '../../backend/src/listings/listing-domain';
 import type { Template, ListingData } from '../../backend/src/listings/listing-domain';
 
@@ -46,5 +46,5 @@ export const priceLabels: Record<string,string> = { FIXED:'Giá cố định', C
 export function listingPrice(data: ListingData) {
   if (data.priceMode === 'CONTACT' || data.priceMode === 'FREE') return priceLabels[data.priceMode];
   if (!data.price || !/^\d+$/.test(data.price)) return 'Chưa có giá';
-  return BigInt(data.price).toLocaleString('vi-VN') + ' đ' + ({ HOUR:'/giờ', DAY:'/ngày', MONTH:'/tháng', M2:'/m²' }[data.priceMode ?? ''] ?? '');
+  return BigInt(data.price).toLocaleString('vi-VN') + '\u00a0đ' + ({ HOUR:'/giờ', DAY:'/ngày', MONTH:'/tháng', M2:'/m²' }[data.priceMode ?? ''] ?? '');
 }

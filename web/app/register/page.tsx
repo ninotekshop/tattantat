@@ -1,9 +1,10 @@
 'use client';
 
+import { Ic } from '../../components/Ic';
 import Link from 'next/link';
 import { Suspense, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Eye, EyeOff, Lock, Mail, User, Phone, CheckCircle, ArrowLeft } from 'lucide-react';
+import { Eye, EyeOff, Lock, Mail, User, Phone, CheckCircle, ArrowLeft, TriangleAlert } from 'lucide-react';
 import { saveSession } from '../../lib/auth';
 
 function RegisterContent() {
@@ -77,7 +78,7 @@ function RegisterContent() {
 
         {error && (
           <div style={{ background: '#fef2f2', border: '1px solid #fca5a5', color: '#dc2626', padding: '10px 14px', borderRadius: 12, fontSize: 13, fontWeight: 500, marginBottom: 18 }}>
-            ⚠️ {error}
+            <Ic i={TriangleAlert}/>{error}
           </div>
         )}
 
@@ -91,7 +92,7 @@ function RegisterContent() {
           <div>
             <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: '#334155', marginBottom: 6 }}>Họ và tên *</label>
             <div style={{ position: 'relative' }}>
-              <User size={18} color="#94a3b8" style={{ position: 'absolute', top: 12, left: 12 }} />
+              <User size={18} style={{ position: 'absolute', top: 12, left: 12 }} />
               <input
                 type="text"
                 value={fullName}
@@ -106,7 +107,7 @@ function RegisterContent() {
           <div>
             <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: '#334155', marginBottom: 6 }}>Địa chỉ Email *</label>
             <div style={{ position: 'relative' }}>
-              <Mail size={18} color="#94a3b8" style={{ position: 'absolute', top: 12, left: 12 }} />
+              <Mail size={18} style={{ position: 'absolute', top: 12, left: 12 }} />
               <input
                 type="email"
                 value={email}
@@ -121,7 +122,7 @@ function RegisterContent() {
           <div>
             <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: '#334155', marginBottom: 6 }}>Số điện thoại (Không bắt buộc)</label>
             <div style={{ position: 'relative' }}>
-              <Phone size={18} color="#94a3b8" style={{ position: 'absolute', top: 12, left: 12 }} />
+              <Phone size={18} style={{ position: 'absolute', top: 12, left: 12 }} />
               <input
                 type="tel"
                 value={phone}
@@ -135,7 +136,7 @@ function RegisterContent() {
           <div>
             <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: '#334155', marginBottom: 6 }}>Mật khẩu (Tối thiểu 8 ký tự) *</label>
             <div style={{ position: 'relative' }}>
-              <Lock size={18} color="#94a3b8" style={{ position: 'absolute', top: 12, left: 12 }} />
+              <Lock size={18} style={{ position: 'absolute', top: 12, left: 12 }} />
               <input
                 type={showPassword ? 'text' : 'password'}
                 value={password}
@@ -149,7 +150,7 @@ function RegisterContent() {
                 onClick={() => setShowPassword(!showPassword)}
                 style={{ position: 'absolute', top: 10, right: 12, background: 'transparent', border: 'none', cursor: 'pointer' }}
               >
-                {showPassword ? <EyeOff size={18} color="#64748b" /> : <Eye size={18} color="#64748b" />}
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
               </button>
             </div>
           </div>

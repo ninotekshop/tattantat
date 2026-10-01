@@ -10,8 +10,8 @@ export class MailService {
   constructor(private readonly config: ConfigService) {
     const host = this.config.get<string>('SMTP_HOST');
     const port = this.config.get<number>('SMTP_PORT', 587);
-    const user = this.config.get<string>('SMTP_USERNAME');
-    const pass = this.config.get<string>('SMTP_PASSWORD');
+    const user = this.config.get<string>('SMTP_USER') ?? this.config.get<string>('SMTP_USERNAME');
+    const pass = this.config.get<string>('SMTP_PASS') ?? this.config.get<string>('SMTP_PASSWORD');
 
     if (host && user && pass) {
       this.transporter = nodemailer.createTransport({
@@ -27,14 +27,16 @@ export class MailService {
   }
 
   private get fromAddress(): string {
+    const full = this.config.get<string>('MAIL_FROM');
+    if (full) return full;
     const name = this.config.get<string>('MAIL_FROM_NAME', 'Tất Tần Tật');
     const address = this.config.get<string>('MAIL_FROM_ADDRESS', 'hotro@tattantat.vn');
     return `"${name}" <${address}>`;
   }
 
   async sendWelcomeEmail(toEmail: string, name: string): Promise<void> {
-    const subject = 'Chào mừng bạn đến với Tất Tần Tật! 🎉';
-    const appUrl = this.config.get<string>('APP_URL', 'https://www.tattantat.vn');
+    const subject = 'Chào mừng bạn đến với Tất Tần Tật!';
+    const appUrl = (this.config.get<string>('PUBLIC_WEB_URL') ?? this.config.get<string>('APP_URL', 'https://www.tattantat.vn'));
 
     const html = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 16px; background-color: #ffffff;">
@@ -77,7 +79,7 @@ hotro@tattantat.vn
 
   async sendPasswordResetEmail(toEmail: string, name: string, resetToken: string): Promise<void> {
     const subject = 'Đặt lại mật khẩu Tất Tần Tật';
-    const appUrl = this.config.get<string>('APP_URL', 'https://www.tattantat.vn');
+    const appUrl = (this.config.get<string>('PUBLIC_WEB_URL') ?? this.config.get<string>('APP_URL', 'https://www.tattantat.vn'));
     const resetUrl = `${appUrl}/reset-password?token=${resetToken}`;
 
     const html = `

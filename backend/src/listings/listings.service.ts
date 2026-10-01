@@ -1,4 +1,7 @@
-import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { ensureDeletionColumns } from '../products/deletion-audit';
+import { BadRequestException, ConflictException, Injectable, NotFoundException, Optional } from '@nestjs/common';
+import { ModerationPolicyService } from '../moderation/moderation-policy.service';
+import { NotificationsService } from '../account/notifications.service';
 import type { PoolClient, QueryResultRow } from 'pg';
 import { DatabaseService } from '../database/database.service';
 import { ListingMediaService } from './listing-media.service';
@@ -10,7 +13,7 @@ const invalid = (errors:Record<string,string>):never => { throw new BadRequestEx
 
 @Injectable()
 export class ListingsService {
-  constructor(private readonly db:DatabaseService, private readonly media:ListingMediaService) {}
+  constructor(private readonly db:DatabaseService, private readonly media:ListingMediaService, @Optional() private readonly policy?:ModerationPolicyService, @Optional() private readonly notifications?:NotificationsService) {}
 
   async categories() {
     return envelope((await this.db.query(`SELECT id::text,parent_id::text AS "parentId",name,slug,is_listing_group AS "isGroup" FROM categories WHERE status='ACTIVE' ORDER BY sort_order,name`)).rows);
@@ -430,9 +433,10 @@ export class ListingsService {
 
     if (!fields.length) {
       const catRow = (await db.query(`SELECT slug, name FROM categories WHERE id=$1`, [categoryId])).rows[0];
-      const schema = await this.getCategorySchema(catRow?.slug || categoryId);
-      fields = schema.data.attributes;
+      const schema = catRow ? await this.getCategorySchema(catRow.slug || categoryId) : null;
+      fields = schema?.data?.attributes ?? [];
     }
+    if (!fields.length) throw new NotFoundException('Danh mục chưa có biểu mẫu đăng tin.');
 
     return {id:row.id,categoryId,version:row.version,name:row.name,config:row.config,fields};
   }
@@ -459,7 +463,7 @@ export class ListingsService {
   }
 
   async mine(sellerId:string) {
-    return envelope((await this.db.query(`SELECT id,category_id::text AS "categoryId",data->>'title' AS title,status,revision,updated_at AS "updatedAt",product_id AS "productId" FROM listings WHERE seller_id=$1 ORDER BY updated_at DESC LIMIT 100`,[sellerId])).rows);
+    return envelope((await this.db.query(`SELECT id,category_id::text AS "categoryId",data->>'title' AS title,status,revision,updated_at AS "updatedAt",product_id AS "productId" FROM listings l WHERE seller_id=$1 AND (product_id IS NULL OR EXISTS(SELECT 1 FROM products p WHERE p.id=l.product_id AND p.deleted_at IS NULL)) ORDER BY updated_at DESC LIMIT 100`,[sellerId])).rows);
   }
 
   async byProduct(productId:string,sellerId:string) {
@@ -507,6 +511,13 @@ export class ListingsService {
   }
 
   private mediaPath(listingId:string,mediaId:string) { return '/'+(process.env.API_PREFIX??'api/v1')+'/listings/'+listingId+'/media/'+mediaId; }
+
+  /** Ảnh của tin đã đăng, lấy theo product_images.storage_key (dùng cho tin được khôi phục khi bản ghi listing gốc không còn). */
+  async productMedia(productId:string,sort:number) {
+    const row=(await this.db.query<{storage_key:string|null}>(`SELECT pi.storage_key FROM product_images pi JOIN products p ON p.id=pi.product_id WHERE p.id=$1 AND p.status='ACTIVE' AND p.deleted_at IS NULL AND pi.sort_order=$2`,[productId,sort]).catch(()=>({rows:[]}))).rows[0];
+    if(!row?.storage_key) throw new NotFoundException();
+    return this.media.signed(row.storage_key);
+  }
 
   async publicMedia(id:string,mediaId:string) {
     const row=(await this.db.query<Row>('SELECT * FROM listings WHERE id=$1',[id])).rows[0];
@@ -570,14 +581,18 @@ export class ListingsService {
   }
 
   async deleteListing(sellerId:string, id:string) {
+    await ensureDeletionColumns(this.db);
     return this.db.transaction(async client => {
       const existing = await client.query('SELECT id, status, product_id FROM listings WHERE id=$1 AND seller_id=$2', [id, sellerId]);
       if (!existing.rows[0]) throw new NotFoundException('Không tìm thấy bản nháp hoặc bạn không có quyền xóa.');
 
       const productId = existing.rows[0].product_id;
       if (productId) {
-        await client.query('UPDATE products SET deleted_at=now() WHERE id=$1', [productId]);
+        // Tin đã đăng: chỉ xóa mềm sản phẩm, GIỮ nguyên bản ghi tin và ảnh/video để quản trị viên có thể khôi phục.
+        await client.query("UPDATE products SET deleted_at=now(), deleted_by=$2::uuid, deleted_by_role='SELLER', deleted_reason='Người đăng tự xóa tin' WHERE id=$1", [productId, sellerId]);
+        return envelope({ id });
       }
+      // Bản nháp chưa đăng: xóa hẳn.
       await client.query('DELETE FROM listing_images WHERE listing_id=$1', [id]);
       await client.query('DELETE FROM listing_videos WHERE listing_id=$1', [id]);
       await client.query('DELETE FROM listing_field_values WHERE listing_id=$1', [id]);
@@ -604,25 +619,34 @@ export class ListingsService {
       const price=['CONTACT','FREE'].includes(data.priceMode!)?'0':data.price!;
       const location=data.location!;
       const address=[...(location.hideExact!==false?[]:[location.address]),location.ward,location.district,location.province].filter(Boolean).join(', ');
+      const decision=this.policy?await this.policy.decide({sellerId,categoryId:row.category_id,title:data.title!,description:data.description,price:['CONTACT','FREE'].includes(data.priceMode!)?0:price,isEdit:!!row.product_id},client):{action:'APPROVE' as const,reasons:[]};
+      if(decision.action==='NEEDS_CHANGES'||decision.action==='REJECT') throw new BadRequestException({success:false,errorCode:decision.code,message:decision.reasons[0]||'Nội dung tin đăng không hợp lệ.'});
+      const nextStatus=decision.action==='PENDING_REVIEW'?'PENDING_REVIEW':'ACTIVE';
       let productId=row.product_id;
+      let finalStatus=nextStatus;
       if(!productId) {
         const plan=(await client.query(`SELECT max_listings_snapshot AS max FROM subscriptions WHERE seller_id=$1 AND status='ACTIVE' AND (ends_at IS NULL OR ends_at>now()) ORDER BY created_at DESC LIMIT 1`,[sellerId])).rows[0];
         const max=plan?plan.max:10;
         const count=(await client.query(`SELECT count(*)::integer AS count FROM products WHERE seller_id=$1 AND status IN ('DRAFT','PENDING_REVIEW','ACTIVE','RESERVED') AND deleted_at IS NULL`,[sellerId])).rows[0].count;
         if(max!==null&&count>=max) throw new BadRequestException('Bạn đã đạt giới hạn tin đăng của gói hiện tại.');
         productId=(await client.query(`INSERT INTO products(seller_id,category_id,title,slug,description,price,condition,status,published_at,address,listing_price_mode,listing_negotiable)
-          VALUES($1,$2,$3,$4,$5,$6,$7::product_condition,'ACTIVE',now(),$8,$9,$10) RETURNING id`,[sellerId,row.category_id,data.title!.trim(),'listing-'+id,data.description,price,data.condition,address,data.priceMode,data.negotiable??false])).rows[0].id;
+          VALUES($1,$2,$3,$4,$5,$6,$7::product_condition,$11::product_status,CASE WHEN $11='ACTIVE' THEN now() ELSE NULL END,$8,$9,$10) RETURNING id`,[sellerId,row.category_id,data.title!.trim(),'listing-'+id,data.description,price,data.condition??'NEW',address,data.priceMode,data.negotiable??false,nextStatus])).rows[0].id;
       } else {
-        const updated=await client.query(`UPDATE products SET title=$3,description=$4,price=$5,condition=$6::product_condition,address=$7,listing_price_mode=$8,listing_negotiable=$9,updated_at=now()
-          WHERE id=$1 AND seller_id=$2 AND status IN ('ACTIVE','HIDDEN') AND deleted_at IS NULL RETURNING id`,[productId,sellerId,data.title!.trim(),data.description,price,data.condition,address,data.priceMode,data.negotiable??false]);
+        const updated=await client.query(`UPDATE products SET title=$3,description=$4,price=$5,condition=$6::product_condition,address=$7,listing_price_mode=$8,listing_negotiable=$9,updated_at=now(),
+          status=(CASE WHEN status IN ('PENDING_REVIEW','REJECTED') THEN $10 WHEN status='ACTIVE' AND $10='PENDING_REVIEW' THEN 'PENDING_REVIEW' ELSE status::text END)::product_status,
+          published_at=CASE WHEN status IN ('PENDING_REVIEW','REJECTED') AND $10='ACTIVE' THEN COALESCE(published_at,now()) ELSE published_at END
+          WHERE id=$1 AND seller_id=$2 AND status IN ('ACTIVE','HIDDEN','PENDING_REVIEW','REJECTED') AND deleted_at IS NULL RETURNING id, status::text AS status`,[productId,sellerId,data.title!.trim(),data.description,price,data.condition??'NEW',address,data.priceMode,data.negotiable??false,nextStatus]);
         if(!updated.rows.length) throw new ConflictException('Tin đang có giao dịch hoặc không thể chỉnh sửa.');
+        finalStatus=updated.rows[0].status;
       }
       await client.query('DELETE FROM product_images WHERE product_id=$1',[productId]);
       for(const [index,mediaId] of data.images!.entries()) await client.query('INSERT INTO product_images(product_id,url,sort_order) VALUES($1,$2,$3)',[productId,this.mediaPath(id,mediaId),index]);
       await client.query(`UPDATE listings SET product_id=$2,status='PUBLISHED',published_snapshot=$3::jsonb,published_at=now(),updated_at=now() WHERE id=$1`,[id,productId,JSON.stringify({data,template:row.template_snapshot})]);
       await client.query('INSERT INTO listing_publish_requests(seller_id,key,listing_id,revision,product_id) VALUES($1,$2,$3,$4,$5)',[sellerId,key,id,revision,productId]);
       await this.audit(client,sellerId,'LISTING_PUBLISHED',id,{revision,productId});
-      return envelope({id,productId,status:'PUBLISHED'});
+      if(this.policy) await this.policy.logEvent(productId!,'AUTO',finalStatus==='PENDING_REVIEW'?'PENDING_REVIEW':'APPROVED',decision.reasons,sellerId,client);
+      if(finalStatus==='PENDING_REVIEW'&&this.notifications) void this.notifications.create(sellerId,'LISTING_PENDING','Tin đăng đang chờ duyệt',`Tin “${data.title}” đã được gửi và đang chờ quản trị viên duyệt. Bạn sẽ nhận thông báo khi có kết quả.`,'PRODUCT',productId!).catch(()=>undefined);
+      return envelope({id,productId,status:'PUBLISHED',moderation:finalStatus});
     });
   }
 

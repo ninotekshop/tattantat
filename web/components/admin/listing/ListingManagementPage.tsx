@@ -1,12 +1,12 @@
 'use client';
 
+import { Ic } from '../../Ic';
 import { useState, useEffect, useMemo, useRef } from 'react';
 import Link from 'next/link';
 import {
   FileText, Search, Filter, Plus, Clock, AlertTriangle, CheckCircle,
-  Eye, Edit, Trash2, MoreVertical, Copy, ChevronLeft, ChevronRight,
-  RefreshCw, Check, EyeOff, ShieldAlert, ArrowUpDown, X, Tag
-} from 'lucide-react';
+  Eye, Edit, Trash2, MoreVertical, Copy, ExternalLink, Link2, XCircle, ChevronLeft, ChevronRight,
+  RefreshCw, Check, EyeOff, ShieldAlert, ArrowUpDown, X, Tag, BadgeCheck, TriangleAlert } from 'lucide-react';
 import { ListingQuickViewDrawer } from './ListingQuickViewDrawer';
 import { DeleteListingModal, EditListingModal } from './ListingModals';
 
@@ -65,6 +65,7 @@ export function ListingManagementPage({
   onSaveEdit,
   onDelete,
   onToast,
+  onReject,
   getAuthHeaders
 }: {
   posts: PostItem[];
@@ -74,8 +75,9 @@ export function ListingManagementPage({
   onUnhide: (id: string) => void;
   onHide: (id: string) => void;
   onSaveEdit: (id: string, form: any) => void;
-  onDelete: (id: string) => void;
+  onDelete: (id: string, reason?: string) => void;
   onToast: (msg: string) => void;
+  onReject?: (id: string) => void;
   getAuthHeaders: () => Record<string, string>;
 }) {
   // STATE MANAGEMENT
@@ -95,6 +97,11 @@ export function ListingManagementPage({
 
   // MODAL & DRAWER STATE
   const [quickViewPost, setQuickViewPost] = useState<PostItem | null>(null);
+  const copyText = (text: string, msg: string) => {
+    const done = () => onToast(msg);
+    if (navigator.clipboard?.writeText) navigator.clipboard.writeText(text).then(done, () => onToast('Không sao chép được.'));
+    else { const t = document.createElement('textarea'); t.value = text; document.body.appendChild(t); t.select(); try { document.execCommand('copy'); done(); } catch { onToast('Không sao chép được.'); } t.remove(); }
+  };
   const [editingPost, setEditingPost] = useState<PostItem | null>(null);
   const [deletingPost, setDeletingPost] = useState<PostItem | null>(null);
 
@@ -216,7 +223,7 @@ export function ListingManagementPage({
 
   const handleBulkDelete = () => {
     if (confirm(`Bạn có chắc muốn xóa ${selectedIds.length} tin đăng đã chọn?`)) {
-      selectedIds.forEach(id => onDelete(id));
+      selectedIds.forEach(id => onDelete(id, 'Xóa hàng loạt bởi quản trị viên'));
       onToast(`Đã xóa ${selectedIds.length} tin đăng!`);
       setSelectedIds([]);
     }
@@ -255,7 +262,7 @@ export function ListingManagementPage({
             transition: 'all 0.2s ease'
           }}
         >
-          <Plus size={18} /> Đăng tin mới
+          <Plus size={18} color="#fff" /> Đăng tin mới
         </Link>
       </div>
 
@@ -351,7 +358,7 @@ export function ListingManagementPage({
         >
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
             <span style={{ fontSize: 12, fontWeight: 600, color: '#64748b' }}>Từ chối / Vi phạm</span>
-            <span style={{ background: '#fee2e2', color: '#dc2626', padding: '2px 6px', borderRadius: 6, fontSize: 11, fontWeight: 700 }}>⚠ Vi phạm</span>
+            <span style={{ background: '#fee2e2', color: '#dc2626', padding: '2px 6px', borderRadius: 6, fontSize: 11, fontWeight: 700 }}><Ic i={TriangleAlert}/>Vi phạm</span>
           </div>
           <div style={{ fontSize: 22, fontWeight: 800, color: '#dc2626' }}>{stats.rejected.toLocaleString('vi-VN')}</div>
         </div>
@@ -362,7 +369,7 @@ export function ListingManagementPage({
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, flex: 1, flexWrap: 'wrap' }}>
           {/* SEARCH INPUT */}
           <div style={{ display: 'flex', alignItems: 'center', background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: 10, padding: '7px 12px', width: 350, gap: 8 }}>
-            <Search size={16} color="#64748b" />
+            <Search size={16} />
             <input
               type="text"
               placeholder="Tìm theo tiêu đề, ID tin, người bán..."
@@ -514,13 +521,13 @@ export function ListingManagementPage({
           <span style={{ fontSize: 14, fontWeight: 600 }}>Đã chọn <b>{selectedIds.length}</b> tin đăng</span>
           <div style={{ display: 'flex', gap: 10 }}>
             <button onClick={handleBulkApprove} style={{ background: '#00a65a', color: '#fff', border: 'none', padding: '6px 14px', borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
-              <Check size={14} /> Duyệt hàng loạt
+              <Check size={14} color="#fff" /> Duyệt hàng loạt
             </button>
             <button onClick={handleBulkHide} style={{ background: '#334155', color: '#fff', border: 'none', padding: '6px 14px', borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
-              <EyeOff size={14} /> Ẩn hàng loạt
+              <EyeOff size={14} color="#fff" /> Ẩn hàng loạt
             </button>
             <button onClick={handleBulkDelete} style={{ background: '#dc2626', color: '#fff', border: 'none', padding: '6px 14px', borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
-              <Trash2 size={14} /> Xóa hàng loạt
+              <Trash2 size={14} color="#fff" /> Xóa hàng loạt
             </button>
           </div>
         </div>
@@ -550,7 +557,7 @@ export function ListingManagementPage({
                   style={{ padding: '12px 16px', textAlign: 'left', cursor: 'pointer', userSelect: 'none' }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                    Giá <ArrowUpDown size={13} color="#64748b" />
+                    Giá <ArrowUpDown size={13} />
                   </div>
                 </th>
                 <th style={{ padding: '12px 16px', textAlign: 'left' }}>Danh mục</th>
@@ -562,7 +569,7 @@ export function ListingManagementPage({
                   style={{ padding: '12px 16px', textAlign: 'left', cursor: 'pointer', userSelect: 'none' }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                    Ngày đăng <ArrowUpDown size={13} color="#64748b" />
+                    Ngày đăng <ArrowUpDown size={13} />
                   </div>
                 </th>
                 <th style={{ padding: '12px 16px', textAlign: 'left' }}>Trạng thái</th>
@@ -715,37 +722,55 @@ export function ListingManagementPage({
                                   border: '1px solid #cbd5e1',
                                   borderRadius: 12,
                                   boxShadow: '0 10px 25px rgba(0,0,0,0.15)',
-                                  width: 170,
+                                  width: 200,
                                   zIndex: 9999,
                                   padding: '6px 0',
                                   textAlign: 'left',
                                   fontSize: 12.5
                                 }}
                               >
-                                <div onClick={() => { setQuickViewPost(p); setOpenMenuId(null); }} style={{ padding: '8px 14px', cursor: 'pointer', color: '#334155', fontWeight: 500 }}>
-                                  👁 Xem chi tiết
+                                <div onClick={() => { setQuickViewPost(p); setOpenMenuId(null); }} className="lm-menu-item" style={{ padding: '8px 14px', cursor: 'pointer', color: '#334155', fontWeight: 500 }}>
+                                  <Ic i={Eye}/>Xem chi tiết
                                 </div>
+                                <div onClick={() => { window.open(`/products/${p.id}`, '_blank', 'noopener'); setOpenMenuId(null); }} className="lm-menu-item" style={{ padding: '8px 14px', cursor: 'pointer', color: '#334155', fontWeight: 500 }}>
+                                  <Ic i={ExternalLink}/>Xem trên website
+                                </div>
+                                <div onClick={() => { setEditingPost(p); setOpenMenuId(null); }} className="lm-menu-item" style={{ padding: '8px 14px', cursor: 'pointer', color: '#334155', fontWeight: 500 }}>
+                                  <Ic i={Edit}/>Chỉnh sửa
+                                </div>
+                                <div onClick={() => { copyText(`${window.location.origin}/products/${p.id}`, 'Đã sao chép liên kết tin đăng!'); setOpenMenuId(null); }} className="lm-menu-item" style={{ padding: '8px 14px', cursor: 'pointer', color: '#334155', fontWeight: 500 }}>
+                                  <Ic i={Link2}/>Sao chép liên kết
+                                </div>
+                                <div onClick={() => { copyText(p.id, 'Đã sao chép mã tin đăng!'); setOpenMenuId(null); }} className="lm-menu-item" style={{ padding: '8px 14px', cursor: 'pointer', color: '#334155', fontWeight: 500 }}>
+                                  <Ic i={Copy}/>Sao chép mã tin
+                                </div>
+                                <div style={{ borderTop: '1px solid #f1f5f9', margin: '4px 0' }} />
 
                                 {p.status === 'PENDING' && (
-                                  <div onClick={() => { onApprove(p.id); setOpenMenuId(null); }} style={{ padding: '8px 14px', cursor: 'pointer', color: '#059669', fontWeight: 600 }}>
-                                    ✓ Duyệt tin
+                                  <div onClick={() => { onApprove(p.id); setOpenMenuId(null); }} className="lm-menu-item" style={{ padding: '8px 14px', cursor: 'pointer', color: '#059669', fontWeight: 600 }}>
+                                    <Ic i={BadgeCheck}/>Duyệt tin
+                                  </div>
+                                )}
+                                {p.status === 'PENDING' && onReject && (
+                                  <div onClick={() => { onReject(p.id); setOpenMenuId(null); }} className="lm-menu-item" style={{ padding: '8px 14px', cursor: 'pointer', color: '#d97706', fontWeight: 600 }}>
+                                    <Ic i={XCircle}/>Từ chối tin
                                   </div>
                                 )}
 
                                 {p.status === 'HIDDEN' ? (
-                                  <div onClick={() => { onUnhide(p.id); setOpenMenuId(null); }} style={{ padding: '8px 14px', cursor: 'pointer', color: '#059669', fontWeight: 600 }}>
-                                    👁️‍🗨️ Hiện lại
+                                  <div onClick={() => { onUnhide(p.id); setOpenMenuId(null); }} className="lm-menu-item" style={{ padding: '8px 14px', cursor: 'pointer', color: '#059669', fontWeight: 600 }}>
+                                    <Ic i={Eye}/>Hiện lại
                                   </div>
-                                ) : (
-                                  <div onClick={() => { onHide(p.id); setOpenMenuId(null); }} style={{ padding: '8px 14px', cursor: 'pointer', color: '#475569', fontWeight: 500 }}>
-                                    👁️‍🗨️ Ẩn tin
+                                ) : p.status !== 'DELETED' && (
+                                  <div onClick={() => { onHide(p.id); setOpenMenuId(null); }} className="lm-menu-item" style={{ padding: '8px 14px', cursor: 'pointer', color: '#475569', fontWeight: 500 }}>
+                                    <Ic i={EyeOff}/>Ẩn tin
                                   </div>
                                 )}
 
                                 <div style={{ borderTop: '1px solid #f1f5f9', margin: '4px 0' }} />
 
                                 <div onClick={() => { setDeletingPost(p); setOpenMenuId(null); }} style={{ padding: '8px 14px', cursor: 'pointer', color: '#dc2626', fontWeight: 600 }}>
-                                  🗑️ Xóa tin đăng
+                                  <Ic i={Trash2}/>Xóa tin đăng
                                 </div>
                               </div>
                             )}
@@ -849,9 +874,9 @@ export function ListingManagementPage({
         isOpen={!!deletingPost}
         postTitle={deletingPost?.title}
         onClose={() => setDeletingPost(null)}
-        onConfirm={() => {
+        onConfirm={(reason) => {
           if (deletingPost) {
-            onDelete(deletingPost.id);
+            onDelete(deletingPost.id, reason);
             setDeletingPost(null);
           }
         }}

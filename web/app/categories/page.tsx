@@ -1,11 +1,49 @@
 'use client';
 
+import { Ic } from '../../components/Ic';
 import Link from 'next/link';
-import { useEffect, useState, Suspense } from 'react';
+import { useCallback, useEffect, useRef, useState, Suspense, type ReactNode } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { Flame, Filter, MapPin as MapPinIcon, User } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Flame, Filter, MapPin as MapPinIcon, User, BadgeCheck, Heart } from 'lucide-react';
 import { api, type Product } from '../../lib/api';
+import { VideoBadge } from '../../components/VideoBadge';
 import { formatVnd, CATEGORY_ENGINE_TAXONOMY, LISTING_INTENTS, ParentCategorySpec, SubCategorySpec } from '../../lib/marketplace';
+
+/** Hàng cuộn ngang có nút mũi tên trái/phải để duyệt danh mục (ẩn khi đã ở đầu/cuối). */
+function ScrollRow({ children }: { children: ReactNode }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [edge, setEdge] = useState({ left: false, right: false });
+  const update = useCallback(() => {
+    const el = ref.current; if (!el) return;
+    setEdge({ left: el.scrollLeft > 4, right: el.scrollLeft + el.clientWidth < el.scrollWidth - 4 });
+  }, []);
+  useEffect(() => {
+    update();
+    const el = ref.current; if (!el) return;
+    const ro = new ResizeObserver(update); ro.observe(el);
+    window.addEventListener('resize', update);
+    return () => { ro.disconnect(); window.removeEventListener('resize', update); };
+  }, [update, children]);
+  // Đưa danh mục đang chọn vào vùng nhìn thấy khi mở trang.
+  useEffect(() => {
+    const el = ref.current; const active = el?.querySelector<HTMLElement>('[data-active="true"]');
+    if (el && active) el.scrollLeft = Math.max(0, active.offsetLeft - el.clientWidth / 2 + active.clientWidth / 2);
+    update();
+  }, [update]);
+  const go = (dir: number) => ref.current?.scrollBy({ left: dir * Math.max(240, (ref.current?.clientWidth ?? 600) * 0.75), behavior: 'smooth' });
+  const arrow = (dir: 1 | -1, visible: boolean): React.CSSProperties => ({
+    position: 'absolute', top: '50%', [dir === 1 ? 'right' : 'left']: -6, transform: 'translateY(-60%)', width: 34, height: 34, borderRadius: '50%',
+    border: '1px solid #cbd5e1', background: '#fff', color: '#0f172a', display: visible ? 'grid' : 'none', placeItems: 'center', cursor: 'pointer',
+    boxShadow: '0 2px 10px rgba(15,23,42,.18)', zIndex: 2, padding: 0,
+  });
+  return (
+    <div style={{ position: 'relative' }}>
+      <button type="button" aria-label="Xem danh mục phía trước" onClick={() => go(-1)} style={arrow(-1, edge.left)}><ChevronLeft size={20} /></button>
+      <div ref={ref} onScroll={update} style={{ display: 'flex', gap: 12, overflowX: 'auto', paddingBottom: 8, scrollbarWidth: 'none', scrollBehavior: 'smooth' }}>{children}</div>
+      <button type="button" aria-label="Xem danh mục tiếp theo" onClick={() => go(1)} style={arrow(1, edge.right)}><ChevronRight size={20} /></button>
+    </div>
+  );
+}
 
 function ProductCard({ product }: { product: Product }) {
   const [isFavorite, setIsFavorite] = useState(false);
@@ -22,7 +60,7 @@ function ProductCard({ product }: { product: Product }) {
             setIsFavorite(!isFavorite);
           }}
         >
-          {isFavorite ? '♥' : '♡'}
+          <Heart size={18} strokeWidth={2} fill={isFavorite ? 'currentColor' : 'none'} aria-hidden="true" />
         </button>
 
         <Link href={'/products/' + product.id}>
@@ -35,6 +73,7 @@ function ProductCard({ product }: { product: Product }) {
             }}
           />
         </Link>
+        <VideoBadge show={product.hasVideo} />
       </div>
 
       <div className="card-body">
@@ -44,10 +83,10 @@ function ProductCard({ product }: { product: Product }) {
             <span className="price">{product.priceMode==='CONTACT' ? 'LIÊN HỆ' : product.priceMode==='FREE' ? 'TẶNG MIỄN PHÍ' : formatVnd(product.price)}</span>
           </div>
           <div className="location-row" style={{display:'flex', alignItems:'center', gap:4, color:'#64748b'}}>
-            <MapPinIcon size={13} color="#64748b" /> {product.location || 'Quy Nhơn'}
+            <MapPinIcon size={13} /> {product.location || 'Quy Nhơn'}
           </div>
           <div className="card-seller-name" style={{fontSize:12, color:'#475569', marginTop:2}}>
-            <User size={13} color="#64748b" /> {product.sellerName} <span className="verified-badge">✓ Đã xác thực</span>
+            <User size={13} /> {product.sellerName} <span className="verified-badge"><Ic i={BadgeCheck}/>Đã xác thực</span>
           </div>
         </Link>
       </div>
@@ -55,7 +94,7 @@ function ProductCard({ product }: { product: Product }) {
   );
 }
 
-function SubCategoryButton({ sub, parentSlug, parentKey, selectedSubSlug, selectedIntent }: { sub: SubCategorySpec; parentSlug: string; parentKey: string; selectedSubSlug: string | null; selectedIntent: string }) {
+function SubCategoryButton({ sub, parentIcon, parentKey, selectedSubSlug, selectedIntent }: { sub: SubCategorySpec; parentIcon: string; parentKey: string; selectedSubSlug: string | null; selectedIntent: string }) {
   return (
     <Link
       href={`/categories?cat=${parentKey}&sub=${sub.slug}&intent=${selectedIntent}`}
@@ -73,10 +112,11 @@ function SubCategoryButton({ sub, parentSlug, parentKey, selectedSubSlug, select
       }}
     >
       <img
-        src={`/assets/category-icons/sub/${parentSlug}/${sub.slug}.png`}
+        src={sub.icon}
         alt={sub.name}
         onError={(e) => {
-          (e.target as HTMLImageElement).src = `/assets/category-icons/parent/${parentSlug}.png`;
+          const img = e.target as HTMLImageElement;
+          if (!img.dataset.fallback) { img.dataset.fallback = '1'; img.src = parentIcon; }
         }}
         style={{ width: 44, height: 44, objectFit: 'contain', flexShrink: 0, filter: 'drop-shadow(0 2px 6px rgba(0,0,0,0.08))' }}
       />
@@ -153,10 +193,11 @@ function CategoryEngineContent() {
       {/* DANH SÁCH DANH MỤC CHA (14 CẤP LỚN - VỚI ICON 3D) */}
       <div className="white-card-box" style={{ marginBottom: 20, padding: '16px 20px' }}>
         <h2 style={{ fontSize: 16, fontWeight: 700, color: '#0f172a', marginBottom: 12 }}>Tất cả danh mục sản phẩm</h2>
-        <div style={{ display: 'flex', gap: 12, overflowX: 'auto', paddingBottom: 8, scrollbarWidth: 'none' }}>
+        <ScrollRow>
           {CATEGORY_ENGINE_TAXONOMY.map(cat => (
             <Link
               key={cat.key}
+              data-active={parentCat.key === cat.key}
               href={`/categories?cat=${cat.key}`}
               style={{
                 flex: '0 0 95px',
@@ -177,7 +218,7 @@ function CategoryEngineContent() {
               </span>
             </Link>
           ))}
-        </div>
+        </ScrollRow>
       </div>
 
       {/* DANH MỤC CON VỚI ICON 3D CỤ THỂ RIÊNG BIỆT (114 SUBCATEGORY ICONS) */}
@@ -190,7 +231,7 @@ function CategoryEngineContent() {
             <SubCategoryButton
               key={sub.slug}
               sub={sub}
-              parentSlug={parentCat.slug}
+              parentIcon={parentCat.icon}
               parentKey={parentCat.key}
               selectedSubSlug={selectedSubSlug}
               selectedIntent={selectedIntent}

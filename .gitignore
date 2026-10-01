@@ -33,3 +33,29 @@ resources/Domain/
 resources/Login Social/
 pass.txt
 API.txt
+
+# Nhật ký đồng bộ danh mục đăng tin (tự sinh)
+backend/catalog-sync.log
+
+# Log chạy cục bộ
+web/*.log
+backend/*.log
+
+backups/
+firebase-service-account.json
+*.sql.gz
+
+# Thông tin chuyển dự án Supabase
+.env.migrate
+backend/.env.migrate
+backend/migrate-dump/
+
+# Bí mật và file dùng riêng trên máy
+.env.dev
+backend/.env.dev
+.env.migrate
+backend/.env.migrate
+.mcp.json
+.agents/
+.artifacts/
+skills-lock.json

@@ -1,3 +1,4 @@
+import { optimizeImage } from '../media/image-processor';
 import { BadRequestException, Injectable, ServiceUnavailableException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { createClient } from '@supabase/supabase-js';
@@ -20,18 +21,20 @@ export class ListingMediaService {
   private readonly client;
   private readonly bucket = 'listing-media';
   constructor(config: ConfigService) {
-    const url = config.get<string>('SUPABASE_URL') || process.env.SUPABASE_URL || 'https://brabreqaarmuowymfnkl.supabase.co';
-    const fallbackKey = Buffer.from('c2Jfc2VjcmV0Xy1MRXRENzh1cjU1OU9GRXFOd1B4Vmdfb1cyblJ1X3I=', 'base64').toString();
-    const key = config.get<string>('SUPABASE_SECRET_KEY') || config.get<string>('SUPABASE_PUBLISHABLE_KEY') || process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_PUBLISHABLE_KEY || fallbackKey;
+    const url = config.get<string>('SUPABASE_URL') || process.env.SUPABASE_URL;
+    const key = config.get<string>('SUPABASE_SECRET_KEY') || config.get<string>('SUPABASE_PUBLISHABLE_KEY') || process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_PUBLISHABLE_KEY;
+    if (!url) throw new Error('Thiếu SUPABASE_URL trong backend/.env.');
+    if (!key) throw new Error('Thiếu SUPABASE_SECRET_KEY trong backend/.env (không lưu khóa trong mã nguồn).');
     this.client=createClient(url, key, {auth:{persistSession:false,autoRefreshToken:false}});
   }
   async upload(userId: string, listingId: string, kind: 'images'|'videos', file: {buffer:Buffer;mimetype:string}) {
     const mime=detectMedia(file.buffer,kind);
     if (!mime || mime!==file.mimetype || !file.buffer.length || file.buffer.length>(kind==='images'?10:50)*1024*1024) throw new BadRequestException('Định dạng hoặc dung lượng tệp không hợp lệ.');
+    const body=kind==='images'?(await optimizeImage(file)).buffer:file.buffer;
     const key=userId+'/'+listingId+'/'+randomUUID()+'.'+mime.split('/')[1];
-    const {error}=await this.client.storage.from(this.bucket).upload(key,file.buffer,{contentType:mime,upsert:false});
+    const {error}=await this.client.storage.from(this.bucket).upload(key,body,{contentType:mime,upsert:false});
     if(error) throw new ServiceUnavailableException('Không thể tải tệp. Kiểm tra cấu hình kho listing-media.');
-    return {key,mime,size:file.buffer.length};
+    return {key,mime,size:body.length};
   }
   async signed(key: string) {
     const {data,error}=await this.client.storage.from(this.bucket).createSignedUrl(key,900);

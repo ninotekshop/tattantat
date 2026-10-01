@@ -20,19 +20,26 @@ import { AdminDashboardController } from './admin-dashboard.controller';
 import { AdminPostsController } from './admin-posts.controller';
 import { AdminUsersController } from './admin-users.controller';
 import { AdminBannersController } from './admin-banners.controller';
+import { PublicBannersController } from './public-banners.controller';
 import { AdminOrdersController } from './admin-orders.controller';
 import { AdminSearchController } from './admin-search.controller';
+import { AdminNotificationsController } from './admin-notifications.controller';
+import { AdminAlertsController } from './admin-alerts.controller';
+import { AccountModule } from '../account/account.module';
 
 @Module({
-  imports: [AuthModule, FinanceModule],
+  imports: [AuthModule, FinanceModule, AccountModule],
   controllers: [
     AdminRevenueController,
     AdminDashboardController,
     AdminPostsController,
     AdminUsersController,
     AdminBannersController,
+    PublicBannersController,
     AdminOrdersController,
     AdminSearchController,
+    AdminNotificationsController,
+    AdminAlertsController,
     ReconciliationController,
     ShippingSettlementController,
     PricingAdminController,

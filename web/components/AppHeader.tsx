@@ -1,10 +1,11 @@
 'use client';
 
 import Link from 'next/link';
-import { useState, useEffect, useSyncExternalStore } from 'react';
+import { useState, useEffect, useRef, useSyncExternalStore } from 'react';
 import { useRouter } from 'next/navigation';
+import { NotificationBell } from './NotificationBell';
 import { clearSession, readSessionSnapshot } from '../lib/auth';
-import { Home, PlusCircle, Heart, MessageSquare, User, Bell, LogOut, FileText, Search } from 'lucide-react';
+import { Home, PlusCircle, Heart, MessageSquare, User, LogOut, FileText, Search, Wallet, ShoppingBag } from 'lucide-react';
 import { AuthModal } from './AuthModal';
 
 function subscribeSession(listener: () => void) {
@@ -31,6 +32,17 @@ export function AppHeader() {
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [authMode, setAuthMode] = useState<'LOGIN' | 'REGISTER' | 'PHONE'>('LOGIN');
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
+  const profileRef = useRef<HTMLDivElement>(null);
+  // Bấm ra ngoài menu hoặc nhấn Esc thì tự đóng
+  useEffect(() => {
+    if (!profileDropdownOpen) return;
+    const onPointer = (e: MouseEvent | TouchEvent) => { if (profileRef.current && !profileRef.current.contains(e.target as Node)) setProfileDropdownOpen(false); };
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setProfileDropdownOpen(false); };
+    document.addEventListener('mousedown', onPointer);
+    document.addEventListener('touchstart', onPointer);
+    document.addEventListener('keydown', onKey);
+    return () => { document.removeEventListener('mousedown', onPointer); document.removeEventListener('touchstart', onPointer); document.removeEventListener('keydown', onKey); };
+  }, [profileDropdownOpen]);
 
   const requireAuth = (path: string, mode: 'LOGIN' | 'REGISTER' = 'LOGIN') => {
     if (session) {
@@ -83,19 +95,14 @@ export function AppHeader() {
               <PlusCircle size={18} className="topbar-sell-icon" /> ĐĂNG TIN MIỄN PHÍ
             </button>
 
-            <button className="bell-btn" onClick={() => requireAuth('/account')} title="Thông báo">
-              <Bell size={20} />
-              <span className="bell-badge">3</span>
-            </button>
-
-            <button className="heart-btn-mobile desktop-only-btn" onClick={() => requireAuth('/favorites')} title="Yêu thích">
-              <Heart size={20} />
-            </button>
+            <NotificationBell />
 
             {name ? (
-              <div style={{ position: 'relative' }}>
+              <div ref={profileRef} style={{ position: 'relative' }}>
                 <button
                   className="user-avatar"
+                  aria-haspopup="menu"
+                  aria-expanded={profileDropdownOpen}
                   onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
                   title="Tài khoản cá nhân"
                 >
@@ -120,16 +127,13 @@ export function AppHeader() {
                       {name}
                     </div>
                     <Link href="/account" onClick={() => setProfileDropdownOpen(false)} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 16px', color: '#334155', textDecoration: 'none', fontSize: 13, fontWeight: 500 }}>
-                      <User size={16} /> Hồ sơ cá nhân
-                    </Link>
-                    <Link href="/account" onClick={() => setProfileDropdownOpen(false)} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 16px', color: '#334155', textDecoration: 'none', fontSize: 13, fontWeight: 500 }}>
                       <FileText size={16} /> Tin đăng của tôi
                     </Link>
-                    <Link href="/favorites" onClick={() => setProfileDropdownOpen(false)} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 16px', color: '#334155', textDecoration: 'none', fontSize: 13, fontWeight: 500 }}>
-                      <Heart size={16} /> Tin đã lưu
+                    <Link href="/orders" onClick={() => setProfileDropdownOpen(false)} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 16px', color: '#334155', textDecoration: 'none', fontSize: 13, fontWeight: 500 }}>
+                      <ShoppingBag size={16} /> Đơn hàng của tôi
                     </Link>
-                    <Link href="/messages" onClick={() => setProfileDropdownOpen(false)} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 16px', color: '#334155', textDecoration: 'none', fontSize: 13, fontWeight: 500 }}>
-                      <MessageSquare size={16} /> Tin nhắn
+                    <Link href="/vi-tien" onClick={() => setProfileDropdownOpen(false)} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 16px', color: '#334155', textDecoration: 'none', fontSize: 13, fontWeight: 500 }}>
+                      <Wallet size={16} /> Ví & gói của tôi
                     </Link>
                     <div style={{ borderTop: '1px solid #f1f5f9', margin: '4px 0' }} />
                     <button

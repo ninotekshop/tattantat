@@ -37,9 +37,9 @@ export const CATEGORY_ENGINE_TAXONOMY: ParentCategorySpec[] = [
       { slug: 'ban-dat', name: 'Bán đất', icon: '/assets/category-icons/sub/nha-dat/dat.png' },
       { slug: 'can-ho', name: 'Căn hộ / Chung cư', icon: '/assets/category-icons/sub/nha-dat/can-ho-chung-cu.png' },
       { slug: 'phong-tro', name: 'Phòng trọ', icon: '/assets/category-icons/sub/nha-dat/phong-tro.png' },
-      { slug: 'cho-thue-nha', name: 'Cho thuê nhà', icon: '/assets/category-icons/sub/nha-dat/van-phong.png' },
+      { slug: 'cho-thue-nha', name: 'Cho thuê nhà', icon: '/assets/category-icons/sub/nha-dat/nha-o.png' },
       { slug: 'cho-thue-mat-bang', name: 'Cho thuê mặt bằng', icon: '/assets/category-icons/sub/nha-dat/mat-bang-kinh-doanh.png' },
-      { slug: 'van-phong', name: 'Văn phòng', icon: '/assets/category-icons/sub/nha-dat/kho-xuang.png' },
+      { slug: 'van-phong', name: 'Văn phòng', icon: '/assets/category-icons/sub/nha-dat/van-phong.png' },
       { slug: 'bat-dong-san-khac', name: 'BĐS khác', icon: '/assets/category-icons/sub/nha-dat/bds-khac.png' },
     ]
   },
@@ -53,7 +53,7 @@ export const CATEGORY_ENGINE_TAXONOMY: ParentCategorySpec[] = [
     subCategories: [
       { slug: 'o-to', name: 'Ô tô', icon: '/assets/category-icons/sub/xe-co/o-to.png' },
       { slug: 'xe-may', name: 'Xe máy', icon: '/assets/category-icons/sub/xe-co/xe-may.png' },
-      { slug: 'xe-dien', name: 'Xe điện', icon: '/assets/category-icons/sub/xe-co/xe-dap.png' },
+      { slug: 'xe-dien', name: 'Xe điện', icon: '/assets/category-icons/sub/xe-co/xe-may.png' },
       { slug: 'xe-tai', name: 'Xe tải', icon: '/assets/category-icons/sub/xe-co/xe-tai-chuyen-dung.png' },
       { slug: 'xe-ban-tai', name: 'Xe bán tải', icon: '/assets/category-icons/sub/xe-co/xe-tai-chuyen-dung.png' },
       { slug: 'xe-dap', name: 'Xe đạp', icon: '/assets/category-icons/sub/xe-co/xe-dap.png' },
@@ -88,12 +88,12 @@ export const CATEGORY_ENGINE_TAXONOMY: ParentCategorySpec[] = [
     icon: '/assets/category-icons/parent/nha-cua-doi-song.png',
     tone: 'amber',
     subCategories: [
-      { slug: 'sofa', name: 'Sofa', icon: '/assets/category-icons/sub/nha-cua-doi-song/noi-that.png' },
-      { slug: 'ban-ghe', name: 'Bàn ghế', icon: '/assets/category-icons/sub/nha-cua-doi-song/noi-that.png' },
-      { slug: 'tu', name: 'Tủ', icon: '/assets/category-icons/sub/nha-cua-doi-song/noi-that.png' },
+      { slug: 'sofa', name: 'Sofa', icon: '/assets/category-icons/sub/nha-cua-doi-song/sofa.png' },
+      { slug: 'ban-ghe', name: 'Bàn ghế', icon: '/assets/category-icons/sub/nha-cua-doi-song/ban-ghe.png' },
+      { slug: 'tu', name: 'Tủ', icon: '/assets/category-icons/sub/nha-dat/kho-xuang.png' },
       { slug: 'giuong', name: 'Giường', icon: '/assets/category-icons/sub/nha-cua-doi-song/giuong-nem.png' },
       { slug: 'tu-lanh', name: 'Tủ lạnh', icon: '/assets/category-icons/sub/nha-cua-doi-song/dien-lanh.png' },
-      { slug: 'may-giat', name: 'Máy giặt', icon: '/assets/category-icons/sub/nha-cua-doi-song/dien-lanh.png' },
+      { slug: 'may-giat', name: 'Máy giặt', icon: '/assets/category-icons/sub/nha-cua-doi-song/quat-thiet-bi-khong-khi.png' },
       { slug: 'dieu-hoa', name: 'Điều hòa', icon: '/assets/category-icons/sub/nha-cua-doi-song/dien-lanh.png' },
       { slug: 'thiet-bi-nha-bep', name: 'Thiết bị nhà bếp', icon: '/assets/category-icons/sub/nha-cua-doi-song/bep-dien-nha-bep.png' },
     ]
@@ -107,10 +107,10 @@ export const CATEGORY_ENGINE_TAXONOMY: ParentCategorySpec[] = [
     tone: 'amber',
     subCategories: [
       { slug: 'quan-ao', name: 'Quần áo', icon: '/assets/category-icons/sub/thoi-trang-ca-nhan/quan-ao-nam.png' },
-      { slug: 'giay-dep', name: 'Giày dép', icon: '/assets/category-icons/sub/thoi-trang-ca-nhan/giay-dep.png' },
-      { slug: 'tui-xach', name: 'Túi xách', icon: '/assets/category-icons/sub/thoi-trang-ca-nhan/tui-xach-balo-vali.png' },
+      { slug: 'giay-dep', name: 'Giày dép', icon: '/assets/category-icons/sub/thoi-trang-ca-nhan/giay.png' },
+      { slug: 'tui-xach', name: 'Túi xách', icon: '/assets/category-icons/sub/thoi-trang-ca-nhan/giay-dep.png' },
       { slug: 'thoi-trang-dong-ho', name: 'Đồng hồ', icon: '/assets/category-icons/sub/thoi-trang-ca-nhan/dong-ho.png' },
-      { slug: 'phu-kien-thoi-trang', name: 'Phụ kiện thời trang', icon: '/assets/category-icons/sub/thoi-trang-ca-nhan/phu-kien-thoi-trang.png' },
+      { slug: 'phu-kien-thoi-trang', name: 'Phụ kiện thời trang', icon: '/assets/category-icons/sub/thoi-trang-ca-nhan/trang-suc.png' },
     ]
   },
   {
@@ -121,7 +121,13 @@ export const CATEGORY_ENGINE_TAXONOMY: ParentCategorySpec[] = [
     icon: '/assets/category-icons/parent/me-va-be.png',
     tone: 'coral',
     subCategories: [
-      { slug: 'me-va-be', name: 'Mẹ & Bé', icon: '/assets/category-icons/sub/me-va-be/do-cho-be.png' },
+      { slug: 'quan-ao-tre-em', name: 'Quần áo trẻ em', icon: '/assets/category-icons/sub/me-va-be/quan-ao-tre-em.png' },
+      { slug: 'sua-do-an-cho-be', name: 'Sữa & đồ ăn cho bé', icon: '/assets/category-icons/sub/me-va-be/sua-do-an-cho-be.png' },
+      { slug: 'xe-day-ghe-noi-cui', name: 'Xe đẩy, ghế, nôi, cũi', icon: '/assets/category-icons/sub/me-va-be/xe-day-ghe-noi-cui.png' },
+      { slug: 'do-choi-tre-em', name: 'Đồ chơi trẻ em', icon: '/assets/category-icons/sub/me-va-be/do-choi-tre-em.png' },
+      { slug: 'do-cho-me', name: 'Đồ cho mẹ', icon: '/assets/category-icons/sub/me-va-be/do-cho-me.png' },
+      { slug: 'do-cho-be', name: 'Đồ dùng cho bé', icon: '/assets/category-icons/sub/me-va-be/do-cho-be.png' },
+      { slug: 'me-be-khac', name: 'Mẹ & bé khác', icon: '/assets/category-icons/sub/me-va-be/me-be-khac.png' },
     ]
   },
   {
@@ -135,9 +141,9 @@ export const CATEGORY_ENGINE_TAXONOMY: ParentCategorySpec[] = [
       { slug: 'do-choi', name: 'Đồ chơi', icon: '/assets/category-icons/sub/me-va-be/do-choi-tre-em.png' },
       { slug: 'dung-cu-the-thao', name: 'Dụng cụ thể thao', icon: '/assets/category-icons/sub/the-thao-giai-tri/the-thao.png' },
       { slug: 'nhac-cu', name: 'Nhạc cụ', icon: '/assets/category-icons/sub/the-thao-giai-tri/nhac-cu.png' },
-      { slug: 'playstation', name: 'Playstation', icon: '/assets/category-icons/sub/the-thao-giai-tri/game-phu-kien.png' },
-      { slug: 'xbox', name: 'Xbox', icon: '/assets/category-icons/sub/the-thao-giai-tri/game-phu-kien.png' },
-      { slug: 'nintendo', name: 'Nintendo', icon: '/assets/category-icons/sub/the-thao-giai-tri/game-phu-kien.png' },
+      { slug: 'playstation', name: 'Playstation', icon: '/assets/category-icons/sub/the-thao-giai-tri/playstation.png' },
+      { slug: 'xbox', name: 'Xbox', icon: '/assets/category-icons/sub/the-thao-giai-tri/xbox.png' },
+      { slug: 'nintendo', name: 'Nintendo', icon: '/assets/category-icons/sub/the-thao-giai-tri/nintendo.png' },
     ]
   },
   {
@@ -228,7 +234,7 @@ export const CATEGORY_ENGINE_TAXONOMY: ParentCategorySpec[] = [
     icon: '/assets/category-icons/parent/khac.png',
     tone: 'violet',
     subCategories: [
-      { slug: 'san-pham-khac', name: 'Sản phẩm khác', icon: '/assets/category-icons/sub/khac/san-pham-khac.png' },
+      { slug: 'hang-hoa-khac', name: 'Sản phẩm khác', icon: '/assets/category-icons/sub/khac/san-pham-khac.png' },
     ]
   }
 ];

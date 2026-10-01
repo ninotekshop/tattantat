@@ -102,3 +102,9 @@ export class RefreshDto {
   @IsString()
   refreshToken!: string;
 }
+
+export class FirebasePhoneDto {
+  @IsString()
+  @IsNotEmpty()
+  idToken!: string;
+}

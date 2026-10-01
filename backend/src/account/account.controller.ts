@@ -1,4 +1,4 @@
-import { BadRequestException, Body, Controller, Get, Param, ParseUUIDPipe, Patch, Post, Req, UseGuards } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Get, Param, ParseUUIDPipe, Patch, Post, Req, UseGuards, Query } from '@nestjs/common';
 import { IsIn, IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
 import { Transform } from 'class-transformer';
 import * as bcrypt from 'bcryptjs';
@@ -54,9 +54,17 @@ export class AccountController {
   }
 
   @Get('notifications')
-  async notices(@Req() request: { user: { id: string } }) {
-    const result = await this.db.query('SELECT id,type,title,content,reference_type,reference_id,is_read,created_at,read_at FROM notifications WHERE user_id=$1 ORDER BY created_at DESC LIMIT 50', [request.user.id]);
+  async notices(@Req() request: { user: { id: string } }, @Query('limit') limitRaw?: string, @Query('offset') offsetRaw?: string, @Query('unread') unread?: string) {
+    const limit = Math.min(Math.max(parseInt(limitRaw ?? '50', 10) || 50, 1), 100);
+    const offset = Math.min(Math.max(parseInt(offsetRaw ?? '0', 10) || 0, 0), 5000);
+    const result = await this.db.query(`SELECT id,type,title,content,reference_type,reference_id,is_read,created_at,read_at FROM notifications WHERE user_id=$1 ${unread === '1' ? 'AND is_read=false' : ''} ORDER BY created_at DESC LIMIT $2 OFFSET $3`, [request.user.id, limit, offset]);
     return { success: true, data: result.rows, message: null, errorCode: null };
+  }
+
+  @Get('notifications/unread-count')
+  async unreadCount(@Req() request: { user: { id: string } }) {
+    const result = await this.db.query('SELECT count(*)::int AS count FROM notifications WHERE user_id=$1 AND is_read=false', [request.user.id]);
+    return { success: true, data: { count: result.rows[0].count }, message: null, errorCode: null };
   }
 
   @Patch('notifications/:id/read')

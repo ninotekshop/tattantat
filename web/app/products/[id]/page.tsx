@@ -1,15 +1,17 @@
 'use client';
 
+import { Ic } from '../../../components/Ic';
 import { useEffect, useState } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
+import { readSession } from '../../../lib/auth';
 import Link from 'next/link';
 import {
   Heart, Share2, ShieldAlert, MapPin, Clock, Eye,
   CheckCircle, MessageSquare, ShoppingCart, ShieldCheck, Flame,
-  ZoomIn, ZoomOut, X, ChevronLeft, ChevronRight, RotateCcw, Maximize
-} from 'lucide-react';
-import { api, Product } from '../../../lib/api';
+  ZoomIn, ZoomOut, X, ChevronLeft, ChevronRight, RotateCcw, Maximize, Pencil, LayoutList, Play, BadgeCheck, Lock, TriangleAlert, Star, ArrowRight } from 'lucide-react';
+import { api, memberRequest, Product } from '../../../lib/api';
 import { formatVnd } from '../../../lib/marketplace';
+import { ProductTools } from '../../../components/vertical/ProductTools';
 import './listing-detail.css';
 
 function formatCondition(condition?: string | null) {
@@ -92,6 +94,13 @@ export default function ProductDetailPage() {
   const params = useParams<{ id: string }>();
 
   const [product, setProduct] = useState<Product | null>(null);
+  const [sellerInfo, setSellerInfo] = useState<{ user: { avatarUrl: string | null; verified: boolean; activeListings: number }; summary: { count: number; average: number } } | null>(null);
+  useEffect(() => {
+    if (!product?.sellerId) return;
+    let live = true;
+    fetch(`/api/v1/users/${encodeURIComponent(product.sellerId)}/reviews?role=seller`).then(r => r.json()).then(j => { if (live && j?.success) setSellerInfo(j.data); }).catch(() => undefined);
+    return () => { live = false; };
+  }, [product?.sellerId]);
   const [allProducts, setAllProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -105,7 +114,36 @@ export default function ProductDetailPage() {
   const [isFavorite, setIsFavorite] = useState(false);
   const [showFullDesc, setShowFullDesc] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
+  const [reportOpen, setReportOpen] = useState(false), [reportReason, setReportReason] = useState('FRAUD'), [reportDetails, setReportDetails] = useState(''), [reportBusy, setReportBusy] = useState(false), [reportError, setReportError] = useState('');
 
+  const router = useRouter();
+  const openChat = () => {
+    const target = '/messages?product=' + encodeURIComponent(String(product?.id ?? ''));
+    if (!readSession()) { router.push('/login?next=' + encodeURIComponent(target)); return; }
+    router.push(target);
+  };
+  const openReport = () => {
+    if (!readSession()) { router.push('/login?next=' + encodeURIComponent('/products/' + String(product?.id ?? ''))); return; }
+    setReportError(''); setReportOpen(true);
+  };
+  const submitReport = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (reportBusy || !product) return;
+    setReportBusy(true); setReportError('');
+    try {
+      await memberRequest('/reports', 'POST', { productId: product.id, reason: reportReason, details: reportDetails.trim() || undefined });
+      setReportOpen(false); setReportDetails('');
+      showToast('Đã gửi báo cáo tới quản trị viên. Cảm ơn bạn!');
+    } catch (err) { setReportError(err instanceof Error ? err.message : 'Không gửi được báo cáo. Hãy thử lại.'); }
+    finally { setReportBusy(false); }
+  };
+  const buyNow = () => {
+    const mode = product?.priceMode;
+    if (mode && mode !== 'FIXED') { openChat(); return; } // tin liên hệ/tặng/giá theo đơn vị: trao đổi trước qua chat
+    const target = '/checkout/' + encodeURIComponent(String(product?.id ?? ''));
+    if (!readSession()) { router.push('/login?next=' + encodeURIComponent(target)); return; }
+    router.push(target);
+  };
   const showToast = (msg: string) => {
     setToast(msg);
     setTimeout(() => setToast(null), 3000);
@@ -166,8 +204,8 @@ export default function ProductDetailPage() {
       <main className="shell detail-page-container" style={{ padding: '60px 0', textAlign: 'center' }}>
         <div className="white-card-box" style={{ maxWidth: 500, margin: '0 auto', padding: 40 }}>
           <ShieldAlert size={48} color="#ef4444" style={{ marginBottom: 16 }} />
-          <h2 style={{ fontSize: 20, color: '#0f172a', marginBottom: 8 }}>Tin đăng không tồn tại hoặc đã bị gỡ</h2>
-          <p style={{ color: '#64748b', fontSize: 14, marginBottom: 20 }}>Sản phẩm này có thể đã được bán hoặc hết hạn hiển thị trên Tất Tần Tật.</p>
+          <h2 style={{ fontSize: 20, color: '#0f172a', marginBottom: 8 }}>{error && !/không tìm thấy/i.test(error) ? 'Không tải được tin đăng' : 'Tin đăng không tồn tại hoặc đã bị gỡ'}</h2>
+          <p style={{ color: '#64748b', fontSize: 14, marginBottom: 20 }}>{error && !/không tìm thấy/i.test(error) ? `Có lỗi khi tải tin: ${error}. Bạn hãy thử tải lại trang.` : 'Sản phẩm này có thể đã được bán, hết hạn hiển thị, đang chờ duyệt hoặc đã bị chủ tin gỡ. Nếu đây là tin của bạn, hãy vào "Tin đăng của tôi" để kiểm tra trạng thái.'}</p>
           <Link href="/" style={{ background: '#00a65a', color: '#fff', padding: '10px 24px', borderRadius: 999, textDecoration: 'none', fontWeight: 600 }}>Quay lại Trang chủ</Link>
         </div>
       </main>
@@ -181,6 +219,11 @@ export default function ProductDetailPage() {
     ? product.images
     : (product.imageUrl ? [product.imageUrl] : ['/assets/product-1.jpg']);
 
+  // Album chung: ảnh trước, video sau (ảnh giữ nguyên chỉ số cho khung xem phóng to)
+  const videos = product.videos ?? [];
+  const media: { type: 'image' | 'video'; src: string }[] = [...images.map(src => ({ type: 'image' as const, src })), ...videos.map(src => ({ type: 'video' as const, src }))];
+  const current = media[Math.min(selectedImgIndex, media.length - 1)];
+
   const hotProducts = allProducts.filter(p => p.id !== product.id).slice(0, 5);
   const relatedProducts = allProducts.filter(p => p.id !== product.id).slice(2, 8);
 
@@ -189,6 +232,33 @@ export default function ProductDetailPage() {
       {toast && (
         <div className="toast-notification">
           <CheckCircle size={18} /> {toast}
+        </div>
+      )}
+
+      {product && product.status && product.status !== 'ACTIVE' && (
+        <div role="status" style={{ margin: '12px 0', padding: '10px 14px', borderRadius: 10, background: '#fff8ec', border: '1px solid #f5c98a', color: '#8a4b00', fontSize: 14 }}>
+          <Ic i={TriangleAlert}/>Tin này hiện <strong>chưa hiển thị công khai</strong> (trạng thái: {({ PENDING: 'chờ duyệt', PAUSED: 'tạm ẩn', SOLD: 'đã bán', EXPIRED: 'hết hạn', REJECTED: 'bị từ chối', DRAFT: 'bản nháp' } as Record<string, string>)[product.status] ?? product.status}). Chỉ bạn xem được trang này.
+        </div>
+      )}
+
+      {reportOpen && (
+        <div role="dialog" aria-modal="true" aria-label="Báo cáo tin đăng" onClick={() => setReportOpen(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.5)', zIndex: 1000, display: 'grid', placeItems: 'center', padding: 16 }}>
+          <form onClick={e => e.stopPropagation()} onSubmit={submitReport} style={{ background: '#fff', borderRadius: 12, padding: 20, width: 'min(440px, 100%)', display: 'grid', gap: 12 }}>
+            <h3 style={{ margin: 0 }}>Báo cáo tin đăng</h3>
+            <label style={{ display: 'grid', gap: 4, fontSize: 14 }}>Lý do
+              <select value={reportReason} onChange={e => setReportReason(e.target.value)}>
+                {Object.entries({ FRAUD: 'Nghi lừa đảo', SPAM: 'Tin rác / trùng lặp', PROHIBITED: 'Hàng cấm / vi phạm quy định', ABUSE: 'Nội dung xúc phạm', OTHER: 'Lý do khác' }).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+              </select>
+            </label>
+            <label style={{ display: 'grid', gap: 4, fontSize: 14 }}>Mô tả thêm (không bắt buộc)
+              <textarea rows={4} maxLength={1000} value={reportDetails} onChange={e => setReportDetails(e.target.value)} placeholder="Ví dụ: người bán yêu cầu chuyển khoản trước rồi không giao hàng…" />
+            </label>
+            {reportError && <p role="alert" style={{ margin: 0, color: '#c0392b', fontSize: 13 }}>{reportError}</p>}
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+              <button type="button" onClick={() => setReportOpen(false)} disabled={reportBusy}>Hủy</button>
+              <button type="submit" className="member-primary" disabled={reportBusy}>{reportBusy ? 'Đang gửi…' : 'Gửi báo cáo'}</button>
+            </div>
+          </form>
         </div>
       )}
 
@@ -244,22 +314,38 @@ export default function ProductDetailPage() {
             <div className="detail-hero-flex">
               {/* GALLERY ALBUM ẢNH */}
               <div className="detail-gallery-box">
-                <div className="main-image-wrapper" onClick={() => setLightboxOpen(true)}>
-                  <img src={images[selectedImgIndex]} alt={product.title} />
-                  <span className="img-counter-badge">{selectedImgIndex + 1} / {images.length}</span>
-                  <div className="zoom-hint-overlay">
-                    <Maximize size={16} /> Xem phóng to
+                {current.type === 'image' ? (
+                  <div className="main-image-wrapper" onClick={() => setLightboxOpen(true)}>
+                    <img src={current.src} alt={product.title} />
+                    <span className="img-counter-badge">{selectedImgIndex + 1} / {media.length}</span>
+                    <div className="zoom-hint-overlay">
+                      <Maximize size={16} /> Xem phóng to
+                    </div>
                   </div>
-                </div>
+                ) : (
+                  <div className="main-image-wrapper" style={{ cursor: 'default', background: '#000' }}>
+                    <video key={current.src} src={current.src} controls playsInline preload="metadata" style={{ width: '100%', height: '100%', objectFit: 'contain', background: '#000' }}>
+                      Trình duyệt của bạn không phát được video này. <a href={current.src} target="_blank" rel="noreferrer">Mở video</a>
+                    </video>
+                    <span className="img-counter-badge" style={{ pointerEvents: 'none' }}>Video · {selectedImgIndex + 1} / {media.length}</span>
+                  </div>
+                )}
 
                 <div className="thumbnail-strip">
-                  {images.map((imgUrl, idx) => (
+                  {media.map((m, idx) => (
                     <button
-                      key={idx}
+                      key={m.src + idx}
                       className={`thumb-btn ${selectedImgIndex === idx ? 'active' : ''}`}
+                      style={m.type === 'video' ? { position: 'relative' } : undefined}
                       onClick={() => setSelectedImgIndex(idx)}
+                      aria-label={m.type === 'video' ? 'Xem video' : `Xem ảnh ${idx + 1}`}
                     >
-                      <img src={imgUrl} alt="" />
+                      {m.type === 'image'
+                        ? <img src={m.src} alt="" />
+                        : <>
+                            <video src={m.src + '#t=0.1'} muted preload="metadata" playsInline tabIndex={-1} style={{ width: '100%', height: '100%', objectFit: 'cover', background: '#111', pointerEvents: 'none' }} />
+                            <span style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', background: 'rgba(0,0,0,.35)', color: '#fff', pointerEvents: 'none' }}><Play size={20} fill="#fff" /></span>
+                          </>}
                     </button>
                   ))}
                 </div>
@@ -267,9 +353,11 @@ export default function ProductDetailPage() {
 
               {/* KHỐI THÔNG TIN CHÍNH */}
               <div className="detail-info-box">
-                <div className="condition-badge">
-                  {formatCondition(product.condition)}
-                </div>
+                {product.condition !== null && (
+                  <div className="condition-badge">
+                    {formatCondition(product.condition)}
+                  </div>
+                )}
 
                 <h1 className="detail-title">{product.title}</h1>
 
@@ -281,9 +369,9 @@ export default function ProductDetailPage() {
                 </div>
 
                 <div className="detail-meta-list">
-                  <div><MapPin size={15} color="#00a65a" /> {product.location || 'Quy Nhơn, Bình Định'}</div>
-                  <div><Clock size={15} color="#64748b" /> Đăng {new Date(product.postedAt).toLocaleDateString('vi-VN')}</div>
-                  <div><Eye size={15} color="#64748b" /> 245 lượt xem · Mã tin: <b>TTT-{product.id.slice(0, 6)}</b></div>
+                  <div><MapPin size={15} color="#00a65a" /> {product.location || 'Chưa cập nhật'}</div>
+                  <div><Clock size={15} /> Đăng {new Date(product.postedAt).toLocaleDateString('vi-VN')}</div>
+                  <div><Eye size={15} /> 245 lượt xem · Mã tin: <b>TTT-{product.id.slice(0, 6)}</b></div>
                 </div>
 
                 {/* ACTION BUTTONS */}
@@ -303,7 +391,7 @@ export default function ProductDetailPage() {
                     <Share2 size={18} /> Chia sẻ
                   </button>
 
-                  <button className="detail-act-btn danger" onClick={() => showToast('Đã gửi báo cáo vi phạm tới quản trị viên!')}>
+                  <button className="detail-act-btn danger" onClick={openReport}>
                     <ShieldAlert size={18} /> Báo cáo tin
                   </button>
                 </div>
@@ -314,29 +402,43 @@ export default function ProductDetailPage() {
           {/* CARD NGƯỜI BÁN */}
           <div className="white-card-box seller-card">
             <div className="seller-card-flex">
-              <div className="seller-left">
-                <img src="/assets/product-1.jpg" alt={product.sellerName} className="seller-avatar-large" />
+              <Link href={`/sellers/${product.sellerId}`} className="seller-left" style={{ textDecoration: 'none', color: 'inherit' }}>
+                {sellerInfo?.user.avatarUrl ? <img src={sellerInfo.user.avatarUrl} alt={product.sellerName} className="seller-avatar-large" /> : <div className="seller-avatar-large" style={{ display: 'grid', placeItems: 'center', background: '#e6f6ed', color: '#007c4b', fontWeight: 800, fontSize: 24 }}>{product.sellerName.slice(0, 1).toUpperCase()}</div>}
                 <div>
                   <div className="seller-name-row">
                     <h3>{product.sellerName}</h3>
-                    <span className="verified-badge">✓ Đã xác thực</span>
+                    {sellerInfo?.user.verified && <span className="verified-badge"><Ic i={BadgeCheck}/>Đã xác minh</span>}
                   </div>
-                  <p className="seller-joined">Đã tham gia 1 năm · 12 tin đang đăng</p>
+                  <p className="seller-joined">{sellerInfo ? <>{sellerInfo.summary.count ? <><Ic i={Star} fill="#f5a623" style={{ color: '#f5a623' }}/>{sellerInfo.summary.average.toFixed(1)} ({sellerInfo.summary.count} đánh giá) · </> : 'Chưa có đánh giá · '}{sellerInfo.user.activeListings} tin đang đăng</> : ' '}</p>
                 </div>
-              </div>
+              </Link>
 
+              {readSession()?.user.id === product.sellerId ? (
+                <div className="seller-actions">
+                  <Link href={product.listingId ? '/sell?listing=' + encodeURIComponent(product.listingId) : '/account'} className="btn-chat-primary" style={{ textDecoration: 'none', color: '#fff', fontSize: 14 }}>
+                    <Pencil size={18} /> Sửa tin đăng
+                  </Link>
+                  <Link href="/account" className="btn-buy-secondary" style={{ textDecoration: 'none', color: '#0f172a', fontSize: 14 }}>
+                    <LayoutList size={18} /> Tin đăng của tôi
+                  </Link>
+                </div>
+              ) : (
               <div className="seller-actions">
-                <button className="btn-chat-primary" onClick={() => showToast('Đang kết nối tới hộp thoại nhắn tin...')}>
-                  <MessageSquare size={18} /> Nhắn tin ngay
-                </button>
-                <button className="btn-buy-secondary" onClick={() => showToast('Đã ghi nhận yêu cầu đặt mua!')}>
-                  <ShoppingCart size={18} /> Đặt mua / Giao dịch
-                </button>
-              </div>
+                  <button className="btn-chat-primary" onClick={openChat}>
+                    <MessageSquare size={18} /> Nhắn tin ngay
+                  </button>
+                  <button className="btn-buy-secondary" onClick={buyNow}>
+                    <ShoppingCart size={18} /> {!product.priceMode || product.priceMode === 'FIXED' ? 'Mua ngay / Giao dịch' : product.priceMode === 'FREE' ? 'Xin nhận tặng' : product.priceMode === 'CONTACT' ? 'Hỏi giá' : 'Hỏi thuê / đặt lịch'}
+                  </button>
+  
+                </div>
+              )}
             </div>
 
+            {product.priceMode && product.priceMode !== 'FIXED' && <p className="seller-joined" style={{ margin: '8px 0 0' }}>Tin này không có giá cố định nên chưa đặt mua trực tiếp được. Hãy nhắn người bán để thỏa thuận giá và cách giao dịch.</p>}
+
             <div className="privacy-note">
-              🔒 Tất Tần Tật bảo vệ thông tin cá nhân. Vui lòng liên hệ và giao dịch trực tiếp qua hệ thống để đảm bảo an toàn.
+              <Ic i={Lock}/>Tất Tần Tật bảo vệ thông tin cá nhân. Vui lòng liên hệ và giao dịch trực tiếp qua hệ thống để đảm bảo an toàn.
             </div>
           </div>
 
@@ -346,22 +448,21 @@ export default function ProductDetailPage() {
 
             {/* BẢNG THÔNG SỐ SẢN PHẨM */}
             <div className="product-specs-table">
-              <div className="spec-row">
-                <span className="spec-label">Tình trạng:</span>
-                <span className="spec-val">{formatCondition(product.condition)}</span>
-              </div>
+              {product.condition !== null && (
+                <div className="spec-row">
+                  <span className="spec-label">Tình trạng:</span>
+                  <span className="spec-val">{formatCondition(product.condition)}</span>
+                </div>
+              )}
               <div className="spec-row">
                 <span className="spec-label">Khu vực:</span>
                 <span className="spec-val">{product.location || 'Quy Nhơn, Bình Định'}</span>
               </div>
-              <div className="spec-row">
-                <span className="spec-label">Bảo hành:</span>
-                <span className="spec-val">Còn bảo hành 3 tháng</span>
-              </div>
             </div>
+            <ProductTools productId={product.id} />
 
             <div className={`description-text ${showFullDesc ? 'expanded' : ''}`}>
-              {product.description?.trim() || 'Sản phẩm chính chủ cần bán nhanh. Tình trạng thực tế nguyên bản, chưa qua sửa chữa. Máy chạy mượt mà, đầy đủ phụ kiện kèm theo. Bao test trực tiếp tại chỗ.'}
+              {product.description?.trim() || 'Người bán chưa cung cấp mô tả chi tiết. Hãy nhắn tin để hỏi thêm về sản phẩm.'}
             </div>
 
             <button className="toggle-desc-btn" onClick={() => setShowFullDesc(!showFullDesc)}>
@@ -393,12 +494,12 @@ export default function ProductDetailPage() {
                   <div className="hot-item-info">
                     <h4>{hot.title}</h4>
                     <strong className="hot-item-price">{formatVnd(hot.price)}</strong>
-                    <span className="hot-item-location">📍 {hot.location || 'Quy Nhơn'}</span>
+                    <span className="hot-item-location"><Ic i={MapPin}/>{hot.location || 'Quy Nhơn'}</span>
                   </div>
                 </Link>
               ))}
             </div>
-            <Link href="/categories" className="hot-view-more">Xem thêm tin HOT →</Link>
+            <Link href="/categories" className="hot-view-more">Xem thêm tin HOT <Ic i={ArrowRight} after/></Link>
           </div>
         </aside>
       </div>
@@ -407,7 +508,7 @@ export default function ProductDetailPage() {
       <section className="related-listings-section white-card-box" style={{ marginTop: 24 }}>
         <div className="section-title">
           <h2><Flame size={20} color="#00a65a" /> Tin liên quan</h2>
-          <Link href="/categories" className="view-all">Xem thêm tin tương tự →</Link>
+          <Link href="/categories" className="view-all">Xem thêm tin tương tự <Ic i={ArrowRight} after/></Link>
         </div>
 
         <div className="products-grid-4">
@@ -424,7 +525,7 @@ export default function ProductDetailPage() {
                   <div className="price-row">
                     <span className="price">{formatVnd(rel.price)}</span>
                   </div>
-                  <div className="location-row">📍 {rel.location || 'Quy Nhơn'}</div>
+                  <div className="location-row"><Ic i={MapPin}/>{rel.location || 'Quy Nhơn'}</div>
                 </Link>
               </div>
             </article>

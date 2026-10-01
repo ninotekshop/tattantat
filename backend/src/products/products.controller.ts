@@ -13,7 +13,11 @@ export class ProductsController {
   }
   @Get('products/mine') @UseGuards(JwtAuthGuard) mine(@Req() request: { user: { id: string } }) { return this.products.mine(request.user.id); }
   @Get('products/:id') @UseGuards(OptionalJwtAuthGuard)
-  detail(@Req() request: { user?: { id: string } }, @Param('id') id: string) { return this.products.detail(id, request.user?.id); }
+  detail(@Req() request: { user?: { id: string }; ip?: string; headers?: Record<string, string | string[] | undefined> }, @Param('id') id: string) {
+    // Yêu cầu từ máy chủ Next (SSR/metadata) không được tính là lượt xem của khách.
+    const ssr = request.headers?.['user-agent'] && /node|undici/i.test(String(request.headers['user-agent']));
+    return this.products.detail(id, request.user?.id, ssr ? undefined : String(request.headers?.['x-forwarded-for'] ?? request.ip ?? '').split(',')[0].trim());
+  }
   @Post('products') @UseGuards(JwtAuthGuard) create(@Req() request: { user: { id: string } }, @Body() body: CreateProductDto) { return this.products.create(request.user.id, body); }
   @Patch('products/:id') @UseGuards(JwtAuthGuard)
   update(@Req() request: { user: { id: string } }, @Param('id') id: string, @Body() body: UpdateProductDto) { return this.products.update(request.user.id, id, body); }

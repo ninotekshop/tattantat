@@ -1,9 +1,10 @@
 'use client';
 
+import { Ic } from '../../components/Ic';
 import Link from 'next/link';
 import { Suspense, useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Eye, EyeOff, Lock, Mail, ArrowLeft, CheckCircle, ShieldCheck } from 'lucide-react';
+import { Eye, EyeOff, Lock, Mail, ArrowLeft, CheckCircle, ShieldCheck, TriangleAlert } from 'lucide-react';
 import { saveSession } from '../../lib/auth';
 import { safeReturnPath } from '../../lib/session-fetch';
 
@@ -275,7 +276,7 @@ function LoginContent() {
 
         {error && (
           <div style={{ background: '#fef2f2', border: '1px solid #fca5a5', color: '#dc2626', padding: '10px 14px', borderRadius: 12, fontSize: 13, fontWeight: 500, marginBottom: 18 }}>
-            ⚠️ {error}
+            <Ic i={TriangleAlert}/>{error}
           </div>
         )}
 
@@ -283,7 +284,7 @@ function LoginContent() {
           <div>
             <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: '#334155', marginBottom: 6 }}>Số điện thoại hoặc Email *</label>
             <div style={{ position: 'relative' }}>
-              <Mail size={18} color="#94a3b8" style={{ position: 'absolute', top: 12, left: 12 }} />
+              <Mail size={18} style={{ position: 'absolute', top: 12, left: 12 }} />
               <input
                 type="text"
                 value={phoneOrEmail}
@@ -298,7 +299,7 @@ function LoginContent() {
           <div>
             <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: '#334155', marginBottom: 6 }}>Mật khẩu *</label>
             <div style={{ position: 'relative' }}>
-              <Lock size={18} color="#94a3b8" style={{ position: 'absolute', top: 12, left: 12 }} />
+              <Lock size={18} style={{ position: 'absolute', top: 12, left: 12 }} />
               <input
                 type={showPassword ? 'text' : 'password'}
                 value={password}
@@ -312,7 +313,7 @@ function LoginContent() {
                 onClick={() => setShowPassword(!showPassword)}
                 style={{ position: 'absolute', top: 10, right: 12, background: 'transparent', border: 'none', cursor: 'pointer' }}
               >
-                {showPassword ? <EyeOff size={18} color="#64748b" /> : <Eye size={18} color="#64748b" />}
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
               </button>
             </div>
           </div>

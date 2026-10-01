@@ -1,5 +1,5 @@
 import { BadRequestException, Body, ConflictException, Controller, Get, Headers, Param, Post, Req, UseGuards } from '@nestjs/common';
-import { IsInt, IsOptional, IsString, IsUUID, Matches, Max, MaxLength, Min } from 'class-validator';
+import { IsIn, IsInt, IsOptional, IsString, IsUUID, Matches, Max, MaxLength, Min } from 'class-validator';
 import { randomUUID } from 'crypto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { DatabaseService } from '../database/database.service';
@@ -7,12 +7,19 @@ import { PricingService } from '../pricing/pricing.service';
 import { IdempotencyService } from '../finance/idempotency.service';
 import { NotificationsService } from '../account/notifications.service';
 import { decimalToVnd } from '../finance/finance-money';
+import { queueRefund } from '../payments/refund-queue';
+
+export const DEPOSIT_PERCENTS = [10, 20, 30, 50];
+export const MIN_ONLINE_AMOUNT = 1000n;
 
 export class CreateOrderDto {
   @IsUUID() productId!: string;
   @IsOptional() @IsInt() @Min(1) @Max(1000) quantity?: number;
   @IsOptional() @IsString() @MaxLength(1000) note?: string;
   @IsOptional() @IsString() @Matches(/^[a-f0-9]{64}$/) quoteFingerprint?: string;
+  /** COD = trả khi nhận hàng; FULL = thanh toán đủ online (tiền được giữ); DEPOSIT = đặt cọc một phần online, phần còn lại trả khi nhận hàng. */
+  @IsOptional() @IsIn(['COD', 'FULL', 'DEPOSIT']) paymentPlan?: 'COD' | 'FULL' | 'DEPOSIT';
+  @IsOptional() @IsInt() @IsIn(DEPOSIT_PERCENTS) depositPercent?: number;
 }
 
 @Controller('orders')
@@ -23,7 +30,12 @@ export class OrdersController {
   @Get()
   async list(@Req() request: { user: { id: string } }) {
     const result = await this.db.query(
-      `SELECT o.*,r.id AS review_id FROM orders o
+      `SELECT o.*,r.id AS review_id,
+              (SELECT oi.product_name FROM order_items oi WHERE oi.order_id=o.id LIMIT 1) AS product_name,
+              (SELECT COALESCE(SUM(oi.quantity),1) FROM order_items oi WHERE oi.order_id=o.id)::int AS quantity,
+              bu.full_name AS buyer_name, su.full_name AS seller_name
+       FROM orders o
+       JOIN users bu ON bu.id=o.buyer_id JOIN users su ON su.id=o.seller_id
        LEFT JOIN seller_reviews r ON r.order_id=o.id
        WHERE o.buyer_id=$1 OR o.seller_id=$1 ORDER BY o.created_at DESC`,
       [request.user.id],
@@ -79,17 +91,24 @@ export class OrdersController {
       if (body.quoteFingerprint && body.quoteFingerprint !== this.pricing.serializeQuote(quote).quoteFingerprint) {
         throw new ConflictException({ message: 'Giá hoặc phí đã thay đổi. Vui lòng tải lại báo giá và xác nhận lại.', errorCode: 'QUOTE_CHANGED' });
       }
+      const plan = body.paymentPlan ?? 'COD';
+      const percent = plan === 'DEPOSIT' ? (body.depositPercent ?? 0) : null;
+      if (plan === 'DEPOSIT' && !DEPOSIT_PERCENTS.includes(percent ?? 0)) throw new BadRequestException('Vui lòng chọn mức đặt cọc 10%, 20%, 30% hoặc 50%.');
+      const depositAmount = plan === 'DEPOSIT' ? (BigInt(quote.buyerTotal) * BigInt(percent!)) / 100n : null;
+      if (plan !== 'COD' && BigInt(quote.buyerTotal) < MIN_ONLINE_AMOUNT) throw new BadRequestException('Đơn hàng quá nhỏ để thanh toán online. Vui lòng chọn thanh toán khi nhận hàng.');
+      if (depositAmount !== null && depositAmount < MIN_ONLINE_AMOUNT) throw new BadRequestException('Số tiền cọc tối thiểu là 1.000 đ. Hãy chọn mức cọc cao hơn.');
       const order = await client.query<{ id: string }>(
         `INSERT INTO orders(
            order_code,buyer_id,seller_id,product_id,product_price,total_amount,payment_method,note,
            pricing_version_id,platform_fee_rate_bps_snapshot,platform_fee_amount,payment_fee_amount,
-           seller_payout_amount,subtotal_amount,discount_amount,shipping_fee_amount
-         ) VALUES($1,$2,$3,$4,$5,$6,'COD',$7,$8,$9,$10,$11,$12,$13,$14,$15) RETURNING id`,
+           seller_payout_amount,subtotal_amount,discount_amount,shipping_fee_amount,payment_plan,deposit_percent,deposit_amount
+         ) VALUES($1,$2,$3,$4,$5,$6,'COD',$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18) RETURNING id`,
         [
           orderCode, request.user.id, item.seller_id, item.id, item.price, quote.buyerTotal.toString(),
           body.note ?? null, quote.pricingVersionId, quote.platformFeeRateBps, quote.platformFee.toString(),
           quote.paymentFee.toString(), quote.sellerPayout.toString(), quote.subtotal.toString(),
           quote.discountAmount.toString(), quote.shippingFee.toString(),
+          plan, percent, depositAmount === null ? null : depositAmount.toString(),
         ],
       );
       await client.query(
@@ -131,6 +150,7 @@ export class OrdersController {
       );
       if (status === 'CANCELLED') {
         await client.query(`UPDATE products SET status='ACTIVE',updated_at=NOW() WHERE id=$1 AND status='RESERVED'`, [order.product_id]);
+        await queueRefund(client, id, isSeller ? 'Người bán hủy đơn' : 'Người mua hủy đơn');
       }
       const recipientId = isSeller ? order.buyer_id : order.seller_id;
       const labels: Record<string, string> = { CONFIRMED: 'đã được xác nhận', PREPARING: 'đang được chuẩn bị', SHIPPING: 'đang được giao', DELIVERED: 'đã giao thành công', CANCELLED: 'đã bị hủy' };

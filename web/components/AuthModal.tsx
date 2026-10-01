@@ -1,6 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { firebasePhoneEnabled, sendFirebaseOtp, firebaseErrorMessage } from '../lib/firebase-phone';
+import type { ConfirmationResult } from 'firebase/auth';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { X, Eye, EyeOff, Lock, Mail, Phone, User, CheckCircle, ArrowLeft, ShieldCheck } from 'lucide-react';
 import { saveSession } from '../lib/auth';
@@ -44,6 +46,7 @@ export function AuthModal({ isOpen, onClose, initialMode = 'LOGIN', onSuccess }:
 
   // OTP state
   const [otp, setOtp] = useState('');
+  const confirmation = useRef<ConfirmationResult | null>(null);
   const [countdown, setCountdown] = useState(60);
 
   useEffect(() => {
@@ -200,6 +203,12 @@ export function AuthModal({ isOpen, onClose, initialMode = 'LOGIN', onSuccess }:
     setLoading(true);
     setError(null);
 
+    if (firebasePhoneEnabled) {
+      try { confirmation.current = await sendFirebaseOtp(phone, 'recaptcha-container'); setMode('OTP'); setCountdown(60); }
+      catch (err) { setError(firebaseErrorMessage(err)); }
+      finally { setLoading(false); }
+      return;
+    }
     try {
       const res = await fetch('/api/v1/auth/phone/send-otp', {
         method: 'POST',
@@ -229,6 +238,19 @@ export function AuthModal({ isOpen, onClose, initialMode = 'LOGIN', onSuccess }:
     setLoading(true);
     setError(null);
 
+    if (firebasePhoneEnabled) {
+      try {
+        if (!confirmation.current) throw new Error('no-confirmation');
+        const cred = await confirmation.current.confirm(otp);
+        const idToken = await cred.user.getIdToken();
+        const res = await fetch('/api/v1/auth/phone/firebase-login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ idToken }) });
+        const data = await res.json();
+        if (data.success && data.data) { saveSession(data.data); onClose(); if (onSuccess) onSuccess(); }
+        else setError(Array.isArray(data.message) ? data.message.join(' ') : data.message || 'Đăng nhập chưa thành công.');
+      } catch (err) { setError(firebaseErrorMessage(err)); }
+      finally { setLoading(false); }
+      return;
+    }
     try {
       const res = await fetch('/api/v1/auth/phone/verify-otp', {
         method: 'POST',
@@ -456,7 +478,7 @@ export function AuthModal({ isOpen, onClose, initialMode = 'LOGIN', onSuccess }:
         {/* MODAL HEADER */}
         <div style={{ padding: '24px 24px 16px', textAlign: 'center', position: 'relative', borderBottom: '1px solid #f1f5f9' }}>
           <button onClick={onClose} style={{ position: 'absolute', top: 20, right: 20, background: 'transparent', border: 'none', cursor: 'pointer', padding: 4 }}>
-            <X size={20} color="#64748b" />
+            <X size={20} />
           </button>
 
           <img src="/assets/logo.png" alt="Tất Tần Tật" style={{ height: 38, objectFit: 'contain', marginBottom: 8 }} />
@@ -507,7 +529,7 @@ export function AuthModal({ isOpen, onClose, initialMode = 'LOGIN', onSuccess }:
               <div>
                 <label style={{ display: 'block', fontSize: 12.5, fontWeight: 600, color: '#334155', marginBottom: 4 }}>Email hoặc Số điện thoại *</label>
                 <div style={{ position: 'relative' }}>
-                  <Mail size={16} color="#94a3b8" style={{ position: 'absolute', top: 12, left: 12 }} />
+                  <Mail size={16} style={{ position: 'absolute', top: 12, left: 12 }} />
                   <input
                     type="text"
                     value={phoneOrEmail}
@@ -521,7 +543,7 @@ export function AuthModal({ isOpen, onClose, initialMode = 'LOGIN', onSuccess }:
               <div>
                 <label style={{ display: 'block', fontSize: 12.5, fontWeight: 600, color: '#334155', marginBottom: 4 }}>Mật khẩu *</label>
                 <div style={{ position: 'relative' }}>
-                  <Lock size={16} color="#94a3b8" style={{ position: 'absolute', top: 12, left: 12 }} />
+                  <Lock size={16} style={{ position: 'absolute', top: 12, left: 12 }} />
                   <input
                     type={showPassword ? 'text' : 'password'}
                     value={password}
@@ -530,7 +552,7 @@ export function AuthModal({ isOpen, onClose, initialMode = 'LOGIN', onSuccess }:
                     style={{ width: '100%', padding: '10px 38px 10px 38px', borderRadius: 10, border: '1px solid #cbd5e1', fontSize: 14 }}
                   />
                   <button type="button" onClick={() => setShowPassword(!showPassword)} style={{ position: 'absolute', top: 10, right: 12, background: 'transparent', border: 'none', cursor: 'pointer' }}>
-                    {showPassword ? <EyeOff size={16} color="#64748b" /> : <Eye size={16} color="#64748b" />}
+                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                   </button>
                 </div>
               </div>
@@ -589,6 +611,7 @@ export function AuthModal({ isOpen, onClose, initialMode = 'LOGIN', onSuccess }:
             </form>
           )}
 
+          <div id="recaptcha-container"/>
           {/* TAB 3: PHONE OTP */}
           {mode === 'PHONE' && (
             <form onSubmit={handleSendOtp} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>

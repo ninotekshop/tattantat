@@ -37,6 +37,21 @@ export default function PrivacyPage() {
           <p>
             Chúng tôi không bán, chia sẻ hoặc tiết lộ thông tin cá nhân của bạn cho bất kỳ bên thứ ba nào ngoại trừ trường hợp có yêu cầu bằng văn bản từ cơ quan pháp luật có thẩm quyền.
           </p>
+
+          <h3 style={{ fontSize: 17, fontWeight: 700, color: '#0f172a', margin: '8px 0 4px 0' }}>4. Dữ liệu định danh (CMND/CCCD)</h3>
+          <ul style={{ paddingLeft: 20, display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <li>Chỉ thu thập khi bạn chủ động xác minh tài khoản: họ tên, số giấy tờ (hệ thống lưu dạng mã hóa một chiều và 4 số cuối để chống trùng lặp), ảnh giấy tờ và ảnh chân dung.</li>
+            <li>Ảnh được lưu ở kho lưu trữ riêng tư, không công khai; chỉ quản trị viên phụ trách xác minh được xem qua liên kết có thời hạn ngắn.</li>
+            <li>Dữ liệu chỉ dùng để xác minh danh tính, phòng chống gian lận và giải quyết tranh chấp; không dùng cho quảng cáo và không chia sẻ cho bên thứ ba trừ khi có yêu cầu hợp pháp của cơ quan nhà nước có thẩm quyền.</li>
+            <li>Bạn có quyền yêu cầu xem, chỉnh sửa hoặc xóa dữ liệu cá nhân bằng cách liên hệ bộ phận hỗ trợ.</li>
+          </ul>
+
+          <h3 style={{ fontSize: 17, fontWeight: 700, color: '#0f172a', margin: '8px 0 4px 0' }}>5. Thông báo, tìm kiếm đã lưu và số điện thoại</h3>
+          <ul style={{ paddingLeft: 20, display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <li>Chúng tôi gửi thông báo trong ứng dụng, thông báo đẩy và email (nếu được bật). Bạn có thể bật/tắt từng nhóm thông báo tại Tài khoản → Cài đặt thông báo.</li>
+            <li>Số điện thoại được dùng để xác minh bằng mã OTP; mã chỉ có hiệu lực 5 phút.</li>
+            <li>Từ khóa và bộ lọc của các tìm kiếm bạn chọn lưu được dùng để thông báo khi có tin mới phù hợp; bạn có thể xóa bất kỳ lúc nào.</li>
+          </ul>
         </section>
       </div>
     </main>

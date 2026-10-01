@@ -40,6 +40,13 @@ export default function DisputeResolutionPage() {
               <p style={{ margin: '4px 0 0 0', fontSize: 14 }}>Tất Tần Tật đưa ra phán quyết hoàn tiền, yêu cầu đổi trả hoặc tạm khóa tài khoản vi phạm tùy theo mức độ.</p>
             </div>
           </div>
+
+          <h3 style={{ fontSize: 17, fontWeight: 700, color: '#0f172a', margin: '8px 0 4px 0' }}>Khiếu nại đơn hàng trên hệ thống</h3>
+          <ul style={{ paddingLeft: 20, display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <li>Vào Đơn hàng → chọn đơn → “Khiếu nại”, chọn lý do, mô tả và gửi kèm liên kết bằng chứng (nếu có). Người mua khiếu nại được khi đơn đang giao, đã giao hoặc trong 7 ngày sau khi hoàn tất.</li>
+            <li>Trong thời gian khiếu nại, đơn chuyển sang trạng thái “Đang khiếu nại” và tiền (nếu thanh toán online) không được chuyển cho người bán cho đến khi có phán quyết.</li>
+            <li>Hai bên trao đổi và bổ sung bằng chứng ngay trong khung khiếu nại. Quản trị viên xem xét và phán quyết một trong các hướng: hoàn tiền toàn bộ, hoàn tiền một phần hoặc từ chối khiếu nại; cả hai bên được thông báo kết quả.</li>
+          </ul>
         </section>
       </div>
     </main>

@@ -12,6 +12,8 @@ export type Product = {
   sellerName: string;
   imageUrl: string;
   images?: string[];
+  videos?: string[];
+  hasVideo?: boolean;
   description?: string | null;
   condition?: string | null;
   categoryId?: number | null;
@@ -42,10 +44,11 @@ export class ApiError extends Error {
 export async function apiRequest<T>(path: string, method = 'GET', body?: unknown, token?: string, key?: string): Promise<T> {
   let response;
   try {
+    const isForm = typeof FormData !== 'undefined' && body instanceof FormData;
     response = await sessionFetch(path, { method, headers: {
-      ...(body !== undefined ? { 'Content-Type': 'application/json' } : {}),
+      ...(body !== undefined && !isForm ? { 'Content-Type': 'application/json' } : {}),
       ...(key ? { 'Idempotency-Key': key } : {}),
-    }, body: body !== undefined ? JSON.stringify(body) : undefined }, token);
+    }, body: body === undefined ? undefined : isForm ? (body as FormData) : JSON.stringify(body) }, token);
   } catch (err) {
     console.error(`[API Fetch Error] to ${baseUrl}${path}:`, err);
     throw new ApiError('Không thể kết nối máy chủ. Hãy thử lại.', 500);
@@ -77,6 +80,11 @@ export const api = {
   categories: () => apiGet<Category[]>('/categories'),
   myProducts: (token: string) => apiGet<Product[]>('/products/mine', token),
   product: (id: string) => apiGet<Product>(`/products/${encodeURIComponent(id)}`, readSession()?.accessToken),
+  search: (params: Record<string, string | number | boolean | undefined>) => {
+    const qs = new URLSearchParams();
+    for (const [k, v] of Object.entries(params)) if (v !== undefined && v !== '' && v !== false) qs.set(k, String(v));
+    return apiGet<{ items: Product[]; total: number; page: number; limit: number }>(`/search/products?${qs}`, readSession()?.accessToken);
+  },
   products: (query = '', categoryId?: number) => {
     const params = new URLSearchParams();
     if (query.trim()) params.set('q', query.trim());
@@ -84,3 +92,27 @@ export const api = {
     return apiGet<Product[]>(`/products${params.size ? `?${params}` : ''}`, readSession()?.accessToken);
   },
 };
+
+/** Tải tệp lên kèm tiến trình (fetch không có sự kiện tiến trình tải lên). Nếu token hết hạn (401) thì quay về memberRequest để tự làm mới phiên. */
+export function uploadRequest<T>(path: string, form: FormData, onProgress: (percent: number) => void): Promise<T> {
+  const session = readSession();
+  if (!session) return Promise.reject(new Error('Vui lòng đăng nhập để tiếp tục.'));
+  return new Promise<T>((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', baseUrl + path);
+    xhr.setRequestHeader('Authorization', `Bearer ${session.accessToken}`);
+    xhr.upload.onprogress = e => { if (e.lengthComputable) onProgress(Math.min(100, Math.round((e.loaded / e.total) * 100))); };
+    xhr.onerror = () => reject(new ApiError('Không thể kết nối máy chủ. Hãy thử lại.', 500));
+    xhr.ontimeout = () => reject(new ApiError('Tải lên quá lâu. Hãy kiểm tra mạng và thử lại.', 408));
+    xhr.onload = () => {
+      let payload: ApiEnvelope<T> | null = null;
+      try { payload = JSON.parse(xhr.responseText); } catch { /* không phải JSON */ }
+      if (xhr.status === 401) { memberRequest<T>(path, 'POST', form).then(resolve, reject); return; }
+      if (xhr.status >= 200 && xhr.status < 300 && payload?.success) { onProgress(100); resolve(payload.data); return; }
+      const message = Array.isArray(payload?.message) ? payload.message.join('. ') : payload?.message;
+      reject(new ApiError(message || (xhr.status === 413 ? 'Tệp quá lớn.' : 'Không gửi được tệp. Hãy thử lại.'), xhr.status, payload?.errorCode ?? null));
+    };
+    xhr.timeout = 5 * 60_000;
+    xhr.send(form);
+  });
+}

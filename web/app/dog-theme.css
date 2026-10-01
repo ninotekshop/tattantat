@@ -716,6 +716,7 @@ body {
 
 /* NÚT 3 CHẤM MENU HIỂN THỊ BÊN DƯỚI KHÔNG CHE KHUẤT NỘI DUNG */
 .card-menu-dropdown-bottom {
+  min-width: 190px;
   position: absolute;
   top: calc(100% + 4px);
   right: 0;
@@ -723,7 +724,7 @@ body {
   border: 1px solid var(--border);
   border-radius: 12px;
   box-shadow: 0 12px 32px rgba(0,0,0,0.25);
-  width: 160px;
+  width: 190px;
   z-index: 99999 !important;
   overflow: hidden;
   padding: 6px 0;

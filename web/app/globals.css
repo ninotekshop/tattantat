@@ -440,3 +440,68 @@ button { cursor: pointer; }
   font-size: 12px;
   color: #a0b2aa;
 }
+
+/* Icon (Ic) mặc định xanh thương hiệu; trên nền xanh đặc thì theo màu chữ (trắng) */
+.primary-action svg, .hero-btn svg, .form-submit svg, .sell-btn svg, .fav-btn.primary svg,
+.bct-icon svg, .admin-login-badge svg, .badge svg, .btn-primary svg { color: currentColor !important; }
+
+/* ===== Bảng màu icon: xanh thương hiệu + trắng (không dùng đen/xám) ===== */
+svg.lucide { color: var(--brand, #00a65a); }
+/* icon bị gán xám/đen bằng prop color → đưa về xanh */
+svg.lucide[stroke="#64748b"], svg.lucide[stroke="#94a3b8"], svg.lucide[stroke="#334155"],
+svg.lucide[stroke="#475569"], svg.lucide[stroke="#71817b"], svg.lucide[stroke="#000"],
+svg.lucide[stroke="#111"], svg.lucide[stroke="#222"] { stroke: var(--brand, #00a65a); }
+/* nền xanh / tối → icon trắng */
+.admin-sidebar svg.lucide, .admin-nav-item svg.lucide, .admin-sidebar-footer svg.lucide,
+.primary-action svg.lucide, .hero-btn svg.lucide, .form-submit svg.lucide, .sell-btn svg.lucide,
+.fav-btn.primary svg.lucide, .btn-primary svg.lucide, .bct-icon svg.lucide, .badge svg.lucide,
+.admin-login-badge svg.lucide, .bl-btn.primary svg.lucide, [data-icon="white"] svg.lucide { color: #fff; }
+/* giữ ngữ nghĩa: cảnh báo/xóa */
+svg.lucide.lucide-trash-2, svg.lucide.lucide-triangle-alert, svg.lucide.lucide-flame { color: currentColor; }
+/* nút nền xanh: icon trắng */
+.topbar-sell-cta svg.lucide, .topbar-sell-icon, .co-btn svg.lucide, .user-avatar svg.lucide { color: #fff; }
+
+/* ===== Popup chuông thông báo ===== */
+.nb-item{display:flex;gap:12px;align-items:flex-start;width:100%;text-align:left;padding:12px 16px;border:0;border-bottom:1px solid #eef3f0;border-left:3px solid transparent;background:#fff;cursor:pointer;font:inherit;transition:background .18s ease,transform .18s ease,border-color .18s ease,box-shadow .18s ease}
+.nb-item:nth-child(even){background:#f6faf8}
+.nb-item.unread{background:#eaf8f0}
+.nb-item.unread:nth-child(even){background:#e2f4ea}
+.nb-item:hover,.nb-item:focus-visible{background:#d9f2e4;border-left-color:#00a65a;transform:translateX(3px);box-shadow:0 2px 10px rgba(0,166,90,.14);outline:none}
+.nb-ico{position:relative;flex:none;width:36px;height:36px;border-radius:50%;display:grid;place-items:center;transition:transform .18s ease}
+.nb-ico svg.lucide{color:currentColor}
+.nb-item:hover .nb-ico{transform:scale(1.1)}
+.nb-dot{position:absolute;top:-1px;right:-1px;width:10px;height:10px;border-radius:50%;background:#e11d48;border:2px solid #fff}
+@media(prefers-reduced-motion:reduce){.nb-item,.nb-ico{transition:none}.nb-item:hover{transform:none}}
+.nb-item.nb-lg{padding:14px 18px}.nb-lg .nb-ico{width:42px;height:42px}
+
+/* icon lucide trên nền xanh đặc luôn trắng */
+.admin-submit-btn svg.lucide,
+.btn-chat-primary svg.lucide,
+.btn-post svg.lucide,
+.co-btn svg.lucide,
+.co-done .co-acts a.p svg.lucide,
+.co-pct button.on svg.lucide,
+.explore-tab-btn.active svg.lucide,
+.fab-circle svg.lucide,
+.fav-btn.primary svg.lucide,
+.fav-empty a svg.lucide,
+.fav-empty button svg.lucide,
+.form-submit svg.lucide,
+.sell-btn svg.lucide,
+.hero-banner-container svg.lucide,
+.hero-btn svg.lucide,
+.primary-action svg.lucide,
+.long-banner button svg.lucide,
+.long-banner span svg.lucide,
+.nt-btn.primary svg.lucide,
+.nt-tab.on svg.lucide,
+.nt-hero svg.lucide,
+.search-bar button svg.lucide,
+.search-submit-btn svg.lucide,
+.topbar-sell-cta svg.lucide,
+.user-avatar svg.lucide,
+.vt-more svg.lucide,
+.vt-tabs button.on svg.lucide,
+.co-step.on i svg.lucide,
+.co-tl li.done i svg.lucide
+{ color: #fff !important; }

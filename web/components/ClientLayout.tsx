@@ -3,6 +3,7 @@ import { usePathname } from 'next/navigation';
 import { AppHeader } from './AppHeader';
 import { Footer } from './Footer';
 import { MobileBottomNav } from './MobileBottomNav';
+import { SupportChat } from './SupportChat';
 
 export function ClientLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -17,6 +18,7 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
       </div>
       {!isAdmin && <Footer />}
       {!isAdmin && <MobileBottomNav />}
+      {!isAdmin && <SupportChat />}
     </>
   );
 }

@@ -1,4 +1,6 @@
 'use client';
+import { Ic } from '../Ic';
+import { Lightbulb } from 'lucide-react';
 import type { Field, ListingMedia } from '../../lib/listings';
 
 const COMPASS_DIRECTIONS = [
@@ -49,6 +51,7 @@ export function DynamicField({
   const fieldLabelLower = field.label.toLowerCase();
 
   const isInteger =
+    (config as any).integer === true ||
     field.type === 'year' ||
     fieldKeyLower.includes('nam_san_xuat') ||
     fieldKeyLower.includes('so_cho') ||
@@ -125,15 +128,27 @@ export function DynamicField({
             {...common}
             type={field.type === 'date' ? 'date' : 'text'}
             inputMode={isInteger ? 'numeric' : isDecimal ? 'decimal' : field.type === 'currency' ? 'numeric' : undefined}
-            maxLength={field.type === 'currency' ? 13 : config.maxLength ?? 2000}
-            value={text}
+            maxLength={field.type === 'currency' ? 17 : config.maxLength ?? 2000}
+            value={field.type === 'currency' ? text.replace(/\B(?=(\d{3})+(?!\d))/g, '.') : text}
             placeholder={config.placeholder || (isInteger ? 'Ví dụ: 5' : isDecimal ? 'Ví dụ: 80.5' : '')}
             onChange={event => {
               let val = event.target.value;
+              if (field.type === 'currency') {
+                val = val.replace(/[^0-9]/g, '').slice(0, 13);
+                onChange(val === '' ? undefined : val);
+                return;
+              }
               if (isInteger) {
                 val = val.replace(/[^0-9]/g, '');
               } else if (isDecimal) {
                 val = val.replace(',', '.');
+              }
+              if (['number', 'year', 'range'].includes(field.type)) {
+                // Backend expects real numbers; keep raw text only while typing (e.g. "80.")
+                if (val === '') { onChange(undefined); return; }
+                const num = Number(val);
+                onChange(Number.isFinite(num) && String(num) === val ? num : val);
+                return;
               }
               onChange(val);
             }}
@@ -142,7 +157,7 @@ export function DynamicField({
         </div>
         {isDecimal && (
           <small style={{ color: '#00a65a', fontSize: 11.5, display: 'block', marginTop: 4, fontWeight: 500 }}>
-            💡 Ghi chú: Nhập số thập phân dùng dấu chấm "." (Ví dụ: 80.5 {config.unit || ''})
+            <Ic i={Lightbulb}/>Ghi chú: Nhập số thập phân dùng dấu chấm "." (Ví dụ: 80.5 {config.unit || ''})
           </small>
         )}
       </div>

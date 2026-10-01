@@ -13,7 +13,14 @@ workflows:
         - app_store_credentials
       vars:
         BUNDLE_ID: "com.tattantat.app"
+        # Địa chỉ API production. Đổi thành tên miền thật (hoặc khai báo trong nhóm biến của Codemagic).
+        EXPO_PUBLIC_API_URL: "https://tattantat.example.com/api/v1"
     scripts:
+      - name: Kiểm tra địa chỉ API production
+        script: |
+          case "$EXPO_PUBLIC_API_URL" in
+            https://*example.com*|"") echo "EXPO_PUBLIC_API_URL chưa được đặt sang tên miền thật"; exit 1;;
+          esac
       - name: Install dependencies
         script: |
           cd mobile
@@ -60,7 +67,14 @@ workflows:
         - google_play_credentials
       vars:
         PACKAGE_NAME: "com.tattantat.app"
+        # Địa chỉ API production. Đổi thành tên miền thật (hoặc khai báo trong nhóm biến của Codemagic).
+        EXPO_PUBLIC_API_URL: "https://tattantat.vn/api/v1"
     scripts:
+      - name: Kiểm tra địa chỉ API production
+        script: |
+          case "$EXPO_PUBLIC_API_URL" in
+            https://*example.com*|"") echo "EXPO_PUBLIC_API_URL chưa được đặt sang tên miền thật"; exit 1;;
+          esac
       - name: Install dependencies
         script: |
           cd mobile

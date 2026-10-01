@@ -58,7 +58,7 @@ export class AdminBannersController {
 
   @Patch(':id')
   async update(@Req() request: { user: { id: string } }, @Param('id') id: string, @Body() body: UpdateBannerDto) {
-    const existing = await this.db.query('SELECT * FROM banners WHERE id=$1 OR code=$1', [id]);
+    const existing = await this.db.query('SELECT * FROM banners WHERE id::text=$1 OR code=$1', [id]);
     if (!existing.rows[0]) throw new BadRequestException('Không tìm thấy Banner');
     const current = existing.rows[0];
 
@@ -71,7 +71,7 @@ export class AdminBannersController {
            expiry_date = COALESCE($6, expiry_date),
            status = COALESCE($7, status),
            updated_at = NOW()
-       WHERE id = $1 OR code = $1
+       WHERE id::text = $1 OR code = $1
        RETURNING id, code, title, image_url AS "imageUrl", position, target_url AS "targetUrl",
                  expiry_date AS "expiryDate", status, created_at AS "createdAt"`,
       [id, body.title?.trim() || null, body.imageUrl?.trim() || null, body.position || null, body.targetUrl?.trim() || null, body.expiryDate || null, body.status || null],
@@ -83,9 +83,9 @@ export class AdminBannersController {
 
   @Delete(':id')
   async delete(@Req() request: { user: { id: string } }, @Param('id') id: string) {
-    const existing = await this.db.query('SELECT * FROM banners WHERE id=$1 OR code=$1', [id]);
+    const existing = await this.db.query('SELECT * FROM banners WHERE id::text=$1 OR code=$1', [id]);
     if (!existing.rows[0]) throw new BadRequestException('Không tìm thấy Banner');
-    await this.db.query('DELETE FROM banners WHERE id=$1 OR code=$1', [id]);
+    await this.db.query('DELETE FROM banners WHERE id::text=$1 OR code=$1', [id]);
     await this.audit.log(request.user.id, 'Super Admin', 'DELETE_BANNER', 'Banner', id, { title: existing.rows[0].title });
     return { success: true, data: { id }, message: 'Đã xóa Banner thành công', errorCode: null };
   }
