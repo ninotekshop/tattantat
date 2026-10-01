@@ -38,6 +38,13 @@ describe('VerificationService', () => {
     await expect(svc.submitIdentity('u', { fullName: 'Nguyễn Văn A', idNumber: '123' }, { front: img, back: img, selfie: img })).rejects.toThrow('9 hoặc 12');
     await expect(svc.submitIdentity('u', { fullName: 'Nguyễn Văn A', idNumber: '012345678901' }, { front: img })).rejects.toThrow('3 ảnh');
   });
+  it('phone review: validates, queues for admin, requires a reject reason', async () => {
+    const { svc } = mk([]);
+    await expect(svc.requestPhoneReview('u', 'abc')).rejects.toBeInstanceOf(BadRequestException);
+    const { svc: s2 } = mk([[{ full_name: 'A', phone: null, pv: false }], [], [], [{ n: 0 }], [{ id: 'p1' }], []]);
+    await expect(s2.requestPhoneReview('u', '0912345678')).resolves.toMatchObject({ data: { status: 'PENDING', phone: '0912345678' } });
+    await expect(svc.adminPhoneReview('a', 'id', 'REJECT', '')).rejects.toBeInstanceOf(BadRequestException);
+  });
   it('requires a reason to reject', async () => {
     const { svc } = mk([]);
     await expect(svc.adminReview('a', 'id', 'REJECT', '')).rejects.toBeInstanceOf(BadRequestException);

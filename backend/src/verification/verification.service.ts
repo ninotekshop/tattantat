@@ -27,6 +27,8 @@ export class VerificationService implements OnModuleInit {
       await this.db.query(`CREATE INDEX IF NOT EXISTS idx_phone_otps_user ON phone_otps(user_id, created_at DESC)`);
       await this.db.query(`CREATE TABLE IF NOT EXISTS identity_verifications (id UUID PRIMARY KEY DEFAULT gen_random_uuid(), user_id UUID NOT NULL, full_name TEXT NOT NULL, id_last4 TEXT NOT NULL, id_hash TEXT NOT NULL, front_key TEXT NOT NULL, back_key TEXT NOT NULL, selfie_key TEXT NOT NULL, status TEXT NOT NULL DEFAULT 'PENDING', reject_reason TEXT, reviewed_by UUID, reviewed_at TIMESTAMPTZ, created_at TIMESTAMPTZ NOT NULL DEFAULT now())`);
       await this.db.query(`CREATE INDEX IF NOT EXISTS idx_identity_status ON identity_verifications(status, created_at)`);
+      await this.db.query(`CREATE TABLE IF NOT EXISTS phone_verifications (id UUID PRIMARY KEY DEFAULT gen_random_uuid(), user_id UUID NOT NULL, phone TEXT NOT NULL, status TEXT NOT NULL DEFAULT 'PENDING', reject_reason TEXT, reviewed_by UUID, reviewed_at TIMESTAMPTZ, created_at TIMESTAMPTZ NOT NULL DEFAULT now())`);
+      await this.db.query(`CREATE INDEX IF NOT EXISTS idx_phone_verif_status ON phone_verifications(status, created_at)`);
       await this.storage.ensurePrivateBucket(BUCKET);
     } catch (e) { this.log.error('Không khởi tạo được bảng xác minh: ' + (e instanceof Error ? e.message : String(e))); }
   }
@@ -44,7 +46,8 @@ export class VerificationService implements OnModuleInit {
     const u = (await this.db.query(`SELECT phone, COALESCE(phone_verified,false) AS phone_verified, COALESCE(is_verified,false) AS identity_verified FROM users WHERE id=$1`, [uid])).rows[0];
     if (!u) throw new NotFoundException('Không tìm thấy tài khoản');
     const last = (await this.db.query(`SELECT id, status, reject_reason, created_at FROM identity_verifications WHERE user_id=$1 ORDER BY created_at DESC LIMIT 1`, [uid])).rows[0] ?? null;
-    return ok({ phone: u.phone, phoneVerified: u.phone_verified, identityVerified: u.identity_verified, identity: last ? { id: last.id, status: last.status, rejectReason: last.reject_reason, createdAt: last.created_at } : null });
+    const ph = (await this.db.query(`SELECT phone, status, reject_reason FROM phone_verifications WHERE user_id=$1 ORDER BY created_at DESC LIMIT 1`, [uid])).rows[0] ?? null;
+    return ok({ phone: u.phone, phoneVerified: u.phone_verified, phoneRequest: ph ? { phone: ph.phone, status: ph.status, rejectReason: ph.reject_reason } : null, identityVerified: u.identity_verified, identity: last ? { id: last.id, status: last.status, rejectReason: last.reject_reason, createdAt: last.created_at } : null });
   }
   async sendPhoneOtp(uid: string, rawPhone: string) {
     const phone = normalizePhone(rawPhone);
@@ -90,6 +93,51 @@ export class VerificationService implements OnModuleInit {
     return ok({ phone, phoneVerified: true }, 'Đã xác minh số điện thoại.');
   }
 
+  /** Người dùng gửi SĐT để quản trị viên duyệt thủ công (không dùng OTP). */
+  async requestPhoneReview(uid: string, rawPhone: string) {
+    const phone = normalizePhone(rawPhone);
+    if (!phone) throw new BadRequestException('Số điện thoại không hợp lệ. Ví dụ: 0912345678.');
+    const me = (await this.db.query(`SELECT full_name, phone, COALESCE(phone_verified,false) AS pv FROM users WHERE id=$1`, [uid])).rows[0];
+    if (!me) throw new NotFoundException('Không tìm thấy tài khoản');
+    if (me.pv && me.phone === phone) throw new BadRequestException('Số điện thoại này đã được xác minh.');
+    if ((await this.db.query(`SELECT 1 FROM users WHERE phone=$1 AND id<>$2 AND COALESCE(phone_verified,false) LIMIT 1`, [phone, uid])).rowCount) throw new BadRequestException('Số điện thoại này đã được xác minh bởi tài khoản khác.');
+    if ((await this.db.query(`SELECT 1 FROM phone_verifications WHERE user_id=$1 AND status='PENDING'`, [uid])).rowCount) throw new BadRequestException('Yêu cầu xác minh số điện thoại của bạn đang chờ duyệt.');
+    if (((await this.db.query(`SELECT COUNT(*)::int AS n FROM phone_verifications WHERE user_id=$1 AND created_at > now()-interval '1 day'`, [uid])).rows[0].n as number) >= 5) throw new BadRequestException('Bạn đã gửi quá nhiều yêu cầu hôm nay. Vui lòng thử lại sau.');
+    const row = (await this.db.query(`INSERT INTO phone_verifications(user_id,phone) VALUES($1,$2) RETURNING id`, [uid, phone])).rows[0];
+    void this.notifyAdmins('ADMIN_PHONE_VERIFY_REQUEST', 'Yêu cầu xác minh số điện thoại', `${me.full_name || 'Người dùng'} gửi số ${phone} để xác minh.`, row.id);
+    return ok({ id: row.id, phone, status: 'PENDING' }, 'Đã gửi yêu cầu. Quản trị viên sẽ duyệt và thông báo cho bạn sớm.');
+  }
+
+  /** Thông báo (đẩy + trong ứng dụng) tới mọi quản trị viên. */
+  private async notifyAdmins(type: string, title: string, content: string, refId: string) {
+    try {
+      const admins = (await this.db.query(`SELECT id FROM users WHERE role IN ('ADMIN'::user_role, 'SUPER_ADMIN'::user_role)`)).rows as { id: string }[];
+      await Promise.all(admins.map(a => this.notifications.create(a.id, type, title, content, 'VERIFICATION', refId).catch(() => undefined)));
+    } catch (e) { this.log.warn('Không gửi được thông báo cho admin: ' + (e instanceof Error ? e.message : String(e))); }
+  }
+
+  async adminPhoneList(status: string, page: number) {
+    const st = ['PENDING', 'APPROVED', 'REJECTED'].includes(status) ? status : null;
+    const p = Math.max(1, page || 1);
+    const rows = (await this.db.query(`SELECT v.id, v.user_id, v.phone, v.status, v.reject_reason, v.created_at, u.full_name, u.email FROM phone_verifications v JOIN users u ON u.id=v.user_id WHERE ($1::text IS NULL OR v.status=$1) ORDER BY (v.status='PENDING') DESC, v.created_at ${st === 'PENDING' || !st ? 'ASC' : 'DESC'} LIMIT 20 OFFSET $2`, [st, (p - 1) * 20])).rows;
+    const stats = (await this.db.query(`SELECT COUNT(*) FILTER (WHERE status='PENDING')::int AS pending FROM phone_verifications`)).rows[0];
+    return ok({ items: rows, stats });
+  }
+  async adminPhoneReview(adminId: string, id: string, action: 'APPROVE' | 'REJECT', reason?: string) {
+    if (action === 'REJECT' && String(reason ?? '').trim().length < 3) throw new BadRequestException('Vui lòng nhập lý do từ chối.');
+    const row = await this.db.transaction(async c => {
+      const v = (await c.query(`SELECT id, user_id, phone FROM phone_verifications WHERE id=$1 AND status='PENDING' FOR UPDATE`, [id])).rows[0];
+      if (!v) throw new BadRequestException('Yêu cầu không còn ở trạng thái chờ duyệt.');
+      if (action === 'APPROVE' && (await c.query(`SELECT 1 FROM users WHERE phone=$1 AND id<>$2 AND COALESCE(phone_verified,false) LIMIT 1`, [v.phone, v.user_id])).rowCount) throw new BadRequestException('Số này đã được xác minh bởi tài khoản khác. Hãy từ chối kèm lý do.');
+      await c.query(`UPDATE phone_verifications SET status=$2, reject_reason=$3, reviewed_by=$4, reviewed_at=now() WHERE id=$1`, [id, action === 'APPROVE' ? 'APPROVED' : 'REJECTED', action === 'REJECT' ? String(reason).trim() : null, adminId]);
+      if (action === 'APPROVE') await c.query(`UPDATE users SET phone=$1, phone_verified=true, updated_at=now() WHERE id=$2`, [v.phone, v.user_id]);
+      return v;
+    });
+    void this.audit?.log(adminId, 'Admin', action === 'APPROVE' ? 'PHONE_APPROVED' : 'PHONE_REJECTED', 'User', row.user_id, { verificationId: id, reason: reason ?? null });
+    void this.notifications.create(row.user_id, action === 'APPROVE' ? 'ACCOUNT_PHONE_VERIFIED' : 'IDENTITY_REJECTED', action === 'APPROVE' ? 'Đã xác minh số điện thoại' : 'Xác minh số điện thoại bị từ chối', action === 'APPROVE' ? `Số điện thoại ${row.phone} đã được xác minh cho tài khoản của bạn. Hoàn tất xác minh CCCD để nhận huy hiệu “Đã xác thực”.` : `Số điện thoại ${row.phone} chưa được xác minh. Lý do: ${String(reason).trim()}. Bạn có thể gửi lại yêu cầu.`, 'ACCOUNT', row.user_id).catch(() => undefined);
+    return ok({ id, status: action === 'APPROVE' ? 'APPROVED' : 'REJECTED' }, action === 'APPROVE' ? 'Đã duyệt số điện thoại.' : 'Đã từ chối số điện thoại.');
+  }
+
   // ---------- CCCD ----------
   async submitIdentity(uid: string, body: { fullName?: string; idNumber?: string }, files: { front?: Img; back?: Img; selfie?: Img }) {
     const fullName = String(body.fullName ?? '').trim();
@@ -104,6 +152,7 @@ export class VerificationService implements OnModuleInit {
     if ((await this.db.query(`SELECT 1 FROM identity_verifications WHERE id_hash=$1 AND status='APPROVED' AND user_id<>$2`, [hash, uid])).rowCount) throw new BadRequestException('Số giấy tờ này đã được dùng để xác minh cho tài khoản khác.');
     const [front, back, selfie] = await Promise.all([this.storage.uploadPrivate(BUCKET, uid, files.front), this.storage.uploadPrivate(BUCKET, uid, files.back), this.storage.uploadPrivate(BUCKET, uid, files.selfie)]);
     const row = (await this.db.query(`INSERT INTO identity_verifications(user_id,full_name,id_last4,id_hash,front_key,back_key,selfie_key) VALUES($1,$2,$3,$4,$5,$6,$7) RETURNING id`, [uid, fullName, idNumber.slice(-4), hash, front, back, selfie])).rows[0];
+    void this.notifyAdmins('ADMIN_IDENTITY_REQUEST', 'Hồ sơ xác minh CCCD mới', `${fullName} gửi hồ sơ CCCD chờ duyệt.`, row.id);
     return ok({ id: row.id, status: 'PENDING' }, 'Đã gửi hồ sơ. Chúng tôi sẽ duyệt trong vòng 24 giờ.');
   }
 
@@ -135,5 +184,5 @@ export class VerificationService implements OnModuleInit {
     void this.notifications.create(row.user_id, action === 'APPROVE' ? 'ACCOUNT_VERIFIED' : 'IDENTITY_REJECTED', action === 'APPROVE' ? 'Đã xác minh danh tính' : 'Hồ sơ xác minh bị từ chối', action === 'APPROVE' ? 'Tài khoản của bạn đã có huy hiệu Đã xác thực.' : `Lý do: ${String(reason).trim()}. Bạn có thể gửi lại hồ sơ.`, 'USER', row.user_id).catch(() => undefined);
     return ok({ id, status: action === 'APPROVE' ? 'APPROVED' : 'REJECTED' }, action === 'APPROVE' ? 'Đã duyệt hồ sơ.' : 'Đã từ chối hồ sơ.');
   }
-  async pendingCount() { return (await this.db.query(`SELECT COUNT(*)::int AS n FROM identity_verifications WHERE status='PENDING'`)).rows[0].n as number; }
+  async pendingCount() { return (await this.db.query(`SELECT (SELECT COUNT(*) FROM identity_verifications WHERE status='PENDING')::int + (SELECT COUNT(*) FROM phone_verifications WHERE status='PENDING')::int AS n`)).rows[0].n as number; }
 }

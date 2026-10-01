@@ -9,6 +9,44 @@ type Detail = { id: string; fullName: string; idLast4: string; status: string; i
 const inp: React.CSSProperties = { padding: '8px 10px', border: '1px solid #dce6e0', borderRadius: 8, fontSize: 13 };
 const STATUS: Record<string, string> = { PENDING: 'Chờ duyệt', APPROVED: 'Đã duyệt', REJECTED: 'Từ chối' };
 
+type PhoneRow = { id: string; phone: string; status: string; reject_reason: string | null; created_at: string; full_name: string | null; email: string | null };
+
+function PhoneRequests({ authHeaders }: { authHeaders: () => Record<string, string> }) {
+  const [rows, setRows] = useState<PhoneRow[]>([]); const [status, setStatus] = useState('PENDING'); const [reasons, setReasons] = useState<Record<string, string>>({});
+  const [busy, setBusy] = useState(false); const [error, setError] = useState(''); const [ok, setOk] = useState('');
+  const call = useCallback(async (path: string, init?: RequestInit) => {
+    const res = await fetch(`/api/v1${path}`, { ...init, headers: { ...authHeaders(), ...(init?.headers ?? {}) }, cache: 'no-store' });
+    const j = await res.json().catch(() => null);
+    if (!res.ok || !j?.success) throw new Error(Array.isArray(j?.message) ? j.message.join('. ') : j?.message || 'Thao tác không thành công.');
+    return j;
+  }, [authHeaders]);
+  const load = useCallback(async () => {
+    setBusy(true); setError('');
+    try { setRows((await call(`/admin/verifications/phone?status=${status}`)).data.items); } catch (e) { setError(e instanceof Error ? e.message : 'Có lỗi xảy ra.'); } finally { setBusy(false); }
+  }, [call, status]);
+  useEffect(() => { void load(); }, [load]);
+  async function review(id: string, action: 'APPROVE' | 'REJECT') {
+    setBusy(true); setError(''); setOk('');
+    try { setOk((await call(`/admin/verifications/phone/${id}/review`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action, reason: reasons[id] ?? '' }) })).message); await load(); }
+    catch (e) { setError(e instanceof Error ? e.message : 'Có lỗi xảy ra.'); } finally { setBusy(false); }
+  }
+  return <div className="bl-card" style={{ marginBottom: 16 }}>
+    <h3 style={{ marginTop: 0 }}>Yêu cầu xác minh số điện thoại</h3>
+    {error && <div className="bl-msg err">{error}</div>}{ok && <div className="bl-msg ok">{ok}</div>}
+    <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+      <select value={status} onChange={e => setStatus(e.target.value)} style={inp}><option value="PENDING">Chờ duyệt</option><option value="APPROVED">Đã duyệt</option><option value="REJECTED">Từ chối</option></select>
+      <button className="bl-btn sm" disabled={busy} onClick={() => void load()}>Tải lại</button>
+    </div>
+    <div style={{ overflowX: 'auto' }}><table className="bl-tbl"><thead><tr><th>Tài khoản</th><th>Số điện thoại</th><th>Gửi lúc</th><th>Trạng thái</th><th>Xử lý</th></tr></thead><tbody>
+      {rows.map(r => <tr key={r.id}><td><b>{r.full_name ?? '—'}</b><div style={{ fontSize: 12, color: '#71817b' }}>{r.email}</div></td><td><b>{r.phone}</b></td><td>{new Date(r.created_at).toLocaleString('vi-VN')}</td><td>{STATUS[r.status] ?? r.status}{r.reject_reason ? <div style={{ fontSize: 12, color: '#b53434' }}>{r.reject_reason}</div> : null}</td>
+        <td>{r.status === 'PENDING' ? <div style={{ display: 'grid', gap: 6, minWidth: 220 }}>
+          <input style={inp} placeholder="Lý do (bắt buộc khi từ chối)" value={reasons[r.id] ?? ''} onChange={e => setReasons(x => ({ ...x, [r.id]: e.target.value }))} />
+          <div style={{ display: 'flex', gap: 6 }}><button className="bl-btn sm" disabled={busy} onClick={() => void review(r.id, 'APPROVE')}>Duyệt</button><button className="bl-btn sm" style={{ color: '#b53434', borderColor: '#f0cfc9' }} disabled={busy || (reasons[r.id] ?? '').trim().length < 3} onClick={() => void review(r.id, 'REJECT')}>Từ chối</button></div></div> : '—'}</td></tr>)}
+      {!rows.length && <tr><td colSpan={5} style={{ textAlign: 'center', color: '#71817b', padding: 24 }}>{busy ? 'Đang tải…' : 'Không có yêu cầu nào.'}</td></tr>}
+    </tbody></table></div>
+  </div>;
+}
+
 export function VerificationsAdmin({ authHeaders }: { authHeaders: () => Record<string, string> }) {
   const [rows, setRows] = useState<Row[]>([]); const [status, setStatus] = useState('PENDING'); const [detail, setDetail] = useState<Detail | null>(null); const [reason, setReason] = useState('');
   const [busy, setBusy] = useState(false); const [error, setError] = useState(''); const [ok, setOk] = useState('');
@@ -30,6 +68,7 @@ export function VerificationsAdmin({ authHeaders }: { authHeaders: () => Record<
     catch (e) { setError(e instanceof Error ? e.message : 'Có lỗi xảy ra.'); } finally { setBusy(false); }
   }
   return <div className="bl" style={{ padding: 0 }}>
+    <PhoneRequests authHeaders={authHeaders} />
     {error && <div className="bl-msg err">{error}</div>}{ok && <div className="bl-msg ok">{ok}</div>}
     <div className="bl-card">
       <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
