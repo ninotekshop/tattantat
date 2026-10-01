@@ -289,7 +289,9 @@ export function MarketplaceHome({ query = '', group = '', sort = '', view = '' }
     leftBanner?: string;
     rightBanner?: string;
     heroBanner?: string;
+    heroBanners?: string[];
   }>({});
+  const [heroIndex, setHeroIndex] = useState(0);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -298,6 +300,15 @@ export function MarketplaceHome({ query = '', group = '', sort = '', view = '' }
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  // Slide ảnh Hero (fade) khi có từ 2 banner trở lên
+  const heroCount = activeBanners.heroBanners?.length ?? 0;
+  useEffect(() => {
+    if (heroIndex >= heroCount) setHeroIndex(0);
+    if (heroCount < 2) return;
+    const t = setInterval(() => setHeroIndex(i => (i + 1) % heroCount), 5000);
+    return () => clearInterval(t);
+  }, [heroCount, heroIndex]);
 
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -308,7 +319,8 @@ export function MarketplaceHome({ query = '', group = '', sort = '', view = '' }
     const pickBanners = (list: any[]) => {
       const active = list.filter((b: any) => b && b.status === 'ACTIVE' && b.imageUrl);
       const find = (key: string) => active.find((b: any) => String(b.position || '').includes(key))?.imageUrl;
-      return { leftBanner: find('Left'), rightBanner: find('Right'), heroBanner: find('Hero') };
+      const heroBanners = Array.from(new Set<string>(active.filter((b: any) => String(b.position || '').includes('Hero')).map((b: any) => b.imageUrl as string)));
+      return { leftBanner: find('Left'), rightBanner: find('Right'), heroBanner: heroBanners[0], heroBanners };
     };
 
     // Lấy banner đang hoạt động từ backend để mọi máy/trình duyệt đều thấy giống nhau
@@ -472,8 +484,18 @@ export function MarketplaceHome({ query = '', group = '', sort = '', view = '' }
         <div className="shell" style={{ padding: '0 8px' }}>
           <div
             className="hero-banner-container hero-flush-top"
-            style={activeBanners.heroBanner ? { backgroundImage: `url(${activeBanners.heroBanner})` } : undefined}
           >
+            {(activeBanners.heroBanners ?? []).map((src, i) => (
+              <div
+                key={src}
+                aria-hidden="true"
+                style={{
+                  position: 'absolute', inset: 0, backgroundImage: `url(${src})`,
+                  backgroundSize: 'cover', backgroundPosition: 'center',
+                  opacity: i === heroIndex ? 1 : 0, transition: 'opacity 1.2s ease-in-out', pointerEvents: 'none',
+                }}
+              />
+            ))}
             <div className="hero-banner-bg" />
             <div className="hero-banner-overlay" style={{ maxWidth: 660 }}>
               <div style={{ textAlign: 'center', marginBottom: 14 }}>

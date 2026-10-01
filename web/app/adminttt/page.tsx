@@ -1207,7 +1207,7 @@ export default function AdminDashboardPage() {
       {/* BANNER ADD/EDIT MODAL */}
       {bannerModalOpen && (
         <div style={{position:'fixed', inset:0, background:'rgba(0,0,0,0.5)', backdropFilter:'blur(4px)', zIndex:1000, display:'flex', alignItems:'center', justifyContent:'center'}} onClick={() => setBannerModalOpen(false)}>
-          <div style={{background:'#fff', borderRadius:16, width:'90%', maxWidth:560, padding:24, boxShadow:'0 20px 40px rgba(0,0,0,0.2)'}} onClick={e => e.stopPropagation()}>
+          <div style={{background:'#fff', borderRadius:16, width:'90%', maxWidth:560, maxHeight:'90vh', overflowY:'auto', padding:24, boxShadow:'0 20px 40px rgba(0,0,0,0.2)'}} onClick={e => e.stopPropagation()}>
             <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:20, borderBottom:'1px solid #e2e8f0', paddingBottom:12}}>
               <h3 style={{margin:0, fontSize:18, fontWeight:700, color:'#0f172a'}}>{editingBanner ? 'Chỉnh sửa Banner' : 'Thêm Banner mới'}</h3>
               <button onClick={() => setBannerModalOpen(false)} style={{background:'transparent', border:'none', cursor:'pointer'}}><X size={20} /></button>
