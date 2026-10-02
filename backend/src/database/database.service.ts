@@ -52,6 +52,7 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
     this.keepAliveTimer = setInterval(() => { void this.pool.query('SELECT 1').catch(() => undefined); }, 60_000);
     this.keepAliveTimer.unref();
     this.ensurePerformanceIndexes();
+    try { await this.query(`ALTER TYPE user_role ADD VALUE IF NOT EXISTS 'MOD'`); } catch (err: unknown) { console.warn('[DatabaseService] Chưa thêm được vai trò MOD:', err instanceof Error ? err.message : String(err)); }
     try {
       await this.query(`
         CREATE TABLE IF NOT EXISTS banners (
@@ -70,6 +71,7 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
         ALTER TABLE banners ADD COLUMN IF NOT EXISTS target_url TEXT DEFAULT '/';
         ALTER TABLE banners ADD COLUMN IF NOT EXISTS expiry_date VARCHAR(50) DEFAULT '2026-12-31';
         ALTER TABLE banners ADD COLUMN IF NOT EXISTS status VARCHAR(20) DEFAULT 'ACTIVE';
+        ALTER TABLE banners ADD COLUMN IF NOT EXISTS sort_order INT NOT NULL DEFAULT 0;
 
         CREATE TABLE IF NOT EXISTS admin_audit_logs (
           id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

@@ -282,7 +282,7 @@ function LoginContent() {
 
         <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           <div>
-            <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: '#334155', marginBottom: 6 }}>Số điện thoại hoặc Email *</label>
+            <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: '#334155', marginBottom: 6 }}>Số điện thoại hoặc Email</label>
             <div style={{ position: 'relative' }}>
               <Mail size={18} style={{ position: 'absolute', top: 12, left: 12 }} />
               <input
@@ -297,14 +297,13 @@ function LoginContent() {
           </div>
 
           <div>
-            <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: '#334155', marginBottom: 6 }}>Mật khẩu *</label>
+            <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: '#334155', marginBottom: 6 }}>Mật khẩu</label>
             <div style={{ position: 'relative' }}>
               <Lock size={18} style={{ position: 'absolute', top: 12, left: 12 }} />
               <input
                 type={showPassword ? 'text' : 'password'}
                 value={password}
                 onChange={e => setPassword(e.target.value)}
-                placeholder="••••••••"
                 required
                 style={{ width: '100%', padding: '11px 40px 11px 40px', borderRadius: 12, border: '1px solid #cbd5e1', fontSize: 14, outline: 'none' }}
               />

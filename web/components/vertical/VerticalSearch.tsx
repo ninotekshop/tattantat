@@ -8,6 +8,7 @@ import { api, memberRequest, type Product } from '../../lib/api';
 import { readSession } from '../../lib/auth';
 import { vndShort, PROPERTY_VERTICAL, VEHICLE_VERTICAL, type FilterDef } from '../../lib/verticals';
 import './vertical.css';
+import { MoneyInput } from '../MoneyInput';
 
 type Item = Product & { attrs?: Record<string, unknown>; sellerVerified?: boolean };
 type Vals = Record<string, { min?: string; max?: string; eq?: string }>;
@@ -53,7 +54,7 @@ export function VerticalSearch({ kind }: { kind: 'property' | 'vehicle' }) {
       <input placeholder="Khu vực (VD: Quy Nhơn)" value={location} onChange={e => setLocation(e.target.value)} style={{ width: 170, padding: '9px 12px', border: '1px solid #dbe4dd', borderRadius: 8 }} />
     </div>
     <div className="vt-bar">
-      <span className="vt-f">Giá<span><input style={{ padding: '8px 10px', border: '1px solid #dbe4dd', borderRadius: 8, width: 130 }} inputMode="numeric" placeholder="Từ (đ)" value={minPrice} onChange={e => setMinPrice(e.target.value)} /> – <input style={{ padding: '8px 10px', border: '1px solid #dbe4dd', borderRadius: 8, width: 130 }} inputMode="numeric" placeholder="Đến (đ)" value={maxPrice} onChange={e => setMaxPrice(e.target.value)} /></span></span>
+      <span className="vt-f">Giá<span><MoneyInput style={{ padding: '8px 10px', border: '1px solid #dbe4dd', borderRadius: 8, width: 130 }} placeholder="Từ (đ)" value={minPrice} onChange={setMinPrice} /> – <MoneyInput style={{ padding: '8px 10px', border: '1px solid #dbe4dd', borderRadius: 8, width: 130 }} placeholder="Đến (đ)" value={maxPrice} onChange={setMaxPrice} /></span></span>
       {filters.map(control)}
       <span className="vt-f">Sắp xếp<select style={{ padding: '8px 10px', border: '1px solid #dbe4dd', borderRadius: 8 }} value={sort} onChange={e => setSort(e.target.value)}><option value="new">Mới nhất</option><option value="price_asc">Giá thấp → cao</option><option value="price_desc">Giá cao → thấp</option></select></span>
       <button className="vt-save" onClick={() => void save()}><Ic i={Bell} solid/>Lưu tìm kiếm</button>

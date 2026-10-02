@@ -36,17 +36,18 @@
 }
 
 .admin-brand {
-  height: 70px;
-  padding: 0 20px;
+  height: 84px;
+  padding: 0 14px;
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 12px;
   border-bottom: 1px solid rgba(255,255,255,0.08);
   overflow: hidden;
 }
 
 .admin-brand img {
-  height: 34px;
+  height: 40px;
   object-fit: contain;
 }
 
@@ -579,3 +580,7 @@
   border-color: #00a65a;
 }
 .lm-menu-item{display:flex;align-items:center;gap:8px;transition:background .12s}.lm-menu-item:hover{background:#eef7f2}
+
+/* Mục con trong menu (vd. Quản lý người dùng > Kiểm duyệt SĐT & giấy tờ) */
+.admin-nav-sub { padding: 8px 14px 8px 30px; font-size: 13px; margin-bottom: 2px; opacity: .92; }
+.admin-sidebar.collapsed .admin-nav-sub { padding-left: 14px; }

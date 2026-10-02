@@ -167,7 +167,7 @@ export function DynamicField({
     <div className="lf-field">
       <label id={`${id}-label`} htmlFor={id}>
         {field.label}
-        {field.required && <span className="lf-required"> *</span>}
+        {/* dấu * bắt buộc đã được bỏ */}
       </label>
       {control}
       {config.help && <small id={`${id}-help`}>{config.help}</small>}

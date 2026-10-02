@@ -18,7 +18,7 @@ type UserRow = {
   password_hash: string | null;
   full_name: string;
   avatar_url: string | null;
-  role: 'USER' | 'ADMIN' | 'SUPER_ADMIN';
+  role: 'USER' | 'MOD' | 'ADMIN' | 'SUPER_ADMIN';
   status: 'ACTIVE' | 'INACTIVE' | 'SUSPENDED' | 'BANNED' | 'DELETED';
 };
 
@@ -50,9 +50,53 @@ export class AuthService {
     return this.envelope(await this.tokensFor(user));
   }
 
+  /** Chuẩn hóa SĐT VN về dạng 0xxxxxxxxx để so sánh (+84901234567, 84901234567, 0901 234 567 → 0901234567). */
+  private normalizePhone(raw: string): string {
+    const digits = raw.replace(/\D/g, '');
+    return digits.startsWith('84') ? '0' + digits.slice(2) : digits;
+  }
+
+  private async phoneExists(raw: string): Promise<boolean> {
+    const n = this.normalizePhone(raw);
+    if (!/^0\d{9}$/.test(n)) return false;
+    const r = await this.database.query(
+      `SELECT 1 FROM users
+       WHERE phone IS NOT NULL
+         AND CASE WHEN regexp_replace(phone, '\\D', '', 'g') LIKE '84%'
+                  THEN '0' || substr(regexp_replace(phone, '\\D', '', 'g'), 3)
+                  ELSE regexp_replace(phone, '\\D', '', 'g') END = $1
+       LIMIT 1`,
+      [n],
+    );
+    return r.rows.length > 0;
+  }
+
+  private async emailExists(raw: string): Promise<boolean> {
+    const r = await this.database.query('SELECT 1 FROM users WHERE lower(email) = $1 LIMIT 1', [raw.trim().toLowerCase()]);
+    return r.rows.length > 0;
+  }
+
+  async checkEmail(email: string) {
+    const e = email.trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)) throw new BadRequestException('Địa chỉ email chưa hợp lệ.');
+    return this.envelope({ exists: await this.emailExists(e) });
+  }
+
+  async checkPhone(phone: string) {
+    const n = this.normalizePhone(phone);
+    if (!/^0\d{9}$/.test(n)) throw new BadRequestException('Số điện thoại chưa hợp lệ.');
+    return this.envelope({ exists: await this.phoneExists(n) });
+  }
+
   async register(body: RegisterDto) {
     const email = body.email?.trim().toLowerCase() || null;
     const phone = body.phone?.trim() || null;
+    if (email && (await this.emailExists(email))) {
+      throw new ConflictException('Email đã được đăng ký. Vui lòng đăng nhập hoặc dùng email khác.');
+    }
+    if (phone && (await this.phoneExists(phone))) {
+      throw new ConflictException('Số điện thoại đã được đăng ký. Vui lòng đăng nhập hoặc dùng số khác.');
+    }
     const passwordHash = await bcrypt.hash(body.password, 12);
 
     try {
@@ -65,8 +109,8 @@ export class AuthService {
       const user = result.rows[0];
 
       await this.database.query(
-        'INSERT INTO user_profiles (user_id, display_name) VALUES ($1, $2) ON CONFLICT DO NOTHING',
-        [user.id, user.full_name],
+        'INSERT INTO user_profiles (user_id, display_name, address) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING',
+        [user.id, user.full_name, body.address?.trim() || null],
       ).catch(() => {});
 
       if (email) {

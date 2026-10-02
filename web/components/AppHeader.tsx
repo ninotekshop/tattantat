@@ -30,7 +30,7 @@ export function AppHeader() {
   const name = mounted && session?.user.fullName ? session.user.fullName : '';
 
   const [authModalOpen, setAuthModalOpen] = useState(false);
-  const [authMode, setAuthMode] = useState<'LOGIN' | 'REGISTER' | 'PHONE'>('LOGIN');
+  const [authMode, setAuthMode] = useState<'LOGIN' | 'REGISTER'>('LOGIN');
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
   const profileRef = useRef<HTMLDivElement>(null);
   // Bấm ra ngoài menu hoặc nhấn Esc thì tự đóng

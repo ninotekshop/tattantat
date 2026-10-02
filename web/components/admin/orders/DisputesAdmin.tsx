@@ -3,6 +3,7 @@ import { Ic } from '../../Ic';
 import { ArrowLeft, ArrowRight, X } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import '../../../app/goi-dich-vu/billing.css';
+import { MoneyInput } from '../../MoneyInput';
 
 type Row = { id: string; order_code: string; total_amount: string; order_status: string; status: string; reasonLabel: string; opened_role: string; resolution: string | null; created_at: string; buyer_name: string; seller_name: string };
 type Msg = { id: string; author_role: string; author_name: string; content: string; created_at: string };
@@ -59,7 +60,7 @@ export function DisputesAdmin({ authHeaders }: { authHeaders: () => Record<strin
 
   return <div className="bl" style={{ padding: 0 }}>
     {error && <div className="bl-msg err">{error}</div>}{ok && <div className="bl-msg ok">{ok}</div>}
-    <div className="bl-grid plans" style={{ marginBottom: 14 }}>{cards.map(([l, v]) => <div key={l} className="bl-card" style={{ margin: 0, padding: 14 }}><div style={{ color: '#71817b', fontSize: 12 }}>{l}</div><div style={{ fontSize: 20, fontWeight: 800, color: l.startsWith('Quá') && v !== '0' ? '#b0402b' : '#007c4b' }}>{v}</div></div>)}</div>
+    <div className="bl-grid plans" style={{ marginBottom: 14, gridTemplateColumns: 'repeat(5, minmax(0, 1fr))' }}>{cards.map(([l, v]) => <div key={l} className="bl-card" style={{ margin: 0, padding: 14 }}><div style={{ color: '#71817b', fontSize: 12 }}>{l}</div><div style={{ fontSize: 20, fontWeight: 800, color: l.startsWith('Quá') && v !== '0' ? '#b0402b' : '#007c4b' }}>{v}</div></div>)}</div>
     <div className="bl-card">
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 12 }}>
         <input placeholder="Tìm mã đơn, người mua, người bán…" value={q} onChange={e => setQ(e.target.value)} style={{ ...inp, flex: 1, minWidth: 220 }} />
@@ -96,7 +97,7 @@ export function DisputesAdmin({ authHeaders }: { authHeaders: () => Record<strin
             {([['REJECT', 'Bác khiếu nại — giữ nguyên giao dịch, người bán được nhận tiền'], ['REFUND_FULL', 'Hoàn toàn bộ tiền cho người mua'], ['REFUND_PARTIAL', 'Hoàn một phần (chỉ khi đơn đã hoàn tất)']] as const).map(([k, l]) =>
               <label key={k} style={{ display: 'flex', gap: 8 }}><input type="radio" name="dec" checked={decision === k} onChange={() => setDecision(k)} />{l}</label>)}
           </div>
-          {decision === 'REFUND_PARTIAL' && <input type="number" min={1} placeholder="Số tiền hoàn (₫)" value={amount} onChange={e => setAmount(e.target.value)} style={{ ...inp, width: '100%', marginBottom: 8 }} />}
+          {decision === 'REFUND_PARTIAL' && <MoneyInput placeholder="Số tiền hoàn (₫)" value={amount} onChange={d => setAmount(d)} style={{ ...inp, width: '100%', marginBottom: 8 }} />}
           <textarea rows={3} value={note} onChange={e => setNote(e.target.value)} placeholder="Lý do quyết định (hai bên sẽ thấy, 5–1000 ký tự)" style={{ ...inp, width: '100%' }} />
           <p style={{ color: '#71817b', fontSize: 12 }}>Đơn đã hoàn tất: hệ thống ghi bút toán đảo và trừ ví người bán. Đơn chưa hoàn tất, đã thanh toán trực tuyến: đơn bị hủy và bạn cần chuyển trả tiền cho người mua qua ngân hàng/cổng thanh toán.</p>
           <button className="bl-btn primary" disabled={busy || note.trim().length < 5 || (decision === 'REFUND_PARTIAL' && !Number(amount))} onClick={resolve}>Chốt quyết định</button></div>}

@@ -3,6 +3,7 @@ import { Ic } from '../../Ic';
 import { BadgeCheck } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import '../../../app/goi-dich-vu/billing.css';
+import { MoneyInput } from '../../MoneyInput';
 
 type Settings = { mode: 'AUTO' | 'MANUAL' | 'HYBRID'; blockContactInfo: boolean; blockProhibited: boolean; prohibitedKeywords: string[]; reviewKeywords: string[]; newSellerReview: boolean; trustedMinApproved: number; trustedIfVerified: boolean; manualCategoryIds: string[]; priceReviewThreshold: number | null; reviewEdits: boolean; aiReview?: boolean; backlogReminder: boolean; backlogHours: number; backlogRepeatHours: number };
 type Item = { id: string; title: string; price: string; description: string | null; createdAt: string; updatedAt: string; categoryName: string; sellerName: string; sellerEmail: string | null; sellerVerified: boolean; imageUrl: string | null; reasons: string[] | null };
@@ -67,7 +68,7 @@ export function ModerationAdmin({ authHeaders }: { authHeaders: () => Record<str
     <div className="bl-toggle" role="tablist">{([['queue', `Hàng chờ duyệt${stats?.pending ? ` (${stats.pending})` : ''}`], ['settings', 'Cài đặt kiểm duyệt'], ['history', 'Nhật ký']] as const).map(([k, l]) => <button key={k} className={tab === k ? 'on' : ''} onClick={() => setTab(k)}>{l}</button>)}</div>
 
     {tab === 'queue' && <div>
-      {stats && <div className="bl-grid plans" style={{ marginBottom: 14 }}>{[['Đang chờ duyệt', String(stats.pending)], ['Chờ lâu nhất', stats.oldest ? dt(stats.oldest) : '—'], ['Đã duyệt hôm nay (thủ công)', String(stats.approvedToday)], ['Từ chối hôm nay', String(stats.rejectedToday)], ['Tự động duyệt hôm nay', String(stats.autoToday)]].map(([l, v]) =>
+      {stats && <div className="bl-grid plans" style={{ marginBottom: 14, gridTemplateColumns: 'repeat(5, minmax(0, 1fr))' }}>{[['Đang chờ duyệt', String(stats.pending)], ['Chờ lâu nhất', stats.oldest ? dt(stats.oldest) : '—'], ['Đã duyệt hôm nay (thủ công)', String(stats.approvedToday)], ['Từ chối hôm nay', String(stats.rejectedToday)], ['Tự động duyệt hôm nay', String(stats.autoToday)]].map(([l, v]) =>
         <div key={l} className="bl-card" style={{ margin: 0, padding: 14 }}><div style={{ color: '#71817b', fontSize: 12 }}>{l}</div><div style={{ fontSize: 20, fontWeight: 800, color: '#007c4b' }}>{v}</div></div>)}</div>}
       <div className="bl-card">
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 12, alignItems: 'center' }}>
@@ -119,7 +120,7 @@ export function ModerationAdmin({ authHeaders }: { authHeaders: () => Record<str
         <label style={{ fontWeight: 700 }}>Từ khóa cần kiểm tra (mỗi dòng một từ)</label>
         <textarea className="bl-in" rows={3} style={{ maxWidth: '100%', margin: '6px 0 12px' }} defaultValue={settings.reviewKeywords.join('\n')} onBlur={e => set({ reviewKeywords: kw(e.target.value) })} />
         <label style={{ fontWeight: 700 }}>Tin có giá từ (VNĐ) trở lên phải duyệt tay (để trống = không áp dụng)</label>
-        <input className="bl-in" type="number" min={0} style={{ maxWidth: 260, margin: '6px 0 12px', display: 'block' }} value={settings.priceReviewThreshold ?? ''} onChange={e => set({ priceReviewThreshold: e.target.value === '' ? null : Number(e.target.value) })} />
+        <MoneyInput className="bl-in" style={{ maxWidth: 260, margin: '6px 0 12px', display: 'block' }} value={settings.priceReviewThreshold ?? ''} onChange={d => set({ priceReviewThreshold: d === '' ? null : Number(d) })} />
         <label style={{ fontWeight: 700 }}>Danh mục luôn duyệt thủ công ({settings.manualCategoryIds.length} đã chọn)</label>
         <input className="bl-in" placeholder="Tìm danh mục…" style={{ maxWidth: 300, margin: '6px 0' }} value={catSearch} onChange={e => setCatSearch(e.target.value)} />
         <div style={{ maxHeight: 220, overflow: 'auto', border: '1px solid #e0e9e4', borderRadius: 10, padding: 8 }}>{catRows.map(({ c, depth }) => <label key={c.id} className="bl-chk" style={{ display: 'flex', gap: 8, padding: '3px 0', paddingLeft: depth * 18 }}>

@@ -22,8 +22,37 @@ export type ModerationSettings = {
   backlogHours: number;
   backlogRepeatHours: number;
 };
+/** Từ khóa cấm đề xuất sẵn (Admin có thể sửa/xóa/bổ sung trong Cài đặt kiểm duyệt). */
+export const SUGGESTED_PROHIBITED_KEYWORDS: string[] = [
+  // Chất cấm, ma túy
+  'ma túy', 'ma tuý', 'cần sa', 'heroin', 'cocaine', 'thuốc lắc', 'kẹo ke', 'bóng cười', 'thuốc phiện', 'đá ngọt', 'cỏ mỹ',
+  // Vũ khí, chất nổ
+  'vũ khí', 'súng', 'đạn dược', 'súng hơi', 'súng bắn bi', 'dao găm', 'kiếm nhật', 'thuốc nổ', 'pháo nổ', 'chất nổ', 'lựu đạn', 'dùi cui điện', 'súng điện', 'nỏ săn',
+  // Hàng giả, hàng nhái, hàng lậu
+  'hàng giả', 'hàng nhái', 'hàng fake', 'fake 1:1', 'super fake', 'rep 1:1', 'hàng lậu', 'hàng xách tay lậu', 'hàng cắp', 'đồ ăn cắp', 'hàng trộm cắp', 'hàng ship lậu', 'hàng dựng',
+  // Giấy tờ, tiền giả, thông tin cá nhân
+  'tiền giả', 'tiền âm phủ giả', 'bằng giả', 'giấy tờ giả', 'làm giấy tờ giả', 'làm bằng lái giả', 'làm bằng đại học', 'cmnd giả', 'cccd giả', 'con dấu giả', 'hóa đơn khống', 'mua bán hóa đơn', 'mua bán cmnd', 'mua bán cccd', 'bán dữ liệu cá nhân', 'bán data khách hàng', 'mua bán tài khoản ngân hàng', 'thuê tài khoản ngân hàng', 'bán sim rác', 'sim không chính chủ',
+  // Cờ bạc, lô đề
+  'cờ bạc', 'cá độ', 'lô đề', 'ghi đề', 'số đề', 'sòng bạc', 'tài xỉu', 'xóc đĩa', 'nhà cái', 'casino online', 'bán độ', 'đánh bạc', 'hack game bài',
+  // Lừa đảo, tài chính đen
+  'lừa đảo', 'bao lãi', 'vay nặng lãi', 'tín dụng đen', 'đa cấp', 'kiếm tiền online nhẹ nhàng', 'việc nhẹ lương cao', 'nhận cọc rồi', 'chuyển khoản trước nhận hàng sau', 'rút tiền thẻ tín dụng', 'bán nợ', 'đòi nợ thuê', 'hack facebook', 'hack tài khoản', 'mở khóa icloud', 'bypass icloud', 'cày thuê', 'cày view', 'tăng like sub',
+  // Nội dung nhạy cảm, người lớn, mại dâm
+  'mại dâm', 'gái gọi', 'gái bao', 'dịch vụ tình dục', 'massage kích dục', 'phim sex', 'ảnh nóng', 'clip nóng', 'đồ chơi người lớn', 'sextoy', 'thuốc kích dục', 'thuốc mê', 'thuốc ngủ không cần đơn', 'nhập môn bán dâm',
+  // Mua bán người, bộ phận cơ thể, động vật quý hiếm
+  'bán thận', 'mua thận', 'bán nội tạng', 'mua bán người', 'bán trẻ em', 'mua bán trẻ', 'cho thuê bụng', 'đẻ thuê', 'sừng tê giác', 'ngà voi', 'vảy tê tê', 'tê tê', 'gấu mèo', 'cao hổ', 'mật gấu', 'xương hổ', 'động vật hoang dã', 'chim quý hiếm', 'gỗ sưa', 'gỗ trắc lậu',
+  // Thuốc, thiết bị y tế cấm bán
+  'thuốc kê đơn', 'thuốc tây không cần toa', 'thuốc giảm cân cấp tốc', 'thuốc phá thai', 'thuốc tránh thai khẩn cấp tem giả', 'thực phẩm chức năng giả', 'sữa giả', 'thuốc tăng cân không rõ nguồn gốc',
+  // Phần mềm, thiết bị phạm pháp
+  'phần mềm hack', 'phần mềm crack', 'key crack', 'thiết bị nghe lén', 'máy nghe trộm', 'camera quay lén', 'camera ngụy trang quay lén', 'định vị gắn xe người khác', 'máy phá sóng', 'thiết bị gây nhiễu', 'bộ kích điện', 'bộ chích điện', 'cung nỏ',
+  // Thuốc lá, rượu, hàng hóa kiểm soát
+  'thuốc lá lậu', 'thuốc lá điện tử', 'vape', 'pod system', 'rượu lậu', 'rượu không rõ nguồn gốc', 'thuốc lào',
+];
+export const SUGGESTED_REVIEW_KEYWORDS: string[] = [
+  'chuyển khoản trước', 'đặt cọc trước', 'cọc trước', 'giá rẻ bất ngờ', 'xả kho', 'thanh lý gấp', 'hàng xách tay', 'không bảo hành', 'nội bộ', 'hàng order', 'ship cod toàn quốc', 'không kiểm tra hàng',
+  'liên hệ zalo', 'liên hệ telegram', 'kết bạn zalo', 'inbox để biết giá', 'giá liên hệ', 'cam kết lợi nhuận', 'đầu tư sinh lời', 'chốt lời', 'tuyển cộng tác viên', 'tuyển ctv',
+];
 export const DEFAULT_SETTINGS: ModerationSettings = {
-  mode: 'AUTO', blockContactInfo: true, blockProhibited: true, prohibitedKeywords: [], reviewKeywords: [],
+  mode: 'AUTO', blockContactInfo: true, blockProhibited: true, prohibitedKeywords: SUGGESTED_PROHIBITED_KEYWORDS, reviewKeywords: SUGGESTED_REVIEW_KEYWORDS,
   newSellerReview: true, trustedMinApproved: 3, trustedIfVerified: true, manualCategoryIds: [], priceReviewThreshold: null, reviewEdits: true, aiReview: true,
   backlogReminder: true, backlogHours: 4, backlogRepeatHours: 6,
 };
@@ -46,7 +75,24 @@ export class ModerationPolicyService implements OnModuleInit {
       await this.db.query(`CREATE TABLE IF NOT EXISTS app_settings (key TEXT PRIMARY KEY, value JSONB NOT NULL, updated_at TIMESTAMPTZ NOT NULL DEFAULT now(), updated_by UUID)`);
       await this.db.query(`CREATE TABLE IF NOT EXISTS moderation_events (id UUID PRIMARY KEY DEFAULT gen_random_uuid(), product_id UUID NOT NULL, actor_id UUID, source TEXT NOT NULL, decision TEXT NOT NULL, mode TEXT, reasons JSONB NOT NULL DEFAULT '[]', created_at TIMESTAMPTZ NOT NULL DEFAULT now())`);
       await this.db.query(`CREATE INDEX IF NOT EXISTS moderation_events_product_idx ON moderation_events(product_id, created_at DESC)`);
+      await this.seedSuggestedKeywords();
     } catch (error) { this.log.error('Không khởi tạo được bảng kiểm duyệt: ' + (error instanceof Error ? error.message : String(error))); }
+  }
+
+  /** Nạp sẵn danh sách từ khóa đề xuất đúng một lần: chỉ bổ sung khi Admin chưa tự nhập từ khóa nào. */
+  private async seedSuggestedKeywords() {
+    const done = (await this.db.query(`SELECT 1 FROM app_settings WHERE key='moderation_keywords_seeded'`)).rows[0];
+    if (done) return;
+    const row = (await this.db.query(`SELECT value FROM app_settings WHERE key='moderation'`)).rows[0];
+    const current: Partial<ModerationSettings> = row?.value ?? {};
+    const merged = this.sanitize({
+      ...current,
+      prohibitedKeywords: list([...(current.prohibitedKeywords ?? []), ...SUGGESTED_PROHIBITED_KEYWORDS]),
+      reviewKeywords: list([...(current.reviewKeywords ?? []), ...SUGGESTED_REVIEW_KEYWORDS]),
+    });
+    await this.db.query(`INSERT INTO app_settings(key,value) VALUES('moderation',$1::jsonb) ON CONFLICT(key) DO UPDATE SET value=EXCLUDED.value, updated_at=now()`, [JSON.stringify(merged)]);
+    await this.db.query(`INSERT INTO app_settings(key,value) VALUES('moderation_keywords_seeded','true'::jsonb) ON CONFLICT(key) DO NOTHING`);
+    this.cache = null;
   }
 
   // ---------- cấu hình ----------

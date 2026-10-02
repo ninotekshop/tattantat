@@ -1,4 +1,4 @@
-import { IsBoolean, IsEmail, IsNotEmpty, IsOptional, IsString, MinLength } from 'class-validator';
+import { IsBoolean, IsEmail, IsNotEmpty, IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
 
 export class LoginDto {
   @IsString()
@@ -24,12 +24,31 @@ export class RegisterDto {
   phone?: string;
 
   @IsString()
+  @IsOptional()
+  @MaxLength(255)
+  address?: string;
+
+  @IsString()
   @MinLength(8)
   password!: string;
 
   @IsBoolean()
   @IsOptional()
   termsAgreed?: boolean;
+}
+
+export class CheckPhoneDto {
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(20)
+  phone!: string;
+}
+
+export class CheckEmailDto {
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(254)
+  email!: string;
 }
 
 export class SendOtpDto {

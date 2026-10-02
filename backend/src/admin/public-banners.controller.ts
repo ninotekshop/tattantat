@@ -17,7 +17,7 @@ export class PublicBannersController {
        FROM banners
        WHERE status = 'ACTIVE'
          AND (expiry_date IS NULL OR expiry_date = '' OR expiry_date >= to_char(NOW() AT TIME ZONE 'Asia/Ho_Chi_Minh', 'YYYY-MM-DD'))
-       ORDER BY updated_at DESC NULLS LAST, created_at DESC`,
+       ORDER BY sort_order ASC, created_at ASC`,
     );
     return { success: true, data: result.rows, message: null, errorCode: null };
   }

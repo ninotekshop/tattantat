@@ -5,7 +5,7 @@ const nextConfig: NextConfig = {
   async rewrites() {
     // Rely exclusively on API_INTERNAL_BASE_URL (injected by Hostinger server.js proxy)
     // Fallback to 127.0.0.1 (not localhost) to avoid IPv6 issues inside Next.js node fetch
-    return [{ source: '/api/v1/:path*', destination: `${process.env.API_INTERNAL_BASE_URL ?? 'http://127.0.0.1:3019/api/v1'}/:path*` }];
+    return [{ source: '/api/v1/:path*', destination: `${process.env.API_INTERNAL_BASE_URL ?? 'http://127.0.0.1:3009/api/v1'}/:path*` }];
   },
   // Cho phép tải video lên qua proxy /api/v1 (mặc định Next chỉ cho 10MB)
   experimental: { proxyClientMaxBodySize: '55mb' },

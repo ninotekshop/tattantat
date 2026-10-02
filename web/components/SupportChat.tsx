@@ -10,7 +10,8 @@ const HELLO: Msg = { role: 'assistant', content: 'Xin chào! Mình là trợ lý
 const SUGGEST = ['Thanh toán QR hoạt động thế nào?', 'Tiền được giữ an toàn ra sao?', 'Cách đăng tin?', 'Gặp tin lừa đảo thì làm gì?'];
 
 export function SupportChat() {
-  const [open, setOpen] = useState(false), [logged, setLogged] = useState(false);
+  const [open, setOpen] = useState(false), [logged, setLogged] = useState(false), [chatOn, setChatOn] = useState(true);
+  useEffect(() => { fetch('/api/v1/ai/config').then(r => r.json()).then(j => { if (j?.data) setChatOn(j.data.supportChat !== false); }).catch(() => {}); }, []);
   const [msgs, setMsgs] = useState<Msg[]>([HELLO]), [text, setText] = useState(''), [busy, setBusy] = useState(false);
   const end = useRef<HTMLDivElement>(null), box = useRef<HTMLElement>(null), fab = useRef<HTMLButtonElement>(null);
   // Bấm chuột ra ngoài bảng hoặc nhấn Esc thì đóng bảng chat.
@@ -44,6 +45,7 @@ export function SupportChat() {
     finally { setBusy(false); }
   }
 
+  if (!chatOn) return null;
   return <>
     <button ref={fab} type="button" className={'sc-fab' + (open ? ' is-open' : '')} aria-label={open ? 'Đóng trợ lý hỗ trợ' : 'Mở trợ lý hỗ trợ'} aria-expanded={open} onClick={() => setOpen(o => !o)}>
       <img src="/chatbot-shipper.png" alt="" width={64} height={64}/>

@@ -46,6 +46,10 @@ export class SearchService implements OnModuleInit {
   constructor(private readonly db: DatabaseService) {}
 
   async onModuleInit() {
+    try {
+      await this.db.query(`CREATE TABLE IF NOT EXISTS search_keyword_stats (keyword TEXT PRIMARY KEY, hits INTEGER NOT NULL DEFAULT 0, last_at TIMESTAMPTZ NOT NULL DEFAULT now())`);
+      await this.db.query(`CREATE INDEX IF NOT EXISTS search_keyword_stats_last_idx ON search_keyword_stats(last_at DESC)`);
+    } catch (e) { this.log.warn('Không tạo được bảng thống kê từ khóa: ' + (e instanceof Error ? e.message : String(e))); }
     try { await this.db.query('CREATE EXTENSION IF NOT EXISTS unaccent'); await this.db.query(`SELECT unaccent('ă')`); this.unaccent = true; }
     catch (e) { this.log.warn('Không bật được unaccent — tìm kiếm sẽ phân biệt dấu: ' + (e instanceof Error ? e.message : String(e))); }
   }
@@ -55,9 +59,13 @@ export class SearchService implements OnModuleInit {
   buildWhere(p: SearchParams, viewerId?: string | null) {
     const values: unknown[] = []; const where = [`p.status='ACTIVE'`, 'p.deleted_at IS NULL'];
     const add = (v: unknown) => { values.push(v); return `$${values.length}`; };
-    for (const token of (p.q ?? '').toLowerCase().split(/\s+/).filter(Boolean).slice(0, 8)) {
-      const t = add(`%${token.replace(/[\\%_]/g, m => '\\' + m)}%`);
-      where.push(`(${this.norm('p.title')} LIKE ${this.norm(t)} OR ${this.norm(`COALESCE(p.description,'')`)} LIKE ${this.norm(t)})`);
+    // Khớp theo TỪ (không khớp lẫn trong giữa từ): "may" không dính "nhanh", "cu" không dính "cung cấp".
+    // Token ngắn (≤3 ký tự) phải khớp nguyên từ; token dài khớp phần đầu của từ.
+    for (const token of (p.q ?? '').toLowerCase().split(/\s+/).map(t => t.replace(/[^\p{L}\p{N}]/gu, '')).filter(Boolean).slice(0, 8)) {
+      const t = add(token);
+      const end = token.length <= 3 ? "|| '\\M'" : '';
+      const re = `('\\m' || ${this.norm(t)} ${end})`;
+      where.push(`(${this.norm('p.title')} ~ ${re} OR ${this.norm(`COALESCE(p.description,'')`)} ~ ${re})`);
     }
     if (p.categoryId) where.push(`p.category_id IN (WITH RECURSIVE tree AS (SELECT id FROM categories WHERE id=${add(p.categoryId)}::bigint UNION SELECT c.id FROM categories c JOIN tree t ON c.parent_id=t.id) SELECT id FROM tree)`);
     if (p.categorySlug) where.push(`p.category_id IN (WITH RECURSIVE tree AS (SELECT id FROM categories WHERE slug=${add(p.categorySlug)} UNION SELECT c.id FROM categories c JOIN tree t ON c.parent_id=t.id) SELECT id FROM tree)`);
@@ -96,7 +104,29 @@ export class SearchService implements OnModuleInit {
       this.db.query(`SELECT COUNT(*)::int AS n FROM products p WHERE ${sql}`, values),
     ]);
     const items = rows.rows.map((row: any) => ({ id: row.id, title: row.title, price: row.price, priceMode: row.listing_price_mode ?? 'FIXED', location: row.address ?? 'Chưa cập nhật', postedAt: row.created_at, sellerId: row.seller_id, sellerName: row.seller_name, sellerVerified: row.seller_verified, attrs: row.attrs ?? {}, imageUrl: row.image_url ?? '', hasVideo: !!row.has_video, images: row.image_url ? [row.image_url] : [], status: row.status }));
+    void this.recordKeyword(p.q, page, total.rows[0].n as number);
     return { success: true, data: { items, total: total.rows[0].n as number, page, limit }, message: null, errorCode: null };
+  }
+
+  /** Ghi nhận từ khóa người dùng thực sự tìm (chỉ trang đầu, có kết quả) để làm "Từ khóa HOT". */
+  private async recordKeyword(q: string | undefined, page: number, total: number) {
+    const key = (q ?? '').toLowerCase().replace(/\s+/g, ' ').trim();
+    if (page !== 1 || total < 1 || key.length < 2 || key.length > 40 || /[<>@]|\d{8,}/.test(key)) return;
+    try {
+      await this.db.query(`INSERT INTO search_keyword_stats(keyword,hits,last_at) VALUES($1,1,now()) ON CONFLICT(keyword) DO UPDATE SET hits=search_keyword_stats.hits+1, last_at=now()`, [key]);
+    } catch { /* thống kê là phụ, không ảnh hưởng tìm kiếm */ }
+  }
+
+  /** Từ khóa được tìm nhiều nhất 30 ngày gần đây; thiếu thì bổ sung bằng từ khóa mặc định. */
+  async hotKeywords(limit = 6) {
+    const fallback = ['iPhone 15', 'Honda Vision', 'Chung cư Quy Nhơn', 'Tủ lạnh Inverter', 'Máy ảnh Canon', 'Laptop cũ'];
+    let rows: Array<{ keyword: string }> = [];
+    try {
+      rows = (await this.db.query(`SELECT keyword FROM search_keyword_stats WHERE last_at > now() - interval '30 days' AND hits >= 2 ORDER BY hits DESC, last_at DESC LIMIT $1`, [limit])).rows as Array<{ keyword: string }>;
+    } catch { /* dùng mặc định */ }
+    const out = rows.map(r => r.keyword);
+    for (const k of fallback) { if (out.length >= limit) break; if (!out.some(o => o.toLowerCase() === k.toLowerCase())) out.push(k); }
+    return { success: true, data: out.slice(0, limit), message: null, errorCode: null };
   }
 
   /** Số tin mới khớp bộ lọc kể từ mốc `since` (dùng cho thông báo tìm kiếm đã lưu). */

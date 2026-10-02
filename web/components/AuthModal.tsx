@@ -1,13 +1,15 @@
 'use client';
 
-import { firebasePhoneEnabled, sendFirebaseOtp, firebaseErrorMessage } from '../lib/firebase-phone';
-import type { ConfirmationResult } from 'firebase/auth';
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { X, Eye, EyeOff, Lock, Mail, Phone, User, CheckCircle, ArrowLeft, ShieldCheck } from 'lucide-react';
 import { saveSession } from '../lib/auth';
+import { ErrorDialog } from './ErrorDialog';
+import { WelcomeDialog } from './WelcomeDialog';
+import { useRouter } from 'next/navigation';
+import { ALL_PROVINCES } from '../lib/locations';
 
-type ModalMode = 'LOGIN' | 'REGISTER' | 'PHONE' | 'OTP' | 'FORGOT_PASSWORD' | 'RESET_SENT';
+type ModalMode = 'LOGIN' | 'REGISTER' | 'FORGOT_PASSWORD' | 'RESET_SENT';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -34,6 +36,9 @@ export function AuthModal({ isOpen, onClose, initialMode = 'LOGIN', onSuccess }:
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
+  const [welcome, setWelcome] = useState(false);
+  const router = useRouter();
+  const finishWelcome = (to: string) => { setWelcome(false); onClose(); if (onSuccess) onSuccess(); router.push(to); };
 
   // Form states
   const [phoneOrEmail, setPhoneOrEmail] = useState('');
@@ -43,25 +48,36 @@ export function AuthModal({ isOpen, onClose, initialMode = 'LOGIN', onSuccess }:
   const [phone, setPhone] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [termsAgreed, setTermsAgreed] = useState(true);
+  const [province, setProvince] = useState('');
+  const [district, setDistrict] = useState('');
+  const [ward, setWard] = useState('');
+  const [street, setStreet] = useState('');
+  const [regStep, setRegStep] = useState<1 | 2 | 3>(1);
+  const [wardList, setWardList] = useState<string[]>([]);
+  const wardsData = useRef<Record<string, string[]> | null>(null);
+  const districtOptions: { id: string; code: string; name: string }[] = ((ALL_PROVINCES.find((p: any) => p.name === province)?.children) || []) as any;
 
-  // OTP state
-  const [otp, setOtp] = useState('');
-  const confirmation = useRef<ConfirmationResult | null>(null);
-  const [countdown, setCountdown] = useState(60);
+  // Tải danh sách phường/xã (1 lần) khi người dùng chọn quận/huyện.
+  useEffect(() => {
+    const code = districtOptions.find(d => d.name === district)?.code;
+    if (!code) { setWardList([]); return; }
+    let cancelled = false;
+    (async () => {
+      try {
+        if (!wardsData.current) wardsData.current = await (await fetch('/data/vn-wards.json')).json();
+        if (!cancelled) setWardList(wardsData.current?.[code] ?? []);
+      } catch { if (!cancelled) setWardList([]); }
+    })();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [district, province]);
 
   useEffect(() => {
     setMode(initialMode);
+    setRegStep(1);
     setError(null);
     setSuccessMsg(null);
   }, [initialMode, isOpen]);
-
-  useEffect(() => {
-    let timer: any;
-    if (mode === 'OTP' && countdown > 0) {
-      timer = setInterval(() => setCountdown(c => c - 1), 1000);
-    }
-    return () => clearInterval(timer);
-  }, [mode, countdown]);
 
   // Load Google GSI Client Script
   useEffect(() => {
@@ -116,6 +132,7 @@ export function AuthModal({ isOpen, onClose, initialMode = 'LOGIN', onSuccess }:
     }
   }, []);
 
+  if (welcome) return <WelcomeDialog name={fullName} onSell={() => finishWelcome('/sell')} onExplore={() => finishWelcome('/')} />;
   if (!isOpen) return null;
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -148,10 +165,44 @@ export function AuthModal({ isOpen, onClose, initialMode = 'LOGIN', onSuccess }:
     }
   };
 
-  const handleRegister = async (e: React.FormEvent) => {
+  const handlePhoneNext = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!fullName || !email || !password) {
-      setError('Vui lòng điền đầy đủ các thông tin bắt buộc');
+    const normalized = phone.replace(/[\s.-]/g, '');
+    if (!/^(0|\+84)\d{9}$/.test(normalized)) {
+      setError('Số điện thoại chưa hợp lệ (ví dụ 0901234567).');
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch('/api/v1/auth/phone/check', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: normalized }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        setError((Array.isArray(data.message) ? data.message.join(' ') : data.message) || 'Chưa kiểm tra được số điện thoại. Vui lòng thử lại.');
+      } else if (data.data?.exists) {
+        setError('Số điện thoại này đã được đăng ký. Vui lòng đăng nhập hoặc dùng số khác.');
+      } else {
+        setRegStep(2);
+      }
+    } catch {
+      setError('Lỗi kết nối máy chủ. Vui lòng thử lại.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAccountNext = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (fullName.trim().length < 2 || !email.trim() || !password) {
+      setError('Vui lòng điền đầy đủ họ tên, email và mật khẩu');
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      setError('Địa chỉ email chưa hợp lệ');
       return;
     }
     if (password.length < 8) {
@@ -162,11 +213,40 @@ export function AuthModal({ isOpen, onClose, initialMode = 'LOGIN', onSuccess }:
       setError('Mật khẩu xác nhận không trùng khớp');
       return;
     }
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch('/api/v1/auth/email/check', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email.trim() }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        setError((Array.isArray(data.message) ? data.message.join(' ') : data.message) || 'Chưa kiểm tra được email. Vui lòng thử lại.');
+      } else if (data.data?.exists) {
+        setError('Email này đã được đăng ký. Vui lòng đăng nhập hoặc dùng email khác.');
+      } else {
+        setRegStep(3);
+      }
+    } catch {
+      setError('Lỗi kết nối máy chủ. Vui lòng thử lại.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRegister = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!province || !district.trim()) {
+      setError('Vui lòng chọn Tỉnh / Thành phố và Quận / Huyện');
+      return;
+    }
     if (!termsAgreed) {
       setError('Bạn cần đồng ý với Điều khoản sử dụng & Chính sách bảo mật');
       return;
     }
-
+    const address = [street.trim(), ward.trim(), district.trim(), province].filter(Boolean).join(', ');
     setLoading(true);
     setError(null);
 
@@ -174,96 +254,14 @@ export function AuthModal({ isOpen, onClose, initialMode = 'LOGIN', onSuccess }:
       const res = await fetch('/api/v1/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ fullName, email, phone: phone || undefined, password, termsAgreed }),
+        body: JSON.stringify({ fullName, email, phone: phone.replace(/[\s.-]/g, ''), address: address.slice(0, 255), password, termsAgreed }),
       });
       const data = await res.json();
       if (data.success && data.data) {
         saveSession(data.data);
-        setSuccessMsg('Đăng ký thành công! Email chào mừng đã được gửi.');
-        setTimeout(() => {
-          onClose();
-          if (onSuccess) onSuccess();
-        }, 1500);
+        setWelcome(true);
       } else {
         setError(data.message || 'Đăng ký không thành công.');
-      }
-    } catch (err) {
-      setError('Lỗi kết nối máy chủ.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSendOtp = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!phone) {
-      setError('Vui lòng nhập số điện thoại');
-      return;
-    }
-    setLoading(true);
-    setError(null);
-
-    if (firebasePhoneEnabled) {
-      try { confirmation.current = await sendFirebaseOtp(phone, 'recaptcha-container'); setMode('OTP'); setCountdown(60); }
-      catch (err) { setError(firebaseErrorMessage(err)); }
-      finally { setLoading(false); }
-      return;
-    }
-    try {
-      const res = await fetch('/api/v1/auth/phone/send-otp', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone }),
-      });
-      const data = await res.json();
-      if (data.success) {
-        setMode('OTP');
-        setCountdown(60);
-      } else {
-        setError(data.message || 'Chưa gửi được mã OTP.');
-      }
-    } catch (err) {
-      setError('Lỗi kết nối máy chủ.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleVerifyOtp = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!otp || otp.length < 6) {
-      setError('Vui lòng nhập mã OTP 6 chữ số');
-      return;
-    }
-    setLoading(true);
-    setError(null);
-
-    if (firebasePhoneEnabled) {
-      try {
-        if (!confirmation.current) throw new Error('no-confirmation');
-        const cred = await confirmation.current.confirm(otp);
-        const idToken = await cred.user.getIdToken();
-        const res = await fetch('/api/v1/auth/phone/firebase-login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ idToken }) });
-        const data = await res.json();
-        if (data.success && data.data) { saveSession(data.data); onClose(); if (onSuccess) onSuccess(); }
-        else setError(Array.isArray(data.message) ? data.message.join(' ') : data.message || 'Đăng nhập chưa thành công.');
-      } catch (err) { setError(firebaseErrorMessage(err)); }
-      finally { setLoading(false); }
-      return;
-    }
-    try {
-      const res = await fetch('/api/v1/auth/phone/verify-otp', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone, otp }),
-      });
-      const data = await res.json();
-      if (data.success && data.data) {
-        saveSession(data.data);
-        onClose();
-        if (onSuccess) onSuccess();
-      } else {
-        setError(data.message || 'Mã OTP không chính xác.');
       }
     } catch (err) {
       setError('Lỗi kết nối máy chủ.');
@@ -451,6 +449,20 @@ export function AuthModal({ isOpen, onClose, initialMode = 'LOGIN', onSuccess }:
     }
   };
 
+  const socialButtons = (
+    <div style={{ display: 'flex', gap: 10 }}>
+                <button type="button" onClick={handleGoogleAuth} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '10px', borderRadius: 10, border: '1px solid #cbd5e1', background: '#fff', cursor: 'pointer', fontSize: 13, fontWeight: 600, color: '#334155' }}>
+                  <GoogleIcon /> Google
+                </button>
+                <button type="button" onClick={handleFacebookAuth} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '10px', borderRadius: 10, border: '1px solid #cbd5e1', background: '#fff', cursor: 'pointer', fontSize: 13, fontWeight: 600, color: '#334155' }}>
+                  <FacebookIcon /> Facebook
+                </button>
+                <button type="button" onClick={handleAppleAuth} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '10px', borderRadius: 10, border: '1px solid #cbd5e1', background: '#fff', cursor: 'pointer', fontSize: 13, fontWeight: 600, color: '#334155' }}>
+                  <AppleIcon /> Apple
+                </button>
+              </div>
+  );
+
   return (
     <div style={{
       position: 'fixed',
@@ -463,7 +475,7 @@ export function AuthModal({ isOpen, onClose, initialMode = 'LOGIN', onSuccess }:
       justifyContent: 'center',
       padding: 16
     }} onClick={onClose}>
-      <div style={{
+      <div className="nice-scroll" style={{
         background: '#ffffff',
         borderRadius: 24,
         width: '100%',
@@ -487,7 +499,7 @@ export function AuthModal({ isOpen, onClose, initialMode = 'LOGIN', onSuccess }:
         </div>
 
         {/* TABS NAVIGATION */}
-        {['LOGIN', 'REGISTER', 'PHONE'].includes(mode) && (
+        {['LOGIN', 'REGISTER'].includes(mode) && (
           <div style={{ display: 'flex', borderBottom: '1px solid #e2e8f0', background: '#f8fafc' }}>
             <button
               onClick={() => { setMode('LOGIN'); setError(null); }}
@@ -496,26 +508,16 @@ export function AuthModal({ isOpen, onClose, initialMode = 'LOGIN', onSuccess }:
               Đăng nhập
             </button>
             <button
-              onClick={() => { setMode('REGISTER'); setError(null); }}
+              onClick={() => { setMode('REGISTER'); setRegStep(1); setError(null); }}
               style={{ flex: 1, padding: '12px 0', fontSize: 14, fontWeight: 600, border: 'none', background: mode === 'REGISTER' ? '#fff' : 'transparent', color: mode === 'REGISTER' ? '#00a65a' : '#64748b', cursor: 'pointer', borderBottom: mode === 'REGISTER' ? '2px solid #00a65a' : 'none' }}
             >
               Đăng ký
-            </button>
-            <button
-              onClick={() => { setMode('PHONE'); setError(null); }}
-              style={{ flex: 1, padding: '12px 0', fontSize: 13, fontWeight: 600, border: 'none', background: mode === 'PHONE' ? '#fff' : 'transparent', color: mode === 'PHONE' ? '#00a65a' : '#64748b', cursor: 'pointer', borderBottom: mode === 'PHONE' ? '2px solid #00a65a' : 'none' }}
-            >
-              SĐT + OTP
             </button>
           </div>
         )}
 
         <div style={{ padding: 24 }}>
-          {error && (
-            <div style={{ background: '#fef2f2', border: '1px solid #fca5a5', color: '#b91c1c', padding: '10px 14px', borderRadius: 10, fontSize: 13, marginBottom: 16 }}>
-              {error}
-            </div>
-          )}
+          <ErrorDialog message={error} onClose={() => setError(null)} />
 
           {successMsg && (
             <div style={{ background: '#ecfdf5', border: '1px solid #6ee7b7', color: '#047857', padding: '10px 14px', borderRadius: 10, fontSize: 13, marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -527,28 +529,26 @@ export function AuthModal({ isOpen, onClose, initialMode = 'LOGIN', onSuccess }:
           {mode === 'LOGIN' && (
             <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
               <div>
-                <label style={{ display: 'block', fontSize: 12.5, fontWeight: 600, color: '#334155', marginBottom: 4 }}>Email hoặc Số điện thoại *</label>
+                <label style={{ display: 'block', fontSize: 12.5, fontWeight: 600, color: '#334155', marginBottom: 4 }}>Email hoặc Số điện thoại</label>
                 <div style={{ position: 'relative' }}>
                   <Mail size={16} style={{ position: 'absolute', top: 12, left: 12 }} />
                   <input
                     type="text"
                     value={phoneOrEmail}
                     onChange={e => setPhoneOrEmail(e.target.value)}
-                    placeholder="nhapemail@domain.com hoặc 0901234567"
                     style={{ width: '100%', padding: '10px 12px 10px 38px', borderRadius: 10, border: '1px solid #cbd5e1', fontSize: 14 }}
                   />
                 </div>
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: 12.5, fontWeight: 600, color: '#334155', marginBottom: 4 }}>Mật khẩu *</label>
+                <label style={{ display: 'block', fontSize: 12.5, fontWeight: 600, color: '#334155', marginBottom: 4 }}>Mật khẩu</label>
                 <div style={{ position: 'relative' }}>
                   <Lock size={16} style={{ position: 'absolute', top: 12, left: 12 }} />
                   <input
                     type={showPassword ? 'text' : 'password'}
                     value={password}
                     onChange={e => setPassword(e.target.value)}
-                    placeholder="Mật khẩu của bạn"
                     style={{ width: '100%', padding: '10px 38px 10px 38px', borderRadius: 10, border: '1px solid #cbd5e1', fontSize: 14 }}
                   />
                   <button type="button" onClick={() => setShowPassword(!showPassword)} style={{ position: 'absolute', top: 10, right: 12, background: 'transparent', border: 'none', cursor: 'pointer' }}>
@@ -572,83 +572,101 @@ export function AuthModal({ isOpen, onClose, initialMode = 'LOGIN', onSuccess }:
             </form>
           )}
 
-          {/* TAB 2: REGISTER */}
+          {/* TAB 2: REGISTER — MXH trước, thủ công sau (2 bước) */}
           {mode === 'REGISTER' && (
-            <form onSubmit={handleRegister} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              <div>
-                <label style={{ display: 'block', fontSize: 12.5, fontWeight: 600, color: '#334155', marginBottom: 4 }}>Họ và tên *</label>
-                <input type="text" value={fullName} onChange={e => setFullName(e.target.value)} placeholder="Nguyễn Văn A" style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1px solid #cbd5e1', fontSize: 14 }} />
-              </div>
+            <>
+              {regStep === 1 && (
+                <>
+                  {socialButtons}
+                  <div style={{ display: 'flex', alignItems: 'center', margin: '20px 0 16px', color: '#94a3b8', fontSize: 12 }}>
+                    <div style={{ flex: 1, height: 1, background: '#e2e8f0' }} />
+                    <span style={{ padding: '0 12px', textTransform: 'uppercase', letterSpacing: 0.5, fontWeight: 500 }}>Hoặc đăng ký bằng số điện thoại</span>
+                    <div style={{ flex: 1, height: 1, background: '#e2e8f0' }} />
+                  </div>
+                  <form onSubmit={handlePhoneNext} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                    <div>
+                      <label style={{ display: 'block', fontSize: 12.5, fontWeight: 600, color: '#334155', marginBottom: 4 }}>Số điện thoại</label>
+                      <input type="tel" value={phone} onChange={e => setPhone(e.target.value)} style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1px solid #cbd5e1', fontSize: 14 }} />
+                    </div>
+                    <button type="submit" disabled={loading} style={{ background: '#00a65a', color: '#ffffff', padding: '12px', borderRadius: 12, border: 'none', fontSize: 15, fontWeight: 700, cursor: 'pointer', marginTop: 8, boxShadow: '0 4px 12px rgba(0,166,90,0.25)' }}>{loading ? 'Đang kiểm tra...' : 'Tiếp tục'}</button>
+                  </form>
+                </>
+              )}
 
-              <div>
-                <label style={{ display: 'block', fontSize: 12.5, fontWeight: 600, color: '#334155', marginBottom: 4 }}>Địa chỉ Email *</label>
-                <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="email@domain.com" style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1px solid #cbd5e1', fontSize: 14 }} />
-              </div>
+              {regStep === 2 && (
+                <form onSubmit={handleAccountNext} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                  <button type="button" onClick={() => { setRegStep(1); setError(null); }} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'transparent', border: 'none', color: '#64748b', fontSize: 13, cursor: 'pointer', padding: 0 }}>
+                    <ArrowLeft size={16} /> Đổi số điện thoại ({phone})
+                  </button>
+                  <div>
+                    <label style={{ display: 'block', fontSize: 12.5, fontWeight: 600, color: '#334155', marginBottom: 4 }}>Họ và tên</label>
+                    <input type="text" value={fullName} onChange={e => setFullName(e.target.value)} style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1px solid #cbd5e1', fontSize: 14 }} />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: 12.5, fontWeight: 600, color: '#334155', marginBottom: 4 }}>Địa chỉ Email</label>
+                    <input type="email" value={email} onChange={e => setEmail(e.target.value)} style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1px solid #cbd5e1', fontSize: 14 }} />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: 12.5, fontWeight: 600, color: '#334155', marginBottom: 4 }}>Mật khẩu (tối thiểu 8 ký tự)</label>
+                    <input type="password" autoComplete="new-password" value={password} onChange={e => setPassword(e.target.value)} style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1px solid #cbd5e1', fontSize: 14 }} />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: 12.5, fontWeight: 600, color: '#334155', marginBottom: 4 }}>Nhập lại mật khẩu</label>
+                    <input type="password" autoComplete="new-password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1px solid #cbd5e1', fontSize: 14 }} />
+                  </div>
+                  <button type="submit" disabled={loading} style={{ background: '#00a65a', color: '#ffffff', padding: '12px', borderRadius: 12, border: 'none', fontSize: 15, fontWeight: 700, cursor: 'pointer', marginTop: 8, boxShadow: '0 4px 12px rgba(0,166,90,0.25)' }}>{loading ? 'Đang kiểm tra...' : 'Tiếp tục'}</button>
+                </form>
+              )}
 
-              <div>
-                <label style={{ display: 'block', fontSize: 12.5, fontWeight: 600, color: '#334155', marginBottom: 4 }}>Số điện thoại (Không bắt buộc)</label>
-                <input type="tel" value={phone} onChange={e => setPhone(e.target.value)} placeholder="0901234567" style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1px solid #cbd5e1', fontSize: 14 }} />
-              </div>
-
-              <div>
-                <label style={{ display: 'block', fontSize: 12.5, fontWeight: 600, color: '#334155', marginBottom: 4 }}>Mật khẩu (Tối thiểu 8 ký tự) *</label>
-                <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Mật khẩu bảo mật" style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1px solid #cbd5e1', fontSize: 14 }} />
-              </div>
-
-              <div>
-                <label style={{ display: 'block', fontSize: 12.5, fontWeight: 600, color: '#334155', marginBottom: 4 }}>Nhập lại mật khẩu *</label>
-                <input type="password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} placeholder="Xác nhận mật khẩu" style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1px solid #cbd5e1', fontSize: 14 }} />
-              </div>
-
-              <label style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: 12, color: '#475569', marginTop: 4, cursor: 'pointer' }}>
-                <input type="checkbox" checked={termsAgreed} onChange={e => setTermsAgreed(e.target.checked)} style={{ marginTop: 2 }} />
-                <span>Tôi đồng ý với <Link href="/terms" style={{ color: '#00a65a', textDecoration: 'underline' }}>Điều khoản sử dụng</Link> và <Link href="/privacy" style={{ color: '#00a65a', textDecoration: 'underline' }}>Chính sách bảo mật</Link> của Tất Tần Tật.</span>
-              </label>
-
-              <button type="submit" disabled={loading} style={{ background: '#00a65a', color: '#ffffff', padding: '12px', borderRadius: 12, border: 'none', fontSize: 15, fontWeight: 700, cursor: 'pointer', marginTop: 8, boxShadow: '0 4px 12px rgba(0,166,90,0.25)' }}>
-                {loading ? 'Đang tạo tài khoản...' : 'Tạo tài khoản ngay'}
-              </button>
-            </form>
-          )}
-
-          <div id="recaptcha-container"/>
-          {/* TAB 3: PHONE OTP */}
-          {mode === 'PHONE' && (
-            <form onSubmit={handleSendOtp} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-              <div>
-                <label style={{ display: 'block', fontSize: 12.5, fontWeight: 600, color: '#334155', marginBottom: 4 }}>Số điện thoại Việt Nam *</label>
-                <div style={{ display: 'flex', gap: 8 }}>
-                  <span style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', padding: '10px 12px', borderRadius: 10, fontSize: 14, fontWeight: 600, color: '#334155' }}>+84</span>
-                  <input type="tel" value={phone} onChange={e => setPhone(e.target.value)} placeholder="0901234567" style={{ flex: 1, padding: '10px 12px', borderRadius: 10, border: '1px solid #cbd5e1', fontSize: 14 }} />
-                </div>
-              </div>
-
-              <button type="submit" disabled={loading} style={{ background: '#00a65a', color: '#ffffff', padding: '12px', borderRadius: 12, border: 'none', fontSize: 15, fontWeight: 700, cursor: 'pointer', marginTop: 8 }}>
-                {loading ? 'Đang gửi mã...' : 'Gửi mã xác thực OTP'}
-              </button>
-            </form>
-          )}
-
-          {/* MODE: OTP VERIFICATION */}
-          {mode === 'OTP' && (
-            <form onSubmit={handleVerifyOtp} style={{ display: 'flex', flexDirection: 'column', gap: 14, textAlign: 'center' }}>
-              <p style={{ fontSize: 13, color: '#475569', margin: 0 }}>Mã OTP 6 chữ số đã được gửi tới số <strong>{phone}</strong></p>
-              <input
-                type="text"
-                maxLength={6}
-                value={otp}
-                onChange={e => setOtp(e.target.value)}
-                placeholder="123456"
-                style={{ textAlign: 'center', fontSize: 24, letterSpacing: 8, fontWeight: 700, padding: 12, borderRadius: 12, border: '2px solid #00a65a', outline: 'none' }}
-              />
-              <div style={{ fontSize: 12, color: '#64748b' }}>
-                {countdown > 0 ? `Gửi lại mã sau ${countdown}s` : <button type="button" onClick={handleSendOtp} style={{ background: 'transparent', border: 'none', color: '#00a65a', fontWeight: 600, cursor: 'pointer' }}>Gửi lại mã OTP</button>}
-              </div>
-
-              <button type="submit" disabled={loading} style={{ background: '#00a65a', color: '#ffffff', padding: '12px', borderRadius: 12, border: 'none', fontSize: 15, fontWeight: 700, cursor: 'pointer', marginTop: 8 }}>
-                {loading ? 'Đang xác nhận...' : 'Xác nhận & Đăng nhập'}
-              </button>
-            </form>
+              {regStep === 3 && (
+                <form onSubmit={handleRegister} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                  <button type="button" onClick={() => { setRegStep(2); setError(null); }} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'transparent', border: 'none', color: '#64748b', fontSize: 13, cursor: 'pointer', padding: 0 }}>
+                    <ArrowLeft size={16} /> Quay lại
+                  </button>
+                  <p style={{ fontSize: 13, color: '#475569', margin: 0 }}>Địa chỉ của bạn, dùng cho đăng tin và giao dịch sau này.</p>
+                  <div>
+                    <label style={{ display: 'block', fontSize: 12.5, fontWeight: 600, color: '#334155', marginBottom: 4 }}>Tỉnh / Thành phố</label>
+                    <select value={province} onChange={e => { setProvince(e.target.value); setDistrict(''); }} style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1px solid #cbd5e1', fontSize: 14 }}>
+                      <option value="">Chọn Tỉnh / Thành phố</option>
+                      {ALL_PROVINCES.map((p: any) => <option key={p.id} value={p.name}>{p.name}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: 12.5, fontWeight: 600, color: '#334155', marginBottom: 4 }}>Quận / Huyện / Thị xã / TP</label>
+                    {districtOptions.length > 0 ? (
+                      <select value={district} onChange={e => { setDistrict(e.target.value); setWard(''); }} disabled={!province} style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1px solid #cbd5e1', fontSize: 14 }}>
+                        <option value="">Chọn Quận / Huyện</option>
+                        {districtOptions.map(d => <option key={d.id} value={d.name}>{d.name}</option>)}
+                      </select>
+                    ) : (
+                      <input type="text" value={district} onChange={e => setDistrict(e.target.value)} disabled={!province} maxLength={80} style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1px solid #cbd5e1', fontSize: 14 }} />
+                    )}
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: 12.5, fontWeight: 600, color: '#334155', marginBottom: 4 }}>Phường / Xã / Thị trấn</label>
+                    {wardList.length > 0 ? (
+                      <select value={ward} onChange={e => setWard(e.target.value)} style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1px solid #cbd5e1', fontSize: 14 }}>
+                        <option value="">Chọn Phường / Xã</option>
+                        {wardList.map(w => <option key={w} value={w}>{w}</option>)}
+                      </select>
+                    ) : (
+                      <input type="text" value={ward} onChange={e => setWard(e.target.value)} disabled={!district} maxLength={80} style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1px solid #cbd5e1', fontSize: 14 }} />
+                    )}
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: 12.5, fontWeight: 600, color: '#334155', marginBottom: 4 }}>Số nhà, tên đường</label>
+                    <input type="text" value={street} onChange={e => setStreet(e.target.value)} maxLength={80} style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1px solid #cbd5e1', fontSize: 14 }} />
+                  </div>
+                  <label style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: 12, color: '#475569', marginTop: 4, cursor: 'pointer' }}>
+                    <input type="checkbox" checked={termsAgreed} onChange={e => setTermsAgreed(e.target.checked)} style={{ marginTop: 2 }} />
+                    <span>Tôi đồng ý với <Link href="/terms" style={{ color: '#00a65a', textDecoration: 'underline' }}>Điều khoản sử dụng</Link> và <Link href="/privacy" style={{ color: '#00a65a', textDecoration: 'underline' }}>Chính sách bảo mật</Link> của Tất Tần Tật.</span>
+                  </label>
+                  <button type="submit" disabled={loading} style={{ background: '#00a65a', color: '#ffffff', padding: '12px', borderRadius: 12, border: 'none', fontSize: 15, fontWeight: 700, cursor: 'pointer', marginTop: 8, boxShadow: '0 4px 12px rgba(0,166,90,0.25)' }}>
+                    {loading ? 'Đang tạo tài khoản...' : 'Tạo tài khoản ngay'}
+                  </button>
+                </form>
+              )}
+            </>
           )}
 
           {/* MODE: FORGOT PASSWORD */}
@@ -661,8 +679,8 @@ export function AuthModal({ isOpen, onClose, initialMode = 'LOGIN', onSuccess }:
                 Nhập email đã đăng ký. Tất Tần Tật sẽ gửi hướng dẫn đặt lại mật khẩu cho bạn từ <strong>hotro@tattantat.vn</strong>.
               </p>
               <div>
-                <label style={{ display: 'block', fontSize: 12.5, fontWeight: 600, color: '#334155', marginBottom: 4 }}>Email đăng ký *</label>
-                <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="email@domain.com" style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1px solid #cbd5e1', fontSize: 14 }} />
+                <label style={{ display: 'block', fontSize: 12.5, fontWeight: 600, color: '#334155', marginBottom: 4 }}>Email đăng ký</label>
+                <input type="email" value={email} onChange={e => setEmail(e.target.value)} style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1px solid #cbd5e1', fontSize: 14 }} />
               </div>
 
               <button type="submit" disabled={loading} style={{ background: '#00a65a', color: '#ffffff', padding: '12px', borderRadius: 12, border: 'none', fontSize: 15, fontWeight: 700, cursor: 'pointer', marginTop: 8 }}>
@@ -672,7 +690,7 @@ export function AuthModal({ isOpen, onClose, initialMode = 'LOGIN', onSuccess }:
           )}
 
           {/* SOCIAL LOGIN DIVIDER */}
-          {['LOGIN', 'REGISTER', 'PHONE'].includes(mode) && (
+          {mode === 'LOGIN' && (
             <>
               <div style={{ display: 'flex', alignItems: 'center', margin: '20px 0 16px', color: '#94a3b8', fontSize: 12 }}>
                 <div style={{ flex: 1, height: 1, background: '#e2e8f0' }} />
@@ -680,17 +698,7 @@ export function AuthModal({ isOpen, onClose, initialMode = 'LOGIN', onSuccess }:
                 <div style={{ flex: 1, height: 1, background: '#e2e8f0' }} />
               </div>
 
-              <div style={{ display: 'flex', gap: 10 }}>
-                <button type="button" onClick={handleGoogleAuth} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '10px', borderRadius: 10, border: '1px solid #cbd5e1', background: '#fff', cursor: 'pointer', fontSize: 13, fontWeight: 600, color: '#334155' }}>
-                  <GoogleIcon /> Google
-                </button>
-                <button type="button" onClick={handleFacebookAuth} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '10px', borderRadius: 10, border: '1px solid #cbd5e1', background: '#fff', cursor: 'pointer', fontSize: 13, fontWeight: 600, color: '#334155' }}>
-                  <FacebookIcon /> Facebook
-                </button>
-                <button type="button" onClick={handleAppleAuth} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '10px', borderRadius: 10, border: '1px solid #cbd5e1', background: '#fff', cursor: 'pointer', fontSize: 13, fontWeight: 600, color: '#334155' }}>
-                  <AppleIcon /> Apple
-                </button>
-              </div>
+              {socialButtons}
             </>
           )}
 

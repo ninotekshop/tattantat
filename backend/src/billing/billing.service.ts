@@ -1,5 +1,6 @@
 import { BadRequestException, ConflictException, Injectable, NotFoundException, OnModuleInit, Logger } from '@nestjs/common';
-import { randomBytes } from 'node:crypto';
+import { randomBytes, randomInt } from 'node:crypto';
+import { createGateway, PaymentGateway, WebhookResult } from '../payments/gateway/payment-gateway';
 import type { PoolClient } from 'pg';
 import { NotificationsService } from '../account/notifications.service';
 import { DatabaseService } from '../database/database.service';
@@ -12,6 +13,7 @@ export const MAX_TOPUP = 50_000_000;
 const TOPUP_TTL_HOURS = 72;
 const MAX_PENDING_TOPUPS = 3;
 
+const BANK_NAMES: Record<string, string> = { '970436': 'Vietcombank', '970415': 'VietinBank', '970418': 'BIDV', '970405': 'Agribank', '970422': 'MB Bank', '970407': 'Techcombank', '970416': 'ACB', '970432': 'VPBank', '970423': 'TPBank', '970403': 'Sacombank', '970437': 'HDBank', '970441': 'VIB', '970448': 'OCB', '970443': 'SHB', '970426': 'MSB', '970431': 'Eximbank', '970454': 'Viet Capital Bank', '970429': 'SCB' };
 export type BankSettings = { bankBin: string; bankName: string; accountNumber: string; accountName: string };
 type PlanVersion = { id: string; name: string; version_id: string; price: string; billing_cycle: 'MONTHLY' | 'YEARLY'; max_listings: number | null; features: unknown };
 class Insufficient extends BadRequestException {
@@ -22,6 +24,7 @@ class Insufficient extends BadRequestException {
 @Injectable()
 export class BillingService implements OnModuleInit {
   private readonly log = new Logger('Billing');
+  private gw?: PaymentGateway;
   constructor(private readonly db: DatabaseService, private readonly idempotency: IdempotencyService, private readonly ledger: LedgerWriterService, private readonly notifications: NotificationsService) {}
 
   private notify(userId: string, type: string, title: string, content: string, refType?: string, refId?: string) {
@@ -29,13 +32,26 @@ export class BillingService implements OnModuleInit {
   }
 
   async onModuleInit() {
+    try { const g = createGateway(); if (g.name === 'PAYOS') this.gw = g; } catch { /* không có PayOS: nạp ví theo chuyển khoản thủ công */ }
     try {
       await this.db.query(`CREATE TABLE IF NOT EXISTS credit_accounts (user_id UUID PRIMARY KEY REFERENCES users(id), balance BIGINT NOT NULL DEFAULT 0 CHECK(balance>=0), updated_at TIMESTAMPTZ NOT NULL DEFAULT now())`);
       await this.db.query(`CREATE TABLE IF NOT EXISTS credit_transactions (id UUID PRIMARY KEY DEFAULT gen_random_uuid(), user_id UUID NOT NULL REFERENCES users(id), type TEXT NOT NULL, amount BIGINT NOT NULL, balance_after BIGINT NOT NULL, ref_type TEXT, ref_id TEXT, note TEXT, created_by UUID, created_at TIMESTAMPTZ NOT NULL DEFAULT now())`);
       await this.db.query(`CREATE INDEX IF NOT EXISTS credit_transactions_user_idx ON credit_transactions(user_id, created_at DESC)`);
       await this.db.query(`CREATE TABLE IF NOT EXISTS topup_requests (id UUID PRIMARY KEY DEFAULT gen_random_uuid(), user_id UUID NOT NULL REFERENCES users(id), amount BIGINT NOT NULL CHECK(amount>0), code TEXT NOT NULL UNIQUE, status TEXT NOT NULL DEFAULT 'PENDING', received_amount BIGINT, bank_snapshot JSONB, created_at TIMESTAMPTZ NOT NULL DEFAULT now(), expires_at TIMESTAMPTZ NOT NULL, decided_by UUID, decided_at TIMESTAMPTZ, reject_reason TEXT)`);
+      await this.db.query(`ALTER TABLE topup_requests ADD COLUMN IF NOT EXISTS provider TEXT NOT NULL DEFAULT 'MANUAL'`);
+      await this.db.query(`ALTER TABLE topup_requests ADD COLUMN IF NOT EXISTS provider_code BIGINT`);
+      await this.db.query(`ALTER TABLE topup_requests ADD COLUMN IF NOT EXISTS checkout_url TEXT`);
+      await this.db.query(`CREATE UNIQUE INDEX IF NOT EXISTS uq_topup_provider_code ON topup_requests(provider, provider_code) WHERE provider_code IS NOT NULL`);
       await this.db.query(`CREATE INDEX IF NOT EXISTS topup_requests_status_idx ON topup_requests(status, created_at DESC)`);
       await this.db.query(`CREATE TABLE IF NOT EXISTS app_settings (key TEXT PRIMARY KEY, value JSONB NOT NULL, updated_at TIMESTAMPTZ NOT NULL DEFAULT now(), updated_by UUID)`);
+      // Chuẩn hóa tên hiển thị các gói bán hàng (Free/Pro/Business/Enterprise kèm tên tiếng Việt).
+      await this.db.query(`UPDATE subscription_plans SET name = CASE
+          WHEN lower(btrim(name)) IN ('free','gói free','gói miễn phí','miễn phí') THEN 'Free (Miễn phí)'
+          WHEN lower(btrim(name)) IN ('pro','gói pro') THEN 'Pro (Chuyên nghiệp)'
+          WHEN lower(btrim(name)) IN ('business','gói business') THEN 'Business (Kinh doanh)'
+          WHEN lower(btrim(name)) IN ('enterprise','gói enterprise') THEN 'Enterprise (Cao cấp)'
+          ELSE name END
+        WHERE lower(btrim(name)) IN ('free','gói free','gói miễn phí','miễn phí','pro','gói pro','business','gói business','enterprise','gói enterprise')`);
     } catch (error) { this.log.error('Không khởi tạo được bảng thanh toán: ' + (error instanceof Error ? error.message : String(error))); }
   }
 
@@ -76,8 +92,13 @@ export class BillingService implements OnModuleInit {
   async createTopup(userId: string, amountInput: number) {
     const amount = Number(amountInput);
     if (!Number.isInteger(amount) || amount < MIN_TOPUP || amount > MAX_TOPUP) throw new BadRequestException(`Số tiền nạp từ ${MIN_TOPUP.toLocaleString('vi-VN')} đ đến ${MAX_TOPUP.toLocaleString('vi-VN')} đ.`);
+    // Có PayOS: tạo QR PayOS, tiền tự cộng vào ví khi thanh toán xong. Lỗi PayOS → quay về chuyển khoản thủ công nếu đã cấu hình ngân hàng.
+    if (this.gw) {
+      try { return await this.createPayosTopup(userId, amount); }
+      catch (e) { if (!(await this.bank())) throw e; this.log.warn('PayOS lỗi, chuyển sang nạp thủ công: ' + (e instanceof Error ? e.message : String(e))); }
+    }
     const bank = await this.bank();
-    if (!bank) throw new BadRequestException('Hệ thống chưa cấu hình tài khoản nhận tiền. Vui lòng liên hệ quản trị viên.');
+    if (!bank) throw new BadRequestException('Chưa tạo được mã nạp tiền vì hệ thống chưa có tài khoản ngân hàng nhận tiền. Quản trị viên cần cấu hình tại: Admin → Khách hàng mua Gói → Tài khoản nhận tiền.');
     return this.db.transaction(async client => {
       await client.query('SELECT id FROM users WHERE id=$1 FOR UPDATE', [userId]);
       await client.query(`UPDATE topup_requests SET status='EXPIRED' WHERE user_id=$1 AND status='PENDING' AND expires_at<now()`, [userId]);
@@ -88,8 +109,61 @@ export class BillingService implements OnModuleInit {
       return envelope({ ...row, bank, qrUrl: this.qrUrl(bank, amount, code) }, 'Đã tạo yêu cầu nạp tiền. Hãy chuyển khoản đúng số tiền và nội dung.');
     });
   }
+  private async createPayosTopup(userId: string, amount: number) {
+    const gw = this.gw!;
+    const code = 'TTT' + randomBytes(5).toString('hex').toUpperCase().slice(0, 7);
+    const providerCode = Number(`${Date.now()}${randomInt(10, 99)}`);
+    const row = await this.db.transaction(async client => {
+      await client.query('SELECT id FROM users WHERE id=$1 FOR UPDATE', [userId]);
+      await client.query(`UPDATE topup_requests SET status='EXPIRED' WHERE user_id=$1 AND status='PENDING' AND expires_at<now()`, [userId]);
+      const pending = Number((await client.query(`SELECT count(*)::int AS n FROM topup_requests WHERE user_id=$1 AND status='PENDING'`, [userId])).rows[0].n);
+      if (pending >= MAX_PENDING_TOPUPS) throw new BadRequestException('Bạn đang có quá nhiều yêu cầu nạp chờ thanh toán. Hãy hủy bớt hoặc hoàn tất các yêu cầu cũ.');
+      return (await client.query(`INSERT INTO topup_requests(user_id,amount,code,expires_at,provider,provider_code) VALUES($1,$2,$3,now()+interval '2 hours','PAYOS',$4) RETURNING id, code, amount::text, status, created_at AS "createdAt", expires_at AS "expiresAt"`, [userId, amount, code, providerCode])).rows[0];
+    });
+    try {
+      const web = (process.env.PUBLIC_WEB_URL ?? 'http://localhost:3001').replace(/\/$/, '');
+      const r = await gw.createCheckout({ providerCode, amount, description: code, returnUrl: `${web}/vi-tien`, cancelUrl: `${web}/vi-tien` });
+      const q = r.qr;
+      const bank: BankSettings | null = q?.accountNumber && q.bin ? { bankBin: q.bin, bankName: BANK_NAMES[q.bin] ?? `Ngân hàng (BIN ${q.bin})`, accountNumber: q.accountNumber, accountName: q.accountName ?? '' } : null;
+      await this.db.query(`UPDATE topup_requests SET bank_snapshot=$2::jsonb, checkout_url=$3 WHERE id=$1`, [row.id, bank ? JSON.stringify(bank) : null, r.checkoutUrl]);
+      return envelope({ ...row, provider: 'PAYOS', bank, qrUrl: bank ? this.qrUrl(bank, amount, code) : null, checkoutUrl: r.checkoutUrl }, 'Đã tạo mã nạp tiền. Quét mã QR để thanh toán — tiền sẽ tự động cộng vào ví.');
+    } catch (e) {
+      await this.db.query(`UPDATE topup_requests SET status='CANCELLED', decided_at=now() WHERE id=$1`, [row.id]).catch(() => undefined);
+      throw e;
+    }
+  }
+
+  /** Ghi nhận kết quả thanh toán PayOS cho yêu cầu nạp ví (webhook hoặc hỏi lại cổng). Trả true nếu mã thuộc về một yêu cầu nạp ví. */
+  async settleGatewayTopup(r: WebhookResult): Promise<boolean> {
+    return this.db.transaction(async client => {
+      const t = (await client.query(`SELECT id,user_id,amount::text,code,status FROM topup_requests WHERE provider='PAYOS' AND provider_code=$1 FOR UPDATE`, [r.providerCode])).rows[0];
+      if (!t) return false;
+      if (r.status === 'FAILED') { if (t.status === 'PENDING') await client.query(`UPDATE topup_requests SET status='CANCELLED', decided_at=now() WHERE id=$1`, [t.id]); return true; }
+      if (t.status === 'CONFIRMED') return true;
+      const amount = BigInt(Math.trunc(Number(r.amount)));
+      if (amount <= 0n) return true;
+      if (amount !== BigInt(t.amount)) this.log.warn(`Nạp ${t.code}: yêu cầu ${t.amount}, cổng báo ${amount}. Cộng theo số tiền thực nhận.`);
+      await this.move(client, t.user_id, amount, 'TOPUP', 'TOPUP_REQUEST', t.id, `Nạp tiền ${t.code} (PayOS)`);
+      await client.query(`UPDATE topup_requests SET status='CONFIRMED', received_amount=$2, decided_at=now() WHERE id=$1`, [t.id, amount.toString()]);
+      this.notify(t.user_id, 'TOPUP_CONFIRMED', 'Nạp tiền thành công', `Ví của bạn vừa được cộng ${amount.toLocaleString('vi-VN')} đ (mã ${t.code}).`, 'TOPUP', t.id);
+      return true;
+    });
+  }
+
+  /** Hỏi PayOS trạng thái yêu cầu nạp (khi webhook chưa tới, ví dụ chạy localhost). */
+  async syncTopup(userId: string, id: string) {
+    const t = (await this.db.query(`SELECT id, status, provider, provider_code::text AS code FROM topup_requests WHERE id=$1 AND user_id=$2`, [id, userId])).rows[0];
+    if (!t) throw new NotFoundException('Không tìm thấy yêu cầu nạp.');
+    if (['PENDING', 'EXPIRED'].includes(t.status) && t.provider === 'PAYOS' && this.gw?.getStatus) {
+      const res = await this.gw.getStatus(Number(t.code)).catch(() => null);
+      if (res) await this.settleGatewayTopup(res);
+    }
+    const status = (await this.db.query(`SELECT status FROM topup_requests WHERE id=$1`, [id])).rows[0].status;
+    return envelope({ id, status });
+  }
+
   async myTopups(userId: string) {
-    const rows = (await this.db.query(`SELECT id, code, amount::text, status, received_amount::text AS "receivedAmount", created_at AS "createdAt", expires_at AS "expiresAt", reject_reason AS "rejectReason", bank_snapshot AS bank FROM topup_requests WHERE user_id=$1 ORDER BY created_at DESC LIMIT 20`, [userId])).rows;
+    const rows = (await this.db.query(`SELECT id, code, amount::text, status, provider, checkout_url AS "checkoutUrl", received_amount::text AS "receivedAmount", created_at AS "createdAt", expires_at AS "expiresAt", reject_reason AS "rejectReason", bank_snapshot AS bank FROM topup_requests WHERE user_id=$1 ORDER BY created_at DESC LIMIT 20`, [userId])).rows;
     return envelope(rows.map(r => ({ ...r, status: r.status === 'PENDING' && new Date(r.expiresAt) < new Date() ? 'EXPIRED' : r.status, qrUrl: r.status === 'PENDING' && r.bank ? this.qrUrl(r.bank, r.amount, r.code) : null })));
   }
   async cancelTopup(userId: string, id: string) {

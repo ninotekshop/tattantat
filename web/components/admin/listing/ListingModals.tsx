@@ -2,6 +2,7 @@
 
 import { X, AlertTriangle, Trash2, Edit } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import { MoneyInput } from '../../MoneyInput';
 
 interface PostItem {
   id: string;
@@ -39,7 +40,7 @@ export function DeleteListingModal({ isOpen, onClose, onConfirm, postTitle }: De
         <p style={{ fontSize: 14, color: '#475569', lineHeight: 1.5, textAlign: 'center', margin: '0 0 20px' }}>
           Tin đăng <b style={{ color: '#0f172a' }}>"{postTitle}"</b> sẽ bị xóa khỏi hệ thống. Người đăng tin sẽ nhận thông báo kèm lý do bên dưới.
         </p>
-        <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#334155', marginBottom: 6 }}>Lý do xóa *</label>
+        <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#334155', marginBottom: 6 }}>Lý do xóa</label>
         <textarea rows={3} maxLength={500} value={reason} onChange={e => setReason(e.target.value)} placeholder="Ví dụ: Tin trùng lặp, vi phạm quy định đăng tin…" style={{ width: '100%', boxSizing: 'border-box', padding: '10px 12px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: 14, fontFamily: 'inherit', marginBottom: 16 }} />
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
           <button onClick={onClose} style={{ flex: 1, padding: '10px 16px', borderRadius: 8, border: '1px solid #cbd5e1', background: '#f8fafc', color: '#475569', fontWeight: 600, cursor: 'pointer' }}>
@@ -93,14 +94,14 @@ export function EditListingModal({ isOpen, post, onClose, onSave }: EditModalPro
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           <div>
-            <label style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 4, color: '#334155' }}>Tiêu đề tin *</label>
+            <label style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 4, color: '#334155' }}>Tiêu đề tin</label>
             <input type="text" value={form.title} onChange={e => setForm({...form, title: e.target.value})} style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: 14 }} />
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <div>
               <label style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 4, color: '#334155' }}>Giá bán (VND)</label>
-              <input type="text" value={form.price} onChange={e => setForm({...form, price: e.target.value})} style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: 14 }} />
+              <MoneyInput value={form.price} onChange={d => setForm({...form, price: d})} style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: 14 }} />
             </div>
             <div>
               <label style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 4, color: '#334155' }}>Trạng thái</label>

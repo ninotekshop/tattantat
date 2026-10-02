@@ -505,3 +505,31 @@ svg.lucide.lucide-trash-2, svg.lucide.lucide-triangle-alert, svg.lucide.lucide-f
 .co-step.on i svg.lucide,
 .co-tl li.done i svg.lucide
 { color: #fff !important; }
+
+/* Thanh cuộn mảnh, bo tròn, dùng cho hộp thoại */
+.nice-scroll::-webkit-scrollbar { width: 10px; }
+.nice-scroll::-webkit-scrollbar-button { display: none; width: 0; height: 0; }
+.nice-scroll::-webkit-scrollbar-corner { background: transparent; }
+.nice-scroll::-webkit-scrollbar-track { background: transparent; margin: 18px 0; }
+.nice-scroll::-webkit-scrollbar-thumb { background: #b6e3cc; border-radius: 999px; border: 2px solid transparent; background-clip: content-box; }
+.nice-scroll::-webkit-scrollbar-thumb:hover { background: #00a65a; background-clip: content-box; }
+
+/* Hiệu ứng rê chuột cho mọi nút trong hệ thống (độ ưu tiên thấp để không đè hiệu ứng riêng của từng nút) */
+:where(button, [role="button"], input[type="button"], input[type="submit"], input[type="reset"], summary, label[for] > input[type="checkbox"] + span) {
+  transition: transform .15s ease, box-shadow .15s ease, filter .15s ease, background-color .15s ease, border-color .15s ease, color .15s ease, opacity .15s ease;
+}
+:where(button, [role="button"], input[type="button"], input[type="submit"], input[type="reset"]):not(:disabled):not([aria-disabled="true"]) { cursor: pointer; }
+:where(button, [role="button"], input[type="button"], input[type="submit"], input[type="reset"]):not(:disabled):not([aria-disabled="true"]):hover {
+  filter: brightness(1.07) saturate(1.05);
+  transform: translateY(-1px);
+}
+.admin-nav :where(button):not(:disabled):hover, .admin-sidebar :where(button):not(:disabled):hover { transform: none; }
+:where(button, [role="button"], input[type="button"], input[type="submit"], input[type="reset"]):not(:disabled):not([aria-disabled="true"]):active {
+  transform: translateY(0) scale(.97);
+  filter: brightness(.95);
+  box-shadow: none;
+}
+:where(button, [role="button"], input[type="button"], input[type="submit"], input[type="reset"]):focus-visible { outline: 2px solid #00a65a; outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) {
+  :where(button, [role="button"]):hover, :where(button, [role="button"]):active { transform: none !important; }
+}

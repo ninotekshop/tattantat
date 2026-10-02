@@ -1,5 +1,5 @@
 import { BadRequestException, Body, Controller, Delete, Get, Param, Patch, Post, Req, UseGuards } from '@nestjs/common';
-import { IsIn, IsOptional, IsString, MaxLength } from 'class-validator';
+import { ArrayMaxSize, IsArray, IsIn, IsOptional, IsString, MaxLength } from 'class-validator';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { DatabaseService } from '../database/database.service';
 import { FinanceAdminGuard } from '../finance/finance-admin.guard';
@@ -12,6 +12,10 @@ class CreateBannerDto {
   @IsString() targetUrl!: string;
   @IsString() expiryDate!: string;
   @IsIn(['ACTIVE', 'INACTIVE']) status!: 'ACTIVE' | 'INACTIVE';
+}
+
+class ReorderBannersDto {
+  @IsArray() @ArrayMaxSize(200) @IsString({ each: true }) ids!: string[];
 }
 
 class UpdateBannerDto {
@@ -35,9 +39,9 @@ export class AdminBannersController {
   async list() {
     const result = await this.db.query(
       `SELECT id, code, title, image_url AS "imageUrl", position, target_url AS "targetUrl",
-              expiry_date AS "expiryDate", status, created_at AS "createdAt"
+              expiry_date AS "expiryDate", status, created_at AS "createdAt", sort_order AS "sortOrder"
        FROM banners
-       ORDER BY created_at DESC`,
+       ORDER BY position ASC, sort_order ASC, created_at ASC`,
     );
     return { success: true, data: result.rows, message: null, errorCode: null };
   }
@@ -45,15 +49,25 @@ export class AdminBannersController {
   @Post()
   async create(@Req() request: { user: { id: string } }, @Body() body: CreateBannerDto) {
     const result = await this.db.query(
-      `INSERT INTO banners (title, image_url, position, target_url, expiry_date, status)
-       VALUES ($1, $2, $3, $4, $5, $6)
+      `INSERT INTO banners (title, image_url, position, target_url, expiry_date, status, sort_order)
+       VALUES ($1, $2, $3, $4, $5, $6, (SELECT COALESCE(MAX(sort_order), -1) + 1 FROM banners WHERE position = $3))
        RETURNING id, code, title, image_url AS "imageUrl", position, target_url AS "targetUrl",
-                 expiry_date AS "expiryDate", status, created_at AS "createdAt"`,
+                 expiry_date AS "expiryDate", status, created_at AS "createdAt", sort_order AS "sortOrder"`,
       [body.title.trim(), body.imageUrl.trim(), body.position, body.targetUrl.trim(), body.expiryDate, body.status],
     );
     const created = result.rows[0];
     await this.audit.log(request.user.id, 'Super Admin', 'CREATE_BANNER', 'Banner', created.id, { title: body.title });
     return { success: true, data: created, message: 'Đã tạo Banner thành công', errorCode: null };
+  }
+
+  /** Sắp xếp lại thứ tự banner: nhận danh sách id theo thứ tự mới, gán sort_order = vị trí trong danh sách. */
+  @Post('reorder')
+  async reorder(@Req() request: { user: { id: string } }, @Body() body: ReorderBannersDto) {
+    for (let i = 0; i < body.ids.length; i++) {
+      await this.db.query('UPDATE banners SET sort_order = $2 WHERE id::text = $1 OR code = $1', [body.ids[i], i]);
+    }
+    await this.audit.log(request.user.id, 'Super Admin', 'REORDER_BANNERS', 'Banner', 'bulk', { count: body.ids.length });
+    return { success: true, data: { count: body.ids.length }, message: 'Đã cập nhật thứ tự Banner', errorCode: null };
   }
 
   @Patch(':id')

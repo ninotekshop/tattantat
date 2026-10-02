@@ -1,9 +1,12 @@
-import { BadRequestException, HttpException, Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, HttpException, Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { DatabaseService } from '../database/database.service';
 import { aiEnabled, askClaude, ChatMsg } from './claude-client';
 
 export type DraftInput = { title?: string; condition?: string; category?: string; price?: string; notes?: string };
 export type Draft = { title: string; description: string; provider: 'mock' | 'anthropic' };
+/** Công tắc AI do Admin cấu hình (mặc định bật). Kiểm duyệt bằng AI dùng cài đặt `aiReview` ở chính sách kiểm duyệt. */
+export type AiFeatures = { listingDraft: boolean; supportChat: boolean };
+export const DEFAULT_AI_FEATURES: AiFeatures = { listingDraft: true, supportChat: true };
 const DAILY_LIMIT = 20;
 const CHAT_LIMIT = 40;
 /** Khách chưa đăng nhập: giới hạn số câu hỏi mỗi IP trong 24 giờ (giữ trong bộ nhớ). */
@@ -34,13 +37,36 @@ export function scrubContact(text: string): string {
 export class AiService implements OnModuleInit {
   private readonly log = new Logger('AI');
   constructor(private readonly db: DatabaseService) {}
+
+  private featCache: { at: number; value: AiFeatures } | null = null;
+  async features(fresh = false): Promise<AiFeatures> {
+    if (!fresh && this.featCache && Date.now() - this.featCache.at < 15_000) return this.featCache.value;
+    let value = DEFAULT_AI_FEATURES;
+    try {
+      const row = (await this.db.query(`SELECT value FROM app_settings WHERE key='ai_features'`)).rows[0] as { value?: Partial<AiFeatures> } | undefined;
+      if (row?.value && typeof row.value === 'object') value = { listingDraft: row.value.listingDraft !== false, supportChat: row.value.supportChat !== false };
+    } catch { /* bảng chưa sẵn sàng: dùng mặc định (bật) */ }
+    this.featCache = { at: Date.now(), value };
+    return value;
+  }
+  async saveFeatures(actorId: string, input: Partial<AiFeatures>) {
+    const cur = await this.features(true);
+    const value: AiFeatures = { listingDraft: typeof input.listingDraft === 'boolean' ? input.listingDraft : cur.listingDraft, supportChat: typeof input.supportChat === 'boolean' ? input.supportChat : cur.supportChat };
+    await this.db.query(`INSERT INTO app_settings(key,value,updated_by) VALUES('ai_features',$1::jsonb,$2) ON CONFLICT(key) DO UPDATE SET value=EXCLUDED.value, updated_at=now(), updated_by=EXCLUDED.updated_by`, [JSON.stringify(value), actorId]);
+    this.featCache = { at: Date.now(), value };
+    return { success: true, data: { ...value, providerReady: aiEnabled() }, message: 'Đã lưu cấu hình AI. Áp dụng ngay.', errorCode: null };
+  }
+  async adminConfig() { return { success: true, data: { ...(await this.features(true)), providerReady: aiEnabled(), provider: this.provider }, message: null, errorCode: null }; }
+  async publicConfig() { return { success: true, data: await this.features(), message: null, errorCode: null }; }
   async onModuleInit() {
+    try { await this.db.query(`CREATE TABLE IF NOT EXISTS app_settings (key TEXT PRIMARY KEY, value JSONB NOT NULL, updated_at TIMESTAMPTZ NOT NULL DEFAULT now(), updated_by UUID)`); } catch { /* bỏ qua */ }
     try { await this.db.query(`CREATE TABLE IF NOT EXISTS ai_usage (id BIGSERIAL PRIMARY KEY, user_id UUID NOT NULL, kind TEXT NOT NULL, created_at TIMESTAMPTZ NOT NULL DEFAULT now())`); await this.db.query(`CREATE INDEX IF NOT EXISTS idx_ai_usage_user ON ai_usage(user_id, created_at DESC)`); }
     catch (e) { this.log.error('Không tạo được bảng ai_usage: ' + (e instanceof Error ? e.message : String(e))); }
   }
   get provider(): 'mock' | 'anthropic' { return (process.env.AI_PROVIDER ?? (process.env.ANTHROPIC_API_KEY ? 'anthropic' : 'mock')).toLowerCase() === 'anthropic' && process.env.ANTHROPIC_API_KEY ? 'anthropic' : 'mock'; }
 
   async draftListing(uid: string, raw: DraftInput) {
+    if (!(await this.features()).listingDraft) throw new ForbiddenException('Tính năng AI viết mô tả đang được tạm tắt.');
     const input = { title: clean(raw.title, 200), condition: clean(raw.condition, 20), category: clean(raw.category, 80), price: clean(raw.price, 20), notes: clean(raw.notes, 1500) };
     if (!input.title && !input.notes) throw new BadRequestException('Hãy nhập tiêu đề hoặc vài ghi chú về món hàng để AI viết giúp.');
     const used = (await this.db.query(`SELECT COUNT(*)::int AS n FROM ai_usage WHERE user_id=$1 AND kind='listing-draft' AND created_at > now()-interval '24 hours'`, [uid])).rows[0].n as number;
@@ -52,6 +78,7 @@ export class AiService implements OnModuleInit {
 
   /** Chatbot hỗ trợ khách hàng. `history` là lịch sử hội thoại (tối đa 10 lượt gần nhất, tin cuối là của người dùng). */
   async supportChat(uid: string, history: ChatMsg[]) {
+    if (!(await this.features()).supportChat) throw new ForbiddenException('Trợ lý hỗ trợ AI đang được tạm tắt.');
     const msgs = this.cleanChat(history);
     const used = (await this.db.query(`SELECT COUNT(*)::int AS n FROM ai_usage WHERE user_id=$1 AND kind='support-chat' AND created_at > now()-interval '24 hours'`, [uid])).rows[0].n as number;
     if (used >= CHAT_LIMIT) throw new HttpException('Bạn đã hỏi nhiều hôm nay. Vui lòng thử lại vào ngày mai hoặc liên hệ quản trị viên.', 429);
@@ -63,6 +90,7 @@ export class AiService implements OnModuleInit {
   private guestUse = new Map<string, number[]>();
   /** Hỏi đáp nhanh cho khách chưa đăng nhập, giới hạn theo IP. */
   async supportChatGuest(ip: string, history: ChatMsg[]) {
+    if (!(await this.features()).supportChat) throw new ForbiddenException('Trợ lý hỗ trợ AI đang được tạm tắt.');
     const msgs = this.cleanChat(history);
     const now = Date.now(), dayAgo = now - 86_400_000, key = ip || 'unknown';
     const list = (this.guestUse.get(key) ?? []).filter(t => t > dayAgo);

@@ -3,6 +3,7 @@ import { IsOptional, IsString, MaxLength } from 'class-validator';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { DatabaseService } from '../database/database.service';
 import { FinanceAdminGuard } from '../finance/finance-admin.guard';
+import { ModeratorGuard } from './moderator.guard';
 import { AdminAuditLogService } from './admin-audit-log.service';
 import { NotificationsService } from '../account/notifications.service';
 import { ModerationPolicyService } from '../moderation/moderation-policy.service';
@@ -28,7 +29,7 @@ class UpdatePostAdminDto {
 }
 
 @Controller('admin/posts')
-@UseGuards(JwtAuthGuard, FinanceAdminGuard)
+@UseGuards(JwtAuthGuard, ModeratorGuard)
 export class AdminPostsController {
   constructor(
     private readonly db: DatabaseService,
@@ -135,6 +136,7 @@ export class AdminPostsController {
   }
 
   @Patch(':id')
+  @UseGuards(FinanceAdminGuard) // chỉ Admin được sửa nội dung tin
   async update(@Req() request: { user: { id: string } }, @Param('id') id: string, @Body() body: UpdatePostAdminDto) {
     const result = await this.db.query(
       `UPDATE products
@@ -153,6 +155,7 @@ export class AdminPostsController {
   }
 
   @Delete(':id')
+  @UseGuards(FinanceAdminGuard) // chỉ Admin được xóa tin
   async delete(@Req() request: { user: { id: string } }, @Param('id') id: string, @Body() body?: DeletePostDto) {
     const reason = body?.reason?.trim().slice(0, 500) || 'Quản trị viên xóa tin đăng';
     await ensureDeletionColumns(this.db);

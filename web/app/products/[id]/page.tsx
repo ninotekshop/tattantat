@@ -16,20 +16,24 @@ import './listing-detail.css';
 
 function formatCondition(condition?: string | null) {
   if (!condition) return 'Đã qua sử dụng (Tốt)';
-  const upper = condition.toUpperCase();
+  const upper = condition.toUpperCase().replace(/[\s-]+/g, '_');
   switch (upper) {
     case 'NEW':
       return 'Mới 100%';
+    case 'LIKE_NEW':
+    case 'LIKENEW':
     case 'USED_LIKE_NEW':
       return 'Như mới (99%)';
     case 'USED_GOOD':
       return 'Đã qua sử dụng (Tốt)';
     case 'USED_FAIR':
       return 'Đã qua sử dụng (Cũ / Tương đối)';
+    case 'FOR_PARTS':
+      return 'Cần sửa / lấy linh kiện';
     case 'REFURBISHED':
       return 'Đã tân trang / Sửa chữa';
     default:
-      return condition.replace('_', ' ');
+      return condition.replace(/_/g, ' ');
   }
 }
 

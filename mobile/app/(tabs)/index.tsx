@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { FlatList, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
@@ -10,27 +10,54 @@ import { C, R, shadow } from '@/lib/theme';
 import type { Category } from '@/lib/types';
 import { useProducts } from '@/lib/useProducts';
 import { ProductCard } from '@/components/ProductCard';
-import { Chip, Empty, ErrorBox, Loading } from '@/components/ui';
+import { Empty, ErrorBox, Loading } from '@/components/ui';
 
-const SORTS = [{ key: 'new', label: 'Mới nhất' }, { key: 'price_asc', label: 'Giá thấp' }, { key: 'price_desc', label: 'Giá cao' }];
+const TABS = [
+  { key: 'for_you', label: 'Dành cho bạn' },
+  { key: 'nearby', label: 'Gần bạn' },
+  { key: 'newest', label: 'Mới nhất' },
+  { key: 'video', label: 'Tin Video' },
+] as const;
 
 export default function Home() {
   const { width } = useWindowDimensions();
   const { session } = useAuth();
   const [cats, setCats] = useState<Category[]>([]);
-  const [sort, setSort] = useState('new');
+  const [activeTab, setActiveTab] = useState<typeof TABS[number]['key']>('for_you');
   const [unread, setUnread] = useState(0);
-  const list = useProducts({ sort });
+
+  const queryParams = useMemo(() => {
+    switch (activeTab) {
+      case 'nearby':
+        return { sort: 'nearby' };
+      case 'newest':
+        return { sort: 'new' };
+      case 'video':
+        return { hasVideo: 1 };
+      case 'for_you':
+      default:
+        return { sort: 'recommended' };
+    }
+  }, [activeTab]);
+
+  const list = useProducts(queryParams);
   const col = (width - 12 * 3) / 2;
 
-  useEffect(() => { api<Category[]>('/categories').then(c => setCats(c.filter(x => !(x.parent_id ?? x.parentId)))).catch(() => undefined); }, []);
+  useEffect(() => {
+    api<Category[]>('/categories')
+      .then(c => setCats(c.filter(x => !(x.parent_id ?? x.parentId))))
+      .catch(() => undefined);
+  }, []);
+
   useEffect(() => {
     if (!session) { setUnread(0); return; }
-    api<{ count?: number; unread?: number }>('/notifications/unread-count', { auth: true }).then(r => setUnread(Number(r.count ?? r.unread ?? 0))).catch(() => undefined);
+    api<{ count?: number; unread?: number }>('/notifications/unread-count', { auth: true })
+      .then(r => setUnread(Number(r.count ?? r.unread ?? 0)))
+      .catch(() => undefined);
   }, [session, list.refreshing]);
 
   const header = (
-    <View>
+    <View style={{ paddingBottom: 10 }}>
       <View style={st.top}>
         <Image source={require('../../assets/logo.png')} style={{ width: 132, height: 38 }} contentFit="contain" />
         <Pressable hitSlop={10} onPress={() => router.push(session ? '/notifications' : '/login')} style={st.bell}>
@@ -38,9 +65,12 @@ export default function Home() {
           {unread > 0 ? <View style={st.badge}><Text style={st.badgeText}>{unread > 99 ? '99+' : unread}</Text></View> : null}
         </Pressable>
       </View>
+
       <Pressable onPress={() => router.push('/search')} style={st.search}>
-        <Search size={20} color={C.brand} /><Text style={st.searchText}>Bạn muốn mua gì?</Text>
+        <Search size={20} color={C.brand} />
+        <Text style={st.searchText}>Bạn muốn mua gì?</Text>
       </Pressable>
+
       <View style={st.hero}>
         <View style={{ flex: 1 }}>
           <Text style={st.heroTitle}>Mua bán dễ dàng</Text>
@@ -48,21 +78,40 @@ export default function Home() {
         </View>
         <Image source={require('../../assets/mascot.png')} style={{ width: 84, height: 84 }} contentFit="contain" />
       </View>
-      {cats.length ? <>
-        <Text style={st.section}>Khám phá danh mục</Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 12, gap: 10 }}>
-          {cats.map(c => (
-            <Pressable key={c.id} onPress={() => router.push({ pathname: '/search', params: { categoryId: String(c.id), title: c.name } })} style={st.cat}>
-              <View style={st.catIcon}>{c.icon_url ? <Image source={{ uri: media(c.icon_url) }} style={{ width: 44, height: 44 }} contentFit="contain" /> : <Text style={{ fontSize: 22 }}>🛍️</Text>}</View>
-              <Text numberOfLines={2} style={st.catText}>{c.name}</Text>
-            </Pressable>
-          ))}
+
+      {cats.length ? (
+        <>
+          <Text style={st.section}>Khám phá danh mục</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 12, gap: 10 }}>
+            {cats.map(c => (
+              <Pressable
+                key={c.id}
+                onPress={() => router.push({ pathname: '/search', params: { categoryId: String(c.id), title: c.name } })}
+                style={st.cat}
+              >
+                <View style={st.catIcon}>
+                  {c.icon_url ? <Image source={{ uri: media(c.icon_url) }} style={{ width: 44, height: 44 }} contentFit="contain" /> : <Text style={{ fontSize: 22 }}>🛍️</Text>}
+                </View>
+                <Text numberOfLines={2} style={st.catText}>{c.name}</Text>
+              </Pressable>
+            ))}
+          </ScrollView>
+        </>
+      ) : null}
+
+      <View style={st.tabBarContainer}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={st.tabBarScroll}>
+          {TABS.map(t => {
+            const active = activeTab === t.key;
+            return (
+              <Pressable key={t.key} onPress={() => setActiveTab(t.key)} style={[st.tabItem, active && st.tabItemActive]}>
+                <Text style={[st.tabText, active && st.tabTextActive]}>{t.label}</Text>
+              </Pressable>
+            );
+          })}
         </ScrollView>
-      </> : null}
-      <Text style={st.section}>Tin đăng mới</Text>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 12, gap: 8, paddingBottom: 10 }}>
-        {SORTS.map(s => <Chip key={s.key} label={s.label} active={sort === s.key} onPress={() => setSort(s.key)} />)}
-      </ScrollView>
+      </View>
+
       {list.error ? <ErrorBox message={list.error} onRetry={list.refresh} /> : null}
     </View>
   );
@@ -80,7 +129,7 @@ export default function Home() {
         onEndReached={list.more}
         onEndReachedThreshold={0.6}
         refreshControl={<RefreshControl refreshing={list.refreshing} onRefresh={list.refresh} tintColor={C.brand} />}
-        ListEmptyComponent={list.loading ? <Loading /> : <Empty title="Chưa có tin đăng" text="Hãy là người đầu tiên đăng tin trên Tất Tần Tật!" />}
+        ListEmptyComponent={list.loading ? <Loading /> : <Empty title="Chưa có tin đăng" text="Hãy là người đầu tiên đăng tin trong mục này!" />}
       />
     </SafeAreaView>
   );
@@ -100,4 +149,10 @@ const st = StyleSheet.create({
   cat: { width: 76, alignItems: 'center', gap: 6 },
   catIcon: { width: 64, height: 64, borderRadius: 20, backgroundColor: C.white, alignItems: 'center', justifyContent: 'center', ...shadow },
   catText: { fontSize: 12, color: C.text, textAlign: 'center', fontWeight: '600' },
+  tabBarContainer: { marginTop: 18, marginBottom: 6 },
+  tabBarScroll: { paddingHorizontal: 12, gap: 8 },
+  tabItem: { paddingHorizontal: 16, paddingVertical: 10, borderRadius: R.pill, backgroundColor: C.white, borderWidth: 1, borderColor: C.line, ...shadow },
+  tabItemActive: { backgroundColor: C.brand, borderColor: C.brand },
+  tabText: { fontSize: 14, fontWeight: '700', color: C.text },
+  tabTextActive: { color: C.white },
 });

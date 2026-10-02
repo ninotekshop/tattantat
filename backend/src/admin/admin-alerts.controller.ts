@@ -2,6 +2,7 @@ import { Controller, Get, Logger, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { DatabaseService } from '../database/database.service';
 import { FinanceAdminGuard } from '../finance/finance-admin.guard';
+import { ModeratorGuard } from './moderator.guard';
 
 type Kind = 'LISTING' | 'REPORT' | 'DISPUTE' | 'VERIFY' | 'ORDER' | 'CANCEL' | 'PAYMENT';
 type Alert = { id: string; kind: Kind; from: 'BUYER' | 'SELLER' | 'SYSTEM'; title: string; detail: string; createdAt: string; nav: string; total: number };
@@ -10,7 +11,7 @@ const REASON: Record<string, string> = { FRAUD: 'Nghi ngờ lừa đảo', SPAM:
 
 /** Trung tâm cảnh báo cho quản trị viên: gom các việc cần xử lý từ người mua / người bán. */
 @Controller('admin/alerts')
-@UseGuards(JwtAuthGuard, FinanceAdminGuard)
+@UseGuards(JwtAuthGuard, ModeratorGuard)
 export class AdminAlertsController {
   private readonly log = new Logger(AdminAlertsController.name);
   constructor(private readonly db: DatabaseService) {}
@@ -41,6 +42,7 @@ export class AdminAlertsController {
   }
 
   @Get()
+  @UseGuards(FinanceAdminGuard)
   async alerts() {
     const lists = await Promise.all([
       this.run('LISTING', `SELECT p.id, p.title, p.created_at, u.full_name, COUNT(*) OVER() AS total

@@ -23,6 +23,7 @@ export class BillingController {
   @Get('transactions') transactions(@Req() r: Req_) { return this.billing.transactions(r.user.id); }
   @Get('topups') topups(@Req() r: Req_) { return this.billing.myTopups(r.user.id); }
   @Post('topups') topup(@Req() r: Req_, @Body() dto: TopupDto) { return this.billing.createTopup(r.user.id, dto.amount); }
+  @Post('topups/:id/sync') sync(@Req() r: Req_, @Param('id') id: string) { return this.billing.syncTopup(r.user.id, id); }
   @Post('topups/:id/cancel') cancel(@Req() r: Req_, @Param('id') id: string) { return this.billing.cancelTopup(r.user.id, id); }
   @Post('subscriptions/purchase') buyPlan(@Req() r: Req_, @Body() dto: PlanDto, @Headers('idempotency-key') key?: string) { return this.billing.buyPlan(r.user.id, dto.planId, key); }
   @Post('promotions/purchase') buyPromo(@Req() r: Req_, @Body() dto: PromoDto, @Headers('idempotency-key') key?: string) { return this.billing.buyPromotion(r.user.id, dto.productId, dto.packageId, key); }

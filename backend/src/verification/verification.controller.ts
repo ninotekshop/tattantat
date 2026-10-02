@@ -2,7 +2,7 @@ import { BadRequestException, Body, Controller, Get, Param, Post, Query, Req, Up
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { IsIn, IsOptional, IsString, MaxLength } from 'class-validator';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { FinanceAdminGuard } from '../finance/finance-admin.guard';
+import { ModeratorGuard } from '../admin/moderator.guard';
 import { VerificationService } from './verification.service';
 import { createCaptcha, verifyCaptcha } from './captcha';
 
@@ -27,7 +27,7 @@ export class VerificationController {
 }
 
 @Controller('admin/verifications')
-@UseGuards(JwtAuthGuard, FinanceAdminGuard)
+@UseGuards(JwtAuthGuard, ModeratorGuard)
 export class AdminVerificationController {
   constructor(private readonly svc: VerificationService) {}
   @Get() list(@Query('status') status = 'PENDING', @Query('page') page = '1') { return this.svc.adminList(status, Number(page)); }

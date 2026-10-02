@@ -50,6 +50,27 @@ export class ServicePricingAdminController {
     return this.list('subscription_plan_versions', 'plan_id', planId);
   }
 
+  @Post('subscription-plans/:id/status')
+  async setPlanStatus(@Req() request: { user: { id: string } }, @Param('id') id: string, @Body() body: { status: 'ACTIVE' | 'INACTIVE'; reason: string }) {
+    return this.setStatus('subscription_plans', 'SUBSCRIPTION_PLAN', request.user.id, id, body);
+  }
+
+  @Post('promotion-packages/:id/status')
+  async setPackageStatus(@Req() request: { user: { id: string } }, @Param('id') id: string, @Body() body: { status: 'ACTIVE' | 'INACTIVE'; reason: string }) {
+    return this.setStatus('promotion_packages', 'PROMOTION_PACKAGE', request.user.id, id, body);
+  }
+
+  private async setStatus(table: 'subscription_plans' | 'promotion_packages', entity: string, actorId: string, id: string, body: { status: string; reason: string }) {
+    if (!['ACTIVE', 'INACTIVE'].includes(body?.status)) throw new BadRequestException('Trạng thái không hợp lệ');
+    const reason = this.reason(body.reason);
+    return this.db.transaction(async (client) => {
+      const r = await client.query(`UPDATE ${table} SET status=$2 WHERE id=$1 RETURNING id`, [id, body.status]);
+      if (!r.rows[0]) throw new BadRequestException('Không tìm thấy gói');
+      await this.audit(client, actorId, `${entity}_STATUS_CHANGED`, entity, id, { status: body.status }, reason);
+      return { success: true, data: { id, status: body.status }, message: body.status === 'ACTIVE' ? 'Đã mở bán lại gói' : 'Đã ngừng bán gói (khách đã mua vẫn giữ quyền lợi)', errorCode: null };
+    });
+  }
+
   @Post('promotion-packages')
   async createPromotionPackage(@Req() request: { user: { id: string } }, @Body() body: PromotionVersionInput & { code: string; name: string }) {
     if (!/^[A-Z][A-Z0-9_]{2,63}$/.test(body.code ?? '') || !body.name?.trim()) throw new BadRequestException('Mã hoặc tên gói không hợp lệ');

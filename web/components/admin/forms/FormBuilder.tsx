@@ -7,6 +7,7 @@ import { Field, ListingError, Template, listingRequest, priceLabels, visible } f
 import { validateTemplate } from '../../../../backend/src/listings/listing-domain';
 import '../../../app/sell/listing-form.css';
 import './form-builder.css';
+import { MoneyInput } from '../../MoneyInput';
 
 type AdminCategory = {
   id: string; parentId: string | null; name: string; slug: string; description: string | null; iconUrl: string | null;
@@ -317,7 +318,7 @@ export function FormBuilder() {
                 </div>
                 {isOpen && <div className="fb-fb">
                   <div className="fb-row">
-                    <div className="fb-f"><label>Nhãn hiển thị *</label><input value={row.label} maxLength={150} onChange={e => {
+                    <div className="fb-f"><label>Nhãn hiển thị</label><input value={row.label} maxLength={150} onChange={e => {
                       const label = e.target.value;
                       patchRow(row.uid, row.isNew ? { label, key: fieldKeyFrom(label, new Set(rows.filter(x => x.uid !== row.uid).map(x => x.key))) } : { label });
                     }} /></div>
@@ -375,15 +376,15 @@ export function FormBuilder() {
 
           {!loading && settings && tab === 'settings' && <div>
             <div className="fb-f"><label>Tên biểu mẫu</label><input value={settings.name} maxLength={150} onChange={e => setSettings({ ...settings, name: e.target.value })} /></div>
-            <div className="fb-f"><label>Cách tính giá cho phép *</label><div>
+            <div className="fb-f"><label>Cách tính giá cho phép</label><div>
               {Object.entries(priceLabels).map(([mode, label]) => <label key={mode} className="fb-chk"><input type="checkbox" checked={settings.config.priceModes.includes(mode)} onChange={e => setSettings({ ...settings, config: { ...settings.config, priceModes: e.target.checked ? [...settings.config.priceModes, mode] : settings.config.priceModes.filter(m => m !== mode) } })} />{label}</label>)}
             </div><small>Người đăng chọn 1 trong các cách tính này. Thứ tự hiển thị theo thứ tự bạn tích chọn.</small></div>
             <div className="fb-f"><label>Tình trạng hàng (mới / cũ)</label><div>
               <label className="fb-chk"><input type="radio" name="cond" checked={settings.config.condition !== 'none'} onChange={() => setSettings({ ...settings, config: { ...settings.config, condition: 'required' } })} />Bắt buộc chọn (đồ vật, xe cộ…)</label>
               <label className="fb-chk"><input type="radio" name="cond" checked={settings.config.condition === 'none'} onChange={() => setSettings({ ...settings, config: { ...settings.config, condition: 'none' } })} />Không áp dụng (dịch vụ, bất động sản…)</label></div></div>
             <div className="fb-row">
-              <div className="fb-f"><label>Giá tối thiểu (VNĐ)</label><input type="number" min={0} value={settings.config.minPrice ?? ''} onChange={e => setSettings({ ...settings, config: { ...settings.config, minPrice: num(e.target.value) } })} /><small>{money(settings.config.minPrice)}</small></div>
-              <div className="fb-f"><label>Giá tối đa (VNĐ)</label><input type="number" min={0} value={settings.config.maxPrice ?? ''} onChange={e => setSettings({ ...settings, config: { ...settings.config, maxPrice: num(e.target.value) } })} /><small>{settings.config.maxPrice ? money(settings.config.maxPrice) : 'Để trống = không giới hạn thêm'}</small></div>
+              <div className="fb-f"><label>Giá tối thiểu (VNĐ)</label><MoneyInput value={settings.config.minPrice ?? ''} onChange={d => setSettings({ ...settings, config: { ...settings.config, minPrice: num(d) } })} /><small>{money(settings.config.minPrice)}</small></div>
+              <div className="fb-f"><label>Giá tối đa (VNĐ)</label><MoneyInput value={settings.config.maxPrice ?? ''} onChange={d => setSettings({ ...settings, config: { ...settings.config, maxPrice: num(d) } })} /><small>{settings.config.maxPrice ? money(settings.config.maxPrice) : 'Để trống = không giới hạn thêm'}</small></div>
             </div>
           </div>}
 

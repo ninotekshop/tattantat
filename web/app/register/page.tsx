@@ -6,6 +6,7 @@ import { Suspense, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Eye, EyeOff, Lock, Mail, User, Phone, CheckCircle, ArrowLeft, TriangleAlert } from 'lucide-react';
 import { saveSession } from '../../lib/auth';
+import { WelcomeDialog } from '../../components/WelcomeDialog';
 
 function RegisterContent() {
   const router = useRouter();
@@ -19,6 +20,7 @@ function RegisterContent() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
+  const [welcome, setWelcome] = useState(false);
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -51,10 +53,7 @@ function RegisterContent() {
       const data = await res.json();
       if (data.success && data.data) {
         saveSession(data.data);
-        setSuccessMsg('Đăng ký tài khoản thành công! Bạn đang được chuyển hướng...');
-        setTimeout(() => {
-          router.replace('/');
-        }, 1200);
+        setWelcome(true);
       } else {
         setError(data.message || 'Đăng ký không thành công. Email hoặc SĐT có thể đã tồn tại.');
       }
@@ -67,6 +66,7 @@ function RegisterContent() {
 
   return (
     <main className="shell" style={{ marginTop: 32, marginBottom: 56, display: 'flex', justifyContent: 'center' }}>
+      {welcome && <WelcomeDialog name={fullName} onSell={() => router.replace('/sell')} onExplore={() => router.replace('/')} />}
       <div className="white-card-box" style={{ width: '100%', maxWidth: 480, padding: '32px 28px', borderRadius: 24, boxShadow: '0 12px 36px rgba(0,0,0,0.06)' }}>
         <div style={{ textAlign: 'center', marginBottom: 24 }}>
           <Link href="/">
@@ -90,7 +90,7 @@ function RegisterContent() {
 
         <form onSubmit={handleRegister} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           <div>
-            <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: '#334155', marginBottom: 6 }}>Họ và tên *</label>
+            <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: '#334155', marginBottom: 6 }}>Họ và tên</label>
             <div style={{ position: 'relative' }}>
               <User size={18} style={{ position: 'absolute', top: 12, left: 12 }} />
               <input
@@ -105,7 +105,7 @@ function RegisterContent() {
           </div>
 
           <div>
-            <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: '#334155', marginBottom: 6 }}>Địa chỉ Email *</label>
+            <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: '#334155', marginBottom: 6 }}>Địa chỉ Email</label>
             <div style={{ position: 'relative' }}>
               <Mail size={18} style={{ position: 'absolute', top: 12, left: 12 }} />
               <input
@@ -134,14 +134,15 @@ function RegisterContent() {
           </div>
 
           <div>
-            <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: '#334155', marginBottom: 6 }}>Mật khẩu (Tối thiểu 8 ký tự) *</label>
+            <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: '#334155', marginBottom: 6 }}>Mật khẩu (Tối thiểu 8 ký tự)</label>
             <div style={{ position: 'relative' }}>
               <Lock size={18} style={{ position: 'absolute', top: 12, left: 12 }} />
               <input
                 type={showPassword ? 'text' : 'password'}
+                autoComplete="new-password"
                 value={password}
                 onChange={e => setPassword(e.target.value)}
-                placeholder="••••••••"
+               
                 required
                 style={{ width: '100%', padding: '11px 40px 11px 40px', borderRadius: 12, border: '1px solid #cbd5e1', fontSize: 14, outline: 'none' }}
               />
@@ -156,9 +157,10 @@ function RegisterContent() {
           </div>
 
           <div>
-            <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: '#334155', marginBottom: 6 }}>Nhập lại mật khẩu *</label>
+            <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: '#334155', marginBottom: 6 }}>Nhập lại mật khẩu</label>
             <input
               type="password"
+              autoComplete="new-password"
               value={confirmPassword}
               onChange={e => setConfirmPassword(e.target.value)}
               placeholder="Xác nhận mật khẩu"

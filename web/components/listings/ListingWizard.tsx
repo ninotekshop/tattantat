@@ -41,7 +41,8 @@ export function ListingWizard() {
   const [selectedParentKey, setSelectedParentKey] = useState<string>('property');
   const [selectedSubSlug, setSelectedSubSlug] = useState<string>('ban-nha');
   const [categoryId, setCategoryId] = useState<string>('47');
-  const [aiBusy, setAiBusy] = useState(false), [aiMsg, setAiMsg] = useState('');
+  const [aiBusy, setAiBusy] = useState(false), [aiMsg, setAiMsg] = useState(''), [aiOn, setAiOn] = useState(true);
+  useEffect(() => { fetch('/api/v1/ai/config').then(r => r.json()).then(j => { if (j?.data) setAiOn(j.data.listingDraft !== false); }).catch(() => {}); }, []);
   const [template, setTemplate] = useState<Template | null>(null);
   const [unsupportedCategory, setUnsupportedCategory] = useState(false);
 
@@ -71,6 +72,12 @@ export function ListingWizard() {
   type LocInfo = { state: 'loading' | 'ok' | 'error'; lat?: number; lng?: number; accuracy?: number; address?: string; filled?: string; note?: string };
   const [locInfo, setLocInfo] = useState<LocInfo | null>(null);
   const [contactWarning, setContactWarning] = useState<string | null>(null);
+  type ProfileContact = { name: string; phone: string; email: string; phoneVerified: boolean };
+  const [profileContact, setProfileContact] = useState<ProfileContact | null>(null);
+  const [contactMode, setContactMode] = useState<'profile' | 'custom'>('profile');
+  const contactModeInit = useRef(false);
+  const [wardList, setWardList] = useState<string[]>([]);
+  const wardsData = useRef<Record<string, string[]> | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [saveState, setSaveState] = useState('');
   const [conflict, setConflict] = useState(false);
@@ -137,12 +144,53 @@ export function ListingWizard() {
 
     Promise.all([
       listingRequest<ListingCategory[]>('/listing-categories').then(setCategories),
-      session ? listingRequest<ListingSummary[]>('/listings/mine').then(setDrafts) : Promise.resolve(),
+      session ? listingRequest<ListingSummary[]>('/listings/mine').then(items => setDrafts(items.filter(d => d.status !== 'PUBLISHED' && !d.productId))) : Promise.resolve(),
       session && selected && /^[0-9a-f-]{36}$/i.test(selected) ? listingRequest<Listing>(`/listings/${selected}`).then(accept) : Promise.resolve()
     ])
       .catch(err => setError(err.message))
       .finally(() => setLoading(false));
   }, []);
+
+  useEffect(() => {
+    if (!signedIn) return;
+    memberRequest<{ full_name: string; phone: string | null; email: string | null; phone_verified: boolean }>('/me')
+      .then(p => setProfileContact({ name: p.full_name || '', phone: p.phone || '', email: p.email || '', phoneVerified: !!p.phone_verified }))
+      .catch(() => undefined);
+  }, [signedIn]);
+
+  // Khi vào bước Liên hệ: nếu tin chưa có thông tin liên hệ và hồ sơ đầy đủ thì mặc định dùng hồ sơ.
+  useEffect(() => {
+    if (step !== 4 || contactModeInit.current || !profileContact) return;
+    contactModeInit.current = true;
+    const c = current.current.contact;
+    const same = !!c && c.name === profileContact.name && c.phone === profileContact.phone && (c.email || '') === profileContact.email;
+    if (same || (!c?.name && !c?.phone)) {
+      setContactMode(profileContact.name && profileContact.phone ? 'profile' : 'custom');
+      if (!same && profileContact.name && profileContact.phone) patch({ contact: { name: profileContact.name, phone: profileContact.phone, email: profileContact.email } });
+    } else setContactMode('custom');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step, profileContact]);
+
+  function chooseContactMode(mode: 'profile' | 'custom') {
+    setContactMode(mode);
+    if (mode === 'profile' && profileContact) patch({ contact: { name: profileContact.name, phone: profileContact.phone, email: profileContact.email } });
+    if (mode === 'custom' && profileContact && current.current.contact?.phone === profileContact.phone) patch({ contact: { name: '', phone: '', email: '' } });
+  }
+
+  // Danh sách phường/xã theo quận/huyện đang chọn (tải 1 lần từ /data/vn-wards.json).
+  const selProvince = data.location?.province, selDistrict = data.location?.district;
+  useEffect(() => {
+    const code = (ALL_PROVINCES.find((p: any) => p.name === selProvince)?.children as any[] | undefined)?.find((d: any) => d.name === selDistrict)?.code;
+    if (!code) { setWardList([]); return; }
+    let cancelled = false;
+    (async () => {
+      try {
+        if (!wardsData.current) wardsData.current = await (await fetch('/data/vn-wards.json')).json();
+        if (!cancelled) setWardList(wardsData.current?.[code] ?? []);
+      } catch { if (!cancelled) setWardList([]); }
+    })();
+    return () => { cancelled = true; };
+  }, [selProvince, selDistrict]);
 
   const fail = useCallback((err: unknown) => {
     setError(err instanceof Error ? err.message : 'Không thể kết nối máy chủ.');
@@ -273,6 +321,8 @@ export function ListingWizard() {
   }
 
   async function deleteDraft(id: string) {
+    const target = drafts.find(d => d.id === id);
+    if (target && (target.status === 'PUBLISHED' || target.productId)) { setError('Tin đã đăng không thể xóa tại đây. Vào Tài khoản > Tin đã đăng để quản lý.'); return; }
     if (!confirm('Bạn có chắc chắn muốn xóa bản nháp này khỏi danh sách?')) return;
     setBusy(true);
     try {
@@ -386,6 +436,7 @@ export function ListingWizard() {
       if (publishKey.current?.revision !== revision.current) publishKey.current = { revision: revision.current, key: crypto.randomUUID() };
       const result = await listingRequest<{ productId: string; moderation?: string }>(`/listings/${listing.id}/publish`, 'POST', { revision: revision.current }, publishKey.current.key);
       setListing({ ...listing, productId: result.productId, status: 'PUBLISHED' });
+      setDrafts(prev => prev.filter(d => d.id !== listing.id));
       setPendingReview(result.moderation === 'PENDING_REVIEW');
       setStep(6);
       setSaveState(result.moderation === 'PENDING_REVIEW' ? 'Tin đã được gửi và đang chờ duyệt.' : 'Tin đã được đăng công khai!');
@@ -683,7 +734,7 @@ export function ListingWizard() {
                     return (
                       <>
                         <div className="lf-field">
-                          <label htmlFor="listing-title">Tiêu đề tin đăng *</label>
+                          <label htmlFor="listing-title">Tiêu đề tin đăng</label>
                           <input
                             id="listing-title"
                             value={data.title ?? ''}
@@ -698,7 +749,7 @@ export function ListingWizard() {
 
                         {template.config.condition !== 'none' && (
                         <div className="lf-field">
-                          <label htmlFor="listing-condition">Tình trạng *</label>
+                          <label htmlFor="listing-condition">Tình trạng</label>
                           <select id="listing-condition" value={data.condition ?? ''} onChange={e => patch({ condition: e.target.value })}>
                             <option value="">Chọn tình trạng</option>
                             {Object.entries(conditionLabels).map(([k, label]) => (
@@ -713,8 +764,8 @@ export function ListingWizard() {
                         <div className="lf-fields-grid">{dynamicFields(false)}</div>
 
                         <div className="lf-field">
-                          <label htmlFor="listing-description">Mô tả chi tiết *</label>
-                          <div style={{ margin: '4px 0' }}><button type="button" disabled={aiBusy} onClick={() => void aiWrite()} style={{ padding: '6px 12px', border: '1px solid #00a65a', color: '#00a65a', background: '#fff', borderRadius: 8, fontWeight: 600, cursor: 'pointer' }}>{aiBusy ? 'Đang viết…' : <><Ic i={Sparkles}/>AI viết giúp mô tả</>}</button> {aiMsg && <small role="status" style={{ color: '#0f766e' }}>{aiMsg}</small>}</div>
+                          <label htmlFor="listing-description">Mô tả chi tiết</label>
+                          {aiOn && <div style={{ margin: '4px 0' }}><button type="button" disabled={aiBusy} onClick={() => void aiWrite()} style={{ padding: '6px 12px', border: '1px solid #00a65a', color: '#00a65a', background: '#fff', borderRadius: 8, fontWeight: 600, cursor: 'pointer' }}>{aiBusy ? 'Đang viết…' : <><Ic i={Sparkles}/>AI viết giúp mô tả</>}</button> {aiMsg && <small role="status" style={{ color: '#0f766e' }}>{aiMsg}</small>}</div>}
                           <textarea
                             id="listing-description"
                             rows={6}
@@ -760,7 +811,7 @@ export function ListingWizard() {
                 <>
                   <div className="lf-fields-grid">
                     <div className="lf-field">
-                      <label htmlFor="listing-price-mode">Cách tính giá *</label>
+                      <label htmlFor="listing-price-mode">Cách tính giá</label>
                       <select id="listing-price-mode" value={data.priceMode} onChange={e => patch({ priceMode: e.target.value })}>
                         {template.config.priceModes.map(mode => (
                           <option key={mode} value={mode}>{priceLabels[mode]}</option>
@@ -770,7 +821,7 @@ export function ListingWizard() {
 
                     {!['FREE', 'CONTACT'].includes(data.priceMode ?? '') && (
                       <div className="lf-field">
-                        <label htmlFor="listing-price">Giá bán (VND) *</label>
+                        <label htmlFor="listing-price">Giá bán (VND)</label>
                         <input
                           id="listing-price"
                           inputMode="numeric"
@@ -793,7 +844,7 @@ export function ListingWizard() {
                   <h3>Vị trí sản phẩm / dịch vụ</h3>
                   <div className="lf-fields-grid">
                     <div className="lf-field">
-                      <label htmlFor="province-select">Tỉnh / Thành phố *</label>
+                      <label htmlFor="province-select">Tỉnh / Thành phố</label>
                       <select
                         id="province-select"
                         value={data.location?.province || ''}
@@ -808,11 +859,11 @@ export function ListingWizard() {
                     </div>
 
                     <div className="lf-field">
-                      <label htmlFor="district-select">Quận / Huyện *</label>
+                      <label htmlFor="district-select">Quận / Huyện</label>
                       <select
                         id="district-select"
                         value={data.location?.district || ''}
-                        onChange={e => patch({ location: { ...current.current.location, district: e.target.value } })}
+                        onChange={e => patch({ location: { ...current.current.location, district: e.target.value, ward: '' } })}
                       >
                         <option value="">-- Chọn Quận / Huyện --</option>
                         {((ALL_PROVINCES.find((p: any) => p.name === data.location?.province)?.children) || []).map((d: any) => (
@@ -823,13 +874,25 @@ export function ListingWizard() {
                     </div>
 
                     <div className="lf-field">
-                      <label htmlFor="ward-input">Phường / Xã *</label>
-                      <input
-                        id="ward-input"
-                        value={data.location?.ward || ''}
-                        placeholder="Ví dụ: Phường Lý Thường Kiệt"
-                        onChange={e => patch({ location: { ...current.current.location, ward: e.target.value } })}
-                      />
+                      <label htmlFor="ward-input">Phường / Xã</label>
+                      {wardList.length > 0 || !selDistrict ? (
+                        <select
+                          id="ward-input"
+                          value={data.location?.ward || ''}
+                          disabled={!selDistrict}
+                          onChange={e => patch({ location: { ...current.current.location, ward: e.target.value } })}
+                        >
+                          <option value="">-- Chọn Phường / Xã --</option>
+                          {data.location?.ward && !wardList.includes(data.location.ward) && <option value={data.location.ward}>{data.location.ward}</option>}
+                          {wardList.map(w => <option key={w} value={w}>{w}</option>)}
+                        </select>
+                      ) : (
+                        <input
+                          id="ward-input"
+                          value={data.location?.ward || ''}
+                          onChange={e => patch({ location: { ...current.current.location, ward: e.target.value } })}
+                        />
+                      )}
                       {fieldError('location.ward')}
                     </div>
 
@@ -897,7 +960,30 @@ export function ListingWizard() {
                       <p>Họ tên và số điện thoại chỉ dùng cho giao dịch bảo mật. Email không bao giờ được công khai.</p>
                     </div>
                   </div>
-                  {([['name', 'Tên liên hệ *', 'text'], ['phone', 'Số điện thoại *', 'tel'], ['email', 'Email', 'email']] as const).map(([k, label, type]) => (
+                  <div role="radiogroup" aria-label="Nguồn thông tin liên hệ" className="lf-field">
+                    <label style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 8 }}>
+                      <input type="radio" name="contact-mode" checked={contactMode === 'profile'} disabled={!profileContact?.name || !profileContact?.phone} onChange={() => chooseContactMode('profile')} />
+                      Dùng thông tin trong hồ sơ của tôi
+                    </label>
+                    <label style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                      <input type="radio" name="contact-mode" checked={contactMode === 'custom'} onChange={() => chooseContactMode('custom')} />
+                      Nhập thông tin liên hệ khác cho tin này
+                    </label>
+                  </div>
+                  {contactMode === 'profile' && (
+                    profileContact?.name && profileContact?.phone ? (
+                      <div className="lf-field">
+                        <p><strong>{profileContact.name}</strong></p>
+                        <p>SĐT: {profileContact.phone}{profileContact.phoneVerified ? ' (đã xác minh)' : ' (chưa xác minh)'}</p>
+                        {profileContact.email && <p>Email: {profileContact.email}</p>}
+                        <p><Link href="/account">Cập nhật hồ sơ</Link></p>
+                        {fieldError('contact.name')}{fieldError('contact.phone')}{fieldError('contact.email')}
+                      </div>
+                    ) : (
+                      <p className="lf-field">Hồ sơ chưa có đủ họ tên và số điện thoại. <Link href="/account">Cập nhật hồ sơ</Link> hoặc chọn nhập thông tin khác.</p>
+                    )
+                  )}
+                  {contactMode === 'custom' && ([['name', 'Tên liên hệ *', 'text'], ['phone', 'Số điện thoại *', 'tel'], ['email', 'Email', 'email']] as const).map(([k, label, type]) => (
                     <div className="lf-field" key={k}>
                       <label htmlFor={`listing-contact-${k}`}>{label}</label>
                       <input

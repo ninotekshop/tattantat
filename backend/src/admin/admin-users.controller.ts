@@ -1,10 +1,15 @@
 import { BadRequestException, Body, Controller, Delete, Get, Param, Patch, Post, Query, Req, UseGuards } from '@nestjs/common';
-import { IsBoolean, IsOptional, IsString, MaxLength } from 'class-validator';
+import { IsBoolean, IsIn, IsOptional, IsString, MaxLength } from 'class-validator';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { DatabaseService } from '../database/database.service';
 import { FinanceAdminGuard } from '../finance/finance-admin.guard';
 import { AdminAuditLogService } from './admin-audit-log.service';
+import { clearModeratorCache } from './moderator.guard';
 import { NotificationsService } from '../account/notifications.service';
+
+class SetRoleDto {
+  @IsIn(['MOD', 'USER']) role!: 'MOD' | 'USER';
+}
 
 class SuspendUserDto {
   @IsString() @MaxLength(500) reason!: string;
@@ -45,7 +50,7 @@ export class AdminUsersController {
 
     const [items, count] = await Promise.all([
       this.db.query(
-        `SELECT u.id, u.full_name, u.email, u.phone, u.avatar_url, u.status::text AS status,
+        `SELECT u.id, u.full_name, u.email, u.phone, u.avatar_url, u.status::text AS status, u.role::text AS role,
                 CASE WHEN u.is_verified THEN 'VERIFIED' ELSE 'UNVERIFIED' END AS verification_status,
                 u.created_at,
                 (SELECT COUNT(*)::int FROM products p WHERE p.seller_id = u.id AND p.deleted_at IS NULL) AS posts_count,
@@ -84,7 +89,7 @@ export class AdminUsersController {
   @Get(':id')
   async detail(@Param('id') id: string) {
     const user = await this.db.query(
-      `SELECT u.id, u.full_name, u.email, u.phone, u.avatar_url, u.status::text AS status,
+      `SELECT u.id, u.full_name, u.email, u.phone, u.avatar_url, u.status::text AS status, u.role::text AS role,
               CASE WHEN u.is_verified THEN 'VERIFIED' ELSE 'UNVERIFIED' END AS verification_status,
               u.created_at
        FROM users u WHERE u.id = $1`,
@@ -163,6 +168,26 @@ export class AdminUsersController {
 
     await this.audit.log(request.user.id, 'Super Admin', 'DELETE_USER', 'User', id, { name: user.full_name });
     return { success: true, data: { id }, message: 'Đã xóa vĩnh viễn toàn bộ dữ liệu tài khoản khỏi hệ thống', errorCode: null };
+  }
+
+  /** Cấp / thu hồi quyền Điều hành viên (MOD). Chỉ chuyển qua lại giữa USER và MOD, không đụng tới tài khoản Admin. */
+  @Post(':id/role')
+  async setRole(@Req() request: { user: { id: string } }, @Param('id') id: string, @Body() body: SetRoleDto) {
+    if (request.user.id === id) throw new BadRequestException('Không thể tự đổi vai trò của chính mình.');
+    const target = await this.db.query<{ id: string; full_name: string; role: string; status: string }>(
+      `SELECT id, full_name, role::text AS role, status::text AS status FROM users WHERE id=$1 AND deleted_at IS NULL`, [id]);
+    const u = target.rows[0];
+    if (!u) throw new BadRequestException('Không tìm thấy người dùng');
+    if (u.role === 'ADMIN' || u.role === 'SUPER_ADMIN') throw new BadRequestException('Không thể đổi vai trò của tài khoản Quản trị viên.');
+    if (body.role === 'MOD' && u.status !== 'ACTIVE') throw new BadRequestException('Chỉ cấp quyền MOD cho tài khoản đang hoạt động.');
+    if (u.role === body.role) return { success: true, data: { id, role: u.role }, message: 'Vai trò không thay đổi', errorCode: null };
+    const result = await this.db.query(`UPDATE users SET role=$2::user_role, updated_at=NOW() WHERE id=$1 RETURNING id, full_name, role::text AS role`, [id, body.role]);
+    clearModeratorCache(id);
+    await this.audit.log(request.user.id, 'Super Admin', body.role === 'MOD' ? 'USER_MOD_GRANTED' : 'USER_MOD_REVOKED', 'User', id, { name: u.full_name });
+    void this.notifications.create(id, body.role === 'MOD' ? 'ROLE_MOD_GRANTED' : 'ROLE_MOD_REVOKED',
+      body.role === 'MOD' ? 'Bạn được cấp quyền Điều hành viên' : 'Quyền Điều hành viên đã được thu hồi',
+      body.role === 'MOD' ? 'Quản trị viên đã cấp cho bạn quyền hỗ trợ duyệt tài khoản và tin đăng. Đăng nhập tại trang quản trị bằng email và mật khẩu của bạn.' : 'Quản trị viên đã thu hồi quyền Điều hành viên của bạn.', 'USER', id).catch(() => undefined);
+    return { success: true, data: result.rows[0], message: body.role === 'MOD' ? 'Đã cấp quyền MOD cho người dùng' : 'Đã thu hồi quyền MOD', errorCode: null };
   }
 
   @Post(':id/suspend')

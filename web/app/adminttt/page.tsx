@@ -3,6 +3,7 @@
 import { Ic } from '../../components/Ic';
 import Link from 'next/link';
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { ErrorDialog, isErrorMessage } from '../../components/ErrorDialog';
 import {
   LayoutDashboard, FileText, Users, FolderTree, ShoppingCart,
   CreditCard, Megaphone, BarChart3, Settings, Bell, Search,
@@ -87,6 +88,7 @@ interface PostItem {
 
 interface UserItem {
   id: string;
+  role?: string;
   full_name: string;
   email: string;
   phone: string;
@@ -145,6 +147,13 @@ const bannerSize = (position: string) => BANNER_SIZES.find(b => b.value === posi
 export default function AdminDashboardPage() {
   // ADMIN AUTH SESSION STATE
   const [adminSession, setAdminSession] = useState<AdminSession | null>(null);
+  // Điều hành viên (MOD): chỉ được duyệt tin đăng, kiểm duyệt và duyệt SĐT/giấy tờ. Backend vẫn kiểm tra lại quyền.
+  const isMod = adminSession?.role === 'MOD';
+  const MOD_NAVS = ['tin-dang', 'kiem-duyet', 'xac-minh', 'ho-so'];
+  useEffect(() => {
+    if (isMod) setActiveNav(cur => (MOD_NAVS.includes(cur) ? cur : 'tin-dang'));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isMod, adminSession]);
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -159,6 +168,8 @@ export default function AdminDashboardPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<{ posts: any[]; users: any[]; orders: any[] }>({ posts: [], users: [], orders: [] });
   const [toast, setToast] = useState<string | null>(null);
+  const [navClosed, setNavClosed] = useState<string[]>([]);
+  const [errorPopup, setErrorPopup] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
   const [notifDropdownOpen, setNotifDropdownOpen] = useState(false);
@@ -273,6 +284,49 @@ export default function AdminDashboardPage() {
   const [reports, setReports] = useState<ReportItem[]>([]);
 
   // SYSTEM SETTINGS STATE
+  const [aiCfg, setAiCfg] = useState<{ listingDraft: boolean; supportChat: boolean; aiReview: boolean; providerReady: boolean }>({ listingDraft: true, supportChat: true, aiReview: true, providerReady: false });
+  const FEATURE_DEFS: { key: string; title: string; desc: string; danger?: boolean }[] = [
+    { key: 'maintenanceMode', title: 'Chế độ bảo trì hệ thống', desc: 'Khóa mọi thao tác ghi của người dùng (đăng ký, đăng tin, đặt hàng, nạp tiền, chat…). Vẫn xem được tin; Admin không bị ảnh hưởng.', danger: true },
+    { key: 'allowRegistration', title: 'Cho phép đăng ký tài khoản mới', desc: 'Tắt để tạm dừng nhận thành viên mới (người dùng cũ vẫn đăng nhập bình thường).' },
+    { key: 'allowListingPublish', title: 'Cho phép đăng tin mới', desc: 'Tắt để tạm dừng đăng/đăng lại tin; người dùng vẫn soạn nháp được.' },
+    { key: 'allowOrders', title: 'Cho phép đặt mua & thanh toán đảm bảo', desc: 'Tắt để tạm dừng tạo đơn hàng mới.' },
+    { key: 'allowTopup', title: 'Cho phép tạo mã nạp tiền vào ví', desc: 'Tắt khi cần đối soát hoặc đổi tài khoản nhận tiền.' },
+    { key: 'allowPackagePurchase', title: 'Cho phép mua gói đăng tin / đẩy tin', desc: 'Tắt để tạm dừng bán gói dịch vụ.' },
+    { key: 'allowChat', title: 'Cho phép nhắn tin người mua – người bán', desc: 'Tắt để khóa chat toàn hệ thống.' },
+    { key: 'allowReviews', title: 'Cho phép gửi đánh giá', desc: 'Tắt để tạm dừng nhận đánh giá mới.' },
+  ];
+  const [sysFeatures, setSysFeatures] = useState<Record<string, boolean>>({});
+  const [sysMsg, setSysMsg] = useState('');
+  const saveSysFeature = async (key: string, value: boolean) => {
+    setSysFeatures(f => ({ ...f, [key]: value })); setSysMsg('Đang lưu…');
+    try {
+      const r = await fetch('/api/v1/admin/system/features', { method: 'PUT', headers: getAuthHeaders(), body: JSON.stringify({ [key]: value }) });
+      const j = await r.json().catch(() => null);
+      if (r.ok && j?.success) { setSysFeatures(j.data); setSysMsg('Đã lưu — có hiệu lực trong vài giây.'); }
+      else { setSysFeatures(f => ({ ...f, [key]: !value })); setSysMsg('Lưu chưa thành công — chỉ Admin mới được đổi.'); }
+    } catch { setSysFeatures(f => ({ ...f, [key]: !value })); setSysMsg('Không kết nối được máy chủ.'); }
+  };
+  const [aiCfgMsg, setAiCfgMsg] = useState('');
+  useEffect(() => {
+    if (activeNav !== 'cai-dat') return;
+    const h = getAuthHeaders();
+    fetch('/api/v1/admin/system/features', { headers: h }).then(r => r.json()).then(j => { if (j?.data) setSysFeatures(j.data); }).catch(() => undefined);
+    Promise.all([
+      fetch('/api/v1/admin/ai/settings', { headers: h }).then(r => r.json()).catch(() => null),
+      fetch('/api/v1/admin/moderation/settings', { headers: h }).then(r => r.json()).catch(() => null),
+    ]).then(([a, m]) => setAiCfg(c => ({ ...c, ...(a?.data ? { listingDraft: !!a.data.listingDraft, supportChat: !!a.data.supportChat, providerReady: !!a.data.providerReady } : {}), ...(m?.data ? { aiReview: m.data.aiReview !== false } : {}) })));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeNav]);
+  const saveAiCfg = async (patch: Partial<{ listingDraft: boolean; supportChat: boolean; aiReview: boolean }>) => {
+    const next = { ...aiCfg, ...patch };
+    setAiCfg(next); setAiCfgMsg('Đang lưu…');
+    try {
+      const h = getAuthHeaders();
+      const r1 = await fetch('/api/v1/admin/ai/settings', { method: 'PUT', headers: h, body: JSON.stringify({ listingDraft: next.listingDraft, supportChat: next.supportChat }) });
+      const r2 = await fetch('/api/v1/admin/moderation/settings', { method: 'PUT', headers: h, body: JSON.stringify({ settings: { aiReview: next.aiReview } }) });
+      setAiCfgMsg(r1.ok && r2.ok ? 'Đã lưu cấu hình AI.' : 'Lưu chưa thành công — chỉ Admin mới được đổi.');
+    } catch { setAiCfgMsg('Không kết nối được máy chủ.'); }
+  };
   const [systemSettings, setSystemSettings] = useState({
     siteName: 'Tất Tần Tật',
     supportEmail: 'hotro@tattantat.vn',
@@ -318,7 +372,7 @@ export default function AdminDashboardPage() {
       const saved = localStorage.getItem('tattantat_adminttt_session') || localStorage.getItem('tattantat_admin_session');
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (parsed?.email && (parsed?.role === 'ADMIN' || parsed?.role === 'SUPER_ADMIN')) {
+        if (parsed?.email && (parsed?.role === 'ADMIN' || parsed?.role === 'SUPER_ADMIN' || parsed?.role === 'MOD')) {
           setAdminSession(parsed);
         }
       }
@@ -326,6 +380,7 @@ export default function AdminDashboardPage() {
   }, []);
 
   const showToast = (msg: string) => {
+    if (isErrorMessage(String(msg ?? ''))) { setErrorPopup(String(msg)); return; }
     setToast(msg);
     setTimeout(() => setToast(null), 3500);
   };
@@ -438,8 +493,8 @@ export default function AdminDashboardPage() {
       .then(res => {
         if (res.success && res.data) {
           const role = res.data.user?.role || res.data.role || 'USER';
-          if (role !== 'ADMIN' && role !== 'SUPER_ADMIN') {
-            setLoginError('Từ chối truy cập: Tài khoản không có quyền Quản trị viên (ADMIN/SUPER_ADMIN)');
+          if (role !== 'ADMIN' && role !== 'SUPER_ADMIN' && role !== 'MOD') {
+            setLoginError('Từ chối truy cập: Tài khoản không có quyền Quản trị viên hoặc Điều hành viên (ADMIN/SUPER_ADMIN/MOD)');
             return;
           }
           const sessionData: AdminSession = {
@@ -525,7 +580,7 @@ export default function AdminDashboardPage() {
       .then(r => r.json())
       .then(res => {
         if (res.success && res.data) {
-          setUsers(res.data);
+          setUsers((res.data as { role?: string }[]).filter(u => u.role !== "ADMIN" && u.role !== "SUPER_ADMIN") as typeof res.data);
         } else {
           handleUnauthorized(res);
         }
@@ -842,6 +897,20 @@ export default function AdminDashboardPage() {
       });
   };
 
+  const handleSetRole = (u: UserItem, role: 'MOD' | 'USER') => {
+    const text = role === 'MOD'
+      ? `Cấp quyền MOD cho "${u.full_name}"?\nMOD được duyệt tin đăng, duyệt SĐT và giấy tờ tùy thân; không được xem tài chính, đơn hàng hay đổi cài đặt hệ thống.`
+      : `Thu hồi quyền MOD của "${u.full_name}"?`;
+    if (!confirm(text)) return;
+    fetch(`/api/v1/admin/users/${u.id}/role`, { method: 'POST', headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' }, body: JSON.stringify({ role }) })
+      .then(r => r.json())
+      .then(res => {
+        if (res.success) { showToast(res.message || 'Đã cập nhật vai trò'); fetchUsersData(); }
+        else showToast(Array.isArray(res.message) ? res.message.join(' ') : res.message || 'Không đổi được vai trò');
+      })
+      .catch(() => showToast('Lỗi kết nối máy chủ'));
+  };
+
   // ORDER CHAT HISTORY
   const handleOpenChatModal = (orderId: string) => {
     setChatModalOpen(true);
@@ -1026,20 +1095,16 @@ export default function AdminDashboardPage() {
           <h1 className="admin-login-title">Đăng nhập Admin Console</h1>
           <p className="admin-login-subtitle">Trang quản trị bảo mật bảo vệ nền tảng Tất Tần Tật</p>
 
-          {loginError && (
-            <div style={{ background: '#fef2f2', border: '1px solid #fca5a5', color: '#dc2626', padding: '10px 14px', borderRadius: 10, fontSize: 13, fontWeight: 500, marginBottom: 16 }}>
-              <Ic i={TriangleAlert}/>{loginError}
-            </div>
-          )}
+          <ErrorDialog message={loginError} title="Không đăng nhập được" onClose={() => setLoginError(null)} />
 
           <form className="admin-login-form" onSubmit={handleAdminLogin}>
             <div className="admin-input-group">
-              <label>Tài khoản / Email Quản trị *</label>
+              <label>Tài khoản / Email Quản trị</label>
               <div className="admin-input-wrapper">
                 <Mail size={18} className="admin-input-icon" />
                 <input
                   type="text"
-                  placeholder="admin@tattantat.vn"
+                  autoComplete="off"
                   value={loginEmail}
                   onChange={e => setLoginEmail(e.target.value)}
                   required
@@ -1048,12 +1113,12 @@ export default function AdminDashboardPage() {
             </div>
 
             <div className="admin-input-group">
-              <label>Mật khẩu Khóa *</label>
+              <label>Mật khẩu Khóa</label>
               <div className="admin-input-wrapper">
                 <KeyRound size={18} className="admin-input-icon" />
                 <input
                   type={showPassword ? 'text' : 'password'}
-                  placeholder="••••••••"
+                  autoComplete="off"
                   value={loginPassword}
                   onChange={e => setLoginPassword(e.target.value)}
                   required
@@ -1085,6 +1150,7 @@ export default function AdminDashboardPage() {
   // RENDER MAIN ADMIN CONSOLE IF AUTHENTICATED
   return (
     <div className={`admin-layout ${sidebarCollapsed ? 'collapsed' : ''}`}>
+      <ErrorDialog message={errorPopup} onClose={() => setErrorPopup(null)} />
       {toast && (
         <div style={{position:'fixed', bottom:24, right:24, background:'#059669', color:'#fff', padding:'12px 20px', borderRadius:10, boxShadow:'0 10px 25px rgba(0,0,0,0.15)', zIndex:9999, fontWeight:600, fontSize:14, display:'flex', alignItems:'center', gap:8}}>
           <CheckCircle size={18} /> {toast}
@@ -1147,7 +1213,7 @@ export default function AdminDashboardPage() {
 
             <div style={{display:'flex', flexDirection:'column', gap:14}}>
               <div>
-                <label style={{display:'block', fontSize:13, fontWeight:600, marginBottom:4, color:'#334155'}}>Họ và tên *</label>
+                <label style={{display:'block', fontSize:13, fontWeight:600, marginBottom:4, color:'#334155'}}>Họ và tên</label>
                 <input type="text" value={editUserForm.fullName} onChange={e => setEditUserForm({...editUserForm, fullName: e.target.value})} style={{width:'100%', padding:'10px 12px', borderRadius:8, border:'1px solid #cbd5e1', fontSize:14}} />
               </div>
 
@@ -1193,7 +1259,7 @@ export default function AdminDashboardPage() {
         <div style={{position:'fixed', inset:0, background:'rgba(0,0,0,0.5)', backdropFilter:'blur(4px)', zIndex:1000, display:'flex', alignItems:'center', justifyContent:'center'}} onClick={() => setRejectModalOpen(false)}>
           <div style={{background:'#fff', borderRadius:16, width:'90%', maxWidth:480, padding:24, boxShadow:'0 20px 40px rgba(0,0,0,0.2)'}} onClick={e => e.stopPropagation()}>
             <h3 style={{margin:'0 0 16px', fontSize:18, fontWeight:700, color:'#0f172a'}}>Từ chối tin đăng</h3>
-            <label style={{display:'block', fontSize:13, fontWeight:600, color:'#334155', marginBottom:6}}>Lý do từ chối *</label>
+            <label style={{display:'block', fontSize:13, fontWeight:600, color:'#334155', marginBottom:6}}>Lý do từ chối</label>
             <select value={rejectReason} onChange={e => setRejectReason(e.target.value)} style={{width:'100%', padding:'10px 12px', borderRadius:8, border:'1px solid #cbd5e1', fontSize:14, marginBottom:16}}>
               <option value="Nội dung không phù hợp quy định">Nội dung không phù hợp quy định</option>
               <option value="Sai danh mục sản phẩm">Sai danh mục sản phẩm</option>
@@ -1233,7 +1299,7 @@ export default function AdminDashboardPage() {
         <div style={{position:'fixed', inset:0, background:'rgba(0,0,0,0.5)', backdropFilter:'blur(4px)', zIndex:1000, display:'flex', alignItems:'center', justifyContent:'center'}} onClick={() => setSuspendModalOpen(false)}>
           <div style={{background:'#fff', borderRadius:16, width:'90%', maxWidth:480, padding:24, boxShadow:'0 20px 40px rgba(0,0,0,0.2)'}} onClick={e => e.stopPropagation()}>
             <h3 style={{margin:'0 0 16px', fontSize:18, fontWeight:700, color:'#0f172a'}}>Tạm khóa tài khoản người dùng</h3>
-            <label style={{display:'block', fontSize:13, fontWeight:600, color:'#334155', marginBottom:6}}>Lý do tạm khóa *</label>
+            <label style={{display:'block', fontSize:13, fontWeight:600, color:'#334155', marginBottom:6}}>Lý do tạm khóa</label>
             <select value={suspendReason} onChange={e => setSuspendReason(e.target.value)} style={{width:'100%', padding:'10px 12px', borderRadius:8, border:'1px solid #cbd5e1', fontSize:14, marginBottom:16}}>
               <option value="Vi phạm tiêu chuẩn cộng đồng">Vi phạm tiêu chuẩn cộng đồng</option>
               <option value="Đăng tin gian lận hoặc nghi vấn lừa đảo">Đăng tin gian lận hoặc nghi vấn lừa đảo</option>
@@ -1259,12 +1325,12 @@ export default function AdminDashboardPage() {
 
             <div style={{display:'flex', flexDirection:'column', gap:14}}>
               <div>
-                <label style={{display:'block', fontSize:13, fontWeight:600, marginBottom:4, color:'#334155'}}>Tên Banner *</label>
+                <label style={{display:'block', fontSize:13, fontWeight:600, marginBottom:4, color:'#334155'}}>Tên Banner</label>
                 <input type="text" value={formBanner.title} onChange={e => setFormBanner({...formBanner, title:e.target.value})} placeholder="Ví dụ: Banner Quảng cáo Trái/Phải" style={{width:'100%', padding:'10px 12px', borderRadius:8, border:'1px solid #cbd5e1', fontSize:14}} />
               </div>
 
               <div>
-                <label style={{display:'block', fontSize:13, fontWeight:600, marginBottom:4, color:'#334155'}}>Vị trí hiển thị *</label>
+                <label style={{display:'block', fontSize:13, fontWeight:600, marginBottom:4, color:'#334155'}}>Vị trí hiển thị</label>
                 <select value={formBanner.position} onChange={e => setFormBanner({...formBanner, position:e.target.value})} style={{width:'100%', padding:'10px 12px', borderRadius:8, border:'1px solid #cbd5e1', fontSize:14}}>
                   {BANNER_SIZES.map(b => <option key={b.value} value={b.value}>{b.label} — {b.w} × {b.h} px</option>)}
                 </select>
@@ -1399,107 +1465,75 @@ export default function AdminDashboardPage() {
 
       {/* SIDEBAR ADMIN V2 */}
       <aside className={`admin-sidebar ${sidebarCollapsed ? 'collapsed' : ''}`}>
-        <div className="admin-brand">
-          <div style={{ background: '#ffffff', padding: '6px 12px', borderRadius: 10, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
-            <img src="/assets/logo.png" alt="Tất Tần Tật" style={{ height: 28, objectFit: 'contain' }} />
+        <div className="admin-brand" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', width: '100%' }}>
+          <div style={{ background: '#ffffff', padding: '8px 14px', borderRadius: 12, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+            <img src="/assets/logo.png" alt="Tất Tần Tật" style={{ height: 40, maxWidth: '100%', objectFit: 'contain' }} />
           </div>
         </div>
 
         <nav className="admin-nav">
-          <div style={{fontSize:11, fontWeight:700, color:'#64748b', padding:'8px 16px', letterSpacing:'0.5px'}}>TỔNG QUAN</div>
-          <button className={`admin-nav-item ${activeNav === 'tong-quan' ? 'active' : ''}`} onClick={() => setActiveNav('tong-quan')}>
-            <div className="admin-nav-left"><LayoutDashboard size={18} />{!sidebarCollapsed && <span>Tổng quan</span>}</div>
-          </button>
-
-          <div style={{fontSize:11, fontWeight:700, color:'#64748b', padding:'16px 16px 8px', letterSpacing:'0.5px'}}>QUẢN LÝ</div>
-          <button className={`admin-nav-item ${activeNav === 'tin-dang' ? 'active' : ''}`} onClick={() => setActiveNav('tin-dang')}>
-            <div className="admin-nav-left"><FileText size={18} />{!sidebarCollapsed && <span>Quản lý tin đăng</span>}</div>
-            {!sidebarCollapsed && dashboard?.actionRequired.pendingPosts ? (
-              <span className="admin-badge amber">{dashboard.actionRequired.pendingPosts} chờ duyệt</span>
-            ) : null}
-          </button>
-
-          <button className={`admin-nav-item ${activeNav === 'nguoi-dung' ? 'active' : ''}`} onClick={() => setActiveNav('nguoi-dung')}>
-            <div className="admin-nav-left"><Users size={18} />{!sidebarCollapsed && <span>Quản lý người dùng</span>}</div>
-            {!sidebarCollapsed && navCounts['nguoi-dung'] > 0 && <span className="admin-badge green">{navCounts['nguoi-dung']}</span>}
-          </button>
-
-          <button className={`admin-nav-item ${activeNav === 'danh-muc' ? 'active' : ''}`} onClick={() => setActiveNav('danh-muc')}>
-            <div className="admin-nav-left"><FolderTree size={18} />{!sidebarCollapsed && <span>Quản lý Danh mục & form</span>}</div>
-          </button>
-
-          <button className={`admin-nav-item ${activeNav === 'don-hang' ? 'active' : ''}`} onClick={() => setActiveNav('don-hang')}>
-            <div className="admin-nav-left"><ShoppingCart size={18} />{!sidebarCollapsed && <span>Quản lý đơn hàng</span>}</div>
-            {!sidebarCollapsed && navCounts['don-hang'] > 0 && <span className="admin-badge green">{navCounts['don-hang']}</span>}
-          </button>
-
-          <button className={`admin-nav-item ${activeNav === 'khieu-nai' ? 'active' : ''}`} onClick={() => setActiveNav('khieu-nai')}>
-            <div className="admin-nav-left"><AlertTriangle size={18} />{!sidebarCollapsed && <span>Xử lý khiếu nại</span>}</div>
-            {!sidebarCollapsed && disputeOpen > 0 && <span className="admin-badge red">{disputeOpen}</span>}
-          </button>
-
-          <button className={`admin-nav-item ${activeNav === 'danh-gia' ? 'active' : ''}`} onClick={() => setActiveNav('danh-gia')}>
-            <div className="admin-nav-left"><UserCheck size={18} />{!sidebarCollapsed && <span>Duyệt đánh giá</span>}</div>
-          </button>
-
-          <button className={`admin-nav-item ${activeNav === 'thanh-toan-online' ? 'active' : ''}`} onClick={() => setActiveNav('thanh-toan-online')}>
-            <div className="admin-nav-left"><Wallet size={18} />{!sidebarCollapsed && <span>Thanh toán đảm bảo</span>}</div>
-            {!sidebarCollapsed && navCounts['thanh-toan-online'] > 0 && <span className="admin-badge red">{navCounts['thanh-toan-online']}</span>}
-          </button>
-
-          <button className={`admin-nav-item ${activeNav === 'xac-minh' ? 'active' : ''}`} onClick={() => setActiveNav('xac-minh')}>
-            <div className="admin-nav-left"><UserCheck size={18} />{!sidebarCollapsed && <span>Xác minh danh tính</span>}</div>
-            {!sidebarCollapsed && navCounts['xac-minh'] > 0 && <span className="admin-badge amber">{navCounts['xac-minh']}</span>}
-          </button>
-
-          <button className={`admin-nav-item ${activeNav === 'rui-ro' ? 'active' : ''}`} onClick={() => setActiveNav('rui-ro')}>
-            <div className="admin-nav-left"><AlertTriangle size={18} />{!sidebarCollapsed && <span>Chống lừa đảo</span>}</div>
-          </button>
-
-          <div style={{fontSize:11, fontWeight:700, color:'#64748b', padding:'16px 16px 8px', letterSpacing:'0.5px'}}>GÓI DỊCH VỤ & QUẢNG CÁO</div>
-          <button className={`admin-nav-item ${activeNav === 'goi-dich-vu' ? 'active' : ''}`} onClick={() => setActiveNav('goi-dich-vu')}>
-            <div className="admin-nav-left"><PackageCheck size={18} />{!sidebarCollapsed && <span>Khách hàng mua Gói</span>}</div>
-            {!sidebarCollapsed && <span className="admin-badge green">{subscriptions.length}</span>}
-          </button>
-
-          <button className={`admin-nav-item ${activeNav === 'goi-quang-cao' ? 'active' : ''}`} onClick={() => setActiveNav('goi-quang-cao')}>
-            <div className="admin-nav-left"><Megaphone size={18} />{!sidebarCollapsed && <span>Khách hàng Quảng cáo</span>}</div>
-            {!sidebarCollapsed && <span className="admin-badge blue">{advertising.length}</span>}
-          </button>
-
-          <button className={`admin-nav-item ${activeNav === 'kiem-duyet' ? 'active' : ''}`} onClick={() => setActiveNav('kiem-duyet')}>
-            <div className="admin-nav-left"><ShieldCheck size={18} />{!sidebarCollapsed && <span>Kiểm duyệt tin đăng</span>}</div>
-            {!sidebarCollapsed && modBacklog.pending > 0 && <span className={`admin-badge ${modBacklog.overdue ? 'red' : 'green'}`}>{modBacklog.pending}</span>}
-          </button>
-
-          <button className={`admin-nav-item ${activeNav === 'thong-bao' ? 'active' : ''}`} onClick={() => setActiveNav('thong-bao')}>
-            <div className="admin-nav-left"><Megaphone size={18} />{!sidebarCollapsed && <span>Gửi thông báo</span>}</div>
-          </button>
-
-          <button className={`admin-nav-item ${activeNav === 'banners' ? 'active' : ''}`} onClick={() => setActiveNav('banners')}>
-            <div className="admin-nav-left"><ImageIcon size={18} />{!sidebarCollapsed && <span>Quản lý Banner</span>}</div>
-            {!sidebarCollapsed && <span className="admin-badge green">{banners.length}</span>}
-          </button>
-
-          <button className={`admin-nav-item ${activeNav === 'reports' ? 'active' : ''}`} onClick={() => setActiveNav('reports')}>
-            <div className="admin-nav-left"><ShieldAlert size={18} />{!sidebarCollapsed && <span>Báo cáo vi phạm</span>}</div>
-            {!sidebarCollapsed && dashboard?.actionRequired.pendingReports ? (
-              <span className="admin-badge danger">{dashboard.actionRequired.pendingReports}</span>
-            ) : null}
-          </button>
-
-          <div style={{fontSize:11, fontWeight:700, color:'#64748b', padding:'16px 16px 8px', letterSpacing:'0.5px'}}>GIAO DIỆN & BẢO MẬT</div>
-          <button className={`admin-nav-item ${activeNav === 'css-editor' ? 'active' : ''}`} onClick={() => setActiveNav('css-editor')}>
-            <div className="admin-nav-left"><Code size={18} />{!sidebarCollapsed && <span>Quản lý CSS / Giao diện</span>}</div>
-          </button>
-
-          <button className={`admin-nav-item ${activeNav === 'ho-so' ? 'active' : ''}`} onClick={() => setActiveNav('ho-so')}>
-            <div className="admin-nav-left"><User size={18} />{!sidebarCollapsed && <span>Hồ sơ cá nhân</span>}</div>
-          </button>
-
-          <button className={`admin-nav-item ${activeNav === 'cai-dat' ? 'active' : ''}`} onClick={() => setActiveNav('cai-dat')}>
-            <div className="admin-nav-left"><Settings size={18} />{!sidebarCollapsed && <span>Cài đặt hệ thống</span>}</div>
-          </button>
+          {(() => {
+            type NavItem = { key: string; label: string; icon: React.ReactNode; badge?: React.ReactNode; mod?: boolean; hidden?: boolean };
+            const bd = (n: number | undefined, cls: string, suffix = '') => (n && n > 0 ? <span className={`admin-badge ${cls}`}>{n}{suffix}</span> : null);
+            const groups: { id: string; title: string; items: NavItem[] }[] = [
+              { id: 'tq', title: 'TỔNG QUAN', items: [
+                { key: 'tong-quan', label: 'Tổng quan', icon: <LayoutDashboard size={18} /> },
+              ] },
+              { id: 'kd', title: 'KIỂM DUYỆT & XỬ LÝ', items: [
+                { key: 'kiem-duyet', label: 'Kiểm duyệt tin đăng', icon: <ShieldCheck size={18} />, mod: true, badge: bd(modBacklog.pending, modBacklog.overdue ? 'red' : 'green') },
+                { key: 'tin-dang', label: 'Quản lý tin đăng', icon: <FileText size={18} />, mod: true, badge: bd(dashboard?.actionRequired.pendingPosts, 'amber', ' chờ') },
+                { key: 'xac-minh', label: 'Duyệt SĐT & giấy tờ', icon: <UserCheck size={18} />, mod: true, badge: bd(navCounts['xac-minh'], 'amber') },
+                { key: 'reports', label: 'Báo cáo vi phạm', icon: <ShieldAlert size={18} />, badge: bd(dashboard?.actionRequired.pendingReports, 'danger') },
+                { key: 'khieu-nai', label: 'Xử lý khiếu nại', icon: <AlertTriangle size={18} />, badge: bd(disputeOpen, 'red') },
+                { key: 'danh-gia', label: 'Duyệt đánh giá', icon: <BadgeCheck size={18} /> },
+                { key: 'rui-ro', label: 'Chống lừa đảo', icon: <Shield size={18} /> },
+              ] },
+              { id: 'nd', title: 'NGƯỜI DÙNG', items: [
+                { key: 'nguoi-dung', label: 'Danh sách người dùng', icon: <Users size={18} />, badge: bd(navCounts['nguoi-dung'], 'green') },
+              ] },
+              { id: 'gd', title: 'GIAO DỊCH', items: [
+                { key: 'don-hang', label: 'Quản lý đơn hàng', icon: <ShoppingCart size={18} />, badge: bd(navCounts['don-hang'], 'green') },
+                { key: 'thanh-toan-online', label: 'Thanh toán đảm bảo', icon: <Wallet size={18} />, badge: bd(navCounts['thanh-toan-online'], 'red') },
+              ] },
+              { id: 'dt', title: 'GÓI & QUẢNG CÁO', items: [
+                { key: 'goi-dich-vu', label: 'Khách hàng mua Gói', icon: <PackageCheck size={18} />, badge: bd(subscriptions.length, 'green') },
+                { key: 'goi-quang-cao', label: 'Khách hàng Quảng cáo', icon: <Megaphone size={18} />, badge: bd(advertising.length, 'blue') },
+              ] },
+              { id: 'nv', title: 'NỘI DUNG', items: [
+                { key: 'danh-muc', label: 'Danh mục & form', icon: <FolderTree size={18} /> },
+                { key: 'banners', label: 'Banner', icon: <ImageIcon size={18} />, badge: bd(banners.length, 'green') },
+                { key: 'thong-bao', label: 'Gửi thông báo', icon: <Bell size={18} /> },
+              ] },
+              { id: 'ht', title: 'HỆ THỐNG', items: [
+                { key: 'cai-dat', label: 'Cài đặt & cấu hình AI', icon: <Settings size={18} /> },
+                { key: 'css-editor', label: 'Giao diện / CSS', icon: <Code size={18} /> },
+                { key: 'ho-so', label: 'Hồ sơ cá nhân', icon: <User size={18} />, mod: true },
+              ] },
+            ];
+            return groups.map(g => {
+              const items = g.items.filter(i => !isMod || i.mod);
+              if (!items.length) return null;
+              const hasActive = items.some(i => i.key === activeNav);
+              const closed = !sidebarCollapsed && navClosed.includes(g.id) && !hasActive;
+              return (
+                <div key={g.id}>
+                  {!sidebarCollapsed && (
+                    <button type="button" onClick={() => setNavClosed(c => c.includes(g.id) ? c.filter(x => x !== g.id) : [...c, g.id])}
+                      style={{ display: 'flex', width: '100%', alignItems: 'center', justifyContent: 'space-between', background: 'transparent', border: 'none', cursor: 'pointer', fontSize: 11, fontWeight: 700, color: '#64748b', padding: '14px 16px 6px', letterSpacing: '0.5px' }}>
+                      <span>{g.title}</span>
+                      <ChevronDown size={13} style={{ transform: closed ? 'rotate(-90deg)' : 'none', transition: 'transform .15s' }} />
+                    </button>
+                  )}
+                  {!closed && items.map(i => (
+                    <button key={i.key} className={`admin-nav-item ${activeNav === i.key ? 'active' : ''}`} onClick={() => setActiveNav(i.key)} title={i.label}>
+                      <div className="admin-nav-left">{i.icon}{!sidebarCollapsed && <span>{i.label}</span>}</div>
+                      {!sidebarCollapsed && i.badge}
+                    </button>
+                  ))}
+                </div>
+              );
+            });
+          })()}
         </nav>
 
         <div className="admin-sidebar-footer">
@@ -1593,7 +1627,7 @@ export default function AdminDashboardPage() {
                       : activeNav === 'danh-muc' ? 'Quản lý Danh mục & form'
                       : activeNav === 'thanh-toan-online' ? 'Thanh toán đảm bảo'
                       : activeNav === 'thanh-toan-online' ? 'Theo dõi tiền đang giữ, hoàn tiền, đối soát và cấu hình tự động xác nhận/hoàn tiền.'
-                    : activeNav === 'xac-minh' ? 'Xác minh danh tính'
+                    : activeNav === 'xac-minh' ? 'Quản lý người dùng › Kiểm duyệt SĐT & giấy tờ tùy thân'
                       : activeNav === 'xac-minh' ? 'Duyệt hồ sơ CMND/CCCD của người dùng để cấp huy hiệu Đã xác thực.'
                     : activeNav === 'rui-ro' ? 'Chống lừa đảo'
                       : activeNav === 'danh-gia' ? 'Duyệt đánh giá'
@@ -1602,6 +1636,7 @@ export default function AdminDashboardPage() {
                       : activeNav === 'kiem-duyet' ? 'Kiểm duyệt tin đăng'
                       : activeNav === 'kiem-duyet' ? 'Chọn kiểm duyệt tự động hoặc thủ công, thiết lập quy tắc và xử lý hàng chờ duyệt.'
                     : activeNav === 'thong-bao' ? 'Gửi thông báo tới người dùng'
+                      : activeNav === 'bang-gia-goi' ? 'Bảng giá & cấu hình gói đăng tin, đẩy tin'
                       : activeNav === 'goi-dich-vu' ? 'Khách hàng mua Gói Đẩy tin & Đăng tin'
                       : activeNav === 'goi-quang-cao' ? 'Khách hàng mua Gói Quảng cáo & Banner'
                       : activeNav === 'reports' ? 'Báo cáo vi phạm & Moderation'
@@ -1620,6 +1655,7 @@ export default function AdminDashboardPage() {
                     : activeNav === 'khieu-nai' ? 'Tiếp nhận, trao đổi và ra quyết định (hoàn tiền hoặc bác bỏ) cho các khiếu nại đơn hàng.'
                     : activeNav === 'don-hang' ? 'Theo dõi mọi đơn hàng, lọc nâng cao, xem chi tiết và dòng thời gian, đổi trạng thái vận hành, in phiếu và xuất Excel.'
                     : activeNav === 'thong-bao' ? 'Gửi thông báo từ quản trị tới toàn bộ người dùng, người bán hoặc một tài khoản cụ thể.'
+                    : activeNav === 'bang-gia-goi' ? 'Thêm gói, chỉnh giá, thời lượng, hạn mức tin; mỗi lần đổi giá được lưu lịch sử kèm lý do.'
                     : activeNav === 'goi-dich-vu' ? 'Quản lý danh sách khách hàng và các shop đã mua gói đẩy tin, tăng hạn mức đăng tin trên nền tảng.'
                     : activeNav === 'goi-quang-cao' ? 'Quản lý danh sách nhà quảng cáo mua gói Banner VIP, ưu tiên hiển thị sản phẩm trên ứng dụng.'
                     : activeNav === 'reports' ? 'Xử lý các báo cáo vi phạm sản phẩm và người dùng từ cộng đồng.'
@@ -1671,6 +1707,7 @@ export default function AdminDashboardPage() {
               onHide={handleHidePost}
               onReject={(id) => { setRejectPostId(id); setRejectModalOpen(true); }}
               onSaveEdit={(id, form) => {
+                if (isMod) { showToast('Chỉ Quản trị viên được sửa nội dung tin đăng.'); return; }
                 fetch(`/api/v1/admin/posts/${id}`, {
                   method: 'PATCH',
                   headers: getAuthHeaders(),
@@ -1684,7 +1721,7 @@ export default function AdminDashboardPage() {
                     }
                   });
               }}
-              onDelete={handleDeletePost}
+              onDelete={(id, reason) => { if (isMod) { showToast('Chỉ Quản trị viên được xóa tin đăng.'); return; } handleDeletePost(id, reason); }}
               onToast={showToast}
               getAuthHeaders={getAuthHeaders}
             />
@@ -1746,16 +1783,21 @@ export default function AdminDashboardPage() {
                             <span className={`status-badge ${u.status === 'SUSPENDED' ? 'danger' : 'approved'}`}>
                               {u.status === 'SUSPENDED' ? 'Đã khóa' : 'Hoạt động'}
                             </span>
+                            {u.role === 'MOD' && <span className="status-badge pending" style={{marginLeft:6}}>MOD</span>}
+                            {(u.role === 'ADMIN' || u.role === 'SUPER_ADMIN') && <span className="status-badge approved" style={{marginLeft:6}}>{u.role}</span>}
                           </td>
                           <td>
-                            <div style={{display:'flex', gap:6, flexWrap:'wrap'}}>
+                            <div style={{display:'flex', gap:6, flexWrap:'nowrap', alignItems:'center'}}>
                               {u.verification_status !== 'VERIFIED' && (
-                                <button onClick={() => handleVerifyUser(u.id)} style={{background:'#d1fae5', color:'#059669', border:'none', padding:'6px 10px', borderRadius:6, fontSize:12, fontWeight:600, cursor:'pointer'}}>Xác minh</button>
+                                <button onClick={() => handleVerifyUser(u.id)} style={{background:'#d1fae5', color:'#059669', border:'none', padding:'6px 10px', borderRadius:6, fontSize:12, fontWeight:600, cursor:'pointer', whiteSpace:'nowrap'}}>Xác minh</button>
                               )}
-                              <button onClick={() => handleOpenEditUser(u)} style={{background:'#e0f2fe', color:'#0284c7', border:'none', padding:'6px 10px', borderRadius:6, fontSize:12, fontWeight:600, cursor:'pointer', display:'flex', alignItems:'center', gap:4}}>
+                              {u.role !== 'ADMIN' && u.role !== 'SUPER_ADMIN' && (u.role === 'MOD'
+                                ? <button onClick={() => handleSetRole(u, 'USER')} style={{background:'#fef3c7', color:'#b45309', border:'none', padding:'6px 10px', borderRadius:6, fontSize:12, fontWeight:600, cursor:'pointer', whiteSpace:'nowrap'}}>Thu hồi MOD</button>
+                                : <button onClick={() => handleSetRole(u, 'MOD')} style={{background:'#ede9fe', color:'#6d28d9', border:'none', padding:'6px 10px', borderRadius:6, fontSize:12, fontWeight:600, cursor:'pointer', whiteSpace:'nowrap'}}>Cấp MOD</button>)}
+                              <button onClick={() => handleOpenEditUser(u)} style={{background:'#e0f2fe', color:'#0284c7', border:'none', padding:'6px 10px', borderRadius:6, fontSize:12, fontWeight:600, cursor:'pointer', whiteSpace:'nowrap', display:'flex', alignItems:'center', gap:4}}>
                                 <Edit size={13} /> Sửa
                               </button>
-                              <button onClick={() => handleDeleteUser(u.id)} style={{background:'#fee2e2', color:'#dc2626', border:'none', padding:'6px 10px', borderRadius:6, fontSize:12, fontWeight:600, cursor:'pointer', display:'flex', alignItems:'center', gap:4}}>
+                              <button onClick={() => handleDeleteUser(u.id)} style={{background:'#fee2e2', color:'#dc2626', border:'none', padding:'6px 10px', borderRadius:6, fontSize:12, fontWeight:600, cursor:'pointer', whiteSpace:'nowrap', display:'flex', alignItems:'center', gap:4}}>
                                 <Trash2 size={13} /> Xóa
                               </button>
                             </div>
@@ -1804,7 +1846,7 @@ export default function AdminDashboardPage() {
                     {reports.length > 0 ? (
                       reports.map(r => (
                         <tr key={r.id}>
-                          <td style={{fontWeight:600, color:'#dc2626'}}>{REPORT_REASON_VI[r.reason] || r.reason}<div style={{fontSize:10.5, color:'#94a3b8', fontWeight:500}}>{r.reason}</div></td>
+                          <td style={{fontWeight:600, color:'#dc2626'}}>{REPORT_REASON_VI[r.reason] || r.reason}</td>
                           <td style={{fontSize:13, maxWidth:200}}>{r.details || 'Không có chi tiết'}</td>
                           <td>{r.reporter_name}</td>
                           <td style={{fontWeight:600}}>
@@ -1937,15 +1979,15 @@ export default function AdminDashboardPage() {
                   <form onSubmit={handleChangePassword}>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 14 }}>
                       <div>
-                        <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#334155', marginBottom: 4 }}>Mật khẩu hiện tại *</label>
+                        <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#334155', marginBottom: 4 }}>Mật khẩu hiện tại</label>
                         <input type="password" value={pwdForm.currentPassword} onChange={e => setPwdForm({...pwdForm, currentPassword: e.target.value})} required style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1px solid #cbd5e1' }} />
                       </div>
                       <div>
-                        <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#334155', marginBottom: 4 }}>Mật khẩu mới *</label>
+                        <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#334155', marginBottom: 4 }}>Mật khẩu mới</label>
                         <input type="password" value={pwdForm.newPassword} onChange={e => setPwdForm({...pwdForm, newPassword: e.target.value})} required style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1px solid #cbd5e1' }} />
                       </div>
                       <div>
-                        <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#334155', marginBottom: 4 }}>Xác nhận mật khẩu mới *</label>
+                        <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#334155', marginBottom: 4 }}>Xác nhận mật khẩu mới</label>
                         <input type="password" value={pwdForm.confirmPassword} onChange={e => setPwdForm({...pwdForm, confirmPassword: e.target.value})} required style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1px solid #cbd5e1' }} />
                       </div>
                     </div>
@@ -1974,21 +2016,22 @@ export default function AdminDashboardPage() {
             </div>
           ) : activeNav === 'cai-dat' ? (
             /* SYSTEM SETTINGS MODULE */
-            <div className="dashboard-card" style={{ maxWidth: 720 }}>
+            <div className="dashboard-card">
               <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 16, color: '#0f172a' }}>Cài đặt hệ thống Tất Tần Tật</h3>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(380px, 1fr))', gap: 16, alignItems: 'start' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                 <div>
-                  <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#334155', marginBottom: 4 }}>Tên nền tảng *</label>
+                  <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#334155', marginBottom: 4 }}>Tên nền tảng</label>
                   <input type="text" value={systemSettings.siteName} onChange={e => setSystemSettings({...systemSettings, siteName: e.target.value})} style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1px solid #cbd5e1' }} />
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                   <div>
-                    <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#334155', marginBottom: 4 }}>Email hỗ trợ *</label>
+                    <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#334155', marginBottom: 4 }}>Email hỗ trợ</label>
                     <input type="email" value={systemSettings.supportEmail} onChange={e => setSystemSettings({...systemSettings, supportEmail: e.target.value})} style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1px solid #cbd5e1' }} />
                   </div>
                   <div>
-                    <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#334155', marginBottom: 4 }}>Hotline *</label>
+                    <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#334155', marginBottom: 4 }}>Hotline</label>
                     <input type="text" value={systemSettings.supportPhone} onChange={e => setSystemSettings({...systemSettings, supportPhone: e.target.value})} style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1px solid #cbd5e1' }} />
                   </div>
                 </div>
@@ -2004,6 +2047,35 @@ export default function AdminDashboardPage() {
                   </div>
                 </div>
 
+                <div style={{ background: '#f8fafc', padding: 14, borderRadius: 10, border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', gap: 12 }}>
+                  <strong style={{ fontSize: 15, color: '#0f172a' }}>Cấu hình AI</strong>
+                  {!aiCfg.providerReady && <span style={{ fontSize: 12, color: '#b45309' }}>Chưa có khóa AI (ANTHROPIC_API_KEY) trên máy chủ: viết mô tả/chatbox chạy chế độ mẫu, kiểm duyệt AI chưa hoạt động.</span>}
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+                    <div><strong style={{ display: 'block', fontSize: 14, color: '#0f172a' }}>AI viết mô tả sản phẩm</strong><span style={{ fontSize: 12, color: '#64748b' }}>Nút "AI viết giúp mô tả" trong trang đăng tin.</span></div>
+                    <input type="checkbox" checked={aiCfg.listingDraft} onChange={e => void saveAiCfg({ listingDraft: e.target.checked })} style={{ width: 18, height: 18, cursor: 'pointer' }} />
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+                    <div><strong style={{ display: 'block', fontSize: 14, color: '#0f172a' }}>Chatbox hỗ trợ AI</strong><span style={{ fontSize: 12, color: '#64748b' }}>Trợ lý hỗ trợ khách ở góc màn hình.</span></div>
+                    <input type="checkbox" checked={aiCfg.supportChat} onChange={e => void saveAiCfg({ supportChat: e.target.checked })} style={{ width: 18, height: 18, cursor: 'pointer' }} />
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+                    <div><strong style={{ display: 'block', fontSize: 14, color: '#0f172a' }}>AI kiểm duyệt thông tin</strong><span style={{ fontSize: 12, color: '#64748b' }}>AI rà soát tin đăng mới trước khi duyệt.</span></div>
+                    <input type="checkbox" checked={aiCfg.aiReview} onChange={e => void saveAiCfg({ aiReview: e.target.checked })} style={{ width: 18, height: 18, cursor: 'pointer' }} />
+                  </div>
+                  {aiCfgMsg && <small style={{ color: '#0f766e' }}>{aiCfgMsg}</small>}
+                </div>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                <div style={{ background: '#f8fafc', padding: 14, borderRadius: 10, border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', gap: 12 }}>
+                  <strong style={{ fontSize: 15, color: '#0f172a' }}>Bật / tắt chức năng hệ thống</strong>
+                  {FEATURE_DEFS.map(d => (
+                    <div key={d.key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+                      <div><strong style={{ display: 'block', fontSize: 14, color: d.danger ? '#dc2626' : '#0f172a' }}>{d.title}</strong><span style={{ fontSize: 12, color: '#64748b' }}>{d.desc}</span></div>
+                      <input type="checkbox" checked={d.key === 'maintenanceMode' ? !!sysFeatures[d.key] : sysFeatures[d.key] !== false} onChange={e => void saveSysFeature(d.key, e.target.checked)} style={{ width: 18, height: 18, cursor: 'pointer' }} />
+                    </div>
+                  ))}
+                  {sysMsg && <small style={{ color: '#0f766e' }}>{sysMsg}</small>}
+                </div>
                 <div style={{ background: '#f8fafc', padding: 14, borderRadius: 10, border: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <div>
                     <strong style={{ display: 'block', fontSize: 14, color: '#0f172a' }}>Tự động duyệt tin đăng mới</strong>
@@ -2011,16 +2083,8 @@ export default function AdminDashboardPage() {
                   </div>
                   <input type="checkbox" checked={systemSettings.autoApproveListings} onChange={e => setSystemSettings({...systemSettings, autoApproveListings: e.target.checked})} style={{ width: 18, height: 18, cursor: 'pointer' }} />
                 </div>
-
-                <div style={{ background: '#f8fafc', padding: 14, borderRadius: 10, border: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <div>
-                    <strong style={{ display: 'block', fontSize: 14, color: '#dc2626' }}>Chế độ Bảo trì Hệ thống</strong>
-                    <span style={{ fontSize: 12, color: '#64748b' }}>Tạm khóa tính năng mua bán để nâng cấp máy chủ.</span>
-                  </div>
-                  <input type="checkbox" checked={systemSettings.maintenanceMode} onChange={e => setSystemSettings({...systemSettings, maintenanceMode: e.target.checked})} style={{ width: 18, height: 18, cursor: 'pointer' }} />
                 </div>
-
-                <button onClick={() => showToast('Đã lưu cấu hình hệ thống thành công!')} style={{ background: '#00a65a', color: '#fff', border: 'none', padding: '10px 20px', borderRadius: 8, fontWeight: 700, cursor: 'pointer', width: 'fit-content', marginTop: 10 }}>
+                <button onClick={() => showToast('Đã lưu cấu hình hệ thống thành công!')} style={{ gridColumn: '1 / -1', justifySelf: 'start', background: '#00a65a', color: '#fff', border: 'none', padding: '10px 20px', borderRadius: 8, fontWeight: 700, cursor: 'pointer', width: 'fit-content', marginTop: 10 }}>
                   LƯU CÀI ĐẶT HỆ THỐNG
                 </button>
               </div>

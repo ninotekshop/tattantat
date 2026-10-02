@@ -4,6 +4,7 @@ import { NotificationsService } from '../account/notifications.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { DatabaseService } from '../database/database.service';
 import { FinanceAdminGuard } from '../finance/finance-admin.guard';
+import { ModeratorGuard } from '../admin/moderator.guard';
 import { ModerationBacklogService } from './moderation-backlog.service';
 import { ModerationPolicyService, type ModerationSettings } from './moderation-policy.service';
 
@@ -16,15 +17,15 @@ class BulkDto {
 type Req_ = { user: { id: string } };
 
 @Controller('admin/moderation')
-@UseGuards(JwtAuthGuard, FinanceAdminGuard)
+@UseGuards(JwtAuthGuard, ModeratorGuard)
 export class ModerationAdminController {
   constructor(private readonly policy: ModerationPolicyService, private readonly db: DatabaseService, private readonly notifications: NotificationsService, private readonly backlogService: ModerationBacklogService) {}
 
   @Get('settings') async settings() { return { success: true, data: await this.policy.settings(true), message: null, errorCode: null }; }
-  @Put('settings') save(@Req() r: Req_, @Body() dto: SettingsDto) { return this.policy.saveSettings(r.user.id, dto.settings ?? {}); }
+  @Put('settings') @UseGuards(FinanceAdminGuard) save(@Req() r: Req_, @Body() dto: SettingsDto) { return this.policy.saveSettings(r.user.id, dto.settings ?? {}); }
   /** Số tin chờ duyệt và quá hạn, dùng cho huy hiệu ở menu quản trị. */
   @Get('summary') async summary() { const s = await this.policy.settings(); return { success: true, data: await this.policy.backlog(s.backlogHours), message: null, errorCode: null }; }
-  @Post('remind-now') async remindNow() { const sent = await this.backlogService.run(true); return { success: true, data: { sent }, message: sent ? `Đã gửi nhắc tới ${sent} quản trị viên.` : 'Hiện không có tin nào chờ quá hạn.', errorCode: null }; }
+  @Post('remind-now') @UseGuards(FinanceAdminGuard) async remindNow() { const sent = await this.backlogService.run(true); return { success: true, data: { sent }, message: sent ? `Đã gửi nhắc tới ${sent} quản trị viên.` : 'Hiện không có tin nào chờ quá hạn.', errorCode: null }; }
   @Get('queue') queue() { return this.policy.queue(); }
   @Get('history') history() { return this.policy.history(); }
 

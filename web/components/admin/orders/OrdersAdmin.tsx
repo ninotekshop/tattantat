@@ -3,6 +3,7 @@ import { Ic } from '../../Ic';
 import { ArrowLeft, ArrowRight, X } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import '../../../app/goi-dich-vu/billing.css';
+import { MoneyInput } from '../../MoneyInput';
 
 type Row = { id: string; order_code: string; total_amount: string; platform_fee: string; seller_net_amount: string; order_status: string; payment_status: string; shipping_status: string; payment_method: string | null; created_at: string; product_title: string; buyer_name: string; buyer_email: string | null; seller_name: string; seller_email: string | null };
 type Detail = Row & { note: string | null; quantity: number; product_price: string; shipping_fee: string; discount_amount: string; payment_fee: string; shipping_method: string | null; confirmed_at: string | null; completed_at: string | null; cancelled_at: string | null; buyer_phone: string | null; seller_phone: string | null; receiver_name: string | null; receiver_phone: string | null; address_line: string | null; items: { product_name: string; unit_price: string; quantity: number; subtotal: string }[]; history: { status: string; note: string | null; created_at: string; actor: string }[]; payments: { provider: string; status: string; amount: string; transaction_id: string | null; paid_at: string | null }[]; shipment: { carrier: string | null; tracking_code: string | null; status: string } | null; allowedTransitions: string[]; buyer_id: string; seller_id: string };
@@ -108,7 +109,7 @@ export function OrdersAdmin({ authHeaders }: { authHeaders: () => Record<string,
 
   return <div className="bl" style={{ padding: 0 }}>
     {error && <div className="bl-msg err">{error}</div>}{ok && <div className="bl-msg ok">{ok}</div>}
-    <div className="bl-grid plans" style={{ marginBottom: 14 }}>
+    <div className="bl-grid plans" style={{ marginBottom: 14, gridTemplateColumns: 'repeat(5, minmax(0, 1fr))' }}>
       {cards.map(([l, v, st]) => <div key={l} className="bl-card" onClick={() => st && setFilter({ status: f.status === st ? '' : st })} style={{ margin: 0, padding: 14, cursor: st ? 'pointer' : 'default', outline: st && f.status === st ? '2px solid #008954' : 'none' }}>
         <div style={{ color: '#71817b', fontSize: 12 }}>{l}</div><div style={{ fontSize: 20, fontWeight: 800, color: '#007c4b' }}>{v}</div></div>)}
     </div>
@@ -122,8 +123,8 @@ export function OrdersAdmin({ authHeaders }: { authHeaders: () => Record<string,
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 12, alignItems: 'center' }}>
         <label style={{ fontSize: 12 }}>Từ <input type="date" value={f.from} onChange={e => setFilter({ from: e.target.value })} style={inp} /></label>
         <label style={{ fontSize: 12 }}>Đến <input type="date" value={f.to} onChange={e => setFilter({ to: e.target.value })} style={inp} /></label>
-        <input type="number" min={0} placeholder="Giá trị từ (₫)" value={f.minAmount} onChange={e => setFilter({ minAmount: e.target.value })} style={{ ...inp, width: 140 }} />
-        <input type="number" min={0} placeholder="Đến (₫)" value={f.maxAmount} onChange={e => setFilter({ maxAmount: e.target.value })} style={{ ...inp, width: 140 }} />
+        <MoneyInput placeholder="Giá trị từ (₫)" value={f.minAmount} onChange={d => setFilter({ minAmount: d })} style={{ ...inp, width: 140 }} />
+        <MoneyInput placeholder="Đến (₫)" value={f.maxAmount} onChange={d => setFilter({ maxAmount: d })} style={{ ...inp, width: 140 }} />
         <button className="bl-btn sm" onClick={reset}>Xóa lọc</button>
         <button className="bl-btn sm" disabled={busy} onClick={() => { void load(); void loadStats(); }}>Tải lại</button>
         <button className="bl-btn sm primary" disabled={busy || !meta.total} onClick={() => void exportCsv()}>Xuất Excel (CSV)</button>

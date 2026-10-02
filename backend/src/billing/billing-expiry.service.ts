@@ -39,9 +39,9 @@ export class BillingExpiryService implements OnModuleInit, OnModuleDestroy {
     for (const st of STAGES) {
       const rows = (await this.db.query(`
         SELECT s.id::text, s.seller_id::text AS uid, p.name, s.ends_at
-        FROM subscriptions s JOIN subscription_plans p ON p.id=s.plan_id
+        FROM subscriptions s JOIN subscription_plans p ON p.id::text=s.plan_id::text
         WHERE s.status='ACTIVE' AND s.ends_at IS NOT NULL AND s.ends_at > NOW()+${st.from} AND s.ends_at <= NOW()+${st.to}
-          AND NOT EXISTS (SELECT 1 FROM notifications n WHERE n.user_id=s.seller_id AND n.type=$1 AND n.reference_id=s.id::text AND n.created_at >= s.ends_at-${st.back})
+          AND NOT EXISTS (SELECT 1 FROM notifications n WHERE n.user_id::text=s.seller_id::text AND n.type=$1 AND n.reference_id::text=s.id::text AND n.created_at >= s.ends_at-${st.back})
         LIMIT 500`, [`SUBSCRIPTION_EXPIRING_${st.key}`])).rows;
       for (const r of rows) {
         const days = st.key === '1D' ? 'chưa đầy 1 ngày' : 'khoảng 3 ngày';
@@ -51,10 +51,10 @@ export class BillingExpiryService implements OnModuleInit, OnModuleDestroy {
     }
     const expired = (await this.db.query(`
       SELECT s.id::text, s.seller_id::text AS uid, p.name
-      FROM subscriptions s JOIN subscription_plans p ON p.id=s.plan_id
+      FROM subscriptions s JOIN subscription_plans p ON p.id::text=s.plan_id::text
       WHERE s.ends_at IS NOT NULL AND s.ends_at <= NOW() AND s.ends_at > NOW()-interval '7 days' AND s.status IN ('ACTIVE','EXPIRED')
-        AND NOT EXISTS (SELECT 1 FROM notifications n WHERE n.user_id=s.seller_id AND n.type='SUBSCRIPTION_EXPIRED' AND n.reference_id=s.id::text AND n.created_at >= s.ends_at)
-        AND NOT EXISTS (SELECT 1 FROM subscriptions s2 WHERE s2.seller_id=s.seller_id AND s2.id<>s.id AND s2.status='ACTIVE' AND (s2.ends_at IS NULL OR s2.ends_at>NOW()))
+        AND NOT EXISTS (SELECT 1 FROM notifications n WHERE n.user_id::text=s.seller_id::text AND n.type='SUBSCRIPTION_EXPIRED' AND n.reference_id::text=s.id::text AND n.created_at >= s.ends_at)
+        AND NOT EXISTS (SELECT 1 FROM subscriptions s2 WHERE s2.seller_id::text=s.seller_id::text AND s2.id::text<>s.id::text AND s2.status='ACTIVE' AND (s2.ends_at IS NULL OR s2.ends_at>NOW()))
       LIMIT 500`)).rows;
     for (const r of expired) {
       await this.notifications.create(r.uid, 'SUBSCRIPTION_EXPIRED', `Gói ${r.name} đã hết hạn`, `Gói ${r.name} của bạn đã hết hạn. Mua lại gói để tiếp tục đăng tin không giới hạn.`, 'SUBSCRIPTION', r.id).catch(() => undefined);
@@ -63,9 +63,9 @@ export class BillingExpiryService implements OnModuleInit, OnModuleDestroy {
     // Gói đẩy tin
     const promos = (await this.db.query(`
       SELECT a.id::text AS aid, o.seller_id::text AS uid, pk.name, pr.title, a.ends_at
-      FROM promotion_activations a JOIN promotion_orders o ON o.id=a.promotion_order_id JOIN promotion_packages pk ON pk.id=o.package_id LEFT JOIN products pr ON pr.id=o.product_id
+      FROM promotion_activations a JOIN promotion_orders o ON o.id::text=a.promotion_order_id::text JOIN promotion_packages pk ON pk.id::text=o.package_id::text LEFT JOIN products pr ON pr.id::text=o.product_id::text
       WHERE a.ends_at IS NOT NULL AND a.ends_at > NOW() AND a.ends_at <= NOW()+interval '1 day'
-        AND NOT EXISTS (SELECT 1 FROM notifications n WHERE n.user_id=o.seller_id AND n.type='PROMOTION_EXPIRING' AND n.reference_id=a.id::text)
+        AND NOT EXISTS (SELECT 1 FROM notifications n WHERE n.user_id::text=o.seller_id::text AND n.type='PROMOTION_EXPIRING' AND n.reference_id::text=a.id::text)
       LIMIT 500`)).rows;
     for (const r of promos) {
       await this.notifications.create(r.uid, 'PROMOTION_EXPIRING', 'Gói đẩy tin sắp kết thúc', `Gói ${r.name}${r.title ? ` cho tin "${r.title}"` : ''} sẽ kết thúc trong vòng 24 giờ. Mua thêm để tin tiếp tục được ưu tiên hiển thị.`, 'SUBSCRIPTION', r.aid).catch(() => undefined);

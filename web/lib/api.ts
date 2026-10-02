@@ -10,6 +10,7 @@ export type Product = {
   postedAt: string;
   sellerId: string;
   sellerName: string;
+  sellerVerified?: boolean;
   imageUrl: string;
   images?: string[];
   videos?: string[];
@@ -85,6 +86,7 @@ export const api = {
     for (const [k, v] of Object.entries(params)) if (v !== undefined && v !== '' && v !== false) qs.set(k, String(v));
     return apiGet<{ items: Product[]; total: number; page: number; limit: number }>(`/search/products?${qs}`, readSession()?.accessToken);
   },
+  hotKeywords: () => apiGet<string[]>('/search/hot-keywords'),
   products: (query = '', categoryId?: number) => {
     const params = new URLSearchParams();
     if (query.trim()) params.set('q', query.trim());

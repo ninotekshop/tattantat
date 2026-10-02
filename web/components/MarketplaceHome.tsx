@@ -4,6 +4,7 @@ import { Ic } from './Ic';
 import { VideoBadge } from './VideoBadge';
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
+import { ErrorDialog, isErrorMessage } from './ErrorDialog';
 import { useRouter } from 'next/navigation';
 import { createPortal } from 'react-dom';
 import { readSession } from '../lib/auth';
@@ -11,7 +12,7 @@ import {
   Search, MapPin, ChevronLeft, ChevronRight, X, ArrowUp, Sparkles,
   Clock, CheckCircle2, Gift, List, Eye, Crown,
   User, MessageSquare, ChevronDown, BadgeCheck, Bell, Flag, Flame, Link2, Heart, Share2, EyeOff } from 'lucide-react';
-import { api, memberRequest, type Product } from '../lib/api';
+import { api, apiGet, memberRequest, type Product } from '../lib/api';
 import { useFavorites } from '../lib/favorites';
 import { CATEGORY_ENGINE_TAXONOMY } from '../lib/marketplace';
 import { LocationSelectorModal } from './LocationSelectorModal';
@@ -57,7 +58,8 @@ function ProductCard({ product, viewMode = 'GRID_4' }: { product: Product; viewM
   const [reportDetails, setReportDetails] = useState('');
   const [reportBusy, setReportBusy] = useState(false);
   const [reportError, setReportError] = useState('');
-  const flash = (msg: string) => { setToast(msg); window.setTimeout(() => setToast(''), 2600); };
+  const [errPopup, setErrPopup] = useState<string | null>(null);
+  const flash = (msg: string) => { if (isErrorMessage(msg)) { setErrPopup(msg); return; } setToast(msg); window.setTimeout(() => setToast(''), 2600); };
   useEffect(() => {
     try { if ((JSON.parse(localStorage.getItem('tt-hidden-products') || '[]') as string[]).includes(product.id)) setHidden(true); } catch { /* bỏ qua */ }
   }, [product.id]);
@@ -110,10 +112,7 @@ function ProductCard({ product, viewMode = 'GRID_4' }: { product: Product; viewM
   const isSale = product.priceMode === 'CONTACT';
   const isNew = !isHot && !isSale && new Date(product.postedAt).getTime() > Date.now() - 86400000;
 
-  const metadataText = product.title.includes('iPhone') ? '256GB · Chính chủ'
-    : product.title.includes('Nhà') ? '80m² · 3 tầng'
-    : product.title.includes('Xe') ? 'Honda · 12.000 km'
-    : 'Chất lượng cao · Hàng đẹp';
+  const metadataText = product.condition ? (CONDITION_TEXT[product.condition.toUpperCase().replace(/_/g, '')] ?? '') : '';
 
   useEffect(() => {
     if (!menuOpen) return;
@@ -170,7 +169,7 @@ function ProductCard({ product, viewMode = 'GRID_4' }: { product: Product; viewM
       <div className="card-body">
         <Link href={'/products/' + product.id} style={{ textDecoration: 'none', color: 'inherit' }}>
           <h3 className="card-title-full">{product.title}</h3>
-          <div className="card-metadata">{metadataText}</div>
+          {metadataText && <div className="card-metadata">{metadataText}</div>}
           <div className="price-row">
             <span className="price">{product.priceMode === 'CONTACT' ? 'LIÊN HỆ' : product.priceMode === 'FREE' ? 'TẶNG MIỄN PHÍ' : formatVnd(product.price)}</span>
           </div>
@@ -178,8 +177,9 @@ function ProductCard({ product, viewMode = 'GRID_4' }: { product: Product; viewM
           <div className="location-row" style={{ display: 'flex', alignItems: 'center', gap: 5, color: '#64748b' }}>
             <MapPin size={13} /> {product.location || 'Quy Nhơn'}
           </div>
-          <div className="card-seller-name" style={{ display: 'flex', alignItems: 'center', gap: 5, color: '#475569' }}>
-            <User size={13} /> {product.sellerName} <span className="verified-badge"><Ic i={BadgeCheck}/>Đã xác thực</span>
+          <div className="card-seller-name" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 2, color: '#475569' }}>
+            <span style={{ display: 'flex', alignItems: 'flex-start', gap: 5, minWidth: 0, overflowWrap: 'anywhere' }}><User size={13} style={{ flex: 'none', marginTop: 2 }} /><span style={{ minWidth: 0 }}>{product.sellerName}</span></span>
+            {product.sellerVerified && <span className="verified-badge" style={{ alignSelf: 'flex-start' }}><Ic i={BadgeCheck}/>Đã xác thực</span>}
           </div>
           <div className="card-posted-date" style={{ display: 'flex', alignItems: 'center', gap: 5, color: '#64748b' }}>
             <Clock size={13} /> Đăng {new Date(product.postedAt).toLocaleDateString('vi-VN')}
@@ -227,6 +227,7 @@ function ProductCard({ product, viewMode = 'GRID_4' }: { product: Product; viewM
         </div>
       </div>
     </article>
+    <ErrorDialog message={errPopup || reportError} onClose={() => { setErrPopup(null); setReportError(''); }} />
     {typeof document !== 'undefined' && toast && createPortal(<div role="status" style={{ position: 'fixed', left: '50%', bottom: 28, transform: 'translateX(-50%)', background: '#0f3d2a', color: '#fff', padding: '10px 18px', borderRadius: 999, fontSize: 13.5, fontWeight: 600, zIndex: 100000, boxShadow: '0 8px 24px #0004' }}>{toast}</div>, document.body)}
     {typeof document !== 'undefined' && reportOpen && createPortal(
       <div role="dialog" aria-modal="true" aria-label="Báo cáo tin đăng" onClick={() => setReportOpen(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.5)', zIndex: 100000, display: 'grid', placeItems: 'center', padding: 16 }}>
@@ -241,7 +242,6 @@ function ProductCard({ product, viewMode = 'GRID_4' }: { product: Product; viewM
           <label style={{ display: 'grid', gap: 4, fontSize: 14 }}>Mô tả thêm (không bắt buộc)
             <textarea rows={4} maxLength={1000} value={reportDetails} onChange={e => setReportDetails(e.target.value)} placeholder="Ví dụ: người bán yêu cầu chuyển khoản trước rồi không giao hàng…" style={{ padding: 10, borderRadius: 8, border: '1px solid #cbd5e1', font: 'inherit' }} />
           </label>
-          {reportError && <p role="alert" style={{ margin: 0, color: '#c0392b', fontSize: 13 }}>{reportError}</p>}
           <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
             <button type="button" onClick={() => setReportOpen(false)} disabled={reportBusy} style={{ padding: '9px 16px', borderRadius: 999, border: '1px solid #cbd5e1', background: '#fff', cursor: 'pointer' }}>Hủy</button>
             <button type="submit" disabled={reportBusy} style={{ padding: '9px 18px', borderRadius: 999, border: 0, background: '#0a9a5c', color: '#fff', fontWeight: 700, cursor: 'pointer' }}>{reportBusy ? 'Đang gửi…' : 'Gửi báo cáo'}</button>
@@ -252,6 +252,7 @@ function ProductCard({ product, viewMode = 'GRID_4' }: { product: Product; viewM
   );
 }
 
+const CONDITION_TEXT: Record<string, string> = { NEW: 'Mới 100%', LIKENEW: 'Như mới', USEDLIKENEW: 'Như mới', USEDGOOD: 'Đã dùng, còn tốt', USEDFAIR: 'Đã dùng, có hao mòn', FORPARTS: 'Cần sửa / lấy linh kiện', REFURBISHED: 'Đã tân trang' };
 export function MarketplaceHome({ query = '', group = '', sort = '', view = '' }: { query?: string; group?: string; sort?: string; view?: string }) {
   const router = useRouter();
   const categoryScrollRef = useRef<HTMLDivElement>(null);
@@ -271,8 +272,10 @@ export function MarketplaceHome({ query = '', group = '', sort = '', view = '' }
   const [loadingMore, setLoadingMore] = useState(false);
   const [saveMsg, setSaveMsg] = useState('');
 
-  // Default view mode: GRID_4 (Lưới 4x3) across all pages
-  const [viewMode, setViewMode] = useState<'GRID_6' | 'GRID_4' | 'LIST'>('GRID_4');
+  // Chế độ xem mặc định: GRID_6 (6 tin/dòng)
+  const [hotKeywords, setHotKeywords] = useState<string[]>(['iPhone 15', 'Honda Vision', 'Chung cư Quy Nhơn', 'Tủ lạnh Inverter']);
+  useEffect(() => { let on = true; api.hotKeywords().then(r => { if (on && Array.isArray(r) && r.length) setHotKeywords(r); }).catch(() => {}); return () => { on = false; }; }, []);
+  const [viewMode, setViewMode] = useState<'GRID_6' | 'GRID_4' | 'LIST'>('GRID_6');
 
   // Unified Location Engine Selection
   const [locationSelection, setLocationSelection] = useState<LocationSelection>({
@@ -291,7 +294,8 @@ export function MarketplaceHome({ query = '', group = '', sort = '', view = '' }
     heroBanner?: string;
     heroBanners?: string[];
   }>({});
-  const [heroIndex, setHeroIndex] = useState(0);
+  const [hero, setHero] = useState<{ cur: number; prev: number }>({ cur: 0, prev: -1 });
+  const heroIndex = hero.cur;
 
   useEffect(() => {
     const handleScroll = () => {
@@ -304,11 +308,12 @@ export function MarketplaceHome({ query = '', group = '', sort = '', view = '' }
   // Slide ảnh Hero (fade) khi có từ 2 banner trở lên
   const heroCount = activeBanners.heroBanners?.length ?? 0;
   useEffect(() => {
-    if (heroIndex >= heroCount) setHeroIndex(0);
-    if (heroCount < 2) return;
-    const t = setInterval(() => setHeroIndex(i => (i + 1) % heroCount), 5000);
+    if (heroCount < 2) { setHero(h => (h.cur === 0 && h.prev === -1 ? h : { cur: 0, prev: -1 })); return; }
+    // Preload toàn bộ ảnh để lần chuyển đầu tiên không bị giật
+    (activeBanners.heroBanners ?? []).forEach(src => { const im = new Image(); im.src = src; });
+    const t = setInterval(() => setHero(h => ({ cur: (h.cur + 1) % heroCount, prev: h.cur < heroCount ? h.cur : -1 })), 5000);
     return () => clearInterval(t);
-  }, [heroCount, heroIndex]);
+  }, [heroCount, activeBanners.heroBanners]);
 
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -347,15 +352,38 @@ export function MarketplaceHome({ query = '', group = '', sort = '', view = '' }
     };
   }, []);
 
-  const locationParam = locationSelection.mode === 'nationwide' || locationSelection.label === 'Toàn quốc' ? '' : locationSelection.label.replace(/.*\(|\).*/g, '').trim();
+  // "Quanh tôi": đổi tọa độ GPS thành quận/huyện + tỉnh để lọc theo địa chỉ tin đăng.
+  const [area, setArea] = useState<{ key: string; district: string; province: string } | null>(null);
+  const nearbyKey = locationSelection.mode === 'nearby' ? `${locationSelection.latitude},${locationSelection.longitude}` : '';
+  useEffect(() => {
+    if (!nearbyKey) return;
+    let on = true;
+    const [lat, lng] = nearbyKey.split(',');
+    apiGet<{ district: string; province: string }>(`/geo/area?lat=${lat}&lng=${lng}`)
+      .then(r => { if (on) setArea({ key: nearbyKey, district: r.district || '', province: r.province || '' }); })
+      .catch(() => { if (on) setArea({ key: nearbyKey, district: '', province: '' }); });
+    return () => { on = false; };
+  }, [nearbyKey]);
+  const cleanArea = (n: string) => n.replace(/^(thành phố|tỉnh|quận|huyện|thị xã|thị trấn|tp\.?)\s+/i, '').trim();
+  const nearbyReady = !nearbyKey || area?.key === nearbyKey;
+  const nearbyDistrict = nearbyKey && area?.key === nearbyKey ? cleanArea(area.district) : '';
+  const nearbyProvince = nearbyKey && area?.key === nearbyKey ? cleanArea(area.province) : '';
+  const locationParam = locationSelection.mode === 'nationwide' || locationSelection.label === 'Toàn quốc' ? ''
+    : locationSelection.mode === 'nearby' ? ((locationSelection.radiusKm ?? 10) >= 20 ? nearbyProvince : (nearbyDistrict || nearbyProvince))
+    : locationSelection.label.replace(/.*\(|\).*/g, '').trim();
   const searchParams = () => ({ q: query, minPrice: filters.minPrice.replace(/\D/g, ''), maxPrice: filters.maxPrice.replace(/\D/g, ''), condition: filters.condition, verified: filters.verified || (activeTab === 'VERIFIED'), location: locationParam, sort: filters.sortBy, limit: 24 });
 
   useEffect(() => {
     let cancelled = false;
     async function load() {
+      if (!nearbyReady) return;
       setIsLoading(true); setPage(1);
       try {
-        const res = await api.search(searchParams()).catch(() => ({ items: [] as Product[], total: 0, page: 1, limit: 24 }));
+        let res = await api.search(searchParams()).catch(() => ({ items: [] as Product[], total: 0, page: 1, limit: 24 }));
+        // Quận/huyện chưa có tin: mở rộng ra cả tỉnh để vẫn thấy tin gần bạn.
+        if (res.total === 0 && locationSelection.mode === 'nearby' && nearbyProvince && nearbyProvince !== locationParam) {
+          res = await api.search({ ...searchParams(), location: nearbyProvince }).catch(() => res);
+        }
         if (!cancelled) { setProducts(res.items); setTotal(res.total); setVisibleCount(res.items.length || 12); }
       } catch (err) {} finally {
         if (!cancelled) setIsLoading(false);
@@ -364,7 +392,7 @@ export function MarketplaceHome({ query = '', group = '', sort = '', view = '' }
     void load();
     return () => { cancelled = true; };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [query, filters, locationParam, activeTab === 'VERIFIED']);
+  }, [query, filters, locationParam, nearbyReady, activeTab === 'VERIFIED']);
 
   async function loadMore() {
     if (loadingMore) return; setLoadingMore(true);
@@ -485,6 +513,7 @@ export function MarketplaceHome({ query = '', group = '', sort = '', view = '' }
           <div
             className="hero-banner-container hero-flush-top"
           >
+            <div aria-hidden="true" style={{ position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none' }}>
             {(activeBanners.heroBanners ?? []).map((src, i) => (
               <div
                 key={src}
@@ -492,10 +521,15 @@ export function MarketplaceHome({ query = '', group = '', sort = '', view = '' }
                 style={{
                   position: 'absolute', inset: 0, backgroundImage: `url(${src})`,
                   backgroundSize: 'cover', backgroundPosition: 'center',
-                  opacity: i === heroIndex ? 1 : 0, transition: 'opacity 1.2s ease-in-out', pointerEvents: 'none',
+                  // Ảnh mới mờ dần hiện lên TRÊN ảnh cũ (ảnh cũ giữ nguyên đến khi ảnh mới đã hiện đủ) → không bị chớp tối giữa 2 ảnh
+                  opacity: i === heroIndex || i === hero.prev ? 1 : 0,
+                  zIndex: i === heroIndex ? 2 : i === hero.prev ? 1 : 0,
+                  transition: i === heroIndex ? 'opacity 1.6s cubic-bezier(0.4, 0, 0.2, 1)' : 'none',
+                  willChange: 'opacity', pointerEvents: 'none',
                 }}
               />
             ))}
+            </div>
             <div className="hero-banner-bg" />
             <div className="hero-banner-overlay" style={{ maxWidth: 660 }}>
               <div style={{ textAlign: 'center', marginBottom: 14 }}>
@@ -561,10 +595,9 @@ export function MarketplaceHome({ query = '', group = '', sort = '', view = '' }
               {/* CENTER-ALIGNED HOT KEYWORDS */}
               <div className="hero-quick-keywords" style={{ justifyContent: 'center', textAlign: 'center', width: '100%', marginTop: 14 }}>
                 <span style={{ fontWeight: 700, color: '#ffffff', textShadow: '0 1px 4px rgba(0,0,0,0.5)' }}><Ic i={Flame}/>Từ khóa HOT:</span>
-                <button onClick={() => { setSearchQuery('iPhone 15'); router.push('/?q=iPhone+15'); }}>iPhone 15</button>
-                <button onClick={() => { setSearchQuery('Honda Vision'); router.push('/?q=Honda+Vision'); }}>Vision cũ</button>
-                <button onClick={() => { setSearchQuery('Chung cư Quy Nhơn'); router.push('/?q=Chung+cư+Quy+Nhơn'); }}>Chung cư Quy Nhơn</button>
-                <button onClick={() => { setSearchQuery('Tủ lạnh'); router.push('/?q=Tủ+lạnh'); }}>Tủ lạnh Inverter</button>
+                {hotKeywords.map(k => (
+                  <button key={k} onClick={() => { setSearchQuery(k); router.push(`/?q=${encodeURIComponent(k)}`); }}>{k}</button>
+                ))}
               </div>
             </div>
           </div>
@@ -689,22 +722,6 @@ export function MarketplaceHome({ query = '', group = '', sort = '', view = '' }
             </div>
           </div>
 
-          {/* BỘ LỌC TÌM KIẾM */}
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', margin: '12px 0', fontSize: 13.5 }}>
-            <input inputMode="numeric" placeholder="Giá từ (đ)" value={filters.minPrice} onChange={e => setFilters(f => ({ ...f, minPrice: e.target.value }))} style={{ width: 120, padding: '8px 10px', border: '1px solid #dbe4dd', borderRadius: 8 }} />
-            <input inputMode="numeric" placeholder="Giá đến (đ)" value={filters.maxPrice} onChange={e => setFilters(f => ({ ...f, maxPrice: e.target.value }))} style={{ width: 120, padding: '8px 10px', border: '1px solid #dbe4dd', borderRadius: 8 }} />
-            <select value={filters.condition} onChange={e => setFilters(f => ({ ...f, condition: e.target.value }))} style={{ padding: '8px 10px', border: '1px solid #dbe4dd', borderRadius: 8 }}>
-              <option value="">Mọi tình trạng</option><option value="NEW">Mới</option><option value="LIKE_NEW">Như mới</option><option value="USED_GOOD">Đã dùng - tốt</option><option value="USED_FAIR">Đã dùng - khá</option><option value="FOR_PARTS">Xác/linh kiện</option>
-            </select>
-            <select value={filters.sortBy} onChange={e => setFilters(f => ({ ...f, sortBy: e.target.value }))} style={{ padding: '8px 10px', border: '1px solid #dbe4dd', borderRadius: 8 }}>
-              <option value="new">Mới nhất</option><option value="price_asc">Giá thấp → cao</option><option value="price_desc">Giá cao → thấp</option><option value="old">Cũ nhất</option>
-            </select>
-            <label style={{ display: 'inline-flex', gap: 6, alignItems: 'center' }}><input type="checkbox" checked={filters.verified} onChange={e => setFilters(f => ({ ...f, verified: e.target.checked }))} /> Người bán đã xác thực</label>
-            <button type="button" onClick={() => void saveSearch()} style={{ padding: '8px 12px', border: '1px solid #00a65a', color: '#00a65a', background: '#fff', borderRadius: 8, fontWeight: 600, cursor: 'pointer' }}><Ic i={Bell} solid/>Lưu tìm kiếm</button>
-            <span style={{ color: '#64748b' }}>{isLoading ? '' : `${total.toLocaleString('vi-VN')} tin phù hợp`}</span>
-            {saveMsg && <span role="status" style={{ color: '#0f766e' }}>{saveMsg}</span>}
-          </div>
-
           {/* PRODUCT MATRIX (DEFAULT: GRID_4 / LƯỚI 4X3) */}
           <div className={viewMode === 'GRID_4' ? 'products-grid-4' : viewMode === 'GRID_6' ? 'products-grid-6' : 'products-list-container'}>
             {isLoading ? (
@@ -712,7 +729,7 @@ export function MarketplaceHome({ query = '', group = '', sort = '', view = '' }
             ) : displayedProducts.length > 0 ? (
               displayedProducts.map(p => <ProductCard key={p.id} product={p} viewMode={viewMode} />)
             ) : (
-              <p style={{ padding: 40, textAlign: 'center', color: '#64748b', gridColumn: 'span 4', background: '#f8fafc', borderRadius: 12, border: '1px dashed #cbd5e1' }}>
+              <p style={{ padding: 40, textAlign: 'center', color: '#64748b', gridColumn: '1 / -1', width: '100%', margin: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 160, background: '#f8fafc', borderRadius: 12, border: '1px dashed #cbd5e1' }}>
                 Không tìm thấy bài đăng phù hợp tại khu vực <strong>{locationSelection.label}</strong>.
               </p>
             )}

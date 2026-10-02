@@ -1,6 +1,8 @@
 'use client';
 import { useCallback, useEffect, useState } from 'react';
 import '../../../app/goi-dich-vu/billing.css';
+import { MoneyInput } from '../../MoneyInput';
+import { planLabel } from '../../../lib/billing';
 
 type Headers = () => Record<string, string>;
 type Customer = { id: string; userId: string; userName: string; email: string | null; phone: string | null; planName: string; billingCycle: string; price: string; maxListings: number | null; effectiveStatus: string; startsAt: string; endsAt: string | null; balance: string };
@@ -16,8 +18,8 @@ const dOnly = (v?: string | null) => (v ? new Date(v).toLocaleDateString('vi-VN'
 const STATUS: Record<string, [string, string]> = { ACTIVE: ['Đang hiệu lực', 'ok'], EXPIRED: ['Hết hạn', ''], CANCELLED: ['Đã hủy/thay', ''] };
 const TOPUP: Record<string, [string, string]> = { PENDING: ['Chờ xác nhận', 'wait'], CONFIRMED: ['Đã cộng tiền', 'ok'], REJECTED: ['Từ chối', 'bad'], CANCELLED: ['Khách hủy', ''], EXPIRED: ['Hết hạn', ''] };
 
-export function CustomerPackagesAdmin({ authHeaders }: { authHeaders: Headers }) {
-  const [tab, setTab] = useState<'customers' | 'topups' | 'pricing' | 'bank'>('customers');
+export function CustomerPackagesAdmin({ authHeaders, mode = 'all' }: { authHeaders: Headers; mode?: 'all' | 'pricing' }) {
+  const [tab, setTab] = useState<'customers' | 'topups' | 'pricing' | 'bank'>(mode === 'pricing' ? 'pricing' : 'customers');
   const [error, setError] = useState(''); const [ok, setOk] = useState(''); const [busy, setBusy] = useState(false);
   const [stats, setStats] = useState<Stats | null>(null);
 
@@ -67,17 +69,28 @@ export function CustomerPackagesAdmin({ authHeaders }: { authHeaders: Headers })
     setForm(null); await loadPricing();
   }); };
 
+  const [hist, setHist] = useState<{ title: string; rows: Record<string, unknown>[] } | null>(null);
+  const showHistory = (kind: 'plan' | 'pack', p: PlanRow) => void run(async () => {
+    const rows = await call<Record<string, unknown>[]>(`/admin/${kind === 'plan' ? 'subscription-plans' : 'promotion-packages'}/${p.id}/versions`);
+    setHist({ title: `Lịch sử giá — ${p.name}`, rows });
+  });
+  const toggleStatus = (kind: 'plan' | 'pack', p: PlanRow) => {
+    const next = p.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
+    const reason = window.prompt(next === 'INACTIVE' ? `Ngừng bán "${p.name}"? Khách đã mua vẫn giữ quyền lợi. Nhập lý do:` : `Mở bán lại "${p.name}". Nhập lý do:`); if (!reason) return;
+    void run(async () => { await call(`/admin/${kind === 'plan' ? 'subscription-plans' : 'promotion-packages'}/${p.id}/status`, 'POST', { status: next, reason }); await loadPricing(); });
+  };
+
   // bank
   const [bank, setBank] = useState<Bank>({ bankBin: '', bankName: '', accountNumber: '', accountName: '' });
   useEffect(() => { if (tab === 'bank') void run(async () => { const b = await call<Bank | null>('/admin/billing/bank'); if (b) setBank(b); }); }, [tab]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return <div className="bl" style={{ padding: 0 }}>
     {error && <div className="bl-msg err" role="alert">{error}</div>}{ok && <div className="bl-msg ok" role="status">{ok}</div>}
-    {stats && <div className="bl-grid plans" style={{ marginBottom: 16 }}>
+    {mode === 'all' && stats && <div className="bl-grid plans" style={{ marginBottom: 16, gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))' }}>
       {[['Gói đang hiệu lực', String(stats.active)], ['Sắp hết hạn (7 ngày)', String(stats.expiring)], ['Doanh thu gói tháng này', vnd(stats.planRevenueMonth)], ['Doanh thu đẩy tin tháng này', vnd(stats.promoRevenueMonth)], ['Yêu cầu nạp chờ duyệt', String(stats.pendingTopups)]].map(([l, v]) =>
         <div key={l} className="bl-card" style={{ margin: 0, padding: 14 }}><div style={{ color: '#71817b', fontSize: 12 }}>{l}</div><div style={{ fontSize: 22, fontWeight: 800, color: '#007c4b' }}>{v}</div></div>)}
     </div>}
-    <div className="bl-toggle" role="tablist">{([['customers', 'Khách hàng mua gói'], ['topups', 'Yêu cầu nạp tiền'], ['pricing', 'Bảng giá gói'], ['bank', 'Tài khoản nhận tiền']] as const).map(([k, l]) => <button key={k} className={tab === k ? 'on' : ''} onClick={() => setTab(k)}>{l}{k === 'topups' && stats?.pendingTopups ? ` (${stats.pendingTopups})` : ''}</button>)}</div>
+    {mode === 'all' && <div className="bl-toggle" role="tablist">{([['customers', 'Khách hàng mua gói'], ['topups', 'Yêu cầu nạp tiền'], ['pricing', 'Bảng giá gói'], ['bank', 'Tài khoản nhận tiền']] as const).map(([k, l]) => <button key={k} className={tab === k ? 'on' : ''} onClick={() => setTab(k)}>{l}{k === 'topups' && stats?.pendingTopups ? ` (${stats.pendingTopups})` : ''}</button>)}</div>}
 
     {tab === 'customers' && <div className="bl-card">
       <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 12 }}>
@@ -88,7 +101,7 @@ export function CustomerPackagesAdmin({ authHeaders }: { authHeaders: Headers })
       <div style={{ overflowX: 'auto' }}><table className="bl-tbl"><thead><tr><th>Khách hàng</th><th>Gói</th><th>Giá</th><th>Hạn mức tin</th><th>Hiệu lực</th><th>Trạng thái</th><th>Số dư ví</th><th /></tr></thead><tbody>
         {customers.map(c => { const [label, cls] = STATUS[c.effectiveStatus] ?? [c.effectiveStatus, '']; return <tr key={c.id}>
           <td><b>{c.userName}</b><div style={{ color: '#71817b', fontSize: 12 }}>{c.email ?? ''} {c.phone ?? ''}</div></td>
-          <td>{c.planName}<div style={{ color: '#71817b', fontSize: 12 }}>{c.billingCycle === 'YEARLY' ? 'Theo năm' : 'Theo tháng'}</div></td><td>{vnd(c.price)}</td><td>{c.maxListings ?? '∞'}</td>
+          <td>{planLabel(c.planName)}<div style={{ color: '#71817b', fontSize: 12 }}>{c.billingCycle === 'YEARLY' ? 'Theo năm' : 'Theo tháng'}</div></td><td>{vnd(c.price)}</td><td>{c.maxListings ?? '∞'}</td>
           <td>{dOnly(c.startsAt)} → {dOnly(c.endsAt)}</td><td><span className={`bl-pill ${cls}`}>{label}</span></td><td>{vnd(c.balance)}</td>
           <td style={{ whiteSpace: 'nowrap' }}><button className="bl-btn sm" disabled={busy || c.effectiveStatus === 'CANCELLED'} onClick={() => extend(c)}>Gia hạn</button>{' '}
             <button className="bl-btn sm" disabled={busy} onClick={() => credit(c)}>Ví</button>{' '}
@@ -110,9 +123,9 @@ export function CustomerPackagesAdmin({ authHeaders }: { authHeaders: Headers })
 
     {tab === 'pricing' && <div>
       <div className="bl-card"><div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}><h2 style={{ margin: 0 }}>Gói đăng tin (thuê bao)</h2><button className="bl-btn sm primary" onClick={() => openPlan()}>+ Thêm gói</button></div>
-        <table className="bl-tbl" style={{ marginTop: 10 }}><thead><tr><th>Mã</th><th>Tên</th><th>Giá</th><th>Chu kỳ</th><th>Hạn mức tin</th><th /></tr></thead><tbody>{plans.map(p => <tr key={p.id}><td>{p.code}</td><td>{p.name}</td><td>{p.price ? vnd(p.price) : '—'}</td><td>{p.billing_cycle === 'YEARLY' ? 'Năm' : p.billing_cycle ? 'Tháng' : '—'}</td><td>{p.max_listings ?? '∞'}</td><td><button className="bl-btn sm" onClick={() => openPlan(p)}>Sửa giá / quyền lợi</button></td></tr>)}</tbody></table></div>
+        <table className="bl-tbl" style={{ marginTop: 10 }}><thead><tr><th>Mã</th><th>Tên</th><th>Giá</th><th>Chu kỳ</th><th>Hạn mức tin</th><th>Trạng thái</th><th /></tr></thead><tbody>{plans.map(p => <tr key={p.id}><td>{p.code}</td><td>{planLabel(p.name)}</td><td>{p.price ? vnd(p.price) : '—'}</td><td>{p.billing_cycle === 'YEARLY' ? 'Năm' : p.billing_cycle ? 'Tháng' : '—'}</td><td>{p.max_listings ?? '∞'}</td><td><span className={`bl-pill ${p.status === 'ACTIVE' ? 'ok' : ''}`}>{p.status === 'ACTIVE' ? 'Đang bán' : 'Ngừng bán'}</span></td><td style={{ whiteSpace: 'nowrap' }}><button className="bl-btn sm" onClick={() => openPlan(p)}>Sửa giá / quyền lợi</button>{' '}<button className="bl-btn sm" onClick={() => showHistory('plan', p)}>Lịch sử giá</button>{' '}<button className="bl-btn sm" onClick={() => toggleStatus('plan', p)}>{p.status === 'ACTIVE' ? 'Ngừng bán' : 'Mở bán'}</button></td></tr>)}</tbody></table></div>
       <div className="bl-card"><div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}><h2 style={{ margin: 0 }}>Gói đẩy tin / tin nổi bật</h2><button className="bl-btn sm primary" onClick={() => openPack()}>+ Thêm gói</button></div>
-        <table className="bl-tbl" style={{ marginTop: 10 }}><thead><tr><th>Mã</th><th>Tên</th><th>Loại</th><th>Giá</th><th>Thời lượng</th><th /></tr></thead><tbody>{packs.map(p => <tr key={p.id}><td>{p.code}</td><td>{p.name}</td><td>{p.promotion_type === 'FEATURED' ? 'Tin nổi bật' : 'Đẩy tin'}</td><td>{p.price ? vnd(p.price) : '—'}</td><td>{p.duration_hours ? `${p.duration_hours} giờ` : '—'}</td><td><button className="bl-btn sm" onClick={() => openPack(p)}>Sửa giá</button></td></tr>)}</tbody></table></div>
+        <table className="bl-tbl" style={{ marginTop: 10 }}><thead><tr><th>Mã</th><th>Tên</th><th>Loại</th><th>Giá</th><th>Thời lượng</th><th>Trạng thái</th><th /></tr></thead><tbody>{packs.map(p => <tr key={p.id}><td>{p.code}</td><td>{p.name}</td><td>{p.promotion_type === 'FEATURED' ? 'Tin nổi bật' : 'Đẩy tin'}</td><td>{p.price ? vnd(p.price) : '—'}</td><td>{p.duration_hours ? `${p.duration_hours} giờ` : '—'}</td><td><span className={`bl-pill ${p.status === 'ACTIVE' ? 'ok' : ''}`}>{p.status === 'ACTIVE' ? 'Đang bán' : 'Ngừng bán'}</span></td><td style={{ whiteSpace: 'nowrap' }}><button className="bl-btn sm" onClick={() => openPack(p)}>Sửa giá</button>{' '}<button className="bl-btn sm" onClick={() => showHistory('pack', p)}>Lịch sử giá</button>{' '}<button className="bl-btn sm" onClick={() => toggleStatus('pack', p)}>{p.status === 'ACTIVE' ? 'Ngừng bán' : 'Mở bán'}</button></td></tr>)}</tbody></table></div>
       <div className="bl-msg info">Mỗi lần sửa tạo phiên bản giá mới có lý do; khách đã mua giữ nguyên giá và quyền lợi đã mua.</div>
     </div>}
 
@@ -124,11 +137,20 @@ export function CustomerPackagesAdmin({ authHeaders }: { authHeaders: Headers })
       <label style={{ fontWeight: 700 }}>Tên chủ tài khoản (IN HOA, không dấu)</label><input className="bl-in" style={{ maxWidth: '100%', marginBottom: 14 }} value={bank.accountName} onChange={e => setBank({ ...bank, accountName: e.target.value.toUpperCase() })} />
       <button className="bl-btn primary" disabled={busy} onClick={() => void run(async () => { await call('/admin/billing/bank', 'PUT', bank); })}>Lưu tài khoản</button></div>}
 
+    {hist && <div className="bl-modal" onClick={() => setHist(null)}><div onClick={e => e.stopPropagation()} style={{ maxWidth: 720, maxHeight: '90vh', overflow: 'auto' }}>
+      <h2 style={{ marginTop: 0 }}>{hist.title}</h2>
+      <table className="bl-tbl"><thead><tr><th>Áp dụng từ</th><th>Đến</th><th>Giá</th><th>Lý do</th></tr></thead><tbody>
+        {hist.rows.map((r, i) => <tr key={i}><td>{dt(String(r.effective_from ?? ''))}</td><td>{r.effective_to ? dt(String(r.effective_to)) : 'Hiện hành'}</td><td>{vnd(r.price as string)}</td><td>{String(r.reason ?? '')}</td></tr>)}
+        {!hist.rows.length && <tr><td colSpan={4} style={{ color: '#71817b' }}>Chưa có lịch sử.</td></tr>}
+      </tbody></table>
+      <div style={{ marginTop: 12 }}><button className="bl-btn" onClick={() => setHist(null)}>Đóng</button></div>
+    </div></div>}
+
     {form && <div className="bl-modal" onClick={() => !busy && setForm(null)}><div onClick={e => e.stopPropagation()} style={{ maxWidth: 520, maxHeight: '90vh', overflow: 'auto' }}>
       <h2 style={{ marginTop: 0 }}>{form.id ? 'Cập nhật' : 'Thêm'} {form.kind === 'plan' ? 'gói đăng tin' : 'gói đẩy tin'}</h2>
       {!form.id && <><label style={{ fontWeight: 700 }}>Mã gói (IN HOA, ví dụ PRO_MONTH)</label><input className="bl-in" style={{ maxWidth: '100%', marginBottom: 8 }} value={form.code} onChange={e => setForm({ ...form, code: e.target.value.toUpperCase() })} />
         <label style={{ fontWeight: 700 }}>Tên gói</label><input className="bl-in" style={{ maxWidth: '100%', marginBottom: 8 }} value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} /></>}
-      <label style={{ fontWeight: 700 }}>Giá (VNĐ)</label><input className="bl-in" type="number" min={0} style={{ maxWidth: '100%', marginBottom: 8 }} value={form.price} onChange={e => setForm({ ...form, price: e.target.value })} />
+      <label style={{ fontWeight: 700 }}>Giá (VNĐ)</label><MoneyInput className="bl-in" style={{ maxWidth: '100%', marginBottom: 8 }} value={form.price} onChange={d => setForm({ ...form, price: d })} />
       {form.kind === 'plan' ? <>
         <label style={{ fontWeight: 700 }}>Chu kỳ</label><select className="bl-in" style={{ maxWidth: '100%', marginBottom: 8 }} value={form.cycle} onChange={e => setForm({ ...form, cycle: e.target.value as 'MONTHLY' | 'YEARLY' })}><option value="MONTHLY">Theo tháng</option><option value="YEARLY">Theo năm</option></select>
         <label style={{ fontWeight: 700 }}>Số tin đăng tối đa (để trống = không giới hạn)</label><input className="bl-in" type="number" min={1} style={{ maxWidth: '100%', marginBottom: 8 }} value={form.max} onChange={e => setForm({ ...form, max: e.target.value })} />

@@ -9,10 +9,12 @@ import { moneyLabel, orderActions, orderLabels } from '../../lib/order-ui';
 import type { WebSession } from '../../lib/auth';
 import { ReviewPanel } from '../../components/reviews/ReviewPanel';
 import { DisputePanel } from '../../components/orders/DisputePanel';
+import { CelebrationDialog, type CelebrationKind } from '../../components/CelebrationDialog';
 type Order = { id: string; order_code: string; buyer_id: string; seller_id: string; order_status: string; total_amount: string; payment_status: string; payment_method: string; payment_plan?: string; deposit_percent?: number | null; deposit_amount?: string | null; note: string | null; review_id?: string | null; product_name?: string | null; quantity?: number; buyer_name?: string; seller_name?: string; created_at: string; completed_at?: string | null; updated_at?: string | null };
 type Price = { subtotal: string; discount: string; shippingFee: string; paymentFee: string; buyerTotal: string; platformFee: string; sellerPayout: string };
 export default function OrdersPage() { return <MemberArea>{session => <Orders session={session}/>}</MemberArea>; }
 function Orders({ session }: { session: WebSession }) {
+  const [celebrate, setCelebrate] = useState<CelebrationKind | null>(null);
   const [orders, setOrders] = useState<Order[]>([]), [prices, setPrices] = useState<Record<string, Price>>({});
   const [loading, setLoading] = useState(true), [busy, setBusy] = useState(''), [error, setError] = useState(''), [reload, setReload] = useState(0);
   const [filter, setFilter] = useState('all'), [statusGroup, setStatusGroup] = useState('all'), [q, setQ] = useState(''), [sort, setSort] = useState('new'), [page, setPage] = useState(1), [openId, setOpenId] = useState<string | null>(null), [disputeOpen, setDisputeOpen] = useState<string | null>(null), [reviewOpen, setReviewOpen] = useState<string | null>(null);
@@ -20,7 +22,7 @@ function Orders({ session }: { session: WebSession }) {
   async function transition(order: Order, status: string) {
     const text = status === 'COMPLETED' ? 'Xác nhận đã giao hàng và đã thu đủ tiền COD? Thao tác này ghi nhận doanh thu và khoản phải trả người bán.' : status === 'CANCELLED' ? 'Hủy đơn ' + order.order_code + '? Sản phẩm sẽ được mở bán lại' + (order.payment_status === 'PAID' ? ' và khoản đã thanh toán sẽ được hoàn lại.' : '.') : 'Chuyển đơn ' + order.order_code + ' sang “' + orderLabels[status] + '”?';
     if (busy || !window.confirm(text)) return; setBusy(order.id); setError('');
-    try { await memberRequest('/orders/' + order.id + (status === 'COMPLETED' ? '/complete' : '/status'), 'POST', status === 'COMPLETED' ? {} : { status }); setReload(v => v + 1); }
+    try { await memberRequest('/orders/' + order.id + (status === 'COMPLETED' ? '/complete' : '/status'), 'POST', status === 'COMPLETED' ? {} : { status }); setReload(v => v + 1); if (status === 'COMPLETED') setCelebrate('sell'); }
     catch (e) { setError(e instanceof Error ? e.message : 'Không thể cập nhật đơn. Hãy tải lại trước khi thử lại.'); } finally { setBusy(''); }
   }
   async function payOnline(order: Order) {
@@ -30,7 +32,7 @@ function Orders({ session }: { session: WebSession }) {
   }
   async function confirmReceipt(order: Order) {
     if (busy || !window.confirm('Xác nhận bạn đã nhận đúng hàng? Tiền sẽ được chuyển cho người bán và bạn không thể hoàn tác.')) return; setBusy(order.id); setError('');
-    try { await memberRequest('/orders/' + order.id + '/confirm-receipt', 'POST', {}); setReload(v => v + 1); }
+    try { await memberRequest('/orders/' + order.id + '/confirm-receipt', 'POST', {}); setReload(v => v + 1); setCelebrate('buy'); }
     catch (e) { setError(e instanceof Error ? e.message : 'Không thể xác nhận.'); } finally { setBusy(''); }
   }
   async function price(order: Order) { setBusy(order.id); setError(''); try { const value = await memberRequest<Price>('/orders/' + order.id + '/price'); setPrices(old => ({ ...old, [order.id]: value })); } catch (e) { setError(e instanceof Error ? e.message : 'Không thể tải giá.'); } finally { setBusy(''); } }
@@ -71,6 +73,7 @@ function Orders({ session }: { session: WebSession }) {
   const reset = () => setPage(1);
 
   return <div className="od-page">
+    {celebrate && <CelebrationDialog kind={celebrate} onClose={() => setCelebrate(null)} />}
     <div className="od-head"><h1>Đơn hàng</h1><button className="od-btn" disabled={!!busy} onClick={() => setReload(v => v + 1)}>Tải lại</button></div>
     <div className="od-roles" role="tablist">{([['all', 'Tất cả'], ['buy', 'Tôi mua'], ['sell', 'Tôi bán']] as const).map(([k, l]) => <button key={k} role="tab" aria-selected={filter === k} className={'od-role' + (filter === k ? ' on' : '')} onClick={() => { setFilter(k); reset(); }}>{l}<em>{roleCount[k]}</em></button>)}</div>
     <div className="od-tools">

@@ -38,7 +38,10 @@ export class ListingMediaService {
   }
   async signed(key: string) {
     const {data,error}=await this.client.storage.from(this.bucket).createSignedUrl(key,900);
-    if(error||!data) throw new ServiceUnavailableException('Không thể mở tệp. Vui lòng thử lại.');
+    if(error||!data) {
+      console.warn('[ListingMedia] createSignedUrl lỗi — bucket='+this.bucket+', key='+key+', chi tiết: '+(error?.message ?? 'không có dữ liệu')+' (status='+((error as any)?.statusCode ?? (error as any)?.status ?? '?')+')');
+      throw new ServiceUnavailableException('Không thể mở tệp. Vui lòng thử lại.');
+    }
     return data.signedUrl;
   }
   async remove(key:string) {

@@ -85,8 +85,9 @@ function ProductCard({ product }: { product: Product }) {
           <div className="location-row" style={{display:'flex', alignItems:'center', gap:4, color:'#64748b'}}>
             <MapPinIcon size={13} /> {product.location || 'Quy Nhơn'}
           </div>
-          <div className="card-seller-name" style={{fontSize:12, color:'#475569', marginTop:2}}>
-            <User size={13} /> {product.sellerName} <span className="verified-badge"><Ic i={BadgeCheck}/>Đã xác thực</span>
+          <div className="card-seller-name" style={{fontSize:12, color:'#475569', marginTop:2, display:'flex', flexDirection:'column', alignItems:'flex-start', gap:2}}>
+            <span style={{ display: 'flex', alignItems: 'flex-start', gap: 5, minWidth: 0, overflowWrap: 'anywhere' }}><User size={13} style={{ flex: 'none', marginTop: 2 }} /><span style={{ minWidth: 0 }}>{product.sellerName}</span></span>
+            {product.sellerVerified && <span className="verified-badge" style={{ alignSelf: 'flex-start' }}><Ic i={BadgeCheck}/>Đã xác thực</span>}
           </div>
         </Link>
       </div>
@@ -145,8 +146,9 @@ function CategoryEngineContent() {
   useEffect(() => {
     let active = true;
     setLoading(true);
-    api.products('')
-      .then(res => { if (active) setProducts(res); })
+    // Lọc theo chuyên mục đang chọn (chuyên mục con nếu có, nếu không thì chuyên mục cha, gồm cả các chuyên mục con của nó).
+    api.search({ categorySlug: activeSubCat?.slug ?? parentCat.slug, limit: 48 })
+      .then(res => { if (active) setProducts(res.items); })
       .catch(() => {})
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
@@ -237,47 +239,6 @@ function CategoryEngineContent() {
               selectedIntent={selectedIntent}
             />
           ))}
-        </div>
-      </div>
-
-      {/* BỘ LỌC ĐỘNG (DYNAMIC FILTERS ENGINE GENERATED FROM SCHEMA) */}
-      <div className="white-card-box" style={{ marginBottom: 20, padding: '16px 20px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 15, fontWeight: 700, color: '#0f172a', marginBottom: 12 }}>
-          <Filter size={18} color="#00a65a" /> Bộ lọc động theo chuyên mục: {activeSubCat ? activeSubCat.name : parentCat.label}
-        </div>
-        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-          <select
-            value={selectedBrand}
-            onChange={(e) => setSelectedBrand(e.target.value)}
-            style={{ padding: '8px 14px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: 13, color: '#334155' }}
-          >
-            <option value="">-- Chọn Hãng / Thương hiệu --</option>
-            <option value="apple">Apple / iPhone</option>
-            <option value="samsung">Samsung</option>
-            <option value="sony">Sony</option>
-            <option value="canon">Canon</option>
-            <option value="toyota">Toyota</option>
-            <option value="honda">Honda</option>
-          </select>
-
-          <select style={{ padding: '8px 14px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: 13, color: '#334155' }}>
-            <option value="">-- Tình trạng --</option>
-            <option value="NEW">Mới 100%</option>
-            <option value="LIKE_NEW">Đã qua sử dụng (Như mới)</option>
-            <option value="USED_GOOD">Đã qua sử dụng (Tốt)</option>
-          </select>
-
-          <select style={{ padding: '8px 14px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: 13, color: '#334155' }}>
-            <option value="">-- Khoảng giá --</option>
-            <option value="0-5m">Dưới 5 triệu</option>
-            <option value="5m-15m">5 - 15 triệu</option>
-            <option value="15m-30m">15 - 30 triệu</option>
-            <option value="30m+">Trên 30 triệu</option>
-          </select>
-
-          <button style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', padding: '8px 16px', borderRadius: 8, fontSize: 13, fontWeight: 600, color: '#475569', cursor: 'pointer' }}>
-            Áp dụng bộ lọc
-          </button>
         </div>
       </div>
 

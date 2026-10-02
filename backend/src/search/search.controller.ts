@@ -13,6 +13,7 @@ export class SearchController {
   constructor(private readonly search: SearchService, private readonly saved: SavedSearchesService, private readonly specs: SpecsService) {}
   @Get('search/products') @UseGuards(OptionalJwtAuthGuard)
   products(@Req() r: { user?: { id: string } }, @Query() q: Record<string, unknown>) { return this.search.search(q, r.user?.id); }
+  @Get('search/hot-keywords') hot() { return this.search.hotKeywords(6); }
   @Get('search/specs/:id') productSpecs(@Param('id') id: string) { return this.specs.specs(id); }
   @Get('search/market/:id') market(@Param('id') id: string) { return this.specs.market(id); }
   @Get('search/sitemap') sitemap() { return this.search.sitemap(); }

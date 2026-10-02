@@ -1,11 +1,14 @@
 'use client';
 import '../goi-dich-vu/billing.css';
 import Link from 'next/link';
-import { Suspense, useCallback, useEffect, useState } from 'react';
+import { Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { MemberArea } from '../../components/MemberArea';
 import { apiGet, memberRequest } from '../../lib/api';
 import { PromoPackage, dateTimeVi, dateVi, daysLeft, durationLabel, newKey, promoLabel, vnd } from '../../lib/billing';
+import { MoneyInput } from '../../components/MoneyInput';
+import { ErrorDialog } from '../../components/ErrorDialog';
+import { CelebrationDialog, type CelebrationKind } from '../../components/CelebrationDialog';
 
 type Overview = {
   balance: string;
@@ -14,9 +17,9 @@ type Overview = {
   history: { id: string; name: string; status: string; price: string; startsAt: string; endsAt: string | null; createdAt: string }[];
   promotions: { id: string; name: string; status: string; price: string; type: string; createdAt: string; productTitle: string | null; endsAt: string | null }[];
 };
-type Topup = { id: string; code: string; amount: string; status: string; receivedAmount: string | null; createdAt: string; expiresAt: string; rejectReason: string | null; qrUrl: string | null; bank?: Bank };
+type Topup = { id: string; code: string; amount: string; status: string; receivedAmount: string | null; createdAt: string; expiresAt: string; rejectReason: string | null; qrUrl: string | null; bank?: Bank | null; provider?: string; checkoutUrl?: string | null };
 type Bank = { bankName: string; accountNumber: string; accountName: string };
-type NewTopup = Topup & { bank: Bank; qrUrl: string };
+type NewTopup = Topup & { bank: Bank | null; qrUrl: string | null };
 type Tx = { id: string; type: string; amount: string; balanceAfter: string; note: string | null; createdAt: string };
 type MyListing = { id: string; title: string | null; status: string; productId: string | null };
 
@@ -39,8 +42,10 @@ function Wallet() {
   const [topups, setTopups] = useState<Topup[]>([]);
   const [txs, setTxs] = useState<Tx[]>([]);
   const [error, setError] = useState('');
-  const [notice, setNotice] = useState(params.get('bought') ? 'Đã kích hoạt gói thành công. Cảm ơn bạn!' : '');
-  const [amount, setAmount] = useState<number>(Number(params.get('topup')) || 200_000);
+  const [notice, setNotice] = useState('');
+  const [celebrate, setCelebrate] = useState<{ kind: CelebrationKind; amount?: string } | null>(params.get('bought') ? { kind: 'plan' } : null);
+  const prevTopups = useRef<Record<string, string> | null>(null);
+  const [amount, setAmount] = useState<number>(Math.max(10_000, Number(params.get('topup')) || 200_000));
   const [busy, setBusy] = useState(false);
   const [fresh, setFresh] = useState<NewTopup | null>(null);
   const [promos, setPromos] = useState<PromoPackage[]>([]);
@@ -51,6 +56,10 @@ function Wallet() {
     try {
       const [o, t, x] = await Promise.all([memberRequest<Overview>('/billing/overview'), memberRequest<Topup[]>('/billing/topups'), memberRequest<Tx[]>('/billing/transactions')]);
       setOverview(o); setTopups(t); setTxs(x);
+      // Phát hiện yêu cầu nạp vừa được quản trị viên xác nhận → chúc mừng.
+      const prev = prevTopups.current;
+      if (prev) { const done = t.find(r => r.status === 'CONFIRMED' && prev[r.id] && prev[r.id] !== 'CONFIRMED'); if (done) setCelebrate({ kind: 'topup', amount: '+' + vnd(done.receivedAmount ?? done.amount) }); }
+      prevTopups.current = Object.fromEntries(t.map(r => [r.id, r.status]));
     } catch (e) { setError(e instanceof Error ? e.message : 'Không tải được dữ liệu ví.'); }
   }, []);
   useEffect(() => { void load(); }, [load]);
@@ -59,9 +68,18 @@ function Wallet() {
     memberRequest<MyListing[]>('/listings/mine').then(list => setListings(list.filter(l => l.status === 'PUBLISHED' && l.productId))).catch(() => undefined);
   }, []);
   const hasPending = topups.some(t => t.status === 'PENDING');
-  useEffect(() => { if (!hasPending) return; const timer = setInterval(() => void load(), 15000); return () => clearInterval(timer); }, [hasPending, load]);
+  const payosPending = topups.filter(t => t.status === 'PENDING' && t.provider === 'PAYOS');
+  const payosKey = payosPending.map(t => t.id).join(',');
+  useEffect(() => {
+    if (!hasPending) return;
+    // PayOS: hỏi cổng mỗi 5 giây (phòng khi webhook chưa tới); chuyển khoản thủ công: tải lại mỗi 15 giây.
+    const timer = setInterval(() => { void (async () => { await Promise.all(payosKey.split(',').filter(Boolean).map(id => memberRequest(`/billing/topups/${id}/sync`, 'POST', {}).catch(() => undefined))); await load(); })(); }, payosKey ? 5000 : 15000);
+    return () => clearInterval(timer);
+  }, [hasPending, payosKey, load]);
 
   async function createTopup() {
+    if (amount < 10_000) { setError('Số tiền nạp tối thiểu là 10.000 đ.'); return; }
+    if (amount > 50_000_000) { setError('Số tiền nạp tối đa là 50.000.000 đ mỗi lần.'); return; }
     setBusy(true); setError(''); setNotice('');
     try { const result = await memberRequest<NewTopup>('/billing/topups', 'POST', { amount }); setFresh(result); await load(); }
     catch (e) { setError(e instanceof Error ? e.message : 'Không tạo được yêu cầu nạp.'); } finally { setBusy(false); }
@@ -74,19 +92,20 @@ function Wallet() {
     if (!productId) { setError('Hãy chọn tin đăng cần đẩy.'); return; }
     if (!window.confirm(`Mua "${pkg.name}" (${vnd(pkg.price)}) cho tin đã chọn?`)) return;
     setBusy(true); setError(''); setNotice('');
-    try { await memberRequest('/billing/promotions/purchase', 'POST', { productId, packageId: pkg.id }, newKey()); setNotice(`Đã kích hoạt ${pkg.name}.`); await load(); }
+    try { await memberRequest('/billing/promotions/purchase', 'POST', { productId, packageId: pkg.id }, newKey()); setCelebrate({ kind: 'promo' }); await load(); }
     catch (e) { setError(e instanceof Error ? e.message : 'Không mua được gói.'); } finally { setBusy(false); }
   }
 
   const sub = overview?.subscription; const left = daysLeft(sub?.endsAt);
   const used = overview?.listing.used ?? 0; const limit = overview?.listing.limit ?? null;
   const pct = limit ? Math.min(100, Math.round((used / limit) * 100)) : 0;
-  const shown = fresh ?? topups.find(t => t.status === 'PENDING' && t.qrUrl && t.bank) as NewTopup | undefined;
+  const shown = ((fresh && topups.find(t => t.id === fresh.id)?.status === 'PENDING') ? fresh : topups.find(t => t.status === 'PENDING' && (t.qrUrl || t.checkoutUrl))) as NewTopup | undefined;
 
   return <div className="bl">
     <h1>Ví & gói của tôi</h1>
     <p className="sub">Quản lý số dư, nạp tiền, gói đăng tin và các gói đẩy tin.</p>
-    {error && <div className="bl-msg err" role="alert">{error}</div>}
+    {celebrate && <CelebrationDialog kind={celebrate.kind} amount={celebrate.amount} onClose={() => setCelebrate(null)} />}
+    <ErrorDialog message={error} title="Chưa thực hiện được" onClose={() => setError('')} />
     {notice && <div className="bl-msg ok" role="status">{notice}</div>}
 
     <div className="bl-grid two">
@@ -106,14 +125,15 @@ function Wallet() {
     <div className="bl-card" id="nap-tien"><h2>Nạp tiền vào ví</h2>
       <div className="bl-chips">{PRESETS.map(p => <button key={p} type="button" className={`bl-chip ${amount === p ? 'on' : ''}`} onClick={() => setAmount(p)}>{vnd(p)}</button>)}</div>
       <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
-        <input className="bl-in" type="number" min={10000} step={1000} value={amount} onChange={e => setAmount(Math.trunc(Number(e.target.value)) || 0)} aria-label="Số tiền nạp" />
-        <button type="button" className="bl-btn primary" disabled={busy || amount < 10_000} onClick={createTopup}>Tạo mã nạp tiền</button>
+        <MoneyInput className="bl-in" value={amount || ''} onChange={d => setAmount(Number(d) || 0)} aria-label="Số tiền nạp" />
+        <button type="button" className="bl-btn primary" disabled={busy} onClick={createTopup}>{busy ? 'Đang tạo mã…' : 'Tạo mã nạp tiền'}</button>
       </div>
-      <small style={{ color: '#7a8b82' }}>Tối thiểu 10.000 đ, tối đa 50.000.000 đ mỗi lần.</small>
+      <small style={{ color: amount > 0 && amount < 10_000 ? '#b53434' : '#7a8b82' }}>Tối thiểu 10.000 đ, tối đa 50.000.000 đ mỗi lần.{amount > 0 && amount < 10_000 ? ' Hãy nhập ít nhất 10.000 đ để tạo mã.' : ''}</small>
+      {shown && !shown.bank && shown.checkoutUrl && <div className="bl-msg info" style={{ marginTop: 18 }}>Mã nạp <b>{shown.code}</b> đã sẵn sàng. <a href={shown.checkoutUrl} target="_blank" rel="noreferrer" className="bl-btn sm primary">Mở trang thanh toán PayOS</a></div>}
       {shown && shown.bank && <div className="bl-qr" style={{ marginTop: 18 }}>
         <img src={shown.qrUrl ?? ''} alt="Mã QR chuyển khoản" />
         <div>
-          <div className="bl-msg info">Quét mã QR bằng ứng dụng ngân hàng hoặc chuyển khoản <b>đúng số tiền</b> và <b>đúng nội dung</b>. Quản trị viên sẽ xác nhận và cộng tiền vào ví (thường trong ít phút giờ hành chính).</div>
+          <div className="bl-msg info">{shown.provider === 'PAYOS' ? <>Quét mã QR bằng ứng dụng ngân hàng và thanh toán <b>đúng số tiền</b>. Tiền sẽ được <b>cộng vào ví tự động</b> ngay khi thanh toán xong (thường trong vài giây).</> : <>Quét mã QR bằng ứng dụng ngân hàng hoặc chuyển khoản <b>đúng số tiền</b> và <b>đúng nội dung</b>. Quản trị viên sẽ xác nhận và cộng tiền vào ví (thường trong ít phút giờ hành chính).</>}</div>
           <div className="bl-kv">
             <b>Ngân hàng</b><span className="v">{shown.bank.bankName}</span><span />
             <b>Số tài khoản</b><span className="v">{shown.bank.accountNumber}</span><Copy text={shown.bank.accountNumber} />

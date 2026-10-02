@@ -1,7 +1,7 @@
 import { Body, Controller, Post, UseGuards } from '@nestjs/common';
 import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
 import { AuthService } from './auth.service';
-import { LoginDto, RegisterDto, RefreshDto, VerifyOtpDto, SendOtpDto, FirebasePhoneDto, ForgotPasswordDto, ResetPasswordDto, SocialLoginDto } from './dto/auth.dto';
+import { CheckEmailDto, CheckPhoneDto, LoginDto, RegisterDto, RefreshDto, VerifyOtpDto, SendOtpDto, FirebasePhoneDto, ForgotPasswordDto, ResetPasswordDto, SocialLoginDto } from './dto/auth.dto';
 
 @Controller('auth')
 @UseGuards(ThrottlerGuard)
@@ -12,6 +12,18 @@ export class AuthController {
   @Throttle({ default: { limit: 5, ttl: 60_000 } })
   login(@Body() body: LoginDto) {
     return this.auth.login(body);
+  }
+
+  @Post('phone/check')
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
+  checkPhone(@Body() body: CheckPhoneDto) {
+    return this.auth.checkPhone(body.phone);
+  }
+
+  @Post('email/check')
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
+  checkEmail(@Body() body: CheckEmailDto) {
+    return this.auth.checkEmail(body.email);
   }
 
   @Post('register')

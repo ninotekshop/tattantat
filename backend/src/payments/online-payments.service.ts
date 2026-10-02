@@ -1,6 +1,7 @@
-import { BadRequestException, ConflictException, ForbiddenException, Injectable, Logger, NotFoundException, OnModuleInit } from '@nestjs/common';
+import { BadRequestException, ConflictException, ForbiddenException, Injectable, Optional, Logger, NotFoundException, OnModuleInit } from '@nestjs/common';
 import { randomInt } from 'crypto';
 import { NotificationsService } from '../account/notifications.service';
+import { BillingService } from '../billing/billing.service';
 import { DatabaseService } from '../database/database.service';
 import { createGateway, PaymentGateway, WebhookResult } from './gateway/payment-gateway';
 import { queueRefund } from './refund-queue';
@@ -14,7 +15,7 @@ export class OnlinePaymentsService implements OnModuleInit {
   private readonly log = new Logger('OnlinePayments');
   private gw?: PaymentGateway; private gwError?: string;
   private cache?: { at: number; value: EscrowSettings };
-  constructor(private readonly db: DatabaseService, private readonly notifications: NotificationsService) {}
+  constructor(private readonly db: DatabaseService, private readonly notifications: NotificationsService, @Optional() private readonly billing?: BillingService) {}
 
   async onModuleInit() {
     try { this.gw = createGateway(); } catch (e) { this.gwError = e instanceof Error ? e.message : String(e); this.log.warn('Thanh toán online chưa sẵn sàng: ' + this.gwError); }
@@ -104,6 +105,11 @@ export class OnlinePaymentsService implements OnModuleInit {
       await c.query(`INSERT INTO order_status_history(order_id,status,changed_by,note) VALUES($1,$2::order_status,NULL,$3)`, [p.order_id, p.order_status, 'Đã nhận thanh toán online — tiền được giữ đến khi người mua xác nhận nhận hàng']);
       return { replay: false as const, paid: p as { seller_id: string; buyer_id: string; order_code: string; order_id: string } };
     });
+    // Mã không thuộc đơn hàng nào → có thể là yêu cầu nạp ví PayOS.
+    if ('unknown' in outcome && outcome.unknown && this.billing) {
+      try { await this.billing.settleGatewayTopup(r); }
+      catch (e) { await this.db.query(`DELETE FROM payment_events WHERE provider=$1 AND event_key=$2`, [provider, eventKey]).catch(() => undefined); throw e; }
+    }
     if ('paid' in outcome && outcome.paid) {
       const p = outcome.paid;
       void this.notifications.create(p.seller_id, 'ORDER_PAID', 'Đơn hàng đã được thanh toán', `Đơn ${p.order_code} đã thanh toán trước. Tất Tần Tật đang giữ tiền — hãy xác nhận và giao hàng để nhận tiền.`, 'ORDER', p.order_id).catch(() => undefined);

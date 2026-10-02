@@ -28,6 +28,7 @@ import { AdvertisingModule } from './advertising/advertising.module';
 import { PaymentsModule } from './payments/payments.module';
 import { ReviewsModule } from './reviews/reviews.module';
 import { ListingsModule } from './listings/listings.module';
+import { SystemModule } from './system/system.module';
 
 @Module({
   imports: [
@@ -59,6 +60,7 @@ import { ListingsModule } from './listings/listings.module';
     PaymentsModule,
     ReviewsModule,
     ListingsModule,
+    SystemModule,
   ],
   controllers: [HealthController],
 })
