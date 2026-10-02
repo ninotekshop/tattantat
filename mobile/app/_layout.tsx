@@ -34,6 +34,7 @@ function Root() {
     }}>
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       <Stack.Screen name="login" options={{ title: 'Đăng nhập', presentation: 'modal' }} />
+      <Stack.Screen name="welcome" options={{ presentation: 'transparentModal', animation: 'fade', headerShown: false }} />
       <Stack.Screen name="register" options={{ title: 'Tạo tài khoản' }} />
       <Stack.Screen name="forgot-password" options={{ title: 'Quên mật khẩu' }} />
       <Stack.Screen name="products/[id]" options={{ title: '', headerTransparent: true }} />
@@ -44,6 +45,7 @@ function Root() {
       <Stack.Screen name="my-listings" options={{ title: 'Tin đăng của tôi' }} />
       <Stack.Screen name="edit-profile" options={{ title: 'Hồ sơ' }} />
       <Stack.Screen name="delete-account" options={{ title: 'Xóa tài khoản' }} />
+      <Stack.Screen name="wallet" options={{ title: 'Số dư & gói của tôi' }} />
       <Stack.Screen name="support" options={{ title: 'Trợ lý TTT' }} />
     </Stack>
   );

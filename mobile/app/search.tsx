@@ -1,4 +1,5 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { api } from '@/lib/api';
 import { FlatList, Modal, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { Search, SlidersHorizontal, X } from 'lucide-react-native';
@@ -20,6 +21,8 @@ export default function SearchScreen() {
   const [draft, setDraft] = useState(filter);
   const [show, setShow] = useState(false);
   const params = useMemo(() => ({ q: q || undefined, categoryId: p.categoryId, sort, minPrice: filter.minPrice || undefined, maxPrice: filter.maxPrice || undefined, condition: filter.condition || undefined, verified: filter.verified ? 'true' : undefined }), [q, p.categoryId, sort, filter]);
+  const [hot, setHot] = useState<string[]>([]);
+  useEffect(() => { api<string[]>('/search/hot-keywords').then(setHot).catch(() => undefined); }, []);
   const list = useProducts(params);
   const col = (width - 36) / 2;
   const active = [filter.minPrice, filter.maxPrice, filter.condition, filter.verified ? '1' : ''].filter(Boolean).length;
@@ -40,6 +43,7 @@ export default function SearchScreen() {
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flexGrow: 0 }} contentContainerStyle={{ gap: 8, paddingHorizontal: 12, paddingBottom: 8 }}>
         {SORTS.map(s => <Chip key={s.key} label={s.label} active={sort === s.key} onPress={() => setSort(s.key)} />)}
       </ScrollView>
+      {!q && !p.categoryId && hot.length ? <View style={{ paddingHorizontal: 12, paddingBottom: 8, gap: 6 }}><Text style={{ color: C.muted, fontWeight: '700', fontSize: 13 }}>Từ khóa HOT</Text><View style={st.wrap}>{hot.map(k => <Chip key={k} label={k} active={false} onPress={() => { setText(k); setQ(k); }} />)}</View></View> : null}
       {!list.loading ? <Text style={st.count}>{list.total.toLocaleString('vi-VN')} tin phù hợp</Text> : null}
       {list.error ? <ErrorBox message={list.error} onRetry={list.refresh} /> : null}
       <FlatList data={list.items} keyExtractor={i => i.id} numColumns={2}

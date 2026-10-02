@@ -2,7 +2,7 @@ import { useCallback, useState } from 'react';
 import { Alert, Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
 import Constants from 'expo-constants';
-import { Bell, Bot, ChevronRight, FileText, Heart, LogOut, PackageOpen, ShieldCheck, Trash2, UserRound, type LucideIcon } from 'lucide-react-native';
+import { Bell, Bot, ChevronRight, FileText, Heart, LogOut, PackageOpen, ShieldCheck, Sparkles, Trash2, UserRound, type LucideIcon } from 'lucide-react-native';
 import { api, media, SITE_URL } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { C, R, shadow } from '@/lib/theme';
@@ -49,6 +49,7 @@ export default function Account() {
       <Text style={st.groupTitle}>Mua bán</Text>
       <View style={st.group}>
         <Row icon={PackageOpen} label="Tin đăng của tôi" onPress={() => router.push('/my-listings')} />
+        <Row icon={Sparkles} label="Số dư & gói của tôi" onPress={() => router.push('/wallet')} />
         <Row icon={Heart} label="Tin đã lưu" onPress={() => router.push('/favorites')} />
         <Row icon={Bell} label="Thông báo" onPress={() => router.push('/notifications')} />
       </View>
