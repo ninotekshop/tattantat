@@ -16,6 +16,11 @@ const beVietnamPro = Be_Vietnam_Pro({
 export const metadata: Metadata = {
   title: 'Tất Tần Tật - Mua bán mọi thứ, gần bạn',
   description: 'Mua bán mọi thứ, đơn giản và an toàn.',
+  openGraph: {
+    title: 'Tất Tần Tật - Mua bán mọi thứ, gần bạn',
+    description: 'Mua bán mọi thứ, đơn giản và an toàn.',
+    images: [{ url: 'https://tattantat.vn/og-image.jpg', width: 1200, height: 630 }],
+  },
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
