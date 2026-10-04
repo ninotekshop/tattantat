@@ -12,6 +12,7 @@ class DraftDto {
   @IsOptional() @IsString() @MaxLength(80) category?: string;
   @IsOptional() @IsString() @MaxLength(20) price?: string;
   @IsOptional() @IsString() @MaxLength(3000) notes?: string;
+  @IsOptional() @IsString() @MaxLength(2000) specs?: string;
 }
 class ChatMsgDto { @IsIn(['user', 'assistant']) role!: 'user' | 'assistant'; @IsString() @MaxLength(1000) content!: string; }
 class ChatDto { @IsArray() @ArrayMaxSize(20) @ValidateNested({ each: true }) @Type(() => ChatMsgDto) messages!: ChatMsgDto[]; }

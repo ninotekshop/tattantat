@@ -274,11 +274,30 @@ export function ListingWizard() {
     setContactWarning(titleWarn || descWarn);
   }
 
+  /** Gom các thông số người bán đã nhập ở biểu mẫu (chỉ trường đang hiển thị, có giá trị) để AI viết đúng thực tế. */
+  function specsForAi(cur: ListingData): string {
+    if (!template) return '';
+    const values = (cur.values ?? {}) as Record<string, unknown>;
+    const lines: string[] = [];
+    for (const field of template.fields) {
+      if (['image', 'video', 'location'].includes(field.type) || !visible(field, values, template.fields)) continue;
+      const v = values[field.key];
+      let text = '';
+      if (Array.isArray(v)) text = v.map(String).join(', ');
+      else if (typeof v === 'boolean') text = v ? 'Có' : '';
+      else if (v !== undefined && v !== null && String(v).trim() !== '') text = String(v).trim();
+      if (!text) continue;
+      const unit = (field.config as { unit?: string } | undefined)?.unit;
+      lines.push(`${field.label}: ${text}${unit && !text.includes(unit) ? ' ' + unit : ''}`);
+    }
+    return lines.join('\n').slice(0, 1800);
+  }
+
   async function aiWrite() {
     if (aiBusy) return; setAiBusy(true); setAiMsg('');
     try {
       const cur = current.current;
-      const r = await memberRequest<{ title: string; description: string; provider: string; remaining: number }>('/ai/listing-draft', 'POST', { title: cur.title || undefined, condition: cur.condition || undefined, price: cur.price ? String(cur.price) : undefined, notes: cur.description || undefined });
+      const r = await memberRequest<{ title: string; description: string; provider: string; remaining: number }>('/ai/listing-draft', 'POST', { title: cur.title || undefined, condition: cur.condition || undefined, category: template?.name || undefined, price: cur.price ? String(cur.price) : undefined, notes: cur.description || undefined, specs: specsForAi(cur) || undefined });
       patch({ description: r.description, ...(cur.title ? {} : { title: r.title }) });
       setAiMsg(`Đã viết xong — hãy đọc lại và chỉnh cho đúng thực tế. Còn ${r.remaining} lượt hôm nay${r.provider === 'mock' ? ' (chế độ mẫu, chưa bật AI)' : ''}.`);
     } catch (e) { setAiMsg(e instanceof Error ? e.message : 'Không tạo được nội dung.'); } finally { setAiBusy(false); }

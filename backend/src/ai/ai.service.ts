@@ -2,7 +2,7 @@ import { BadRequestException, ForbiddenException, HttpException, Injectable, Log
 import { DatabaseService } from '../database/database.service';
 import { aiEnabled, askClaude, ChatMsg } from './claude-client';
 
-export type DraftInput = { title?: string; condition?: string; category?: string; price?: string; notes?: string };
+export type DraftInput = { title?: string; condition?: string; category?: string; price?: string; notes?: string; specs?: string };
 /** Đọc phản hồi AI: ưu tiên định dạng TITLE/DESCRIPTION, dự phòng JSON (chấp nhận xuống dòng thô trong chuỗi). */
 export function parseDraft(text: string): { title: string; description: string } | null {
   const t = text.replace(/```[a-z]*\n?|```/gi, '').trim();
@@ -80,7 +80,7 @@ export class AiService implements OnModuleInit {
 
   async draftListing(uid: string, raw: DraftInput) {
     if (!(await this.features()).listingDraft) throw new ForbiddenException('Tính năng AI viết mô tả đang được tạm tắt.');
-    const input = { title: clean(raw.title, 200), condition: clean(raw.condition, 20), category: clean(raw.category, 80), price: clean(raw.price, 20), notes: clean(raw.notes, 1500) };
+    const input = { title: clean(raw.title, 200), condition: clean(raw.condition, 20), category: clean(raw.category, 80), price: clean(raw.price, 20), notes: clean(raw.notes, 1500), specs: String(raw.specs ?? '').split('\n').map(l => clean(l, 160)).filter(Boolean).slice(0, 30).join('\n') };
     if (!input.title && !input.notes) throw new BadRequestException('Hãy nhập tiêu đề hoặc vài ghi chú về món hàng để AI viết giúp.');
     const used = (await this.db.query(`SELECT COUNT(*)::int AS n FROM ai_usage WHERE user_id=$1 AND kind='listing-draft' AND created_at > now()-interval '24 hours'`, [uid])).rows[0].n as number;
     if (used >= DAILY_LIMIT) throw new HttpException(`Bạn đã dùng hết ${DAILY_LIMIT} lượt AI hôm nay. Hãy thử lại vào ngày mai.`, 429);
@@ -136,15 +136,34 @@ export class AiService implements OnModuleInit {
     const cond = COND[i.condition];
     const lines = [`${i.title || 'Sản phẩm cần bán'}${cond ? ` — ${cond}` : ''}.`];
     if (i.category) lines.push(`Danh mục: ${i.category}.`);
+    if (i.specs) lines.push('', 'Thông số:', ...i.specs.split('\n').map(l => '- ' + l));
     if (i.notes) lines.push('', i.notes);
     lines.push('', 'Hàng thực tế như hình, xem trực tiếp trước khi mua. Ưu tiên trao đổi và giao dịch qua Tất Tần Tật để được bảo vệ. Vui lòng nhắn tin qua chat nếu cần thêm thông tin.');
     return { title: i.title, description: scrubContact(lines.join('\n')), provider: 'mock' };
   }
-  private normalize(i: DraftInput) { return { title: '', condition: '', category: '', price: '', notes: '', ...i }; }
+  private normalize(i: DraftInput) { return { title: '', condition: '', category: '', price: '', notes: '', specs: '', ...i }; }
 
   private async callModel(i: ReturnType<AiService['normalize']>): Promise<Draft> {
-    const prompt = `Bạn là trợ lý viết tin rao vặt cho sàn mua bán "Tất Tần Tật". Viết lại tin đăng bằng tiếng Việt tự nhiên, trung thực, dễ đọc.\nQuy tắc: KHÔNG bịa thông số, xuất xứ, bảo hành hay tình trạng không có trong dữ liệu; KHÔNG ghi số điện thoại, link, Zalo/Facebook hay kêu gọi giao dịch ngoài sàn; KHÔNG dùng từ ngữ phóng đại như "số 1", "rẻ nhất"; tiêu đề ≤ 100 ký tự; mô tả 60–200 từ, chia đoạn ngắn hoặc gạch đầu dòng.\nDữ liệu người bán:\n- Tiêu đề hiện tại: ${i.title || '(chưa có)'}\n- Danh mục: ${i.category || '(chưa rõ)'}\n- Tình trạng: ${COND[i.condition] ?? '(chưa rõ)'}\n- Giá: ${i.price || '(chưa rõ)'}\n- Ghi chú/mô tả nháp: ${i.notes || '(không có)'}\nTrả về đúng định dạng sau, không thêm lời dẫn hay ký tự markdown:\nTITLE: <tiêu đề trên một dòng>\nDESCRIPTION:\n<phần mô tả, có thể nhiều dòng>`;
-    const res = await fetch('https://api.anthropic.com/v1/messages', { method: 'POST', headers: { 'content-type': 'application/json', 'x-api-key': process.env.ANTHROPIC_API_KEY!, 'anthropic-version': '2023-06-01' }, body: JSON.stringify({ model: process.env.AI_MODEL || 'claude-haiku-4-5', max_tokens: 1200, messages: [{ role: 'user', content: prompt }] }), signal: AbortSignal.timeout(25_000) });
+    const prompt = `Bạn là trợ lý viết tin rao vặt cho sàn mua bán "Tất Tần Tật". Viết lại tin đăng bằng tiếng Việt tự nhiên, trung thực, cụ thể và dễ đọc.
+Cách viết:
+- Mở đầu 1–2 câu nêu rõ sản phẩm, tình trạng.
+- Sau đó liệt kê THÔNG SỐ / ĐẶC ĐIỂM bằng gạch đầu dòng ("- Tên thông số: giá trị"). Ưu tiên tuyệt đối các thông số người bán đã nhập bên dưới, dùng đúng giá trị, không đổi số liệu.
+- Nếu tên/model sản phẩm rõ ràng và bạn CHẮC CHẮN về thông số công khai của hãng (ví dụ công suất, kết nối, kích thước, cấu hình), có thể bổ sung thêm vài gạch đầu dòng; chỗ nào không chắc thì bỏ qua, tuyệt đối không đoán.
+- Kết bằng 1 câu về xem hàng/trao đổi qua chat của sàn.
+Quy tắc: KHÔNG bịa xuất xứ, bảo hành, phụ kiện đi kèm hay tình trạng không có trong dữ liệu; KHÔNG ghi số điện thoại, link, Zalo/Facebook hay kêu gọi giao dịch ngoài sàn; KHÔNG dùng từ phóng đại như "số 1", "rẻ nhất", "cơ hội sở hữu"; tiêu đề ≤ 100 ký tự; mô tả 80–250 từ.
+Dữ liệu người bán:
+- Tiêu đề hiện tại: ${i.title || '(chưa có)'}
+- Danh mục: ${i.category || '(chưa rõ)'}
+- Tình trạng: ${COND[i.condition] ?? '(chưa rõ)'}
+- Giá: ${i.price || '(chưa rõ)'}
+- Ghi chú/mô tả nháp: ${i.notes || '(không có)'}
+- Thông số người bán đã nhập:
+${i.specs || '(chưa nhập)'}
+Trả về đúng định dạng sau, không thêm lời dẫn hay ký tự markdown:
+TITLE: <tiêu đề trên một dòng>
+DESCRIPTION:
+<phần mô tả, có thể nhiều dòng>`;
+    const res = await fetch('https://api.anthropic.com/v1/messages', { method: 'POST', headers: { 'content-type': 'application/json', 'x-api-key': process.env.ANTHROPIC_API_KEY!, 'anthropic-version': '2023-06-01' }, body: JSON.stringify({ model: process.env.AI_MODEL || 'claude-haiku-4-5', max_tokens: 1500, messages: [{ role: 'user', content: prompt }] }), signal: AbortSignal.timeout(25_000) });
     if (!res.ok) throw new Error(`HTTP ${res.status}: ${(await res.text().catch(() => '')).slice(0, 200)}`);
     const j = await res.json() as { content?: { type: string; text?: string }[] };
     const text = j.content?.find(c => c.type === 'text')?.text ?? '';
