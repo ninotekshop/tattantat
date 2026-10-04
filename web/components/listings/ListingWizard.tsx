@@ -549,12 +549,22 @@ export function ListingWizard() {
             </div>
             <h3 style={{ fontSize: 18, fontWeight: 700, color: '#0f172a', marginBottom: 10 }}>Thông báo hệ thống</h3>
             <p style={{ fontSize: 14, color: '#475569', lineHeight: 1.6, marginBottom: 20 }}>{error}</p>
+            {/gói hiện tại|giới hạn tin đăng|hết lượt đăng|hạn mức đăng|nâng cấp gói|mua gói/i.test(error) && (
+              <Link
+                href="/goi-dich-vu"
+                style={{ display: 'block', background: 'linear-gradient(135deg,#f59e0b,#ea580c)', color: '#ffffff', padding: '12px 24px', borderRadius: 999, fontWeight: 800, fontSize: 14, textDecoration: 'none', width: '100%', boxSizing: 'border-box', marginBottom: 10 }}
+              >
+                Nâng cấp gói
+              </Link>
+            )}
             <button
               type="button"
               onClick={() => setError('')}
-              style={{ background: '#00a65a', color: '#ffffff', border: 'none', padding: '12px 24px', borderRadius: 999, fontWeight: 700, fontSize: 14, cursor: 'pointer', width: '100%' }}
+              style={/gói hiện tại|giới hạn tin đăng|hết lượt đăng|hạn mức đăng|nâng cấp gói|mua gói/i.test(error)
+                ? { background: '#f1f5f9', color: '#334155', border: 'none', padding: '12px 24px', borderRadius: 999, fontWeight: 700, fontSize: 14, cursor: 'pointer', width: '100%' }
+                : { background: '#00a65a', color: '#ffffff', border: 'none', padding: '12px 24px', borderRadius: 999, fontWeight: 700, fontSize: 14, cursor: 'pointer', width: '100%' }}
             >
-              Đã hiểu & Xác nhận
+              {/gói hiện tại|giới hạn tin đăng|hết lượt đăng|hạn mức đăng|nâng cấp gói|mua gói/i.test(error) ? 'Để sau' : 'Đã hiểu & Xác nhận'}
             </button>
           </div>
         </div>
