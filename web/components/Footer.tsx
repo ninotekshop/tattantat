@@ -152,14 +152,11 @@ export function Footer() {
               </div>
             </div>
 
-            <div className="footer-socials">
-              <h5 className="social-heading">Kết nối với chúng tôi</h5>
-              <div className="social-icons">
-                <a href="https://facebook.com" target="_blank" rel="noopener noreferrer" aria-label="Facebook" className="social-btn"><FacebookIcon /></a>
-                <a href="https://youtube.com" target="_blank" rel="noopener noreferrer" aria-label="YouTube" className="social-btn"><YoutubeIcon /></a>
-                <a href="https://tiktok.com" target="_blank" rel="noopener noreferrer" aria-label="TikTok" className="social-btn"><TiktokIcon /></a>
-                <a href="https://zalo.me" target="_blank" rel="noopener noreferrer" aria-label="Zalo" className="social-btn"><ZaloIcon /></a>
-              </div>
+            <div className="footer-contact">
+              <h5 className="social-heading">Liên hệ</h5>
+              <p><b>Email:</b> <a href="mailto:hotro@tattantat.vn">hotro@tattantat.vn</a></p>
+              <p><b>CSKH:</b> <a href="tel:02563577988">(0256) 35779 888</a></p>
+              <p><b>Địa chỉ:</b> 80 Lê Công Miễn, Phường Quy Nhơn Nam, Tỉnh Gia Lai, Việt Nam.</p>
             </div>
           </div>
         </div>
@@ -207,7 +204,7 @@ export function Footer() {
       {/* FOOTER BOTTOM */}
       <div className="footer-bottom">
         <div className="shell footer-bottom-inner">
-          <span>© 2026 Tất Tần Tật · Công ty TNHH Ninotek. Mọi quyền được bảo lưu.</span>
+          <span>© 2026 Tất Tần Tật · Công ty TNHH Công nghệ & Dịch vụ NINOTEK. Mọi quyền được bảo lưu.</span>
           <span className="domain-text">www.tattantat.vn</span>
         </div>
       </div>

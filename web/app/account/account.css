@@ -48,7 +48,10 @@
 .ac-bar h2{margin:0;font-size:19px}.ac-bar h2 small{font-size:12.5px;font-weight:600;color:#5b6b64;background:#e9efec;border-radius:999px;padding:2px 10px;margin-left:6px}
 .ac-msg{display:flex;align-items:center;gap:8px;padding:12px 14px;border-radius:12px;margin:0 0 14px;font-size:14px}
 .ac-msg.ok{background:#e3f8ec;color:#0a7a45}.ac-msg.bad{background:#fde8e8;color:#b91c1c}.ac-msg.wait{background:#fff4dc;color:#8a5a00}
-.ac-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px}
+.ac-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+.ac-date{margin:0;color:#66766f;font-size:12.5px}
+@media(max-width:1100px){.ac-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:800px){.ac-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .ac-item{background:#fff;border:1px solid #e3ebe6;border-radius:16px;overflow:hidden;display:flex;flex-direction:column;transition:box-shadow .18s,transform .18s}
 .ac-item:hover{box-shadow:0 10px 24px rgba(15,60,40,.12);transform:translateY(-3px)}
 .ac-thumb{position:relative;height:160px;background:#eef4f0;display:grid;place-items:center}

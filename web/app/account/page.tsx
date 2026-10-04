@@ -104,7 +104,7 @@ function Account({ session }: { session: WebSession }) {
               <div className="ac-thumb">{p.imageUrl ? <img src={p.imageUrl} alt={p.title} loading="lazy" /> : <FileText size={30} />}<span className={'ac-chip ' + st.cls}>{st.label}</span></div>
               <div className="ac-item-b"><h3>{p.title}</h3>
                 <p className="ac-price">{listingPrice({ price: p.price.replace(/\.0+$/, ''), priceMode: p.priceMode || 'FIXED' })}</p>
-                {p.location && <p className="ac-loc"><MapPin size={14} />{p.location}</p>}
+                {p.postedAt && <p className="ac-date">Đăng {new Date(p.postedAt).toLocaleDateString('vi-VN')}</p>}
                 {p.status === 'REJECTED' && <p className="ac-hint">Hãy chỉnh sửa và gửi lại để được duyệt.</p>}
                 <div className="ac-actions">
                   {p.status === 'ACTIVE' && <a className="ac-btn sm" href={'/products/' + p.id}><ExternalLink size={14} />Xem</a>}
