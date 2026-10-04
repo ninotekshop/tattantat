@@ -395,8 +395,10 @@ body {
 
 .cat-scroll-arrow {
   position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
+  top: calc(50% - 19px);
+  margin: 0;
+  padding: 0;
+  transform: none;
   width: 38px;
   height: 38px;
   border-radius: 50%;
@@ -411,9 +413,12 @@ body {
   transition: all 0.2s ease;
 }
 
-.cat-scroll-arrow:hover {
+.cat-scroll-arrow:hover,
+.cat-scroll-arrow:active,
+.cat-scroll-arrow:focus-visible {
   background: #f1f5f9;
-  transform: translateY(-50%) scale(1.1);
+  top: calc(50% - 19px) !important;
+  transform: scale(1.1) !important;
 }
 
 .cat-scroll-arrow.left { left: -16px; }
