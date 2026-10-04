@@ -1,5 +1,5 @@
 import { HttpException } from '@nestjs/common';
-import { AiService, scrubContact } from './ai.service';
+import { AiService, parseDraft, scrubContact } from './ai.service';
 
 const mk = (n: number) => { const db: any = { query: jest.fn(async (sql: string) => sql.startsWith('SELECT') ? { rows: [{ n }] } : { rows: [] }) }; return { svc: new AiService(db), db }; };
 describe('AiService', () => {
@@ -23,4 +23,14 @@ describe('support chat', () => {
     expect(r.data.provider).toBe('mock'); expect(r.data.reply).toContain('QR'); expect(r.data.remaining).toBe(39);
   });
   it('enforces the chat limit', async () => { await expect(mk(40).svc.supportChat('u', [{ role: 'user', content: 'hi' }])).rejects.toBeInstanceOf(HttpException); });
+});
+
+describe('parseDraft', () => {
+  it('đọc định dạng TITLE/DESCRIPTION nhiều dòng', () => {
+    expect(parseDraft('TITLE: Loa Harman Kardon\nDESCRIPTION:\nDòng 1\n\n- Ý 2')).toEqual({ title: 'Loa Harman Kardon', description: 'Dòng 1\n\n- Ý 2' });
+  });
+  it('đọc JSON có xuống dòng thô trong chuỗi và JSON bọc markdown', () => {
+    expect(parseDraft('```json\n{"title":"A","description":"x\ny"}\n```')).toEqual({ title: 'A', description: 'x\ny' });
+  });
+  it('trả null khi không đọc được', () => { expect(parseDraft('xin lỗi, không viết được')).toBeNull(); });
 });

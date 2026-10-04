@@ -3,6 +3,19 @@ import { DatabaseService } from '../database/database.service';
 import { aiEnabled, askClaude, ChatMsg } from './claude-client';
 
 export type DraftInput = { title?: string; condition?: string; category?: string; price?: string; notes?: string };
+/** Đọc phản hồi AI: ưu tiên định dạng TITLE/DESCRIPTION, dự phòng JSON (chấp nhận xuống dòng thô trong chuỗi). */
+export function parseDraft(text: string): { title: string; description: string } | null {
+  const t = text.replace(/```[a-z]*\n?|```/gi, '').trim();
+  const tagged = t.match(/TITLE:\s*(.*?)\s*\n+\s*DESCRIPTION:\s*([\s\S]+)/i);
+  if (tagged && tagged[2].trim()) return { title: tagged[1].trim(), description: tagged[2].trim() };
+  const m = t.match(/\{[\s\S]*\}/);
+  if (m) {
+    for (const raw of [m[0], m[0].replace(/\r?\n/g, '\\n')]) {
+      try { const o = JSON.parse(raw) as { title?: string; description?: string }; if (o.description) return { title: String(o.title ?? ''), description: String(o.description) }; } catch { /* thử cách khác */ }
+    }
+  }
+  return null;
+}
 export type Draft = { title: string; description: string; provider: 'mock' | 'anthropic' };
 /** Công tắc AI do Admin cấu hình (mặc định bật). Kiểm duyệt bằng AI dùng cài đặt `aiReview` ở chính sách kiểm duyệt. */
 export type AiFeatures = { listingDraft: boolean; supportChat: boolean };
@@ -130,14 +143,14 @@ export class AiService implements OnModuleInit {
   private normalize(i: DraftInput) { return { title: '', condition: '', category: '', price: '', notes: '', ...i }; }
 
   private async callModel(i: ReturnType<AiService['normalize']>): Promise<Draft> {
-    const prompt = `Bạn là trợ lý viết tin rao vặt cho sàn mua bán "Tất Tần Tật". Viết lại tin đăng bằng tiếng Việt tự nhiên, trung thực, dễ đọc.\nQuy tắc: KHÔNG bịa thông số, xuất xứ, bảo hành hay tình trạng không có trong dữ liệu; KHÔNG ghi số điện thoại, link, Zalo/Facebook hay kêu gọi giao dịch ngoài sàn; KHÔNG dùng từ ngữ phóng đại như "số 1", "rẻ nhất"; tiêu đề ≤ 100 ký tự; mô tả 60–200 từ, chia đoạn ngắn hoặc gạch đầu dòng.\nDữ liệu người bán:\n- Tiêu đề hiện tại: ${i.title || '(chưa có)'}\n- Danh mục: ${i.category || '(chưa rõ)'}\n- Tình trạng: ${COND[i.condition] ?? '(chưa rõ)'}\n- Giá: ${i.price || '(chưa rõ)'}\n- Ghi chú/mô tả nháp: ${i.notes || '(không có)'}\nChỉ trả về JSON hợp lệ dạng {"title":"...","description":"..."}.`;
-    const res = await fetch('https://api.anthropic.com/v1/messages', { method: 'POST', headers: { 'content-type': 'application/json', 'x-api-key': process.env.ANTHROPIC_API_KEY!, 'anthropic-version': '2023-06-01' }, body: JSON.stringify({ model: process.env.AI_MODEL || 'claude-haiku-4-5', max_tokens: 800, messages: [{ role: 'user', content: prompt }] }), signal: AbortSignal.timeout(20_000) });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const prompt = `Bạn là trợ lý viết tin rao vặt cho sàn mua bán "Tất Tần Tật". Viết lại tin đăng bằng tiếng Việt tự nhiên, trung thực, dễ đọc.\nQuy tắc: KHÔNG bịa thông số, xuất xứ, bảo hành hay tình trạng không có trong dữ liệu; KHÔNG ghi số điện thoại, link, Zalo/Facebook hay kêu gọi giao dịch ngoài sàn; KHÔNG dùng từ ngữ phóng đại như "số 1", "rẻ nhất"; tiêu đề ≤ 100 ký tự; mô tả 60–200 từ, chia đoạn ngắn hoặc gạch đầu dòng.\nDữ liệu người bán:\n- Tiêu đề hiện tại: ${i.title || '(chưa có)'}\n- Danh mục: ${i.category || '(chưa rõ)'}\n- Tình trạng: ${COND[i.condition] ?? '(chưa rõ)'}\n- Giá: ${i.price || '(chưa rõ)'}\n- Ghi chú/mô tả nháp: ${i.notes || '(không có)'}\nTrả về đúng định dạng sau, không thêm lời dẫn hay ký tự markdown:\nTITLE: <tiêu đề trên một dòng>\nDESCRIPTION:\n<phần mô tả, có thể nhiều dòng>`;
+    const res = await fetch('https://api.anthropic.com/v1/messages', { method: 'POST', headers: { 'content-type': 'application/json', 'x-api-key': process.env.ANTHROPIC_API_KEY!, 'anthropic-version': '2023-06-01' }, body: JSON.stringify({ model: process.env.AI_MODEL || 'claude-haiku-4-5', max_tokens: 1200, messages: [{ role: 'user', content: prompt }] }), signal: AbortSignal.timeout(25_000) });
+    if (!res.ok) throw new Error(`HTTP ${res.status}: ${(await res.text().catch(() => '')).slice(0, 200)}`);
     const j = await res.json() as { content?: { type: string; text?: string }[] };
     const text = j.content?.find(c => c.type === 'text')?.text ?? '';
-    const m = text.match(/\{[\s\S]*\}/); if (!m) throw new Error('Phản hồi không phải JSON');
-    const out = JSON.parse(m[0]) as { title?: string; description?: string };
-    const description = scrubContact(clean(out.description, 0) ? String(out.description).slice(0, 4000) : '');
+    const out = parseDraft(text);
+    if (!out) throw new Error('Không đọc được phản hồi của AI: ' + text.slice(0, 120).replace(/\s+/g, ' '));
+    const description = scrubContact(out.description ? String(out.description).slice(0, 4000) : '');
     if (!description) throw new Error('Thiếu mô tả');
     return { title: clean(out.title, 100) || i.title, description, provider: 'anthropic' };
   }
