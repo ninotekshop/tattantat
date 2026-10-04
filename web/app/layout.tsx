@@ -19,7 +19,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'Tất Tần Tật - Mua bán mọi thứ, gần bạn',
     description: 'Mua bán mọi thứ, đơn giản và an toàn.',
-    images: [{ url: 'https://tattantat.vn/og-image.jpg', width: 1200, height: 630 }],
+    images: [{ url: 'https://tattantat.vn/og-image.jpg?v=2', width: 1200, height: 630 }],
   },
 };
 
