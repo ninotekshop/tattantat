@@ -227,6 +227,25 @@ export const CATEGORY_ENGINE_TAXONOMY: ParentCategorySpec[] = [
     ]
   },
   {
+    key: 'software',
+    slug: 'phan-mem-dich-vu-so',
+    label: 'Phần mềm & Dịch vụ số',
+    short: 'Phần mềm',
+    icon: '/assets/category-icons/parent/phan-mem-dich-vu-so.svg',
+    tone: 'violet',
+    subCategories: [
+      { slug: 'phan-mem-quan-ly-ban-hang', name: 'Phần mềm quản lý bán hàng', icon: '/assets/category-icons/sub/phan-mem-dich-vu-so/phan-mem-quan-ly-ban-hang.svg' },
+      { slug: 'phan-mem-tien-ich', name: 'Phần mềm tiện ích', icon: '/assets/category-icons/sub/phan-mem-dich-vu-so/phan-mem-tien-ich.svg' },
+      { slug: 'thiet-ke-website', name: 'Thiết kế website', icon: '/assets/category-icons/sub/phan-mem-dich-vu-so/thiet-ke-website.svg' },
+      { slug: 'thiet-ke-ung-dung', name: 'Thiết kế ứng dụng / Phần mềm theo yêu cầu', icon: '/assets/category-icons/sub/phan-mem-dich-vu-so/thiet-ke-ung-dung.svg' },
+      { slug: 'ban-quyen-tai-khoan', name: 'Bản quyền & tài khoản số', icon: '/assets/category-icons/sub/phan-mem-dich-vu-so/ban-quyen-tai-khoan.svg' },
+      { slug: 'hosting-ten-mien', name: 'Hosting, tên miền & máy chủ', icon: '/assets/category-icons/sub/phan-mem-dich-vu-so/hosting-ten-mien.svg' },
+      { slug: 'marketing-online', name: 'Marketing & quảng cáo online', icon: '/assets/category-icons/sub/phan-mem-dich-vu-so/marketing-online.svg' },
+      { slug: 'tu-van-cai-dat-it', name: 'Tư vấn, cài đặt & hỗ trợ IT', icon: '/assets/category-icons/sub/phan-mem-dich-vu-so/tu-van-cai-dat-it.svg' },
+      { slug: 'phan-mem-khac', name: 'Phần mềm & dịch vụ số khác', icon: '/assets/category-icons/sub/phan-mem-dich-vu-so/phan-mem-khac.svg' },
+    ]
+  },
+  {
     key: 'other',
     slug: 'khac',
     label: 'Khác',
@@ -299,6 +318,13 @@ export function getCategoryPlaceholders(parentKeyOrSlug?: string, categoryName?:
     return {
       title: 'VD: Tuyển 03 Nhân viên Tư vấn Bán hàng Thu nhập 10-15 triệu/tháng',
       description: 'Mô tả chi tiết vị trí công việc, địa điểm, thời gian làm việc, yêu cầu độ tuổi/kinh nghiệm, mức lương, phụ cấp và cách nộp hồ sơ...'
+    };
+  }
+
+  if (key.includes('software') || key.includes('phan-mem') || key.includes('phần mềm')) {
+    return {
+      title: 'VD: Phần mềm quản lý bán hàng cho cửa hàng, bản quyền trọn đời, cài đặt & hướng dẫn miễn phí',
+      description: 'Mô tả tính năng chính, nền tảng chạy (Windows/Web/Android), hình thức bán (mua đứt/thuê bao), bản dùng thử, chính sách bảo hành và hỗ trợ cài đặt...'
     };
   }
 

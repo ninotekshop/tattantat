@@ -41,6 +41,8 @@ describe('Danh mục & biểu mẫu theo chuyên mục', () => {
     ['dich-vu', 'sua-chua', ['repair_type', 'service_area']],
     ['thoi-trang', 'giay-dep', ['shoe_type', 'shoe_size']],
     ['tang-mien-phi', 'thu-cung-cho-nuoi', ['reason', 'handover']],
+    ['phan-mem-dich-vu-so', 'phan-mem-quan-ly-ban-hang', ['software_name', 'platform', 'license']],
+    ['phan-mem-dich-vu-so', 'thiet-ke-website', ['web_type', 'delivery_days']],
   ])('%s > %s có trường đặc thù của chuyên mục', (group, slug, expected) => {
     for (const key of expected) expect(keys(leaf(group, slug))).toContain(key);
   });

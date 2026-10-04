@@ -614,6 +614,52 @@ const SERVICES: LeafSpec[] = [
 export const SERVICE_GROUP: GroupSpec = { slug: 'dich-vu', name: 'Dịch vụ', order: 11, config: { priceModes: ['FIXED', 'HOUR', 'DAY', 'MONTH', 'CONTACT'], condition: 'none', minPrice: 1000 },
   fields: [t('service_name', 'Tên dịch vụ', true), serviceArea(), scope()], children: SERVICES };
 
+// ============================ PHẦN MỀM & DỊCH VỤ SỐ (mới) ============================
+const PLATFORMS = ['Windows', 'macOS', 'Linux', 'Android', 'iOS', 'Web (trình duyệt)'];
+const LICENSE = ['Mua đứt (vĩnh viễn)', 'Thuê bao theo tháng', 'Thuê bao theo năm', 'Dùng thử miễn phí', 'Theo hợp đồng'];
+const SW_BUSINESS = ['Bán lẻ / Tạp hóa', 'Cửa hàng điện thoại / Máy tính', 'Quán cà phê / Nhà hàng', 'Spa / Salon', 'Thời trang / Mỹ phẩm', 'Siêu thị mini', 'Kho / Phân phối', 'Bán hàng online', 'Đa ngành'];
+const supportMode = () => ms('support', 'Hỗ trợ kèm theo', ['Cài đặt', 'Hướng dẫn sử dụng', 'Đào tạo nhân viên', 'Bảo hành / Bảo trì', 'Hỗ trợ từ xa', 'Hỗ trợ tại chỗ']);
+const demoUrl = () => t('demo_url', 'Đường dẫn dùng thử / Demo', false, { maxLength: 300, placeholder: 'https://...' });
+const SOFTWARE: LeafSpec[] = [
+  { slug: 'phan-mem-quan-ly-ban-hang', name: 'Phần mềm quản lý bán hàng', fields: [
+    t('software_name', 'Tên phần mềm', true), ms('platform', 'Nền tảng', PLATFORMS), ms('business_type', 'Phù hợp ngành', SW_BUSINESS),
+    ms('features', 'Tính năng chính', ['Bán hàng / POS', 'Quản lý kho', 'Quản lý khách hàng', 'Công nợ', 'Báo cáo doanh thu', 'In hóa đơn / Mã vạch', 'Hóa đơn điện tử', 'Bán hàng đa chi nhánh', 'Kết nối sàn TMĐT']),
+    s('license', 'Hình thức bán', true, LICENSE), b('free_trial', 'Có dùng thử'), demoUrl(), supportMode(), n('warranty_months', 'Bảo hành / Cập nhật', false, { min: 0, max: 120, unit: 'tháng', integer: true }), ta('scope', 'Mô tả chi tiết gói bán'),
+  ] },
+  { slug: 'phan-mem-tien-ich', name: 'Phần mềm tiện ích', fields: [
+    t('software_name', 'Tên phần mềm', true), s('utility_type', 'Loại tiện ích', true, ['Văn phòng / Kế toán', 'Đồ họa / Video', 'Bảo mật / Diệt virus', 'Hệ thống / Dọn dẹp', 'Tải / Chuyển đổi file', 'Marketing / Đăng bài tự động', 'Giáo dục / Học tập', 'Khác']),
+    ms('platform', 'Nền tảng', PLATFORMS), s('license', 'Hình thức bán', true, LICENSE), t('version', 'Phiên bản', false, { maxLength: 60 }), b('free_trial', 'Có dùng thử'), demoUrl(), supportMode(), ta('scope', 'Mô tả chi tiết'),
+  ] },
+  { slug: 'thiet-ke-website', name: 'Thiết kế website', fields: [
+    s('web_type', 'Loại website', true, ['Website giới thiệu doanh nghiệp', 'Website bán hàng / TMĐT', 'Landing page', 'Website tin tức / Blog', 'Website đặt lịch / Booking', 'Website theo yêu cầu', 'Sửa / Nâng cấp website']),
+    s('tech', 'Nền tảng xây dựng', false, ['WordPress', 'Next.js / React', 'Haravan / Shopify', 'Code thuần (HTML/PHP)', 'Khác']), n('delivery_days', 'Thời gian hoàn thành', true, { min: 1, max: 365, unit: 'ngày', integer: true }),
+    n('revisions', 'Số lần chỉnh sửa', false, { min: 0, max: 100, integer: true }), ms('included', 'Đã bao gồm', ['Tên miền', 'Hosting', 'SSL', 'Giao diện responsive', 'Chuẩn SEO cơ bản', 'Quản trị nội dung', 'Hướng dẫn sử dụng', 'Bảo hành']),
+    t('portfolio_url', 'Đường dẫn website đã làm', false, { maxLength: 300 }), n('warranty_months', 'Bảo hành', false, { min: 0, max: 120, unit: 'tháng', integer: true }), b('remote', 'Làm việc từ xa'), scope(),
+  ] },
+  { slug: 'thiet-ke-ung-dung', name: 'Thiết kế ứng dụng / Phần mềm theo yêu cầu', fields: [
+    s('app_type', 'Loại sản phẩm', true, ['Ứng dụng di động (Android/iOS)', 'Phần mềm máy tính', 'Hệ thống quản lý nội bộ', 'Chatbot / Tự động hóa', 'Tích hợp / API', 'Khác']), t('tech', 'Công nghệ sử dụng', false, { maxLength: 200 }),
+    n('delivery_days', 'Thời gian hoàn thành', true, { min: 1, max: 730, unit: 'ngày', integer: true }), t('portfolio_url', 'Sản phẩm đã làm', false, { maxLength: 300 }), n('warranty_months', 'Bảo hành', false, { min: 0, max: 120, unit: 'tháng', integer: true }), b('source_code', 'Bàn giao mã nguồn'), b('remote', 'Làm việc từ xa'), scope(),
+  ] },
+  { slug: 'ban-quyen-tai-khoan', name: 'Bản quyền & tài khoản số', config: { condition: 'none' }, fields: [
+    s('key_type', 'Loại', true, ['Windows / Office', 'Phần mềm đồ họa', 'Diệt virus', 'Tài khoản học tập / Giải trí', 'Tài khoản AI / Công cụ làm việc', 'Khác']), t('product_name', 'Tên sản phẩm', true), s('license', 'Thời hạn', true, ['Vĩnh viễn', '1 tháng', '3 tháng', '6 tháng', '1 năm', 'Khác']),
+    s('delivery', 'Hình thức giao', true, ['Gửi mã qua tin nhắn', 'Cài đặt từ xa', 'Tài khoản dùng chung', 'Tài khoản chính chủ']), n('warranty_months', 'Bảo hành', false, { min: 0, max: 60, unit: 'tháng', integer: true }), b('official', 'Bản quyền chính hãng'),
+  ] },
+  { slug: 'hosting-ten-mien', name: 'Hosting, tên miền & máy chủ', config: { condition: 'none' }, fields: [
+    s('host_type', 'Loại dịch vụ', true, ['Tên miền', 'Hosting', 'VPS / Máy chủ', 'Chứng chỉ SSL', 'Email doanh nghiệp', 'Cloud / Lưu trữ', 'Khác']), t('provider', 'Nhà cung cấp', false, { maxLength: 100 }), t('spec', 'Cấu hình / Gói', false, { maxLength: 200, placeholder: 'VD: 2 vCPU, 4GB RAM, 80GB SSD' }),
+    s('period', 'Thời hạn', true, ['1 tháng', '6 tháng', '1 năm', '2 năm', 'Khác']), b('setup', 'Hỗ trợ cài đặt'), b('migration', 'Hỗ trợ chuyển dữ liệu'),
+  ] },
+  { slug: 'marketing-online', name: 'Marketing & quảng cáo online', fields: [
+    s('mkt_type', 'Dịch vụ', true, ['Chạy quảng cáo Facebook / Google', 'SEO / Lên top Google', 'Quản trị fanpage / Nội dung', 'Thiết kế ấn phẩm số', 'Quay / Dựng video', 'Email / Zalo marketing', 'Khác']), n('delivery_days', 'Thời gian thực hiện', false, { min: 1, max: 365, unit: 'ngày', integer: true }),
+    t('portfolio_url', 'Dự án đã thực hiện', false, { maxLength: 300 }), b('report', 'Có báo cáo định kỳ'), b('remote', 'Làm việc từ xa'), experience(), scope(),
+  ] },
+  { slug: 'tu-van-cai-dat-it', name: 'Tư vấn, cài đặt & hỗ trợ IT', fields: [
+    s('it_type', 'Dịch vụ', true, ['Cài đặt phần mềm bán hàng', 'Cài đặt máy in / Máy quét', 'Mạng / Camera / Wifi', 'Sao lưu / Khôi phục dữ liệu', 'Bảo trì máy tính', 'Đào tạo sử dụng phần mềm', 'Khác']), serviceArea(), b('remote', 'Hỗ trợ từ xa'), atHome(), b('urgent', 'Nhận việc gấp'), availability(), experience(), scope(),
+  ] },
+  { slug: 'phan-mem-khac', name: 'Phần mềm & dịch vụ số khác', fields: [t('item_name', 'Tên sản phẩm / dịch vụ', true), t('category_note', 'Nhóm sản phẩm'), ms('platform', 'Nền tảng', PLATFORMS), demoUrl(), scope()] },
+];
+export const SOFTWARE_GROUP: GroupSpec = { slug: 'phan-mem-dich-vu-so', name: 'Phần mềm & Dịch vụ số', order: 15, config: { priceModes: ['FIXED', 'MONTH', 'CONTACT'], condition: 'none', minPrice: 1000 },
+  fields: [t('item_name', 'Tên sản phẩm / dịch vụ', true), demoUrl()], children: SOFTWARE };
+
 // ============================ HÀNG HÓA KHÁC ============================
 const OTHER: LeafSpec[] = [
   { slug: 'hang-hoa-khac', name: 'Hàng hóa khác', fields: [t('item_type', 'Loại hàng hóa', true), t('brand', 'Thương hiệu'), t('model', 'Model'), t('material', 'Chất liệu', false, { maxLength: 100 }), dims(), n('weight_kg', 'Khối lượng', false, { min: 0.001, max: 100000, unit: 'kg' }), origin(), ta('details', 'Thông tin chi tiết')] },
@@ -621,4 +667,4 @@ const OTHER: LeafSpec[] = [
 export const OTHER_GROUP: GroupSpec = { slug: 'khac', name: 'Hàng hóa khác', order: 12, config: { priceModes: ['FIXED', 'CONTACT', 'FREE'], condition: 'required', minPrice: 1000 },
   fields: [t('brand', 'Thương hiệu'), t('model', 'Model'), origin()], children: OTHER };
 
-export const CATALOG: GroupSpec[] = [TECH_GROUP, VEHICLE_GROUP, PROPERTY_GROUP, HOME_GROUP, FASHION_GROUP, SPORTS_GROUP, BOOKS_GROUP, MACHINERY_GROUP, COLLECT_GROUP, PETS_GROUP, FOOD_GROUP, GIVEAWAY_GROUP, BABY_GROUP, SERVICE_GROUP, OTHER_GROUP];
+export const CATALOG: GroupSpec[] = [TECH_GROUP, VEHICLE_GROUP, PROPERTY_GROUP, HOME_GROUP, FASHION_GROUP, SPORTS_GROUP, BOOKS_GROUP, MACHINERY_GROUP, COLLECT_GROUP, PETS_GROUP, FOOD_GROUP, GIVEAWAY_GROUP, BABY_GROUP, SERVICE_GROUP, SOFTWARE_GROUP, OTHER_GROUP];
