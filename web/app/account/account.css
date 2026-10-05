@@ -63,6 +63,8 @@
 .ac-loc{margin:0;display:flex;align-items:center;gap:5px;color:#66766f;font-size:13px}
 .ac-hint{margin:0;font-size:12.5px;color:#b45309}
 .ac-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:auto;padding-top:6px}
+.ac-item .ac-actions{flex-wrap:nowrap;gap:6px}
+.member-page .ac-item .ac-actions .ac-btn.sm{flex:1 1 0;min-width:0;padding:6px 4px;gap:4px;font-size:12.5px;white-space:nowrap}
 .ac-chip{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:700;border-radius:999px;padding:3px 11px;border:1px solid transparent;background:#fff}
 .ac-chip.ok{background:#e3f8ec;color:#0a7a45;border-color:#a9e4c3}.ac-chip.wait{background:#fff4dc;color:#8a5a00;border-color:#f5d38a}
 .ac-chip.bad{background:#fde8e8;color:#c81e1e;border-color:#f6b4b4}.ac-chip.info{background:#e6f0ff;color:#1d4ed8;border-color:#b9d0fb}.ac-chip.mute{background:#eef2f0;color:#5b6b64;border-color:#d9e2dd}

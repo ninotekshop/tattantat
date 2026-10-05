@@ -35,7 +35,9 @@ export async function googleLogin(): Promise<Session | null> {
   } catch (e) {
     const code = (e as { code?: string }).code;
     if (code === statusCodes.SIGN_IN_CANCELLED || code === statusCodes.IN_PROGRESS) return null;
-    throw e instanceof ApiError ? e : new ApiError('Đăng nhập Google chưa thành công. Vui lòng thử lại.', 0);
+    if (e instanceof ApiError) throw e;
+    // Kèm mã lỗi để dễ tìm nguyên nhân (10 = DEVELOPER_ERROR: chưa khai báo SHA-1 của bản build với Google).
+    throw new ApiError(`Đăng nhập Google chưa thành công${code ? ` (mã ${code})` : ''}. Vui lòng thử lại.`, 0);
   } finally { GoogleSignin.signOut().catch(() => undefined); }
 }
 
@@ -90,7 +92,9 @@ function otpError(e: unknown) {
 
 /** Facebook / Zalo: mở trình duyệt đăng nhập qua máy chủ Tất Tần Tật, nhận mã một lần rồi đổi lấy phiên (không cần SDK gốc). */
 export async function webLogin(provider: 'facebook' | 'zalo'): Promise<Session | null> {
-  const returnUrl = Linking.createURL('oauth');
+  // Bản build dùng scheme riêng của app; Expo Go dùng exp://. Nếu không đọc được cấu hình thì rơi về scheme cố định.
+  let returnUrl = 'tattantat://oauth';
+  try { returnUrl = Linking.createURL('oauth'); } catch { /* giữ scheme mặc định */ }
   const res = await WebBrowser.openAuthSessionAsync(`${API_URL}/auth/oauth/${provider}/start?returnUrl=${encodeURIComponent(returnUrl)}`, returnUrl);
   if (res.type !== 'success') return null;
   const q = Linking.parse(res.url).queryParams ?? {};

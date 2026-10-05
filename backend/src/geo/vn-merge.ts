@@ -52,3 +52,55 @@ export function convertAddress(address?: string | null): string | null {
   const res = out.join(', ');
   return res === address ? null : res;
 }
+
+// ---- Hiển thị gọn trên thẻ tin: "P. Trần Phú (P. Quy Nhơn mới)" ----
+const ABBR: [RegExp, string][] = [[/^phường\s+/i, 'P. '], [/^xã\s+/i, 'X. '], [/^thị trấn\s+/i, 'TT. '], [/^đặc khu\s+/i, 'ĐK. ']];
+const abbr = (s: string) => { for (const [r, a] of ABBR) if (r.test(s)) return s.replace(r, a); return s; };
+const noteRe = /\s*\(([^)]*?)\s+mới\)\s*$/i;
+
+let loc: { provNew: Map<string, string>; byNewProv: Map<string, { wards: Map<string, [string, string]>; newWards: Map<string, string> }> } | null = null;
+function locIndex() {
+  if (loc) return loc;
+  const provNew = new Map<string, string>(); // strip(tên tỉnh cũ hoặc mới) -> mã tỉnh mới
+  for (const [oldName, [code, newName]] of Object.entries(VN_MERGE.p)) { provNew.set(strip(oldName), code); provNew.set(strip(newName), code); }
+  const byNewProv = new Map<string, { wards: Map<string, [string, string]>; newWards: Map<string, string> }>();
+  for (const [k, dc] of Object.entries(VN_MERGE.d)) {
+    const code = VN_MERGE.p[k.split('|')[0]]?.[0];
+    if (!code) continue;
+    const e = byNewProv.get(code) ?? { wards: new Map(), newWards: new Map() };
+    for (const [oldWard, nw] of Object.entries(VN_MERGE.w[dc] ?? {})) {
+      const key = strip(oldWard);
+      if (!e.wards.has(key)) e.wards.set(key, [oldWard, nw[1]]);
+      e.newWards.set(strip(nw[1]), nw[1]);
+    }
+    byNewProv.set(code, e);
+  }
+  loc = { provNew, byNewProv };
+  return loc;
+}
+
+/** Hiển thị gọn cho thẻ tin; trả về null nếu không nhận ra khu vực (khi đó dùng địa chỉ đầy đủ). */
+export function compactLocation(address?: string | null): string | null {
+  if (!address) return null;
+  const { provNew, byNewProv } = locIndex();
+  const parts = address.split(',').map(x => x.trim()).filter(Boolean).map(p => ({ base: p.replace(noteRe, '').trim(), note: noteRe.exec(p)?.[1] }));
+  let pi = -1, code = '';
+  for (let i = parts.length - 1; i >= 0 && pi < 0; i--) { const c = provNew.get(strip(parts[i].base)); if (c) { pi = i; code = c; } }
+  if (pi < 0) return null;
+  const provNewName = VN_MERGE.np[code];
+  const idx = byNewProv.get(code);
+  if (!provNewName || !idx) return null;
+  for (let i = 0; i < parts.length; i++) {
+    if (i === pi) continue;
+    const { base, note } = parts[i];
+    const m = idx.wards.get(strip(base));
+    if (note && m) return `${abbr(m[0])} (${abbr(note)} mới)`;
+    if (m) return core(m[1]) === core(m[0]) ? `${abbr(m[1])}, ${provNewName} mới` : `${abbr(m[0])} (${abbr(m[1])} mới)`;
+  }
+  for (let i = 0; i < parts.length; i++) {
+    if (i === pi) continue;
+    const nw = idx.newWards.get(strip(parts[i].base));
+    if (nw) return `${abbr(nw)} mới, ${provNewName} mới`;
+  }
+  return null;
+}

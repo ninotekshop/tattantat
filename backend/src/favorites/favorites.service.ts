@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { DatabaseService } from '../database/database.service';
-import { convertAddress } from '../geo/vn-merge';
+import { compactLocation, convertAddress } from '../geo/vn-merge';
 
 type FavoriteProductRow = {
   id: string;
@@ -61,7 +61,7 @@ export class FavoritesService {
 
   private payload(row: FavoriteProductRow) {
     return {
-      id: row.id, title: row.title, price: row.price, location: (row.address ? (convertAddress(row.address) ?? row.address) : null) ?? 'Chưa cập nhật',
+      id: row.id, title: row.title, price: row.price, location: (row.address ? (compactLocation(row.address) ?? convertAddress(row.address) ?? row.address) : null) ?? 'Chưa cập nhật',
       sellerId: row.seller_id, priceMode: row.listing_price_mode ?? 'FIXED', listingId: row.listing_id,
       postedAt: row.created_at, sellerName: row.seller_name, imageUrl: row.image_url ?? '',
       description: row.description, condition: row.condition, categoryId: row.category_id, status: row.status,

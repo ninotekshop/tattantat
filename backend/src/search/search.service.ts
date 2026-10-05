@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { DatabaseService } from '../database/database.service';
-import { convertAddress } from '../geo/vn-merge';
+import { compactLocation, convertAddress } from '../geo/vn-merge';
 
 export type AttrFilter = { min?: number; max?: number; eq?: string[] };
 export type SearchParams = { q?: string; categoryId?: number; categorySlug?: string; attrs?: Record<string, AttrFilter>; minPrice?: number; maxPrice?: number; condition?: string; location?: string; verified?: boolean; sort?: string; page?: number; limit?: number; since?: string };
@@ -104,7 +104,7 @@ export class SearchService implements OnModuleInit {
         FROM products p JOIN users u ON u.id=p.seller_id WHERE ${sql} ORDER BY ${order} LIMIT ${limit} OFFSET ${(page - 1) * limit}`, values),
       this.db.query(`SELECT COUNT(*)::int AS n FROM products p WHERE ${sql}`, values),
     ]);
-    const items = rows.rows.map((row: any) => ({ id: row.id, title: row.title, price: row.price, priceMode: row.listing_price_mode ?? 'FIXED', location: (row.address ? (convertAddress(row.address) ?? row.address) : null) ?? 'Chưa cập nhật', postedAt: row.created_at, sellerId: row.seller_id, sellerName: row.seller_name, sellerVerified: row.seller_verified, attrs: row.attrs ?? {}, imageUrl: row.image_url ?? '', hasVideo: !!row.has_video, images: row.image_url ? [row.image_url] : [], status: row.status }));
+    const items = rows.rows.map((row: any) => ({ id: row.id, title: row.title, price: row.price, priceMode: row.listing_price_mode ?? 'FIXED', location: (row.address ? (compactLocation(row.address) ?? convertAddress(row.address) ?? row.address) : null) ?? 'Chưa cập nhật', postedAt: row.created_at, sellerId: row.seller_id, sellerName: row.seller_name, sellerVerified: row.seller_verified, attrs: row.attrs ?? {}, imageUrl: row.image_url ?? '', hasVideo: !!row.has_video, images: row.image_url ? [row.image_url] : [], status: row.status }));
     void this.recordKeyword(p.q, page, total.rows[0].n as number);
     return { success: true, data: { items, total: total.rows[0].n as number, page, limit }, message: null, errorCode: null };
   }

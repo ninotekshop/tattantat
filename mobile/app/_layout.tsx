@@ -33,7 +33,8 @@ function Root() {
       headerStyle: { backgroundColor: C.white }, contentStyle: { backgroundColor: C.paper }, headerBackButtonDisplayMode: 'minimal',
     }}>
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-      <Stack.Screen name="login" options={{ title: 'Đăng nhập', presentation: 'modal' }} />
+      <Stack.Screen name="login" options={{ title: 'Đăng nhập', presentation: 'modal', headerShown: false }} />
+      <Stack.Screen name="oauth" options={{ headerShown: false, animation: 'none' }} />
       <Stack.Screen name="welcome" options={{ presentation: 'transparentModal', animation: 'fade', headerShown: false }} />
       <Stack.Screen name="register" options={{ title: 'Tạo tài khoản' }} />
       <Stack.Screen name="forgot-password" options={{ title: 'Quên mật khẩu' }} />

@@ -16,4 +16,5 @@ export function timeAgo(iso?: string | null) {
   return new Date(iso).toLocaleDateString('vi-VN');
 }
 export const initials = (name?: string | null) => (name ?? '?').trim().split(/\s+/).slice(-2).map(w => w[0]?.toUpperCase() ?? '').join('') || '?';
-export const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
+/** Mã duy nhất dạng UUID v4 (máy chủ yêu cầu đúng định dạng này cho clientKey, khóa chống gửi trùng…). */
+export const uid = () => 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => { const r = Math.floor(Math.random() * 16); return (c === 'x' ? r : (r & 3) | 8).toString(16); });
