@@ -295,12 +295,12 @@ export function AuthModal({ isOpen, onClose, initialMode = 'LOGIN', onSuccess }:
     }
   };
 
-  const handleGoogleAuth = () => {
+  const initGoogle = (prompt: boolean): boolean => {
     const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '927392714442-7s4c7vca99p1rtr9jvd3ken6ctinut9v.apps.googleusercontent.com';
     if ((window as any).google?.accounts?.id) {
       (window as any).google.accounts.id.initialize({
         client_id: googleClientId,
-        callback: async (response: any) => {
+        callback: (response: any) => { void (async () => {
           if (response?.credential) {
             setLoading(true);
             try {
@@ -327,19 +327,34 @@ export function AuthModal({ isOpen, onClose, initialMode = 'LOGIN', onSuccess }:
               setLoading(false);
             }
           }
-        },
+        })(); },
       });
-      (window as any).google.accounts.id.prompt();
-    } else {
-      handleSocialLogin('google');
+      if (prompt) (window as any).google.accounts.id.prompt();
+      return true;
     }
+    if (prompt) handleSocialLogin('google');
+    return false;
   };
+  const handleGoogleAuth = () => { initGoogle(true); };
+
+  const mountGoogle = (el: HTMLDivElement | null) => {
+    if (!el || el.dataset.done) return;
+    const tryMount = (n: number) => {
+      const g = (window as any).google?.accounts?.id;
+      if (!g) { if (n < 40) setTimeout(() => tryMount(n + 1), 250); return; }
+      if (!initGoogle(false)) return;
+      el.dataset.done = '1';
+      g.renderButton(el, { type: 'standard', theme: 'outline', size: 'large', width: Math.min(400, Math.max(200, el.offsetWidth)) });
+    };
+    tryMount(0);
+  };
+
 
   const handleFacebookAuth = () => {
     const fbAppId = process.env.NEXT_PUBLIC_FACEBOOK_APP_ID || '2833629363678891';
     if ((window as any).FB) {
       (window as any).FB.login(
-        async (response: any) => {
+        (response: any) => { void (async () => {
           if (response?.authResponse?.accessToken) {
             setLoading(true);
             try {
@@ -368,7 +383,7 @@ export function AuthModal({ isOpen, onClose, initialMode = 'LOGIN', onSuccess }:
           } else {
             setError('Người dùng đã hủy hoặc chưa hoàn tất đăng nhập Facebook.');
           }
-        },
+        })(); },
         { scope: 'public_profile,email' }
       );
     } else {
@@ -451,9 +466,12 @@ export function AuthModal({ isOpen, onClose, initialMode = 'LOGIN', onSuccess }:
 
   const socialButtons = (
     <div style={{ display: 'flex', gap: 10 }}>
-                <button type="button" onClick={handleGoogleAuth} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '10px', borderRadius: 10, border: '1px solid #cbd5e1', background: '#fff', cursor: 'pointer', fontSize: 13, fontWeight: 600, color: '#334155' }}>
+<div style={{ flex: 1, position: 'relative', display: 'flex' }}>
+                <button type="button" onClick={handleGoogleAuth} tabIndex={-1} style={{ flex: 1, pointerEvents: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '10px', borderRadius: 10, border: '1px solid #cbd5e1', background: '#fff', cursor: 'pointer', fontSize: 13, fontWeight: 600, color: '#334155' }}>
                   <GoogleIcon /> Google
                 </button>
+<div ref={mountGoogle} style={{ position: 'absolute', inset: 0, opacity: 0.01, overflow: 'hidden', display: 'flex', justifyContent: 'center' }} />
+</div>
                 <button type="button" onClick={handleFacebookAuth} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '10px', borderRadius: 10, border: '1px solid #cbd5e1', background: '#fff', cursor: 'pointer', fontSize: 13, fontWeight: 600, color: '#334155' }}>
                   <FacebookIcon /> Facebook
                 </button>
