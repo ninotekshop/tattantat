@@ -11,6 +11,9 @@
 #    (google-services.json của ứng dụng Android com.tattantat.admin, mã hóa base64) để nhận thông báo đẩy.
 #    Build bằng cách đẩy tag dạng admin-v1.0.0 (workflow admin-android-apk), tải .apk ở mục Artifacts.
 #  - google_play: GCP_SERVICE_ACCOUNT_CREDENTIALS (JSON tài khoản dịch vụ Google Play, Secure)
+# Nộp lên cửa hàng: đẩy tag store-vX.Y.Z (vd store-v1.0.0) -> workflow android-store + ios-store tự build rồi gửi
+#   Google Play (track production) và App Store (gửi duyệt, phát hành thủ công sau khi Apple duyệt).
+#   Tag app-v* vẫn chỉ đưa lên Internal testing (Google Play) và TestFlight để thử nghiệm.
 # Ký app Android: Code signing identities → Android keystores, đặt tên tham chiếu "tattantat_upload".
 # Ký app iOS: Integrations → App Store Connect API key tên "tattantat_asc".
 
@@ -199,3 +202,121 @@ workflows:
       app_store_connect:
         auth: integration
         submit_to_testflight: true
+
+  android-store:
+    name: Android — NỘP LÊN GOOGLE PLAY (bản chính thức, gửi Google duyệt) khi đẩy tag store-v*
+    max_build_duration: 90
+    instance_type: linux_x2
+    environment:
+      <<: *env_common
+      java: 17
+      groups:
+        - tattantat_mobile
+        - google_play
+      android_signing:
+        - tattantat_upload
+      vars:
+        EXPO_PUBLIC_API_URL: "https://tattantat.vn/api/v1"
+        APP_VERSION: "1.0.0"
+        PACKAGE_NAME: "com.tattantat.app"
+    triggering:
+      events: [tag]
+      tag_patterns:
+        - pattern: "store-v*"
+    scripts:
+      - *install
+      - name: Số build (versionCode) tăng dần theo Google Play
+        script: |
+          LATEST=$(google-play get-latest-build-number --package-name "$PACKAGE_NAME" 2>/dev/null || echo 0)
+          echo "BUILD_NUMBER=$((LATEST + 1))" >> $CM_ENV
+      - name: Tệp cấu hình Firebase cho Android
+        script: |
+          if [ -n "$ANDROID_GOOGLE_SERVICES_JSON" ]; then echo "$ANDROID_GOOGLE_SERVICES_JSON" | base64 --decode > mobile/google-services.json; fi
+          test -f mobile/google-services.json || { echo "Thiếu google-services.json (biến ANDROID_GOOGLE_SERVICES_JSON)"; exit 1; }
+      - name: Sinh mã native Android
+        script: |
+          cd mobile
+          npx expo prebuild --platform android --clean --no-install
+      - name: Cấu hình ký app (upload key)
+        script: |
+          cat >> mobile/android/app/build.gradle <<'GRADLE'
+          android {
+            signingConfigs {
+              release {
+                storeFile file(System.getenv("CM_KEYSTORE_PATH"))
+                storePassword System.getenv("CM_KEYSTORE_PASSWORD")
+                keyAlias System.getenv("CM_KEY_ALIAS")
+                keyPassword System.getenv("CM_KEY_PASSWORD")
+              }
+            }
+            buildTypes { release { signingConfig signingConfigs.release } }
+          }
+          GRADLE
+      - name: Build Android App Bundle (.aab) và APK (.apk)
+        script: |
+          cd mobile/android
+          ./gradlew bundleRelease assembleRelease
+    artifacts:
+      - mobile/android/app/build/outputs/bundle/release/*.aab
+      - mobile/android/app/build/outputs/apk/release/*.apk
+      - mobile/android/app/build/outputs/mapping/release/mapping.txt
+    publishing:
+      google_play:
+        credentials: $GCP_SERVICE_ACCOUNT_CREDENTIALS
+        track: production
+        submit_as_draft: false
+        in_app_update_priority: 0
+
+  ios-store:
+    name: iOS — NỘP LÊN APP STORE (gửi Apple duyệt) khi đẩy tag store-v*
+    max_build_duration: 120
+    instance_type: mac_mini_m2
+    integrations:
+      app_store_connect: tattantat_asc
+    environment:
+      <<: *env_common
+      xcode: latest
+      cocoapods: default
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: com.tattantat.app
+      vars:
+        EXPO_PUBLIC_API_URL: "https://tattantat.vn/api/v1"
+        APP_VERSION: "1.0.0"
+        BUNDLE_ID: "com.tattantat.app"
+        BUILD_PLATFORM: "ios"
+    triggering:
+      events: [tag]
+      tag_patterns:
+        - pattern: "store-v*"
+    scripts:
+      - *install
+      - name: Tệp cấu hình Firebase cho iOS
+        script: |
+          if [ -z "$IOS_GOOGLE_SERVICES_PLIST" ]; then echo "Thiếu biến IOS_GOOGLE_SERVICES_PLIST"; exit 1; fi
+          echo "$IOS_GOOGLE_SERVICES_PLIST" | base64 --decode > mobile/GoogleService-Info.plist
+      - name: Số build tăng dần theo TestFlight
+        script: |
+          LATEST=$(app-store-connect get-latest-testflight-build-number --bundle-id-identifier "$BUNDLE_ID" 2>/dev/null || echo 0)
+          echo "BUILD_NUMBER=$((LATEST + 1))" >> $CM_ENV
+      - name: Sinh mã native iOS và cài CocoaPods
+        script: |
+          cd mobile
+          npx expo prebuild --platform ios --clean --no-install
+          cd ios && pod install
+      - name: Áp dụng hồ sơ ký app
+        script: xcode-project use-profiles
+      - name: Build IPA
+        script: |
+          WORKSPACE=$(ls -d mobile/ios/*.xcworkspace | head -n 1)
+          SCHEME=$(basename "$WORKSPACE" .xcworkspace)
+          xcode-project build-ipa --workspace "$WORKSPACE" --scheme "$SCHEME"
+    artifacts:
+      - build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+    publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: true
+        submit_to_app_store: true
+        release_type: MANUAL

@@ -45,9 +45,15 @@ export async function api<T>(path: string, opts: { method?: string; body?: unkno
     return fetch(API_URL + path, { method: opts.method ?? 'GET', headers, body: opts.body === undefined ? undefined : isForm ? (opts.body as FormData) : JSON.stringify(opts.body) });
   };
   if (opts.auth && !session) throw new ApiError('Vui lòng đăng nhập để tiếp tục.', 401);
-  let res: Response;
-  try { res = await send(session?.accessToken); }
-  catch { throw new ApiError('Không kết nối được máy chủ. Kiểm tra mạng và thử lại.', 0); }
+  let res: Response | undefined;
+  // Yêu cầu đọc (GET) tự thử lại tối đa 2 lần khi mạng chập chờn / máy chủ bận (429, 5xx).
+  const reads = (opts.method ?? 'GET') === 'GET';
+  for (let i = 0; i <= (reads ? 2 : 0); i++) {
+    try { res = await send(session?.accessToken); } catch { res = undefined; }
+    if (res && !(reads && (res.status === 429 || res.status >= 500))) break;
+    if (i < (reads ? 2 : 0)) await new Promise(r => setTimeout(r, 700 * (i + 1)));
+  }
+  if (!res) throw new ApiError('Không kết nối được máy chủ. Kiểm tra mạng và thử lại.', 0);
   if (res.status === 401 && session && !path.startsWith('/auth/')) {
     const next = await refresh(session);
     if (!next) throw new ApiError('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.', 401);

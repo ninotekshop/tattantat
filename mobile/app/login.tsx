@@ -13,6 +13,9 @@ import { C, R } from '@/lib/theme';
 
 type Step = 'start' | 'password' | 'otp';
 
+/** Zalo chặn lấy hồ sơ từ IP máy chủ ngoài Việt Nam (lỗi -501). Đặt true khi backend có IP Việt Nam hoặc proxy VN. */
+const SHOW_ZALO = false;
+
 /** Đăng nhập / Đăng ký: Google, Facebook, Zalo, Apple (iOS) hoặc số điện thoại (mật khẩu hoặc mã OTP). */
 export default function Login() {
   const { signIn } = useAuth();
@@ -76,7 +79,7 @@ export default function Login() {
               <View style={{ gap: 14 }}>
                 <Social title="Tiếp tục với Google" icon={<GoogleIcon />} loading={busy === 'google'} onPress={() => run('google', googleLogin)} />
                 <Social title="Tiếp tục với Facebook" icon={<FacebookIcon />} loading={busy === 'facebook'} onPress={() => run('facebook', () => webLogin('facebook'))} />
-                <Social title="Tiếp tục với Zalo" icon={<ZaloIcon />} loading={busy === 'zalo'} onPress={() => run('zalo', () => webLogin('zalo'))} />
+                {SHOW_ZALO ? <Social title="Tiếp tục với Zalo" icon={<ZaloIcon />} loading={busy === 'zalo'} onPress={() => run('zalo', () => webLogin('zalo'))} /> : null}
                 {apple ? <Social title="Tiếp tục với Apple" icon={<AppleIcon />} loading={busy === 'apple'} onPress={() => run('apple', appleLogin)} /> : null}
               </View>
 

@@ -43,6 +43,18 @@ export class ApiError extends Error {
 }
 
 export async function apiRequest<T>(path: string, method = 'GET', body?: unknown, token?: string, key?: string): Promise<T> {
+  // Yêu cầu đọc (GET) tự thử lại tối đa 2 lần khi mạng chập chờn / máy chủ bận (429, 5xx).
+  for (let attempt = 0; ; attempt++) {
+    try { return await apiRequestOnce<T>(path, method, body, token, key); }
+    catch (e) {
+      const status = e instanceof ApiError ? e.status : 0;
+      if (method !== 'GET' || attempt >= 2 || !(status === 429 || status >= 500 || status === 0)) throw e;
+      await new Promise(r => setTimeout(r, 700 * (attempt + 1)));
+    }
+  }
+}
+
+async function apiRequestOnce<T>(path: string, method = 'GET', body?: unknown, token?: string, key?: string): Promise<T> {
   let response;
   try {
     const isForm = typeof FormData !== 'undefined' && body instanceof FormData;

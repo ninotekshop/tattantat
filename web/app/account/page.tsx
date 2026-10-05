@@ -99,7 +99,7 @@ function Account({ session }: { session: WebSession }) {
 
           {section === 'listings' && <>
             <div className="ac-bar"><h2>Tin đã đăng <small>{products.length}</small></h2><a className="ac-btn primary" href="/sell"><PlusCircle size={16} />Đăng tin / tiếp tục bản nháp ({drafts.length})</a></div>
-            {!products.length && <div className="ac-empty"><FileText size={34} /><h3>Bạn chưa có tin đăng</h3><p>Đăng tin đầu tiên để bắt đầu bán hàng trên Tất Tần Tật.</p><a className="ac-btn primary" href="/sell">Đăng tin ngay</a></div>}
+            {!error && !products.length && <div className="ac-empty"><FileText size={34} /><h3>Bạn chưa có tin đăng</h3><p>Đăng tin đầu tiên để bắt đầu bán hàng trên Tất Tần Tật.</p><a className="ac-btn primary" href="/sell">Đăng tin ngay</a></div>}
             <div className="ac-grid">{products.map(p => { const st = STATUS[p.status || ''] ?? { label: p.status || '', cls: 'mute' }; return <article className="ac-item" key={p.id}>
               <div className="ac-thumb">{p.imageUrl ? <img src={p.imageUrl} alt={p.title} loading="lazy" /> : <FileText size={30} />}<span className={'ac-chip ' + st.cls}>{st.label}</span></div>
               <div className="ac-item-b"><h3>{p.title}</h3>
