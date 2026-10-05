@@ -54,10 +54,17 @@ export async function identityFromCode(provider: WebProvider, secret: string, re
     headers: { 'Content-Type': 'application/x-www-form-urlencoded', secret_key: appSecret },
     body: new URLSearchParams({ app_id: id, code, grant_type: 'authorization_code', code_verifier: zaloVerifier(secret, nonce) }),
   });
-  const t = await r.json().catch(() => null) as { access_token?: string } | null;
-  if (!t?.access_token) return null;
+  const t = await r.json().catch(() => null) as { access_token?: string; error?: number | string; error_name?: string; error_reason?: string; message?: string } | null;
+  if (!t?.access_token) {
+    const why = [t?.error, t?.error_name, t?.error_reason ?? t?.message].filter(Boolean).join(' ') || `HTTP ${r.status}`;
+    console.warn('[oauth zalo] đổi mã thất bại:', why);
+    throw new Error(`Zalo từ chối đăng nhập (${why}). Kiểm tra App ID, Secret key và Callback URL.`);
+  }
   const me = await fetch('https://graph.zalo.me/v2.0/me?fields=id,name,picture', { headers: { access_token: t.access_token }, signal: AbortSignal.timeout(10_000) });
   const p = await me.json().catch(() => null) as { id?: string; name?: string; picture?: { data?: { url?: string } } } | null;
-  if (!p?.id) return null;
+  if (!p?.id) {
+    console.warn('[oauth zalo] lấy hồ sơ thất bại:', JSON.stringify(p));
+    throw new Error('Zalo không trả về hồ sơ người dùng. Kiểm tra quyền truy cập thông tin tài khoản của ứng dụng Zalo.');
+  }
   return { subject: String(p.id), email: null, name: p.name ?? null, avatarUrl: p.picture?.data?.url ?? null };
 }

@@ -98,7 +98,7 @@ a{color:${t.solid}}
 <!-- Logo -->
 <tr><td style="padding:0 6px 18px"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
 <td align="left"><a href="${site}" target="_blank"><img src="${site}/email/logo.png" width="168" alt="Tất Tần Tật" style="display:block;width:168px;height:auto;border:0"></a></td>
-<td align="right" style="font-family:${FONT};font-size:12px;color:#64748b">Mua bán dễ dàng · Kết nối mọi người</td>
+<td align="right" style="white-space:nowrap;line-height:1.5;font-family:${FONT};font-size:12px;color:#64748b">Mua bán dễ dàng<br>Kết nối mọi người</td>
 </tr></table></td></tr>
 
 <!-- Hero -->
