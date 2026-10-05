@@ -60,11 +60,17 @@ export async function identityFromCode(provider: WebProvider, secret: string, re
     console.warn('[oauth zalo] đổi mã thất bại:', why);
     throw new Error(`Zalo từ chối đăng nhập (${why}). Kiểm tra App ID, Secret key và Callback URL.`);
   }
-  const me = await fetch('https://graph.zalo.me/v2.0/me?fields=id,name,picture', { headers: { access_token: t.access_token }, signal: AbortSignal.timeout(10_000) });
-  const p = await me.json().catch(() => null) as { id?: string; name?: string; picture?: { data?: { url?: string } } } | null;
-  if (!p?.id) {
-    console.warn('[oauth zalo] lấy hồ sơ thất bại:', JSON.stringify(p));
-    throw new Error('Zalo không trả về hồ sơ người dùng. Kiểm tra quyền truy cập thông tin tài khoản của ứng dụng Zalo.');
+  type ZProfile = { id?: string; name?: string; picture?: { data?: { url?: string } }; error?: number | string; message?: string };
+  let p: ZProfile | null = null;
+  let why = '';
+  for (const fields of ['id,name,picture', 'id,name', 'id']) {
+    const me = await fetch(`https://graph.zalo.me/v2.0/me?${new URLSearchParams({ fields, access_token: t.access_token })}`, { headers: { access_token: t.access_token }, signal: AbortSignal.timeout(10_000) });
+    const raw = await me.text();
+    p = (() => { try { return JSON.parse(raw) as ZProfile; } catch { return null; } })();
+    if (p?.id) break;
+    why = [p?.error, p?.message].filter(Boolean).join(' ') || `HTTP ${me.status} ${raw.slice(0, 120)}`;
+    console.warn('[oauth zalo] lấy hồ sơ thất bại (' + fields + '):', raw.slice(0, 300));
   }
+  if (!p?.id) throw new Error(`Zalo không trả về hồ sơ người dùng (${why}).`);
   return { subject: String(p.id), email: null, name: p.name ?? null, avatarUrl: p.picture?.data?.url ?? null };
 }
