@@ -12,7 +12,7 @@ const SORTS = [{ key: 'new', label: 'Mới nhất' }, { key: 'price_asc', label:
 const CONDS = [{ key: '', label: 'Tất cả' }, { key: 'NEW', label: 'Mới' }, { key: 'LIKE_NEW', label: 'Như mới' }, { key: 'USED_GOOD', label: 'Đã dùng, tốt' }];
 
 export default function SearchScreen() {
-  const p = useLocalSearchParams<{ q?: string; categoryId?: string; title?: string }>();
+  const p = useLocalSearchParams<{ q?: string; categoryId?: string; categorySlug?: string; title?: string }>();
   const { width } = useWindowDimensions();
   const [text, setText] = useState(p.q ?? '');
   const [q, setQ] = useState(p.q ?? '');
@@ -20,7 +20,7 @@ export default function SearchScreen() {
   const [filter, setFilter] = useState({ minPrice: '', maxPrice: '', condition: '', verified: false });
   const [draft, setDraft] = useState(filter);
   const [show, setShow] = useState(false);
-  const params = useMemo(() => ({ q: q || undefined, categoryId: p.categoryId, sort, minPrice: filter.minPrice || undefined, maxPrice: filter.maxPrice || undefined, condition: filter.condition || undefined, verified: filter.verified ? 'true' : undefined }), [q, p.categoryId, sort, filter]);
+  const params = useMemo(() => ({ q: q || undefined, categoryId: p.categoryId, categorySlug: p.categorySlug, sort, minPrice: filter.minPrice || undefined, maxPrice: filter.maxPrice || undefined, condition: filter.condition || undefined, verified: filter.verified ? 'true' : undefined }), [q, p.categoryId, p.categorySlug, sort, filter]);
   const [hot, setHot] = useState<string[]>([]);
   useEffect(() => { api<string[]>('/search/hot-keywords').then(setHot).catch(() => undefined); }, []);
   const list = useProducts(params);
@@ -32,7 +32,7 @@ export default function SearchScreen() {
       <Stack.Screen options={{ title: p.title || 'Tìm kiếm' }} />
       <View style={st.bar}>
         <View style={{ flex: 1 }}>
-          <Input value={text} onChangeText={setText} placeholder="Tìm điện thoại, xe máy, nhà đất…" returnKeyType="search" autoFocus={!p.categoryId}
+          <Input value={text} onChangeText={setText} placeholder="Tìm điện thoại, xe máy, nhà đất…" returnKeyType="search" autoFocus={!p.categoryId && !p.categorySlug}
             onSubmitEditing={() => setQ(text.trim())} left={<Search size={18} color={C.brand} />}
             right={text ? <Pressable hitSlop={8} onPress={() => { setText(''); setQ(''); }}><X size={18} color={C.muted} /></Pressable> : null} />
         </View>
@@ -43,7 +43,7 @@ export default function SearchScreen() {
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flexGrow: 0 }} contentContainerStyle={{ gap: 8, paddingHorizontal: 12, paddingBottom: 8 }}>
         {SORTS.map(s => <Chip key={s.key} label={s.label} active={sort === s.key} onPress={() => setSort(s.key)} />)}
       </ScrollView>
-      {!q && !p.categoryId && hot.length ? <View style={{ paddingHorizontal: 12, paddingBottom: 8, gap: 6 }}><Text style={{ color: C.muted, fontWeight: '700', fontSize: 13 }}>Từ khóa HOT</Text><View style={st.wrap}>{hot.map(k => <Chip key={k} label={k} active={false} onPress={() => { setText(k); setQ(k); }} />)}</View></View> : null}
+      {!q && !p.categoryId && !p.categorySlug && hot.length ? <View style={{ paddingHorizontal: 12, paddingBottom: 8, gap: 6 }}><Text style={{ color: C.muted, fontWeight: '700', fontSize: 13 }}>Từ khóa HOT</Text><View style={st.wrap}>{hot.map(k => <Chip key={k} label={k} active={false} onPress={() => { setText(k); setQ(k); }} />)}</View></View> : null}
       {!list.loading ? <Text style={st.count}>{list.total.toLocaleString('vi-VN')} tin phù hợp</Text> : null}
       {list.error ? <ErrorBox message={list.error} onRetry={list.refresh} /> : null}
       <FlatList data={list.items} keyExtractor={i => i.id} numColumns={2}

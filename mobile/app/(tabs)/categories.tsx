@@ -7,6 +7,7 @@ import { api, media } from '@/lib/api';
 import { C, R, shadow } from '@/lib/theme';
 import type { Category } from '@/lib/types';
 import { ErrorBox, Loading } from '@/components/ui';
+import { renderCategoryIcon } from '@/lib/categoryIcons';
 
 const parentOf = (c: Category) => c.parent_id ?? c.parentId ?? null;
 
@@ -36,13 +37,35 @@ export default function Categories() {
         return (
           <View style={st.card}>
             <Pressable style={st.row} onPress={() => (kids.length ? setOpen(expanded ? null : item.id) : go(item))}>
-              <View style={st.icon}>{item.icon_url ? <Image source={{ uri: media(item.icon_url) }} style={{ width: 36, height: 36 }} contentFit="contain" /> : <Text style={{ fontSize: 20 }}>🛍️</Text>}</View>
+              <View style={st.icon}>
+                {item.icon_url ? (
+                  <Image source={{ uri: media(item.icon_url) }} style={{ width: 36, height: 36 }} contentFit="contain" />
+                ) : (
+                  renderCategoryIcon(item.slug, item.name, 24, C.brand)
+                )}
+              </View>
               <Text style={st.name}>{item.name}</Text>
               <ChevronRight size={20} color={C.muted} style={{ transform: [{ rotate: expanded ? '90deg' : '0deg' }] }} />
             </Pressable>
             {expanded ? <View style={st.kids}>
-              <Pressable onPress={() => go(item)} style={st.kid}><Text style={[st.kidText, { color: C.brand, fontWeight: '700' }]}>Xem tất cả {item.name}</Text></Pressable>
-              {kids.map(k => <Pressable key={k.id} onPress={() => go(k)} style={st.kid}><Text style={st.kidText}>{k.name}</Text></Pressable>)}
+              <Pressable onPress={() => go(item)} style={st.kidRow}>
+                <View style={[st.kidIcon, { backgroundColor: C.brandSoft }]}><Text style={{ fontSize: 16 }}>🔥</Text></View>
+                <Text style={[st.kidText, { color: C.brand, fontWeight: '700' }]}>Xem tất cả {item.name}</Text>
+                <ChevronRight size={16} color={C.brand} />
+              </Pressable>
+              {kids.map(k => (
+                <Pressable key={k.id} onPress={() => go(k)} style={st.kidRow}>
+                  <View style={st.kidIcon}>
+                    {k.icon_url ? (
+                      <Image source={{ uri: media(k.icon_url) }} style={{ width: 24, height: 24 }} contentFit="contain" />
+                    ) : (
+                      renderCategoryIcon(k.slug, k.name, 18, C.brand)
+                    )}
+                  </View>
+                  <Text style={st.kidText}>{k.name}</Text>
+                  <ChevronRight size={16} color={C.muted} />
+                </Pressable>
+              ))}
             </View> : null}
           </View>
         );
@@ -57,6 +80,7 @@ const st = StyleSheet.create({
   icon: { width: 48, height: 48, borderRadius: 14, backgroundColor: C.brandSoft, alignItems: 'center', justifyContent: 'center' },
   name: { flex: 1, fontSize: 16, fontWeight: '700', color: C.ink },
   kids: { borderTopWidth: 1, borderTopColor: C.line, paddingVertical: 4 },
-  kid: { paddingVertical: 12, paddingHorizontal: 72 },
-  kidText: { fontSize: 15, color: C.text },
+  kidRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10, paddingHorizontal: 16 },
+  kidIcon: { width: 36, height: 36, borderRadius: 10, backgroundColor: C.paper, alignItems: 'center', justifyContent: 'center' },
+  kidText: { flex: 1, fontSize: 15, color: C.text, fontWeight: '600' },
 });

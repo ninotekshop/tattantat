@@ -4,13 +4,13 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { Bell, Search } from 'lucide-react-native';
-import { api, media } from '@/lib/api';
+import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { C, R, shadow } from '@/lib/theme';
-import type { Category } from '@/lib/types';
 import { useProducts } from '@/lib/useProducts';
 import { ProductCard } from '@/components/ProductCard';
 import { Empty, ErrorBox, Loading } from '@/components/ui';
+import { TAXONOMY } from '@/lib/taxonomy';
 
 const TABS = [
   { key: 'for_you', label: 'Dành cho bạn' },
@@ -22,7 +22,6 @@ const TABS = [
 export default function Home() {
   const { width } = useWindowDimensions();
   const { session } = useAuth();
-  const [cats, setCats] = useState<Category[]>([]);
   const [activeTab, setActiveTab] = useState<typeof TABS[number]['key']>('for_you');
   const [unread, setUnread] = useState(0);
 
@@ -42,12 +41,6 @@ export default function Home() {
 
   const list = useProducts(queryParams);
   const col = (width - 12 * 3) / 2;
-
-  useEffect(() => {
-    api<Category[]>('/categories')
-      .then(c => setCats(c.filter(x => !(x.parent_id ?? x.parentId))))
-      .catch(() => undefined);
-  }, []);
 
   useEffect(() => {
     if (!session) { setUnread(0); return; }
@@ -79,25 +72,19 @@ export default function Home() {
         <Image source={require('../../assets/mascot.png')} style={{ width: 84, height: 84 }} contentFit="contain" />
       </View>
 
-      {cats.length ? (
-        <>
-          <Text style={st.section}>Khám phá danh mục</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 12, gap: 10 }}>
-            {cats.map(c => (
-              <Pressable
-                key={c.id}
-                onPress={() => router.push({ pathname: '/search', params: { categoryId: String(c.id), title: c.name } })}
-                style={st.cat}
-              >
-                <View style={st.catIcon}>
-                  {c.icon_url ? <Image source={{ uri: media(c.icon_url) }} style={{ width: 44, height: 44 }} contentFit="contain" /> : <Text style={{ fontSize: 22 }}>🛍️</Text>}
-                </View>
-                <Text numberOfLines={2} style={st.catText}>{c.name}</Text>
-              </Pressable>
-            ))}
-          </ScrollView>
-        </>
-      ) : null}
+      <Text style={st.section}>Danh mục</Text>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 12, gap: 6 }}>
+        {TAXONOMY.map(c => (
+          <Pressable
+            key={c.slug}
+            onPress={() => router.push({ pathname: '/categories/[id]', params: { id: c.slug, title: c.label } })}
+            style={st.cat}
+          >
+            <Image source={c.icon} style={{ width: 56, height: 56 }} contentFit="contain" />
+            <Text numberOfLines={2} style={st.catText}>{c.short}</Text>
+          </Pressable>
+        ))}
+      </ScrollView>
 
       <View style={st.tabBarContainer}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={st.tabBarScroll}>
@@ -146,9 +133,8 @@ const st = StyleSheet.create({
   heroTitle: { color: C.white, fontSize: 20, fontWeight: '800' },
   heroText: { color: 'rgba(255,255,255,.92)', fontSize: 13, marginTop: 4, lineHeight: 18 },
   section: { fontSize: 17, fontWeight: '800', color: C.ink, marginHorizontal: 14, marginTop: 18, marginBottom: 10 },
-  cat: { width: 76, alignItems: 'center', gap: 6 },
-  catIcon: { width: 64, height: 64, borderRadius: 20, backgroundColor: C.white, alignItems: 'center', justifyContent: 'center', ...shadow },
-  catText: { fontSize: 12, color: C.text, textAlign: 'center', fontWeight: '600' },
+  cat: { width: 76, alignItems: 'center', gap: 4 },
+  catText: { fontSize: 11.5, lineHeight: 14, color: C.text, textAlign: 'center', fontWeight: '600' },
   tabBarContainer: { marginTop: 18, marginBottom: 6 },
   tabBarScroll: { paddingHorizontal: 12, gap: 8 },
   tabItem: { paddingHorizontal: 16, paddingVertical: 10, borderRadius: R.pill, backgroundColor: C.white, borderWidth: 1, borderColor: C.line, ...shadow },

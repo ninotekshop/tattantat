@@ -7,6 +7,9 @@
 #      GOOGLE_IOS_URL_SCHEME             reversed iOS Client ID, vd com.googleusercontent.apps.123-abc
 #      IOS_GOOGLE_SERVICES_PLIST         nội dung GoogleService-Info.plist mã hóa base64 (Secure)
 #      ANDROID_GOOGLE_SERVICES_JSON      nội dung google-services.json mã hóa base64 (Secure)
+#  - Với app quản trị (thư mục admin-app/), thêm vào nhóm tattantat_mobile biến tùy chọn ADMIN_GOOGLE_SERVICES_JSON
+#    (google-services.json của ứng dụng Android com.tattantat.admin, mã hóa base64) để nhận thông báo đẩy.
+#    Build bằng cách đẩy tag dạng admin-v1.0.0 (workflow admin-android-apk), tải .apk ở mục Artifacts.
 #  - google_play: GCP_SERVICE_ACCOUNT_CREDENTIALS (JSON tài khoản dịch vụ Google Play, Secure)
 # Ký app Android: Code signing identities → Android keystores, đặt tên tham chiếu "tattantat_upload".
 # Ký app iOS: Integrations → App Store Connect API key tên "tattantat_asc".
@@ -89,6 +92,61 @@ workflows:
         credentials: $GCP_SERVICE_ACCOUNT_CREDENTIALS
         track: internal
         submit_as_draft: true
+
+  admin-android-apk:
+    name: App quản trị — build .apk Android (cài trực tiếp, không cần Google Play)
+    max_build_duration: 60
+    instance_type: linux_x2
+    environment:
+      node: 22.14.0
+      java: 17
+      groups:
+        - tattantat_mobile
+      android_signing:
+        - tattantat_upload
+      vars:
+        EXPO_PUBLIC_API_URL: "https://tattantat.vn/api/v1"
+        APP_VERSION: "1.0.0"
+    triggering:
+      events: [tag]
+      tag_patterns:
+        - pattern: "admin-v*"
+    scripts:
+      - name: Cài thư viện
+        script: |
+          cd admin-app
+          npm ci || npm install
+          npx tsc --noEmit
+      - name: Số build (versionCode) theo số lần build của Codemagic
+        script: echo "BUILD_NUMBER=$PROJECT_BUILD_NUMBER" >> $CM_ENV
+      - name: Tệp cấu hình Firebase (tùy chọn, để nhận thông báo đẩy)
+        script: |
+          if [ -n "$ADMIN_GOOGLE_SERVICES_JSON" ]; then echo "$ADMIN_GOOGLE_SERVICES_JSON" | base64 --decode > admin-app/google-services.json; else echo "Không có ADMIN_GOOGLE_SERVICES_JSON: app vẫn build, chỉ không nhận thông báo đẩy."; fi
+      - name: Sinh mã native Android
+        script: |
+          cd admin-app
+          npx expo prebuild --platform android --clean --no-install
+      - name: Cấu hình ký app (upload key)
+        script: |
+          cat >> admin-app/android/app/build.gradle <<'GRADLE'
+          android {
+            signingConfigs {
+              release {
+                storeFile file(System.getenv("CM_KEYSTORE_PATH"))
+                storePassword System.getenv("CM_KEYSTORE_PASSWORD")
+                keyAlias System.getenv("CM_KEY_ALIAS")
+                keyPassword System.getenv("CM_KEY_PASSWORD")
+              }
+            }
+            buildTypes { release { signingConfig signingConfigs.release } }
+          }
+          GRADLE
+      - name: Build APK
+        script: |
+          cd admin-app/android
+          ./gradlew assembleRelease
+    artifacts:
+      - admin-app/android/app/build/outputs/apk/release/*.apk
 
   ios-release:
     name: iOS — build .ipa và đưa lên TestFlight

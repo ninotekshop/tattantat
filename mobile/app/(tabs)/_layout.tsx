@@ -1,6 +1,6 @@
 import { Tabs } from 'expo-router';
 import { View } from 'react-native';
-import { House, LayoutGrid, MessageCircle, Plus, UserRound } from 'lucide-react-native';
+import { House, ClipboardList, MessageCircle, Plus, UserRound } from 'lucide-react-native';
 import { C } from '@/lib/theme';
 
 export default function TabsLayout() {
@@ -11,7 +11,8 @@ export default function TabsLayout() {
       headerTitleStyle: { fontWeight: '800' }, tabBarStyle: { borderTopColor: C.line },
     }}>
       <Tabs.Screen name="index" options={{ title: 'Trang chủ', headerShown: false, tabBarIcon: ({ color }) => <House color={color} size={22} /> }} />
-      <Tabs.Screen name="categories" options={{ title: 'Danh mục', tabBarIcon: ({ color }) => <LayoutGrid color={color} size={22} /> }} />
+      <Tabs.Screen name="manage" options={{ title: 'Quản lý tin', tabBarIcon: ({ color }) => <ClipboardList color={color} size={22} /> }} />
+      <Tabs.Screen name="categories" options={{ href: null }} />
       <Tabs.Screen name="sell" options={{
         title: 'Đăng tin', tabBarLabel: 'Đăng tin',
         tabBarIcon: () => <View style={{ width: 46, height: 46, borderRadius: 23, backgroundColor: C.brand, alignItems: 'center', justifyContent: 'center', marginTop: -18, borderWidth: 4, borderColor: C.white }}><Plus color={C.white} size={24} /></View>,
