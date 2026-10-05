@@ -296,6 +296,53 @@ export class AuthService {
     return this.envelope(await this.tokensFor(user), `Đăng nhập ${providerName} thành công!`);
   }
 
+  // ---- Đăng nhập Facebook/Zalo qua trình duyệt (OAuth phía máy chủ) ----
+  private oauthTablesReady?: Promise<unknown>;
+  private ensureOauthTables() {
+    this.oauthTablesReady ??= (async () => {
+      await this.database.query(`CREATE TABLE IF NOT EXISTS social_identities (provider TEXT NOT NULL, subject TEXT NOT NULL, user_id UUID NOT NULL, created_at TIMESTAMPTZ NOT NULL DEFAULT now(), PRIMARY KEY (provider, subject))`);
+      await this.database.query(`CREATE TABLE IF NOT EXISTS oauth_login_codes (code_hash TEXT PRIMARY KEY, user_id UUID NOT NULL, expires_at TIMESTAMPTZ NOT NULL, used_at TIMESTAMPTZ)`);
+    })().catch(e => { this.oauthTablesReady = undefined; throw e; });
+    return this.oauthTablesReady;
+  }
+  get oauthSecret() { return this.config.get<string>('JWT_ACCESS_SECRET') || 'tat_tan_tat_jwt_access_secret_key_2026'; }
+
+  /** Tìm hoặc tạo tài khoản theo danh tính mạng xã hội, trả về mã dùng một lần để app đổi lấy phiên. */
+  async oauthLoginCode(provider: 'facebook' | 'zalo', identity: SocialIdentity) {
+    await this.ensureOauthTables();
+    const label = provider === 'facebook' ? 'Facebook' : 'Zalo';
+    let user: UserRow | undefined = (await this.database.query<UserRow>(
+      `SELECT u.id, u.phone, u.email, u.password_hash, u.full_name, u.avatar_url, u.role, u.status FROM social_identities s JOIN users u ON u.id = s.user_id WHERE s.provider = $1 AND s.subject = $2 AND u.deleted_at IS NULL LIMIT 1`,
+      [provider, identity.subject])).rows[0];
+    if (!user && identity.email) {
+      user = (await this.database.query<UserRow>(`SELECT id, phone, email, password_hash, full_name, avatar_url, role, status FROM users WHERE LOWER(email) = $1 AND deleted_at IS NULL LIMIT 1`, [identity.email])).rows[0];
+    }
+    if (user && user.status !== 'ACTIVE') throw new UnauthorizedException('Tài khoản đang bị khóa hoặc chưa hoạt động.');
+    if (!user) {
+      user = (await this.database.query<UserRow>(
+        `INSERT INTO users (email, full_name, avatar_url, email_verified) VALUES ($1, $2, $3, $4) RETURNING id, phone, email, password_hash, full_name, avatar_url, role, status`,
+        [identity.email, (identity.name || '').trim() || `Thành viên ${label}`, identity.avatarUrl, !!identity.email])).rows[0];
+      if (identity.email) this.mailService.sendWelcomeEmail(identity.email, user.full_name).catch(() => {});
+    } else {
+      if (identity.avatarUrl && !user.avatar_url) await this.database.query('UPDATE users SET avatar_url = $1 WHERE id = $2', [identity.avatarUrl, user.id]);
+      await this.database.query('UPDATE users SET last_login_at = NOW() WHERE id = $1', [user.id]);
+    }
+    await this.database.query(`INSERT INTO social_identities (provider, subject, user_id) VALUES ($1, $2, $3) ON CONFLICT (provider, subject) DO NOTHING`, [provider, identity.subject, user.id]);
+    const code = crypto.randomBytes(32).toString('base64url');
+    await this.database.query(`DELETE FROM oauth_login_codes WHERE expires_at < now() - interval '1 hour'`);
+    await this.database.query(`INSERT INTO oauth_login_codes (code_hash, user_id, expires_at) VALUES ($1, $2, now() + interval '2 minutes')`, [sha256(code), user.id]);
+    return code;
+  }
+
+  async oauthExchange(code: string) {
+    await this.ensureOauthTables();
+    const row = (await this.database.query<{ user_id: string }>(`UPDATE oauth_login_codes SET used_at = now() WHERE code_hash = $1 AND used_at IS NULL AND expires_at > now() RETURNING user_id`, [sha256(String(code ?? ''))])).rows[0];
+    if (!row) throw new UnauthorizedException('Phiên đăng nhập đã hết hạn. Vui lòng thử lại.');
+    const user = (await this.database.query<UserRow>(`SELECT id, phone, email, password_hash, full_name, avatar_url, role, status FROM users WHERE id = $1 LIMIT 1`, [row.user_id])).rows[0];
+    if (!user || user.status !== 'ACTIVE') throw new UnauthorizedException('Tài khoản đang bị khóa hoặc chưa hoạt động.');
+    return this.envelope(await this.tokensFor(user), 'Đăng nhập thành công!');
+  }
+
   async refresh(body: RefreshDto) {
     try {
       const payload = await this.jwt.verifyAsync<{ sub: string; type: string }>(body.refreshToken, {

@@ -1,17 +1,29 @@
 import { Platform } from 'react-native';
-import * as AppleAuthentication from 'expo-apple-authentication';
-import { GoogleSignin, isSuccessResponse, statusCodes } from '@react-native-google-signin/google-signin';
-import { getAuth, signInWithPhoneNumber, signOut as fbSignOut } from '@react-native-firebase/auth';
-import { api, ApiError } from './api';
+import Constants from 'expo-constants';
+import * as Linking from 'expo-linking';
+import * as WebBrowser from 'expo-web-browser';
+import { API_URL, api, ApiError } from './api';
 import type { Session } from './session';
 
-export type ConfirmationResult = Awaited<ReturnType<typeof signInWithPhoneNumber>>;
+// Các module gốc (Google, Apple, Firebase) chỉ nạp khi dùng để màn đăng nhập vẫn mở được trong Expo Go.
+// Trong Expo Go các tính năng này không chạy; dùng bản build (APK/IPA) để thử đầy đủ.
+const inExpoGo = Constants.executionEnvironment === 'storeClient';
+function native<T>(load: () => T, feature: string): T {
+  if (inExpoGo) throw new ApiError(`${feature} chỉ hoạt động trong bản app đã build (không chạy trong Expo Go).`, 0);
+  return load();
+}
+const loadGoogle = () => native(() => require('@react-native-google-signin/google-signin') as typeof import('@react-native-google-signin/google-signin'), 'Đăng nhập Google');
+const loadApple = () => native(() => require('expo-apple-authentication') as typeof import('expo-apple-authentication'), 'Đăng nhập Apple');
+const loadFbAuth = () => native(() => require('@react-native-firebase/auth') as typeof import('@react-native-firebase/auth'), 'Đăng nhập bằng mã OTP');
+
+export type ConfirmationResult = Awaited<ReturnType<typeof import('@react-native-firebase/auth').signInWithPhoneNumber>>;
 
 const WEB_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID ?? '927392714442-7s4c7vca99p1rtr9jvd3ken6ctinut9v.apps.googleusercontent.com';
 let configured = false;
 
 /** Đăng nhập Google: lấy idToken (aud = Web Client ID) rồi đổi lấy phiên đăng nhập Tất Tần Tật. */
 export async function googleLogin(): Promise<Session | null> {
+  const { GoogleSignin, isSuccessResponse, statusCodes } = loadGoogle();
   if (!configured) { GoogleSignin.configure({ webClientId: WEB_CLIENT_ID }); configured = true; }
   try {
     if (Platform.OS === 'android') await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
@@ -27,10 +39,11 @@ export async function googleLogin(): Promise<Session | null> {
   } finally { GoogleSignin.signOut().catch(() => undefined); }
 }
 
-export const appleAvailable = () => Platform.OS === 'ios' && AppleAuthentication.isAvailableAsync();
+export const appleAvailable = async () => { if (Platform.OS !== 'ios' || inExpoGo) return false; return loadApple().isAvailableAsync(); };
 
 /** Đăng nhập Apple (bắt buộc trên iOS khi có đăng nhập Google). */
 export async function appleLogin(): Promise<Session | null> {
+  const AppleAuthentication = loadApple();
   try {
     const c = await AppleAuthentication.signInAsync({ requestedScopes: [AppleAuthentication.AppleAuthenticationScope.FULL_NAME, AppleAuthentication.AppleAuthenticationScope.EMAIL] });
     if (!c.identityToken) throw new ApiError('Không lấy được thông tin Apple. Vui lòng thử lại.', 0);
@@ -47,12 +60,14 @@ export const toE164 = (p: string) => { const d = p.replace(/[\s.\-()]/g, ''); re
 
 /** Gửi mã OTP qua SMS bằng Firebase Phone Auth. */
 export async function sendOtp(phone: string): Promise<ConfirmationResult> {
+  const { getAuth, signInWithPhoneNumber } = loadFbAuth();
   try { return await signInWithPhoneNumber(getAuth(), toE164(phone)); }
   catch (e) { throw new ApiError(otpError(e), 0); }
 }
 
 /** Xác nhận mã OTP rồi đổi ID token lấy phiên Tất Tần Tật. */
 export async function confirmOtp(c: ConfirmationResult, code: string): Promise<Session> {
+  const { getAuth, signOut: fbSignOut } = loadFbAuth();
   let idToken: string;
   try {
     const cred = await c.confirm(code.trim());
@@ -71,4 +86,15 @@ function otpError(e: unknown) {
   if (code.includes('session-expired') || code.includes('code-expired')) return 'Mã OTP đã hết hạn. Hãy gửi lại mã.';
   if (code.includes('quota-exceeded')) return 'Hệ thống tạm hết lượt gửi SMS. Vui lòng thử lại sau.';
   return 'Chưa gửi/xác nhận được mã OTP. Vui lòng thử lại.';
+}
+
+/** Facebook / Zalo: mở trình duyệt đăng nhập qua máy chủ Tất Tần Tật, nhận mã một lần rồi đổi lấy phiên (không cần SDK gốc). */
+export async function webLogin(provider: 'facebook' | 'zalo'): Promise<Session | null> {
+  const returnUrl = Linking.createURL('oauth');
+  const res = await WebBrowser.openAuthSessionAsync(`${API_URL}/auth/oauth/${provider}/start?returnUrl=${encodeURIComponent(returnUrl)}`, returnUrl);
+  if (res.type !== 'success') return null;
+  const q = Linking.parse(res.url).queryParams ?? {};
+  if (q.error) throw new ApiError(String(q.error), 0);
+  if (!q.code) return null;
+  return api<Session>('/auth/oauth/exchange', { method: 'POST', body: { code: String(q.code) } });
 }

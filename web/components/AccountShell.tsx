@@ -11,8 +11,8 @@ type Me = { full_name: string; avatar_url?: string | null; email: string | null;
 type Item = { key: string; href: string; label: string; icon: LucideIcon };
 const GROUPS: { title: string; items: Item[] }[] = [
   { title: 'Tài khoản', items: [
-    { key: 'account:profile', href: '/account?section=profile', label: 'Hồ sơ', icon: User },
     { key: 'account:listings', href: '/account?section=listings', label: 'Tin đã đăng', icon: FileText },
+    { key: 'account:profile', href: '/account?section=profile', label: 'Hồ sơ', icon: User },
     { key: 'account:searches', href: '/account?section=searches', label: 'Tìm kiếm đã lưu', icon: Bookmark },
     { key: 'account:prefs', href: '/account?section=prefs', label: 'Cài đặt thông báo', icon: SlidersHorizontal },
     { key: 'account:blocks', href: '/account?section=blocks', label: 'Đã chặn', icon: Ban },
@@ -35,7 +35,7 @@ function Inner({ session, children }: { session: WebSession; children: ReactNode
   const sp = useSearchParams();
   const [me, setMe] = useState<Me | null>(null);
   useEffect(() => { const load = () => memberRequest<Me>('/me').then(setMe).catch(() => undefined); load(); window.addEventListener('tt-profile-updated', load); return () => window.removeEventListener('tt-profile-updated', load); }, []);
-  const active = path.startsWith('/account') ? 'account:' + (sp.get('section') || 'profile') : path.replace(/\/$/, '');
+  const active = path.startsWith('/account') ? 'account:' + (sp.get('section') || 'listings') : path.replace(/\/$/, '');
   const shown = me?.full_name || session.user.fullName || '';
   const initials = shown.trim().split(/\s+/).slice(-2).map(w => w[0]?.toUpperCase()).join('') || 'TT';
   const compact = path.startsWith('/messages');

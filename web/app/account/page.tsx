@@ -28,7 +28,7 @@ export default function AccountPage() {
   return <Suspense fallback={null}><MemberArea>{session => <Account session={session}/>}</MemberArea></Suspense>;
 }
 function Account({ session }: { session: WebSession }) {
-  const sp = useSearchParams(); const q = sp.get('section'); const section: Section = q && q in sections ? (q as Section) : 'profile';
+  const sp = useSearchParams(); const q = sp.get('section'); const section: Section = q && q in sections ? (q as Section) : 'listings';
   const [profile, setProfile] = useState<Profile | null>(null), [name, setName] = useState('');
   const [products, setProducts] = useState<Product[]>([]), [drafts, setDrafts] = useState<ListingSummary[]>([]);
   const [notices, setNotices] = useState<Notice[]>([]), [blocks, setBlocks] = useState<Block[]>([]), [searches, setSearches] = useState<Saved[]>([]), [prefData, setPrefData] = useState<PrefData | null>(null);

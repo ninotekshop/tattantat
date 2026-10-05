@@ -4,6 +4,7 @@ import { DatabaseService } from '../database/database.service';
 import { CreateProductDto, UpdateProductDto } from './dto/products.dto';
 import { ModerationService } from '../admin/moderation.service';
 import { randomUUID } from 'crypto';
+import { convertAddress } from '../geo/vn-merge';
 
 type ProductRow = { id: string; title: string; price: string; address: string | null; created_at: string; seller_id?: string; seller_name: string; image_url: string | null; description?: string | null; condition?: string; category_id?: number; status?: string; listing_price_mode?:string; listing_id?:string|null };
 
@@ -180,7 +181,7 @@ export class ProductsService {
       price: row.price,
       priceMode: row.listing_price_mode ?? 'FIXED',
       listingId: row.listing_id ?? null,
-      location: row.address ?? 'Chưa cập nhật',
+      location: (row.address ? (convertAddress(row.address) ?? row.address) : null) ?? 'Chưa cập nhật',
       postedAt: row.created_at,
       sellerId: row.seller_id ?? '',
       sellerName: row.seller_name,

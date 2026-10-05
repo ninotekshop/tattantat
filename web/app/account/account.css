@@ -54,8 +54,8 @@
 @media(max-width:800px){.ac-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .ac-item{background:#fff;border:1px solid #e3ebe6;border-radius:16px;overflow:hidden;display:flex;flex-direction:column;transition:box-shadow .18s,transform .18s}
 .ac-item:hover{box-shadow:0 10px 24px rgba(15,60,40,.12);transform:translateY(-3px)}
-.ac-thumb{position:relative;height:160px;background:#eef4f0;display:grid;place-items:center}
-.ac-thumb img{width:100%;height:100%;object-fit:cover}
+.ac-thumb{position:relative;height:160px;flex:none;overflow:hidden;background:#eef4f0;display:flex;align-items:center;justify-content:center}
+.ac-thumb img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
 .ac-thumb .ac-chip{position:absolute;top:10px;left:10px}
 .ac-item-b{padding:14px;display:flex;flex-direction:column;gap:6px;flex:1}
 .ac-item-b h3{margin:0;font-size:15px;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
