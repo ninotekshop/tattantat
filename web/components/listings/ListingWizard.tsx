@@ -9,6 +9,7 @@ import { memberRequest } from '../../lib/api';
 import { Listing, ListingCategory, ListingData, ListingError, ListingMedia, ListingSummary, Template, conditionLabels, listingPrice, listingRequest, priceLabels, publicData, validateListing, visible, looksLikeStreetAddress, DEFAULT_MIN_PRICE } from '../../lib/listings';
 import { CATEGORY_ENGINE_TAXONOMY, LISTING_INTENTS, ParentCategorySpec, SubCategorySpec, getCategoryPlaceholders } from '../../lib/marketplace';
 import { ALL_PROVINCES, removeAccents } from '../../lib/locations';
+import { loadVnMerge, provinceLabel, wardLabel, type VnMergeMap } from '../../lib/vn-merge';
 import { DynamicField } from './DynamicField';
 import { MediaPicker } from './MediaPicker';
 import { LocationMap } from './LocationMap';
@@ -78,6 +79,8 @@ export function ListingWizard() {
   const contactModeInit = useRef(false);
   const [wardList, setWardList] = useState<string[]>([]);
   const wardsData = useRef<Record<string, string[]> | null>(null);
+  const [vnMerge, setVnMerge] = useState<VnMergeMap | null>(null);
+  useEffect(() => { loadVnMerge().then(setVnMerge); }, []);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [saveState, setSaveState] = useState('');
   const [conflict, setConflict] = useState(false);
@@ -179,6 +182,7 @@ export function ListingWizard() {
 
   // Danh sách phường/xã theo quận/huyện đang chọn (tải 1 lần từ /data/vn-wards.json).
   const selProvince = data.location?.province, selDistrict = data.location?.district;
+  const selDistrictCode = (ALL_PROVINCES.find((p: any) => p.name === selProvince)?.children as any[] | undefined)?.find((d: any) => d.name === selDistrict)?.code as string | undefined;
   useEffect(() => {
     const code = (ALL_PROVINCES.find((p: any) => p.name === selProvince)?.children as any[] | undefined)?.find((d: any) => d.name === selDistrict)?.code;
     if (!code) { setWardList([]); return; }
@@ -881,7 +885,7 @@ export function ListingWizard() {
                       >
                         <option value="">-- Chọn Tỉnh / Thành phố --</option>
                         {ALL_PROVINCES.map((p: any) => (
-                          <option key={p.id} value={p.name}>{p.name}</option>
+                          <option key={p.id} value={p.name}>{provinceLabel(p.name, p.code, vnMerge)}</option>
                         ))}
                       </select>
                       {fieldError('location.province')}
@@ -913,7 +917,7 @@ export function ListingWizard() {
                         >
                           <option value="">-- Chọn Phường / Xã --</option>
                           {data.location?.ward && !wardList.includes(data.location.ward) && <option value={data.location.ward}>{data.location.ward}</option>}
-                          {wardList.map(w => <option key={w} value={w}>{w}</option>)}
+                          {wardList.map(w => <option key={w} value={w}>{wardLabel(w, selDistrictCode, vnMerge)}</option>)}
                         </select>
                       ) : (
                         <input

@@ -1,11 +1,7 @@
 import { Platform } from 'react-native';
-import * as Notifications from 'expo-notifications';
+import { getNotifications } from './notifications';
 import { api } from './api';
 import { currentSession } from './session';
-
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({ shouldShowBanner: true, shouldShowList: true, shouldPlaySound: true, shouldSetBadge: true }),
-});
 
 let unsubscribe: (() => void) | null = null;
 
@@ -18,6 +14,8 @@ function loadMessaging() {
 export async function registerPush() {
   try {
     if (!currentSession()) return;
+    const Notifications = getNotifications();
+    if (!Notifications) return; // Expo Go: không có thông báo đẩy
     const m = loadMessaging();
     if (!m) return;
     if (Platform.OS === 'android') {
@@ -37,5 +35,5 @@ export async function registerPush() {
 
 export async function unregisterPush() {
   unsubscribe?.(); unsubscribe = null;
-  try { const m = loadMessaging(); if (m) await m.deleteToken(m.getMessaging()); } catch { /* bỏ qua */ }
+  try { if (!getNotifications()) return; const m = loadMessaging(); if (m) await m.deleteToken(m.getMessaging()); } catch { /* bỏ qua */ }
 }

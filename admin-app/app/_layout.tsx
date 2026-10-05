@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { Stack, router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
-import * as Notifications from 'expo-notifications';
+import { getNotifications } from '@/lib/notifications';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AuthProvider, useAuth } from '@/lib/auth';
@@ -23,6 +23,8 @@ function Root() {
   const { ready, session } = useAuth();
   useEffect(() => { if (ready) SplashScreen.hideAsync().catch(() => undefined); }, [ready]);
   useEffect(() => {
+    const Notifications = getNotifications();
+    if (!Notifications) return;
     const sub = Notifications.addNotificationResponseReceivedListener(r => openFromNotification(r.notification.request.content.data as Record<string, unknown>));
     return () => sub.remove();
   }, []);

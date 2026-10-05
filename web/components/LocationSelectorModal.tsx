@@ -1,7 +1,7 @@
 'use client';
 
 import { Ic } from './Ic';
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Search, MapPin, Navigation, ChevronRight, ArrowLeft, X, Check, Globe, TriangleAlert } from 'lucide-react';
 import {
   LocationNode,
@@ -11,6 +11,7 @@ import {
   searchLocations,
   removeAccents
 } from '../lib/locations';
+import { loadVnMerge, provinceLabel, type VnMergeMap } from '../lib/vn-merge';
 
 interface LocationSelectorModalProps {
   isOpen: boolean;
@@ -31,9 +32,19 @@ export function LocationSelectorModal({
   const [gpsLoading, setGpsLoading] = useState(false);
   const [gpsError, setGpsError] = useState<string | null>(null);
 
+  const [vnMerge, setVnMerge] = useState<VnMergeMap | null>(null);
+  useEffect(() => { loadVnMerge().then(setVnMerge); }, []);
+
+  // Gõ tên cũ hoặc tên mới (VD "Bình Định" hay "Gia Lai") đều ra đúng khu vực.
   const filteredProvinces = useMemo(() => {
-    return searchLocations(searchQuery);
-  }, [searchQuery]);
+    const found = searchLocations(searchQuery);
+    const q = removeAccents(searchQuery);
+    if (!q || !vnMerge) return found;
+    const have = new Set(found.map(f => f.id));
+    const extra = ALL_PROVINCES.filter(p => !have.has(p.id) && removeAccents(vnMerge.p[p.code]?.[1] ?? '').includes(q));
+    return [...found, ...extra];
+  }, [searchQuery, vnMerge]);
+  const provLabel = (n: LocationNode) => { const c = ALL_PROVINCES.find(p => p.id === n.id) ?? n; return provinceLabel(c.name, c.code, vnMerge); };
 
   if (!isOpen) return null;
 
@@ -82,7 +93,7 @@ export function LocationSelectorModal({
       locationId: node.id,
       provinceName: node.type === 'province' || node.type === 'city' ? node.name : activeParentNode?.name,
       districtName: node.type === 'district' ? node.name : undefined,
-      label: node.name
+      label: node.type === 'province' || node.type === 'city' ? provLabel(node) : node.name
     });
     onClose();
   };
@@ -195,7 +206,7 @@ export function LocationSelectorModal({
                       className={`popular-chip ${currentSelection?.locationId === pop.id ? 'active' : ''}`}
                       onClick={() => handleSelectNode(pop)}
                     >
-                      <Ic i={MapPin}/>{pop.name}
+                      <Ic i={MapPin}/>{provLabel(pop)}
                     </button>
                   ))}
                 </div>
@@ -211,7 +222,7 @@ export function LocationSelectorModal({
                 onClick={() => handleSelectNode(activeParentNode)}
               >
                 <div className="row-title">
-                  <Check size={18} color="#00a65a" /> Toàn {activeParentNode.name}
+                  <Check size={18} color="#00a65a" /> Toàn {provLabel(activeParentNode)}
                 </div>
               </button>
 
@@ -248,7 +259,7 @@ export function LocationSelectorModal({
                     }
                   }}
                 >
-                  <span className="row-title"><Ic i={MapPin}/>{prov.name}</span>
+                  <span className="row-title"><Ic i={MapPin}/>{provLabel(prov)}</span>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                     {prov.children && prov.children.length > 0 && (
                       <span className="child-badge">{prov.children.length} quận/huyện</span>

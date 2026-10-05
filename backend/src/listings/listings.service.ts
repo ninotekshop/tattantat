@@ -6,6 +6,7 @@ import type { PoolClient, QueryResultRow } from 'pg';
 import { DatabaseService } from '../database/database.service';
 import { ListingMediaService } from './listing-media.service';
 import { type ListingData, type Template, type Field, publicData, validateListing, validateTemplate, uuid } from './listing-domain';
+import { toNewAdmin, withNew } from '../geo/vn-merge';
 
 type Row = {id:string;seller_id:string;category_id:string;template_id:string;template_snapshot:Template;data:ListingData;revision:number;status:string;product_id:string|null;published_snapshot:{data:ListingData;template:Template}|null};
 const envelope = <T>(data:T) => ({success:true,data,message:null,errorCode:null});
@@ -618,7 +619,8 @@ export class ListingsService {
       const data=row.data;
       const price=['CONTACT','FREE'].includes(data.priceMode!)?'0':data.price!;
       const location=data.location!;
-      const address=[...(location.hideExact!==false?[]:[location.address]),location.ward,location.district,location.province].filter(Boolean).join(', ');
+      const na=toNewAdmin(location.province,location.district,location.ward);
+      const address=[...(location.hideExact!==false?[]:[location.address]),withNew(location.ward,na.ward),location.district,withNew(location.province,na.province)].filter(Boolean).join(', ');
       const decision=this.policy?await this.policy.decide({sellerId,categoryId:row.category_id,title:data.title!,description:data.description,price:['CONTACT','FREE'].includes(data.priceMode!)?0:price,isEdit:!!row.product_id},client):{action:'APPROVE' as const,reasons:[]};
       if(decision.action==='NEEDS_CHANGES'||decision.action==='REJECT') throw new BadRequestException({success:false,errorCode:decision.code,message:decision.reasons[0]||'Nội dung tin đăng không hợp lệ.'});
       const nextStatus=decision.action==='PENDING_REVIEW'?'PENDING_REVIEW':'ACTIVE';

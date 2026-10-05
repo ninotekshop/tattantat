@@ -11,6 +11,7 @@ import { uid } from '@/lib/format';
 import { CONDITIONS, PRICE_MODES, type Listing } from '@/lib/listing';
 import { validateListing, visible, type ListingData } from '@/lib/listing-domain';
 import { ALL_PROVINCES } from '@/lib/locations';
+import { provinceLabel, wardLabel, wardsOfDistrict } from '@/lib/vn-merge';
 import { C, R, shadow } from '@/lib/theme';
 import type { ListingCategory, ListingMedia, Me } from '@/lib/types';
 import { DynamicField } from '@/components/DynamicField';
@@ -172,6 +173,8 @@ export default function Sell() {
   const t = listing.template;
   const images = data.images ?? [];
   const province = ALL_PROVINCES.find(p => p.name === data.location?.province);
+  const districtCode = province?.children?.find(d => d.name === data.location?.district)?.code;
+  const wardNames = wardsOfDistrict(districtCode);
   const priceless = data.priceMode === 'CONTACT' || data.priceMode === 'FREE';
   const err = (k: string) => errors[k];
 
@@ -225,9 +228,10 @@ export default function Sell() {
         <View style={st.card}>
           <Text style={st.cardTitle}>Khu vực giao dịch</Text>
           <Button variant="outline" title={busy === 'loc' ? 'Đang lấy vị trí…' : 'Dùng vị trí hiện tại'} loading={busy === 'loc'} icon={<LocateFixed size={18} color={C.brand} />} onPress={locate} />
-          <Picker label="Tỉnh / Thành phố" required value={data.location?.province} options={ALL_PROVINCES.map(p => ({ value: p.name, label: p.name }))} onChange={v => patch({ location: { ...data.location, province: v as string, district: '' } })} error={err('location.province') || err('location')} />
-          {province?.children?.length ? <Picker label="Quận / Huyện" value={data.location?.district} options={province.children.map(d => ({ value: d.name, label: d.name }))} onChange={v => patch({ location: { ...data.location, district: v as string } })} /> : null}
-          <Input label="Phường / Xã *" value={data.location?.ward ?? ''} onChangeText={v => patch({ location: { ...data.location, ward: v } })} error={err('location.ward')} />
+          <Picker label="Tỉnh / Thành phố" required value={data.location?.province} options={ALL_PROVINCES.map(p => ({ value: p.name, label: provinceLabel(p.name, p.code) }))} onChange={v => patch({ location: { ...data.location, province: v as string, district: '', ward: '' } })} error={err('location.province') || err('location')} />
+          {province?.children?.length ? <Picker label="Quận / Huyện" value={data.location?.district} options={province.children.map(d => ({ value: d.name, label: d.name }))} onChange={v => patch({ location: { ...data.location, district: v as string, ward: '' } })} /> : null}
+          {wardNames.length ? <Picker label="Phường / Xã" required value={data.location?.ward} options={wardNames.map(w => ({ value: w, label: wardLabel(w, districtCode) }))} onChange={v => patch({ location: { ...data.location, ward: v as string } })} error={err('location.ward')} />
+            : <Input label="Phường / Xã *" value={data.location?.ward ?? ''} onChangeText={v => patch({ location: { ...data.location, ward: v } })} error={err('location.ward')} />}
           <Input label="Địa chỉ cụ thể (không bắt buộc)" value={data.location?.address ?? ''} onChangeText={v => patch({ location: { ...data.location, address: v } })} error={err('location.address')} />
           <View style={st.switchRow}><Text style={{ color: C.ink, fontSize: 15, flex: 1 }}>Ẩn địa chỉ cụ thể, chỉ hiện phường/xã</Text><Switch value={!!data.location?.hideExact} onValueChange={v => patch({ location: { ...data.location, hideExact: v } })} trackColor={{ true: C.brand, false: '#CBD5E1' }} /></View>
         </View>
