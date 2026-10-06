@@ -160,7 +160,7 @@ workflows:
       - name: Lấy chứng chỉ và hồ sơ ký app từ Apple
         script: |
           keychain initialize
-          app-store-connect fetch-signing-files "$BUNDLE_ID" --type IOS_APP_STORE --create
+          app-store-connect fetch-signing-files "$BUNDLE_ID" --type IOS_APP_STORE --create --certificate-key=@env:CERTIFICATE_PRIVATE_KEY
           keychain add-certificates
       - name: Áp dụng hồ sơ ký app
         script: xcode-project use-profiles
@@ -265,7 +265,7 @@ workflows:
       - name: Lấy chứng chỉ và hồ sơ ký app từ Apple
         script: |
           keychain initialize
-          app-store-connect fetch-signing-files "$BUNDLE_ID" --type IOS_APP_STORE --create
+          app-store-connect fetch-signing-files "$BUNDLE_ID" --type IOS_APP_STORE --create --certificate-key=@env:CERTIFICATE_PRIVATE_KEY
           keychain add-certificates
       - name: Áp dụng hồ sơ ký app
         script: xcode-project use-profiles
