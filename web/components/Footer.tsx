@@ -143,13 +143,13 @@ export function Footer() {
                   <strong>App Store</strong>
                 </div>
               </div>
-              <div className="app-store-btn">
+              <a className="app-store-btn" href="https://play.google.com/store/apps/details?id=com.tattantat.app&pcampaignid=web_share" target="_blank" rel="noopener noreferrer" aria-label="Tải ứng dụng trên Google Play" style={{ textDecoration: 'none', color: 'inherit' }}>
                 <span className="app-icon">▶</span>
                 <div>
                   <small>GET IT ON</small>
                   <strong>Google Play</strong>
                 </div>
-              </div>
+              </a>
             </div>
 
             <div className="footer-contact">
@@ -184,10 +184,10 @@ export function Footer() {
                 <span className="app-icon" style={{ fontSize: 16 }}></span>
                 <div><small style={{ fontSize: 8 }}>Download on</small><strong style={{ fontSize: 11 }}>App Store</strong></div>
               </div>
-              <div className="app-store-btn" style={{ padding: '6px 12px' }}>
+              <a className="app-store-btn" href="https://play.google.com/store/apps/details?id=com.tattantat.app&pcampaignid=web_share" target="_blank" rel="noopener noreferrer" aria-label="Tải ứng dụng trên Google Play" style={{ padding: '6px 12px', textDecoration: 'none', color: 'inherit' }}>
                 <span className="app-icon" style={{ fontSize: 14 }}>▶</span>
                 <div><small style={{ fontSize: 8 }}>GET IT ON</small><strong style={{ fontSize: 11 }}>Google Play</strong></div>
-              </div>
+              </a>
             </div>
 
             <Link href="/regulations" className="bocongthuong-badge" style={{ margin: '0 auto', textDecoration: 'none' }}>
