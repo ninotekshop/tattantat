@@ -154,6 +154,8 @@ workflows:
         script: |
           cd mobile
           npx expo prebuild --platform ios --clean --no-install
+          # react-native-firebase không hỗ trợ SPM cùng liên kết static: tắt SPM của RNFirebase
+          printf '$RNFirebaseDisableSPM = true\n' | cat - ios/Podfile > ios/Podfile.new && mv ios/Podfile.new ios/Podfile
           cd ios && pod install
       - name: Lấy chứng chỉ và hồ sơ ký app từ Apple
         script: |
@@ -257,6 +259,8 @@ workflows:
         script: |
           cd mobile
           npx expo prebuild --platform ios --clean --no-install
+          # react-native-firebase không hỗ trợ SPM cùng liên kết static: tắt SPM của RNFirebase
+          printf '$RNFirebaseDisableSPM = true\n' | cat - ios/Podfile > ios/Podfile.new && mv ios/Podfile.new ios/Podfile
           cd ios && pod install
       - name: Lấy chứng chỉ và hồ sơ ký app từ Apple
         script: |
