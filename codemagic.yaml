@@ -14,7 +14,7 @@
 # Nộp lên cửa hàng: đẩy tag store-vX.Y.Z (vd store-v1.0.0) -> workflow android-store + ios-store tự build rồi gửi
 #   Google Play (track production) và App Store (gửi duyệt, phát hành thủ công sau khi Apple duyệt).
 #   Tag app-v* vẫn chỉ đưa lên Internal testing (Google Play) và TestFlight để thử nghiệm.
-# Ký app Android: Code signing identities → Android keystores, đặt tên tham chiếu "tattantat_upload".
+# Ký app Android: Code signing identities → Android keystores, đặt tên tham chiếu "ninotek_upload_keystore".
 # Ký app iOS: Integrations → App Store Connect API key tên "tattantat_asc".
 
 definitions:
@@ -44,7 +44,7 @@ workflows:
         - tattantat_mobile
         - google_play
       android_signing:
-        - tattantat_upload
+        - ninotek_upload_keystore
       vars:
         EXPO_PUBLIC_API_URL: "https://tattantat.vn/api/v1"
         APP_VERSION: "1.0.0"
@@ -106,7 +106,7 @@ workflows:
       groups:
         - tattantat_mobile
       android_signing:
-        - tattantat_upload
+        - ninotek_upload_keystore
       vars:
         EXPO_PUBLIC_API_URL: "https://tattantat.vn/api/v1"
         APP_VERSION: "1.0.0"
@@ -214,7 +214,7 @@ workflows:
         - tattantat_mobile
         - google_play
       android_signing:
-        - tattantat_upload
+        - ninotek_upload_keystore
       vars:
         EXPO_PUBLIC_API_URL: "https://tattantat.vn/api/v1"
         APP_VERSION: "1.0.0"
