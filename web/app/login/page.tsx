@@ -208,7 +208,7 @@ function LoginContent() {
   };
 
   const handleAppleAuth = async () => {
-    const appleClientId = process.env.NEXT_PUBLIC_APPLE_CLIENT_ID;
+    const appleClientId = process.env.NEXT_PUBLIC_APPLE_CLIENT_ID || 'com.tattantat.web';
     if ((window as any).AppleID && appleClientId) {
       try {
         (window as any).AppleID.auth.init({

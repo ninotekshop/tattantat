@@ -392,7 +392,7 @@ export function AuthModal({ isOpen, onClose, initialMode = 'LOGIN', onSuccess }:
   };
 
   const handleAppleAuth = async () => {
-    const appleClientId = process.env.NEXT_PUBLIC_APPLE_CLIENT_ID || 'vn.tattantat.web.signin';
+    const appleClientId = process.env.NEXT_PUBLIC_APPLE_CLIENT_ID || 'com.tattantat.web';
     if ((window as any).AppleID) {
       try {
         (window as any).AppleID.auth.init({

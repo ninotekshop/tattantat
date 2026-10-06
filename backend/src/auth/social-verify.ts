@@ -51,7 +51,7 @@ export async function verifyApple(idToken: string): Promise<SocialIdentity | nul
   const ok = verifySig('RSA-SHA256', Buffer.from(`${h}.${p}`), createPublicKey({ key: jwk as any, format: 'jwk' }), Buffer.from(s, 'base64url'));
   if (!ok) return null;
   const c = JSON.parse(Buffer.from(p, 'base64url').toString('utf8')) as { iss?: string; aud?: string; exp?: number; sub?: string; email?: string; email_verified?: string | boolean };
-  const audiences = list(process.env.APPLE_CLIENT_IDS || process.env.APPLE_CLIENT_ID || 'com.tattantat.app');
+  const audiences = list(process.env.APPLE_CLIENT_IDS || process.env.APPLE_CLIENT_ID || 'com.tattantat.app,com.tattantat.web');
   if (c.iss !== 'https://appleid.apple.com' || !audiences.includes(c.aud ?? '') || !c.sub || (c.exp ?? 0) * 1000 < Date.now()) return null;
   return { subject: c.sub, email: c.email?.toLowerCase() ?? null, name: null, avatarUrl: null };
 }
