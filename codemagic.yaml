@@ -168,7 +168,11 @@ workflows:
         script: |
           WORKSPACE=$(ls -d mobile/ios/*.xcworkspace | head -n 1)
           SCHEME=$(basename "$WORKSPACE" .xcworkspace)
-          xcode-project build-ipa --workspace "$WORKSPACE" --scheme "$SCHEME"
+          xcode-project build-ipa --workspace "$WORKSPACE" --scheme "$SCHEME" || {
+            echo "===== CÁC DÒNG LỖI TỪ XCODEBUILD ====="
+            grep -h -B2 -A8 -E "error:|ARCHIVE FAILED|Signing for|No profile|Provisioning" /tmp/xcodebuild_logs/*.log | head -120
+            exit 1
+          }
     artifacts:
       - build/ios/ipa/*.ipa
       - /tmp/xcodebuild_logs/*.log
@@ -273,7 +277,11 @@ workflows:
         script: |
           WORKSPACE=$(ls -d mobile/ios/*.xcworkspace | head -n 1)
           SCHEME=$(basename "$WORKSPACE" .xcworkspace)
-          xcode-project build-ipa --workspace "$WORKSPACE" --scheme "$SCHEME"
+          xcode-project build-ipa --workspace "$WORKSPACE" --scheme "$SCHEME" || {
+            echo "===== CÁC DÒNG LỖI TỪ XCODEBUILD ====="
+            grep -h -B2 -A8 -E "error:|ARCHIVE FAILED|Signing for|No profile|Provisioning" /tmp/xcodebuild_logs/*.log | head -120
+            exit 1
+          }
     artifacts:
       - build/ios/ipa/*.ipa
       - /tmp/xcodebuild_logs/*.log
