@@ -8,7 +8,7 @@ import { ArrowLeft, Eye, EyeOff } from 'lucide-react-native';
 import { SITE_URL, api } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import type { Session } from '@/lib/session';
-import { appleAvailable, appleLogin, confirmOtp, googleLogin, sendOtp, webLogin, type ConfirmationResult } from '@/lib/social';
+import { appleAvailable, appleLogin, confirmOtp, googleLogin, sendOtp, webLogin, type OtpSession } from '@/lib/social';
 import { C, R } from '@/lib/theme';
 
 type Step = 'start' | 'password' | 'otp';
@@ -24,7 +24,7 @@ export default function Login() {
   const [focus, setFocus] = useState(false), [apple, setApple] = useState(false);
   const [busy, setBusy] = useState<string | null>(null), [error, setError] = useState(''), [info, setInfo] = useState('');
   const [wait, setWait] = useState(0);
-  const confirmation = useRef<ConfirmationResult | null>(null);
+  const confirmation = useRef<OtpSession | null>(null);
 
   const normalized = phone.replace(/[\s.\-()]/g, '');
   const validPhone = /^(0|\+?84)\d{9}$/.test(normalized);

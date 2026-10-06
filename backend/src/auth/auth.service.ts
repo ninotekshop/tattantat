@@ -6,6 +6,7 @@ import * as crypto from 'crypto';
 import { DatabaseService } from '../database/database.service';
 import { MailService } from '../mail/mail.service';
 import { toLocalPhone, phoneVariants, verifyFirebasePhone } from './firebase-phone';
+import { sendZnsOtp, znsOtpEnabled } from './zns-otp';
 import { SocialIdentity, verifyApple, verifyFacebook, verifyGoogle } from './social-verify';
 import { LoginDto, RegisterDto, RefreshDto, VerifyOtpDto, SendOtpDto, ForgotPasswordDto, ResetPasswordDto, SocialLoginDto } from './dto/auth.dto';
 
@@ -23,7 +24,8 @@ type UserRow = {
 };
 
 const sha256 = (v: string) => crypto.createHash('sha256').update(v).digest('hex');
-const otpStore = new Map<string, { phone: string; otp: string; expiresAt: number }>();
+const normPhone = (p: string) => { const d = p.replace(/[^\d]/g, ''); return d.startsWith('84') ? '0' + d.slice(2) : d; };
+const otpStore = new Map<string, { phone: string; otp: string; expiresAt: number; tries?: number; sentAt?: number }>();
 
 @Injectable()
 export class AuthService {
@@ -126,38 +128,39 @@ export class AuthService {
     }
   }
 
-  /** Đăng nhập bằng OTP hiện chỉ có mã thử nghiệm cố định → TUYỆT ĐỐI không bật ở production (ai cũng vào được tài khoản của người khác). */
-  private assertOtpLoginAllowed() {
-    if (process.env.NODE_ENV === 'production') {
-      throw new BadRequestException('Đăng nhập bằng mã OTP chưa được hỗ trợ. Vui lòng đăng nhập bằng email/mật khẩu hoặc tài khoản mạng xã hội.');
-    }
-  }
-
+  /** Gửi OTP qua Zalo (ZNS). Chưa cấu hình ZNS → channel 'none' (app dùng SMS Firebase); môi trường thử nghiệm dùng mã cố định. */
   async sendOtp(body: SendOtpDto) {
-    this.assertOtpLoginAllowed();
-    const phone = body.phone.trim();
-    const otp = this.config.get<string>('DEV_OTP_CODE') || '123456';
+    const phone = normPhone(body.phone);
+    if (!/^0\d{9}$/.test(phone)) throw new BadRequestException('Số điện thoại không hợp lệ.');
+    if (!znsOtpEnabled()) {
+      if (process.env.NODE_ENV === 'production') return this.envelope({ phone, channel: 'none' }, 'Chưa bật OTP qua Zalo');
+      const expiresAt = Date.now() + 5 * 60 * 1000;
+      otpStore.set(phone, { phone, otp: this.config.get<string>('DEV_OTP_CODE') || '123456', expiresAt });
+      return this.envelope({ phone, expiresAt, channel: 'dev' }, `Đã gửi mã OTP tới số ${phone}`);
+    }
+    const old = otpStore.get(phone);
+    if (old?.sentAt && Date.now() - old.sentAt < 45_000) throw new BadRequestException('Vui lòng đợi ít phút trước khi gửi lại mã.');
+    const otp = crypto.randomInt(0, 1_000_000).toString().padStart(6, '0');
     const expiresAt = Date.now() + 5 * 60 * 1000;
-
-    otpStore.set(phone, { phone, otp, expiresAt });
-    return this.envelope({ phone, expiresAt }, `Đã gửi mã OTP tới số ${phone}`);
+    try { await sendZnsOtp(phone, otp); } catch (e) { throw new BadRequestException((e as Error).message); }
+    otpStore.set(phone, { phone, otp, expiresAt, tries: 0, sentAt: Date.now() });
+    return this.envelope({ phone, expiresAt, channel: 'zalo' }, 'Đã gửi mã OTP qua Zalo');
   }
 
   async verifyOtp(body: VerifyOtpDto) {
-    this.assertOtpLoginAllowed();
-    const phone = body.phone?.trim();
-    const expectedOtp = this.config.get<string>('DEV_OTP_CODE') || '123456';
-
-    if (body.otp !== expectedOtp && (!phone || otpStore.get(phone)?.otp !== body.otp)) {
-      throw new BadRequestException('Mã OTP không chính xác hoặc đã hết hạn');
-    }
-
-    if (phone) otpStore.delete(phone);
+    const phone = body.phone ? normPhone(body.phone) : '';
+    const rec = phone ? otpStore.get(phone) : undefined;
+    if (!rec || rec.expiresAt < Date.now()) throw new BadRequestException('Mã OTP không chính xác hoặc đã hết hạn');
+    rec.tries = (rec.tries ?? 0) + 1;
+    if (rec.tries > 5) { otpStore.delete(phone); throw new BadRequestException('Nhập sai quá nhiều lần. Hãy gửi lại mã mới.'); }
+    const a = Buffer.from(rec.otp), b = Buffer.from(String(body.otp));
+    if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) throw new BadRequestException('Mã OTP không chính xác hoặc đã hết hạn');
+    otpStore.delete(phone);
 
     let result = await this.database.query<UserRow>(
       `SELECT id, phone, email, password_hash, full_name, avatar_url, role, status
-       FROM users WHERE phone = $1 LIMIT 1`,
-      [phone || ''],
+       FROM users WHERE phone = ANY($1::text[]) LIMIT 1`,
+      [phoneVariants(phone)],
     );
     let user = result.rows[0];
 
@@ -172,6 +175,8 @@ export class AuthService {
     }
 
     if (!user) throw new BadRequestException('Xác thực OTP không thành công');
+    if (user.status !== 'ACTIVE') throw new UnauthorizedException('Tài khoản đang bị khóa hoặc chưa hoạt động.');
+    await this.database.query('UPDATE users SET phone_verified = TRUE, last_login_at = NOW() WHERE id = $1', [user.id]);
 
     return this.envelope(await this.tokensFor(user));
   }

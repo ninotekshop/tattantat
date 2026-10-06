@@ -60,19 +60,26 @@ export async function appleLogin(): Promise<Session | null> {
 /** 0901234567 → +84901234567 */
 export const toE164 = (p: string) => { const d = p.replace(/[\s.\-()]/g, ''); return d.startsWith('+') ? d : d.startsWith('0') ? '+84' + d.slice(1) : d.startsWith('84') ? '+' + d : '+84' + d; };
 
-/** Gửi mã OTP qua SMS bằng Firebase Phone Auth. */
-export async function sendOtp(phone: string): Promise<ConfirmationResult> {
+export type OtpSession = { kind: 'zalo'; phone: string } | { kind: 'firebase'; c: ConfirmationResult };
+
+/** Gửi mã OTP: ưu tiên qua Zalo (ZNS) do máy chủ gửi; nếu máy chủ chưa bật thì gửi SMS bằng Firebase Phone Auth. */
+export async function sendOtp(phone: string): Promise<OtpSession> {
+  let channel = 'none';
+  try { channel = (await api<{ channel?: string }>('/auth/phone/send-otp', { method: 'POST', body: { phone } })).channel ?? 'none'; }
+  catch (e) { if (e instanceof ApiError && e.status >= 400 && e.status < 500) throw e; }
+  if (channel === 'zalo' || channel === 'dev') return { kind: 'zalo', phone };
   const { getAuth, signInWithPhoneNumber } = loadFbAuth();
-  try { return await signInWithPhoneNumber(getAuth(), toE164(phone)); }
+  try { return { kind: 'firebase', c: await signInWithPhoneNumber(getAuth(), toE164(phone)) }; }
   catch (e) { throw new ApiError(otpError(e), 0); }
 }
 
-/** Xác nhận mã OTP rồi đổi ID token lấy phiên Tất Tần Tật. */
-export async function confirmOtp(c: ConfirmationResult, code: string): Promise<Session> {
+/** Xác nhận mã OTP rồi đổi lấy phiên Tất Tần Tật. */
+export async function confirmOtp(s: OtpSession, code: string): Promise<Session> {
+  if (s.kind === 'zalo') return await api<Session>('/auth/phone/verify-otp', { method: 'POST', body: { phone: s.phone, otp: code.trim() } });
   const { getAuth, signOut: fbSignOut } = loadFbAuth();
   let idToken: string;
   try {
-    const cred = await c.confirm(code.trim());
+    const cred = await s.c.confirm(code.trim());
     if (!cred?.user) throw new Error('no user');
     idToken = await cred.user.getIdToken();
   } catch (e) { throw new ApiError(otpError(e), 0); }
