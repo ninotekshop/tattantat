@@ -67,25 +67,10 @@ workflows:
         script: |
           cd mobile
           npx expo prebuild --platform android --clean --no-install
-      - name: Cấu hình ký app (upload key)
-        script: |
-          cat >> mobile/android/app/build.gradle <<'GRADLE'
-          android {
-            signingConfigs {
-              release {
-                storeFile file(System.getenv("CM_KEYSTORE_PATH"))
-                storePassword System.getenv("CM_KEYSTORE_PASSWORD")
-                keyAlias System.getenv("CM_KEY_ALIAS")
-                keyPassword System.getenv("CM_KEY_PASSWORD")
-              }
-            }
-            buildTypes { release { signingConfig signingConfigs.release } }
-          }
-          GRADLE
       - name: Build Android App Bundle (.aab) và APK (.apk)
         script: |
           cd mobile/android
-          ./gradlew bundleRelease assembleRelease
+          ./gradlew bundleRelease assembleRelease -Pandroid.injected.signing.store.file="$CM_KEYSTORE_PATH" -Pandroid.injected.signing.store.password="$CM_KEYSTORE_PASSWORD" -Pandroid.injected.signing.key.alias="$CM_KEY_ALIAS" -Pandroid.injected.signing.key.password="$CM_KEY_PASSWORD"
     artifacts:
       - mobile/android/app/build/outputs/bundle/release/*.aab
       - mobile/android/app/build/outputs/apk/release/*.apk
@@ -129,25 +114,10 @@ workflows:
         script: |
           cd admin-app
           npx expo prebuild --platform android --clean --no-install
-      - name: Cấu hình ký app (upload key)
-        script: |
-          cat >> admin-app/android/app/build.gradle <<'GRADLE'
-          android {
-            signingConfigs {
-              release {
-                storeFile file(System.getenv("CM_KEYSTORE_PATH"))
-                storePassword System.getenv("CM_KEYSTORE_PASSWORD")
-                keyAlias System.getenv("CM_KEY_ALIAS")
-                keyPassword System.getenv("CM_KEY_PASSWORD")
-              }
-            }
-            buildTypes { release { signingConfig signingConfigs.release } }
-          }
-          GRADLE
       - name: Build APK
         script: |
           cd admin-app/android
-          ./gradlew assembleRelease
+          ./gradlew assembleRelease -Pandroid.injected.signing.store.file="$CM_KEYSTORE_PATH" -Pandroid.injected.signing.store.password="$CM_KEYSTORE_PASSWORD" -Pandroid.injected.signing.key.alias="$CM_KEY_ALIAS" -Pandroid.injected.signing.key.password="$CM_KEY_PASSWORD"
     artifacts:
       - admin-app/android/app/build/outputs/apk/release/*.apk
 
@@ -237,25 +207,10 @@ workflows:
         script: |
           cd mobile
           npx expo prebuild --platform android --clean --no-install
-      - name: Cấu hình ký app (upload key)
-        script: |
-          cat >> mobile/android/app/build.gradle <<'GRADLE'
-          android {
-            signingConfigs {
-              release {
-                storeFile file(System.getenv("CM_KEYSTORE_PATH"))
-                storePassword System.getenv("CM_KEYSTORE_PASSWORD")
-                keyAlias System.getenv("CM_KEY_ALIAS")
-                keyPassword System.getenv("CM_KEY_PASSWORD")
-              }
-            }
-            buildTypes { release { signingConfig signingConfigs.release } }
-          }
-          GRADLE
       - name: Build Android App Bundle (.aab) và APK (.apk)
         script: |
           cd mobile/android
-          ./gradlew bundleRelease assembleRelease
+          ./gradlew bundleRelease assembleRelease -Pandroid.injected.signing.store.file="$CM_KEYSTORE_PATH" -Pandroid.injected.signing.store.password="$CM_KEYSTORE_PASSWORD" -Pandroid.injected.signing.key.alias="$CM_KEY_ALIAS" -Pandroid.injected.signing.key.password="$CM_KEY_PASSWORD"
     artifacts:
       - mobile/android/app/build/outputs/bundle/release/*.aab
       - mobile/android/app/build/outputs/apk/release/*.apk
