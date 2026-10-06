@@ -533,3 +533,7 @@ svg.lucide.lucide-trash-2, svg.lucide.lucide-triangle-alert, svg.lucide.lucide-f
 @media (prefers-reduced-motion: reduce) {
   :where(button, [role="button"]):hover, :where(button, [role="button"]):active { transform: none !important; }
 }
+
+/* Hộp chọn Tỉnh/Thành phố: icon vị trí, quả cầu... dùng xanh tươi (không dùng xanh đậm/đen); trên nền xanh thì trắng */
+.location-modal-card svg.lucide { color: #00a65a; stroke: currentColor; }
+.location-modal-card .popular-chip:hover svg.lucide, .location-modal-card .popular-chip.active svg.lucide { color: #fff; }

@@ -116,7 +116,7 @@ export default function Home() {
         onEndReached={list.more}
         onEndReachedThreshold={0.6}
         refreshControl={<RefreshControl refreshing={list.refreshing} onRefresh={list.refresh} tintColor={C.brand} />}
-        ListEmptyComponent={list.loading ? <Loading /> : <Empty title="Chưa có tin đăng" text="Hãy là người đầu tiên đăng tin trong mục này!" />}
+        ListEmptyComponent={list.loading ? <Loading /> : list.error ? null : <Empty title="Chưa có tin đăng" text="Hãy là người đầu tiên đăng tin trong mục này!" />}
       />
     </SafeAreaView>
   );
