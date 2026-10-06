@@ -35,5 +35,5 @@ export function Ic({ i: Icon, size = '1.1em', after = false, fill, tone, solid, 
       <Icon size="0.9em" strokeWidth={2.2} style={{ color: '#fff', margin: 0 }} />
     </span>;
   }
-  return <Icon size={size} strokeWidth={2} fill={fill} aria-hidden="true" style={{ ...box, ...(inherit ? { color: 'inherit' } : {}) }} />;
+  return <Icon size={size} strokeWidth={2} fill={fill ?? 'none'} aria-hidden="true" style={{ ...box, ...(inherit ? { color: 'inherit' } : {}) }} />;
 }

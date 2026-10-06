@@ -29,5 +29,9 @@
     "caniuse-lite": "^1.0.30001810",
     "eslint": "^9.18.0",
     "eslint-config-next": "^16.3.5"
+  },
+  "overrides": {
+    "sharp": "0.35.5",
+    "source-map-js": "1.2.2"
   }
 }
