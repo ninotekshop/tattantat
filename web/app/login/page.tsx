@@ -146,7 +146,9 @@ function LoginContent() {
     const fbAppId = process.env.NEXT_PUBLIC_FACEBOOK_APP_ID;
     if (!fbAppId) return;
 
-    if (!document.getElementById('facebook-jssdk')) {
+    (window as any).__loadFb = () => {
+    if (document.getElementById('facebook-jssdk')) return;
+    {
       const script = document.createElement('script');
       script.id = 'facebook-jssdk';
       script.src = 'https://connect.facebook.net/vi_VN/sdk.js';
@@ -158,13 +160,14 @@ function LoginContent() {
           (window as any).FB.init({
             appId: fbAppId,
             cookie: true,
-            xfbml: true,
+            xfbml: false,
             version: 'v19.0',
           });
         }
       };
       document.body.appendChild(script);
     }
+    };
   }, []);
 
   const handleFacebookAuth = () => {
@@ -203,6 +206,7 @@ function LoginContent() {
         { scope: 'public_profile,email' }
       );
     } else {
+      (window as any).__loadFb?.();
       handleSocialLogin('facebook');
     }
   };
@@ -378,7 +382,7 @@ function LoginContent() {
 </div>
           <button
             type="button"
-            onClick={handleFacebookAuth}
+            onMouseEnter={() => (window as any).__loadFb?.()} onFocus={() => (window as any).__loadFb?.()} onTouchStart={() => (window as any).__loadFb?.()} onClick={handleFacebookAuth}
             style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '11px', borderRadius: 12, border: '1px solid #cbd5e1', background: '#ffffff', cursor: 'pointer', fontSize: 13.5, fontWeight: 600, color: '#334155' }}
           >
             <FacebookIcon /> Facebook

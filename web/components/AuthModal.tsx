@@ -98,7 +98,9 @@ export function AuthModal({ isOpen, onClose, initialMode = 'LOGIN', onSuccess }:
     if (typeof window === 'undefined') return;
     const fbAppId = process.env.NEXT_PUBLIC_FACEBOOK_APP_ID || '2833629363678891';
 
-    if (!document.getElementById('facebook-jssdk')) {
+    (window as any).__loadFb = () => {
+    if (document.getElementById('facebook-jssdk')) return;
+    {
       const script = document.createElement('script');
       script.id = 'facebook-jssdk';
       script.src = 'https://connect.facebook.net/vi_VN/sdk.js';
@@ -110,13 +112,14 @@ export function AuthModal({ isOpen, onClose, initialMode = 'LOGIN', onSuccess }:
           (window as any).FB.init({
             appId: fbAppId,
             cookie: true,
-            xfbml: true,
+            xfbml: false,
             version: 'v19.0',
           });
         }
       };
       document.body.appendChild(script);
     }
+    };
   }, []);
 
   // Load Apple JS SDK
@@ -387,6 +390,7 @@ export function AuthModal({ isOpen, onClose, initialMode = 'LOGIN', onSuccess }:
         { scope: 'public_profile,email' }
       );
     } else {
+      (window as any).__loadFb?.();
       handleSocialLogin('facebook');
     }
   };
@@ -472,7 +476,7 @@ export function AuthModal({ isOpen, onClose, initialMode = 'LOGIN', onSuccess }:
                 </button>
 <div ref={mountGoogle} style={{ position: 'absolute', inset: 0, opacity: 0.01, overflow: 'hidden', display: 'flex', justifyContent: 'center' }} />
 </div>
-                <button type="button" onClick={handleFacebookAuth} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '10px', borderRadius: 10, border: '1px solid #cbd5e1', background: '#fff', cursor: 'pointer', fontSize: 13, fontWeight: 600, color: '#334155' }}>
+                <button type="button" onMouseEnter={() => (window as any).__loadFb?.()} onFocus={() => (window as any).__loadFb?.()} onTouchStart={() => (window as any).__loadFb?.()} onClick={handleFacebookAuth} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '10px', borderRadius: 10, border: '1px solid #cbd5e1', background: '#fff', cursor: 'pointer', fontSize: 13, fontWeight: 600, color: '#334155' }}>
                   <FacebookIcon /> Facebook
                 </button>
                 <button type="button" onClick={handleAppleAuth} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '10px', borderRadius: 10, border: '1px solid #cbd5e1', background: '#fff', cursor: 'pointer', fontSize: 13, fontWeight: 600, color: '#334155' }}>
