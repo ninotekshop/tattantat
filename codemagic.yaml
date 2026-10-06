@@ -57,7 +57,7 @@ workflows:
       - *install
       - name: Số build (versionCode) tăng dần theo Google Play
         script: |
-          LATEST=$(google-play get-latest-build-number --package-name "$PACKAGE_NAME" 2>/dev/null || echo 0)
+          LATEST=$(google-play get-latest-build-number --package-name "$PACKAGE_NAME" --credentials "$GCP_SERVICE_ACCOUNT_CREDENTIALS" 2>/dev/null | grep -oE "[0-9]+" | tail -1 || true); LATEST=${LATEST:-0}; if [ "$LATEST" -lt "$PROJECT_BUILD_NUMBER" ]; then LATEST=$PROJECT_BUILD_NUMBER; fi
           echo "BUILD_NUMBER=$((LATEST + 1))" >> $CM_ENV
       - name: Tệp cấu hình Firebase cho Android
         script: |
@@ -205,7 +205,7 @@ workflows:
       - *install
       - name: Số build (versionCode) tăng dần theo Google Play
         script: |
-          LATEST=$(google-play get-latest-build-number --package-name "$PACKAGE_NAME" 2>/dev/null || echo 0)
+          LATEST=$(google-play get-latest-build-number --package-name "$PACKAGE_NAME" --credentials "$GCP_SERVICE_ACCOUNT_CREDENTIALS" 2>/dev/null | grep -oE "[0-9]+" | tail -1 || true); LATEST=${LATEST:-0}; if [ "$LATEST" -lt "$PROJECT_BUILD_NUMBER" ]; then LATEST=$PROJECT_BUILD_NUMBER; fi
           echo "BUILD_NUMBER=$((LATEST + 1))" >> $CM_ENV
       - name: Tệp cấu hình Firebase cho Android
         script: |
