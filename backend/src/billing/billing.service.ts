@@ -16,6 +16,7 @@ const TOPUP_TTL_HOURS = 72;
 const MAX_PENDING_TOPUPS = 3;
 
 const BANK_NAMES: Record<string, string> = { '970436': 'Vietcombank', '970415': 'VietinBank', '970418': 'BIDV', '970405': 'Agribank', '970422': 'MB Bank', '970407': 'Techcombank', '970416': 'ACB', '970432': 'VPBank', '970423': 'TPBank', '970403': 'Sacombank', '970437': 'HDBank', '970441': 'VIB', '970448': 'OCB', '970443': 'SHB', '970426': 'MSB', '970431': 'Eximbank', '970454': 'Viet Capital Bank', '970429': 'SCB' };
+export type PurchaseIntent = { kind: 'PLAN'; planId: string } | { kind: 'PROMO'; productId: string; packageId: string };
 export type BankSettings = { bankBin: string; bankName: string; accountNumber: string; accountName: string };
 type PlanVersion = { id: string; name: string; version_id: string; price: string; billing_cycle: 'MONTHLY' | 'YEARLY'; max_listings: number | null; features: unknown };
 class Insufficient extends BadRequestException {
@@ -48,6 +49,7 @@ export class BillingService implements OnModuleInit {
       await this.db.query(`UPDATE credit_accounts a SET total_coin_deposited=COALESCE(s.dep,0), total_coin_spent=COALESCE(s.sp,0) FROM (SELECT user_id, sum(amount) FILTER (WHERE type='TOPUP' AND amount>0) AS dep, -sum(amount) FILTER (WHERE type='SPEND' AND amount<0) AS sp FROM credit_transactions GROUP BY user_id) s WHERE s.user_id=a.user_id AND a.total_coin_deposited=0 AND a.total_coin_spent=0`);
       await this.db.query(`ALTER TABLE topup_requests ADD COLUMN IF NOT EXISTS provider_code BIGINT`);
       await this.db.query(`ALTER TABLE topup_requests ADD COLUMN IF NOT EXISTS checkout_url TEXT`);
+      await this.db.query(`ALTER TABLE topup_requests ADD COLUMN IF NOT EXISTS purchase_intent JSONB`);
       await this.db.query(`CREATE UNIQUE INDEX IF NOT EXISTS uq_topup_provider_code ON topup_requests(provider, provider_code) WHERE provider_code IS NOT NULL`);
       await this.db.query(`CREATE INDEX IF NOT EXISTS topup_requests_status_idx ON topup_requests(status, created_at DESC)`);
       await this.db.query(`CREATE TABLE IF NOT EXISTS app_settings (key TEXT PRIMARY KEY, value JSONB NOT NULL, updated_at TIMESTAMPTZ NOT NULL DEFAULT now(), updated_by UUID)`);
@@ -96,12 +98,12 @@ export class BillingService implements OnModuleInit {
   }
 
   // ---------- nạp tiền ----------
-  async createTopup(userId: string, amountInput: number) {
+  async createTopup(userId: string, amountInput: number, purchase?: PurchaseIntent) {
     const amount = Number(amountInput);
     if (!Number.isInteger(amount) || amount < MIN_TOPUP || amount > MAX_TOPUP) throw new BadRequestException(`Số tiền nạp từ ${MIN_TOPUP.toLocaleString('vi-VN')} đ đến ${MAX_TOPUP.toLocaleString('vi-VN')} đ.`);
     // Có PayOS: tạo QR PayOS, tiền tự cộng vào ví khi thanh toán xong. Lỗi PayOS → quay về chuyển khoản thủ công nếu đã cấu hình ngân hàng.
     if (this.gw) {
-      try { return await this.createPayosTopup(userId, amount); }
+      try { return await this.createPayosTopup(userId, amount, purchase); }
       catch (e) { if (!(await this.bank())) throw e; this.log.warn('PayOS lỗi, chuyển sang nạp thủ công: ' + (e instanceof Error ? e.message : String(e))); }
     }
     const bank = await this.bank();
@@ -116,7 +118,7 @@ export class BillingService implements OnModuleInit {
       return envelope({ ...row, bank, qrUrl: this.qrUrl(bank, amount, code) }, 'Đã tạo yêu cầu nạp tiền. Hãy chuyển khoản đúng số tiền và nội dung.');
     });
   }
-  private async createPayosTopup(userId: string, amount: number) {
+  private async createPayosTopup(userId: string, amount: number, purchase?: PurchaseIntent) {
     const gw = this.gw!;
     const code = 'TTT' + randomBytes(5).toString('hex').toUpperCase().slice(0, 7);
     const providerCode = Number(`${Date.now()}${randomInt(10, 99)}`);
@@ -125,7 +127,7 @@ export class BillingService implements OnModuleInit {
       await client.query(`UPDATE topup_requests SET status='EXPIRED' WHERE user_id=$1 AND status='PENDING' AND expires_at<now()`, [userId]);
       const pending = Number((await client.query(`SELECT count(*)::int AS n FROM topup_requests WHERE user_id=$1 AND status='PENDING'`, [userId])).rows[0].n);
       if (pending >= MAX_PENDING_TOPUPS) throw new BadRequestException('Bạn đang có quá nhiều yêu cầu nạp chờ thanh toán. Hãy hủy bớt hoặc hoàn tất các yêu cầu cũ.');
-      return (await client.query(`INSERT INTO topup_requests(user_id,amount,code,expires_at,provider,provider_code) VALUES($1,$2,$3,now()+interval '2 hours','PAYOS',$4) RETURNING id, code, amount::text, status, created_at AS "createdAt", expires_at AS "expiresAt"`, [userId, amount, code, providerCode])).rows[0];
+      return (await client.query(`INSERT INTO topup_requests(user_id,amount,code,expires_at,provider,provider_code,purchase_intent) VALUES($1,$2,$3,now()+interval '2 hours','PAYOS',$4,$5::jsonb) RETURNING id, code, amount::text, status, created_at AS "createdAt", expires_at AS "expiresAt"`, [userId, amount, code, providerCode, purchase ? JSON.stringify(purchase) : null])).rows[0];
     });
     try {
       const web = (process.env.PUBLIC_WEB_URL ?? 'http://localhost:3001').replace(/\/$/, '');
@@ -142,6 +144,26 @@ export class BillingService implements OnModuleInit {
 
   /** Ghi nhận kết quả thanh toán PayOS cho yêu cầu nạp ví (webhook hoặc hỏi lại cổng). Trả true nếu mã thuộc về một yêu cầu nạp ví. */
   async settleGatewayTopup(r: WebhookResult): Promise<boolean> {
+    const own = await this.settleGatewayTopupTx(r);
+    if (own && r.status !== 'FAILED') await this.autoPurchase(r.providerCode).catch(e => this.log.warn('Tự kích hoạt gói lỗi: ' + (e instanceof Error ? e.message : String(e))));
+    return own;
+  }
+
+  /** Mua QR: sau khi tiền vào ví, tự kích hoạt gói đã chọn (kể cả khi người dùng đã đóng trang). Khóa idempotency `topup-<id>` trùng với khóa phía client nên không bao giờ mua 2 lần. */
+  private async autoPurchase(providerCode: number | string) {
+    const t = (await this.db.query(`SELECT id, user_id, status, purchase_intent AS intent FROM topup_requests WHERE provider='PAYOS' AND provider_code=$1`, [providerCode])).rows[0];
+    if (!t || t.status !== 'CONFIRMED' || !t.intent) return;
+    const key = `topup-${t.id}`;
+    try {
+      if (t.intent.kind === 'PLAN') await this.buyPlan(t.user_id, t.intent.planId, key);
+      else if (t.intent.kind === 'PROMO') await this.buyPromotion(t.user_id, t.intent.productId, t.intent.packageId, key);
+    } catch (e) {
+      this.notify(t.user_id, 'PURCHASE_FAILED', 'Chưa kích hoạt được gói', 'Tiền đã được cộng vào ví TTTCoin nhưng gói chưa kích hoạt tự động. Vui lòng vào Ví & Gói và chọn "Dùng số dư ví" để hoàn tất.', 'TOPUP', t.id);
+      throw e;
+    }
+  }
+
+  private async settleGatewayTopupTx(r: WebhookResult): Promise<boolean> {
     return this.db.transaction(async client => {
       const t = (await client.query(`SELECT id,user_id,amount::text,code,status FROM topup_requests WHERE provider='PAYOS' AND provider_code=$1 FOR UPDATE`, [r.providerCode])).rows[0];
       if (!t) return false;

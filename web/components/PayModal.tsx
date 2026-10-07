@@ -30,8 +30,8 @@ export function PayModal({ item, balance, onClose, onSuccess, onRefresh }: { ite
   async function payByQr() {
     setBusy(true); setError('');
     try {
-      const t = await memberRequest<QrTopup>('/billing/topups', 'POST', { amount: vndNeededForCoin(price) });
-      key.current = newKey(); setQr(t); setState('waiting');
+      const t = await memberRequest<QrTopup>('/billing/topups', 'POST', { amount: vndNeededForCoin(price), purchase: item.kind === 'PLAN' ? { kind: 'PLAN', planId: item.planId } : { kind: 'PROMO', productId: item.productId, packageId: item.packageId } });
+      key.current = `topup-${t.id}`; setQr(t); setState('waiting');
     } catch (e) { setError(e instanceof Error ? e.message : 'Không tạo được mã QR.'); }
     finally { setBusy(false); }
   }
@@ -69,7 +69,7 @@ export function PayModal({ item, balance, onClose, onSuccess, onRefresh }: { ite
           <div className="bl-msg info">{state === 'buying' ? 'Đã nhận tiền, đang kích hoạt gói…' : <>Quét mã QR bằng ứng dụng ngân hàng và thanh toán <b>đúng số tiền {vnd(qr.amount)}</b>. Gói sẽ được <b>kích hoạt tự động</b> ngay khi nhận được tiền.</>}</div>
           {qr.bank && <div className="bl-kv"><b>Ngân hàng</b><span className="v">{qr.bank.bankName}</span><span /><b>Số tài khoản</b><span className="v">{qr.bank.accountNumber}</span><span /><b>Nội dung</b><span className="v">{qr.code}</span><span /></div>}
           {qr.checkoutUrl && !qr.bank && <a href={qr.checkoutUrl} target="_blank" rel="noreferrer" className="bl-btn sm primary">Mở trang thanh toán PayOS</a>}
-          <p style={{ color: '#71817b', fontSize: 12 }}>Đang chờ thanh toán… Vui lòng không đóng trang này.</p>
+          <p style={{ color: '#71817b', fontSize: 12 }}>Đang chờ thanh toán… Gói sẽ tự kích hoạt dù bạn đóng trang này.</p>
         </div>
       </div>
       {error && <div className="bl-msg err">{error}</div>}
