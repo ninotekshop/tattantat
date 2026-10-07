@@ -11,6 +11,7 @@ export type Product = {
   sellerId: string;
   sellerName: string;
   sellerVerified?: boolean;
+  sellerAvatar?: string | null;
   imageUrl: string;
   images?: string[];
   videos?: string[];

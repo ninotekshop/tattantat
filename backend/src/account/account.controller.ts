@@ -4,6 +4,7 @@ import { Transform } from 'class-transformer';
 import * as bcrypt from 'bcryptjs';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { DatabaseService } from '../database/database.service';
+import { StorageService } from '../storage/storage.service';
 import { triggerTrustRecalc } from '../trust/trust.service';
 
 class RegisterPushDeviceDto {
@@ -29,7 +30,7 @@ export class ChangePasswordDto {
 @Controller()
 @UseGuards(JwtAuthGuard)
 export class AccountController {
-  constructor(private readonly db: DatabaseService) {}
+  constructor(private readonly db: DatabaseService, private readonly storage: StorageService) {}
 
   @Get('me')
   async me(@Req() request: { user: { id: string } }) {
@@ -39,6 +40,7 @@ export class AccountController {
 
   @Patch('me')
   async update(@Req() request: { user: { id: string } }, @Body() body: UpdateProfileDto) {
+    if (body.avatarUrl?.startsWith('data:image')) body.avatarUrl = (await this.storage.uploadAvatar(request.user.id, body.avatarUrl)) ?? body.avatarUrl;
     const result = await this.db.query(
       `UPDATE users SET full_name=COALESCE($1,full_name), avatar_url=COALESCE($2,avatar_url), avatar_custom=CASE WHEN $2::text IS NULL THEN avatar_custom WHEN $2::text LIKE 'data:image/%' THEN TRUE WHEN $2::text !~* '^https://[^/]*(googleusercontent|fbcdn|facebook|fbsbx|zdn\.vn|zalo|appleid|apple\.com)' THEN TRUE ELSE avatar_custom END, updated_at=NOW() WHERE id=$3 RETURNING id, full_name, avatar_url, email, role`,
       [body.fullName || null, body.avatarUrl || null, request.user.id]

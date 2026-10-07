@@ -1,8 +1,9 @@
 'use client';
 import './favorites.css';
+import { SellerAvatar } from '../../components/SellerAvatar';
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
-import { Heart, MapPin, Search, User } from 'lucide-react';
+import { Heart, MapPin, Search } from 'lucide-react';
 import { MemberArea } from '../../components/MemberArea';
 import { memberRequest, type Product } from '../../lib/api';
 import { useFavorites } from '../../lib/favorites';
@@ -100,7 +101,7 @@ function Favorites() {
                 <Link className="fav-name" href={'/products/' + p.id}>{p.title}</Link>
                 <div className="fav-price">{listingPrice({ price: String(p.price).replace(/\.0+$/, ''), priceMode: p.priceMode || 'FIXED' })}</div>
                 <div className="fav-meta"><MapPin size={14} /><span>{p.location || 'Chưa cập nhật'}</span></div>
-                <div className="fav-meta"><User size={14} /><span>{p.sellerName}</span></div>
+                <div className="fav-meta"><SellerAvatar name={p.sellerName} url={p.sellerAvatar} size={18} /><span>{p.sellerName}</span></div>
                 <div className="fav-foot">
                   <Link className="fav-btn primary" href={'/messages?product=' + encodeURIComponent(p.id)}>Nhắn tin</Link>
                   <Link className="fav-btn" href={'/products/' + p.id}>Xem tin</Link>

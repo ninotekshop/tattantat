@@ -86,7 +86,7 @@ export default function ProductDetail() {
         </View>
         <View style={st.block}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-            <Avatar name={p.sellerName} />
+            <Avatar name={p.sellerName} url={p.sellerAvatar ? media(p.sellerAvatar) : null} />
             <View style={{ flex: 1 }}>
               <Text style={{ fontWeight: '700', fontSize: 16, color: C.ink }}>{p.sellerName}</Text>
               <Text style={{ color: C.muted, fontSize: 13 }}>{p.sellerVerified ? 'Đã xác thực danh tính' : 'Người bán'}</Text>

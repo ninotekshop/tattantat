@@ -1,5 +1,6 @@
 'use client';
 
+import { SellerAvatar } from './SellerAvatar';
 import { Ic } from './Ic';
 import { VideoBadge } from './VideoBadge';
 import Link from 'next/link';
@@ -11,7 +12,7 @@ import { readSession } from '../lib/auth';
 import {
   Search, MapPin, ChevronLeft, ChevronRight, X, ArrowUp, Sparkles,
   Clock, CheckCircle2, Gift, List, Eye, Crown,
-  User, MessageSquare, ChevronDown, BadgeCheck, Bell, Flag, Flame, Link2, Heart, Share2, EyeOff } from 'lucide-react';
+  MessageSquare, ChevronDown, BadgeCheck, Bell, Flag, Flame, Link2, Heart, Share2, EyeOff } from 'lucide-react';
 import { api, apiGet, memberRequest, type Product } from '../lib/api';
 import { useFavorites } from '../lib/favorites';
 import { CATEGORY_ENGINE_TAXONOMY } from '../lib/marketplace';
@@ -178,7 +179,7 @@ function ProductCard({ product, viewMode = 'GRID_4' }: { product: Product; viewM
             <MapPin size={13} /> {product.location || 'Quy Nhơn'}
           </div>
           <div className="card-seller-name" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 2, color: '#475569' }}>
-            <span style={{ display: 'flex', alignItems: 'flex-start', gap: 5, minWidth: 0, overflowWrap: 'anywhere' }}><User size={13} style={{ flex: 'none', marginTop: 2 }} /><span style={{ minWidth: 0 }}>{product.sellerName}</span></span>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0, overflowWrap: 'anywhere' }}><SellerAvatar name={product.sellerName} url={product.sellerAvatar} /><span style={{ minWidth: 0 }}>{product.sellerName}</span></span>
             {product.sellerVerified && <span className="verified-badge" style={{ alignSelf: 'flex-start' }}><Ic i={BadgeCheck}/>Đã xác thực</span>}
           </div>
           <div className="card-posted-date" style={{ display: 'flex', alignItems: 'center', gap: 5, color: '#64748b' }}>

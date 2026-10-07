@@ -1,3 +1,4 @@
+import { avatarThumb } from '../storage/avatar';
 import { BadRequestException, Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { DatabaseService } from '../database/database.service';
 import { compactLocation, convertAddress } from '../geo/vn-merge';
@@ -97,14 +98,14 @@ export class SearchService implements OnModuleInit {
     const { sql, values } = this.buildWhere(p, viewerId);
     const order = SORTS[p.sort ?? 'new'] ?? SORTS.new;
     const [rows, total] = await Promise.all([
-      this.db.query(`SELECT p.id, p.title, p.price::text, p.address, p.created_at, p.status::text, p.seller_id, p.listing_price_mode, u.full_name AS seller_name, COALESCE(u.is_verified,false) AS seller_verified,
+      this.db.query(`SELECT p.id, p.title, p.price::text, p.address, p.created_at, p.status::text, p.seller_id, p.listing_price_mode, u.full_name AS seller_name, CASE WHEN u.avatar_url LIKE 'data:%' THEN NULL ELSE u.avatar_url END AS seller_avatar, COALESCE(u.is_verified,false) AS seller_verified,
         (SELECT l.published_snapshot->'data'->'values' FROM listings l WHERE l.product_id=p.id LIMIT 1) AS attrs,
         (SELECT url FROM product_images WHERE product_id=p.id ORDER BY sort_order LIMIT 1) AS image_url,
         EXISTS(SELECT 1 FROM listings lv WHERE lv.product_id=p.id AND CASE WHEN jsonb_typeof(lv.published_snapshot->'data'->'videos')='array' THEN jsonb_array_length(lv.published_snapshot->'data'->'videos')>0 ELSE false END) AS has_video
         FROM products p JOIN users u ON u.id=p.seller_id WHERE ${sql} ORDER BY ${order} LIMIT ${limit} OFFSET ${(page - 1) * limit}`, values),
       this.db.query(`SELECT COUNT(*)::int AS n FROM products p WHERE ${sql}`, values),
     ]);
-    const items = rows.rows.map((row: any) => ({ id: row.id, title: row.title, price: row.price, priceMode: row.listing_price_mode ?? 'FIXED', location: (row.address ? (compactLocation(row.address) ?? convertAddress(row.address) ?? row.address) : null) ?? 'Chưa cập nhật', postedAt: row.created_at, sellerId: row.seller_id, sellerName: row.seller_name, sellerVerified: row.seller_verified, attrs: row.attrs ?? {}, imageUrl: row.image_url ?? '', hasVideo: !!row.has_video, images: row.image_url ? [row.image_url] : [], status: row.status }));
+    const items = rows.rows.map((row: any) => ({ id: row.id, title: row.title, price: row.price, priceMode: row.listing_price_mode ?? 'FIXED', location: (row.address ? (compactLocation(row.address) ?? convertAddress(row.address) ?? row.address) : null) ?? 'Chưa cập nhật', postedAt: row.created_at, sellerId: row.seller_id, sellerName: row.seller_name, sellerAvatar: avatarThumb(row.seller_avatar), sellerVerified: row.seller_verified, attrs: row.attrs ?? {}, imageUrl: row.image_url ?? '', hasVideo: !!row.has_video, images: row.image_url ? [row.image_url] : [], status: row.status }));
     void this.recordKeyword(p.q, page, total.rows[0].n as number);
     return { success: true, data: { items, total: total.rows[0].n as number, page, limit }, message: null, errorCode: null };
   }

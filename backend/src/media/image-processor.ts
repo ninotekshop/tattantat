@@ -23,4 +23,15 @@ export async function optimizeImage(file: Img, maxSide = 1600): Promise<Img> {
     return buffer.length < file.buffer.length || file.buffer.length > 3 * 1024 * 1024 ? { buffer, mimetype: file.mimetype } : file;
   } catch (e) { log.warn('Không tối ưu được ảnh, dùng bản gốc: ' + (e instanceof Error ? e.message : String(e))); return file; }
 }
+/** Ảnh đại diện: bản 384px và bản thumbnail 96px (JPEG, vuông, xóa metadata). Trả null nếu chưa cài sharp. */
+export async function makeAvatarVariants(input: Buffer): Promise<{ main: Buffer; thumb: Buffer } | null> {
+  const sharp = loadSharp();
+  if (!sharp) return null;
+  try {
+    const base = () => sharp(input, { failOn: 'error' }).rotate();
+    const main: Buffer = await base().resize(384, 384, { fit: 'cover' }).jpeg({ quality: 82, mozjpeg: true }).toBuffer();
+    const thumb: Buffer = await base().resize(96, 96, { fit: 'cover' }).jpeg({ quality: 78, mozjpeg: true }).toBuffer();
+    return { main, thumb };
+  } catch (e) { log.warn('Không xử lý được ảnh đại diện: ' + (e instanceof Error ? e.message : String(e))); return null; }
+}
 export const __resetSharpForTest = (lib?: unknown) => { sharpLib = lib as never; };

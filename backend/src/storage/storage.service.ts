@@ -2,7 +2,7 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { createClient } from '@supabase/supabase-js';
 import { randomUUID } from 'crypto';
-import { optimizeImage } from '../media/image-processor';
+import { makeAvatarVariants, optimizeImage } from '../media/image-processor';
 
 @Injectable()
 export class StorageService {
@@ -19,6 +19,21 @@ export class StorageService {
     const extension = file.mimetype === 'image/png' ? 'png' : file.mimetype === 'image/webp' ? 'webp' : 'jpg'; const key = `${userId}/${randomUUID()}.${extension}`;
     const { error } = await this.client.storage.from('product-images').upload(key, (await optimizeImage(file)).buffer, { contentType: file.mimetype, upsert: false });
     if (error) throw new BadRequestException('Không thể tải ảnh lên'); return { key };
+  }
+  /** Ảnh đại diện công khai: lưu bản 384px + thumbnail 96px (`_s.jpg`). Trả URL công khai bản chính, hoặc null nếu không xử lý/tải được. */
+  async uploadAvatar(userId: string, dataUrl: string): Promise<string | null> {
+    const m = /^data:image\/(?:jpeg|png|webp);base64,([A-Za-z0-9+/=]+)$/.exec(dataUrl);
+    if (!m) return null;
+    const variants = await makeAvatarVariants(Buffer.from(m[1], 'base64'));
+    if (!variants) return null;
+    try {
+      try { await this.client.storage.createBucket('avatars', { public: true }); } catch { /* đã tồn tại */ }
+      const id = randomUUID();
+      const up = (key: string, body: Buffer) => this.client.storage.from('avatars').upload(key, body, { contentType: 'image/jpeg', upsert: false, cacheControl: '31536000' });
+      const [a, b] = await Promise.all([up(`${userId}/${id}.jpg`, variants.main), up(`${userId}/${id}_s.jpg`, variants.thumb)]);
+      if (a.error || b.error) return null;
+      return `${process.env.SUPABASE_URL}/storage/v1/object/public/avatars/${userId}/${id}.jpg`;
+    } catch { return null; }
   }
   /** Kho riêng tư cho giấy tờ định danh; chỉ truy cập qua đường dẫn ký có hạn. */
   async ensurePrivateBucket(name: string) { try { await this.client.storage.createBucket(name, { public: false }); } catch { /* đã tồn tại */ } }

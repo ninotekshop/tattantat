@@ -1,6 +1,6 @@
 export type Product = {
   id: string; title: string; price: string; priceMode?: string; location: string; postedAt: string;
-  sellerId: string; sellerName: string; sellerVerified?: boolean; imageUrl: string; images?: string[]; videos?: string[];
+  sellerId: string; sellerName: string; sellerVerified?: boolean; sellerAvatar?: string | null; imageUrl: string; images?: string[]; videos?: string[];
   hasVideo?: boolean; description?: string | null; condition?: string | null; categoryId?: number | null; status?: string; listingId?: string | null;
   attrs?: Record<string, unknown>; isFavorite?: boolean; viewCount?: number;
 };
