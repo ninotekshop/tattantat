@@ -11,7 +11,7 @@ import type { Session } from '@/lib/session';
 import { appleAvailable, appleLogin, confirmZaloOtp, googleLogin, sendZaloOtp, webLogin } from '@/lib/social';
 import { C, R } from '@/lib/theme';
 
-type Step = 'start' | 'password' | 'otp';
+type Step = 'start' | 'password' | 'otp' | 'zalo';
 
 /** Đăng nhập / Đăng ký: Google, Facebook, Zalo (+ Apple trên iOS) hoặc nhập số điện thoại → mật khẩu hoặc mã OTP qua Zalo. */
 export default function Login() {
@@ -56,7 +56,7 @@ export default function Login() {
     } catch (e) { setError((e as Error).message); setBusy(null); }
   };
 
-  const heading = step === 'start' ? 'Chào mừng đến Tất Tần Tật' : step === 'password' ? 'Nhập mật khẩu' : 'Nhập mã OTP';
+  const heading = step === 'start' ? 'Chào mừng đến Tất Tần Tật' : step === 'zalo' ? 'Đăng nhập bằng Zalo' : step === 'password' ? 'Nhập mật khẩu' : 'Nhập mã OTP';
   const sub = step === 'start' ? 'Chọn một cách bên dưới để đăng nhập hoặc tạo tài khoản mới.' : '';
   const openSite = (path: string) => Linking.openURL(SITE_URL + path).catch(() => undefined);
 
@@ -83,7 +83,7 @@ export default function Login() {
                 <Image pointerEvents="none" source={require('../assets/mascot.png')} style={st.mascot} contentFit="contain" />
               </View>
               <Social title="Tiếp tục với Facebook" icon={<FacebookIcon />} loading={busy === 'facebook'} onPress={() => run('facebook', () => webLogin('facebook'))} />
-              <Social title="Tiếp tục với Zalo" icon={<ZaloIcon />} loading={busy === 'zalo'} onPress={() => run('zalo', () => webLogin('zalo'))} />
+              <Social title="Tiếp tục với Zalo" icon={<ZaloIcon />} onPress={() => { setError(''); setInfo(''); setStep('zalo'); }} />
               {apple ? <Social title="Tiếp tục với Apple" icon={<AppleIcon />} loading={busy === 'apple'} onPress={() => run('apple', appleLogin)} /> : null}
 
               <View style={st.or}><View style={st.line} /><Text style={st.orText}>Hoặc</Text><View style={st.line} /></View>
@@ -96,6 +96,21 @@ export default function Login() {
               {error ? <Text style={st.error}>{error}</Text> : null}
               <Pressable accessibilityRole="button" onPress={next} disabled={!validPhone || !!busy} style={[st.cta, validPhone && st.ctaOn]}>
                 {busy === 'phone' || busy === 'otp-send' ? <ActivityIndicator color={validPhone ? C.white : C.ink} /> : <Text style={[st.ctaText, validPhone && { color: C.white }]}>Tiếp tục</Text>}
+              </Pressable>
+            </View>
+          ) : null}
+
+          {step === 'zalo' ? (
+            <View style={{ gap: 14 }}>
+              <Text style={st.hint}>Nhập số điện thoại đã đăng ký Zalo. Chúng tôi sẽ gửi mã OTP 6 số qua Zalo để bạn đăng nhập (số chưa có tài khoản sẽ được tạo mới).</Text>
+              <View style={[st.phoneBox, st.phoneBoxOn]}>
+                <Text style={st.phoneLabel}>Số điện thoại Zalo</Text>
+                <TextInput value={phone} onChangeText={t => { setPhone(t); setError(''); }} autoFocus keyboardType="phone-pad" textContentType="telephoneNumber" autoComplete="tel" maxLength={16}
+                  style={st.phoneInput} onSubmitEditing={requestOtp} returnKeyType="go" />
+              </View>
+              {error ? <Text style={st.error}>{error}</Text> : null}
+              <Pressable accessibilityRole="button" onPress={requestOtp} disabled={!validPhone || !!busy} style={[st.cta, validPhone && st.ctaOn]}>
+                {busy === 'otp-send' ? <ActivityIndicator color={C.white} /> : <Text style={[st.ctaText, validPhone && { color: C.white }]}>Gửi mã qua Zalo</Text>}
               </Pressable>
             </View>
           ) : null}
