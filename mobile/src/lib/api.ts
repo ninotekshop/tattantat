@@ -86,4 +86,4 @@ export function upload<T>(path: string, file: { uri: string; name: string; type:
 }
 
 /** Đường dẫn ảnh tương đối → tuyệt đối. */
-export const media = (url?: string | null) => !url ? '' : /^https?:\/\//.test(url) ? url : SITE_URL + (url.startsWith('/') ? url : '/' + url);
+export const media = (url?: string | null) => !url ? '' : /^(https?:\/\/|data:)/.test(url) ? url : SITE_URL + (url.startsWith('/') ? url : '/' + url);
