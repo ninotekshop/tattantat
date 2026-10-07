@@ -66,3 +66,13 @@ export async function webLogin(provider: 'facebook' | 'zalo'): Promise<Session |
   if (!q.code) return null;
   return api<Session>('/auth/oauth/exchange', { method: 'POST', body: { code: String(q.code) } });
 }
+
+/** Gửi mã OTP qua Zalo (ZNS) do máy chủ thực hiện. */
+export async function sendZaloOtp(phone: string): Promise<void> {
+  const r = await api<{ channel?: string }>('/auth/phone/send-otp', { method: 'POST', body: { phone } });
+  if (r?.channel === 'none') throw new ApiError('Chưa bật gửi mã OTP qua Zalo. Vui lòng đăng nhập bằng mật khẩu.', 0);
+}
+
+/** Xác nhận mã OTP rồi đổi lấy phiên Tất Tần Tật (tự tạo tài khoản nếu số chưa có). */
+export const confirmZaloOtp = (phone: string, code: string) =>
+  api<Session>('/auth/phone/verify-otp', { method: 'POST', body: { phone, otp: code.trim() } });

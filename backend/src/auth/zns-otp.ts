@@ -10,7 +10,7 @@ export async function sendZnsOtp(phone: string, otp: string) {
   const base = (process.env.ETELECOM_BASE_URL || '').replace(/\/+$/, '');
   const url = base.endsWith('.Zalo') ? `${base}/SendZNS` : `${base}.Zalo/SendZNS`;
   const body: Record<string, unknown> = {
-    oa_id: Number(process.env.ZNS_OA_ID),
+    oa_id: process.env.ZNS_OA_ID, // chuỗi: ID quá lớn, Number() sẽ làm tròn sai
     template_id: Number(process.env.ZNS_OTP_TEMPLATE_ID),
     phone: toZaloPhone(phone),
     template_data: { [process.env.ZNS_OTP_PARAM || 'otp']: otp },

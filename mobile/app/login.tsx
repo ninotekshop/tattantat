@@ -8,17 +8,18 @@ import { ArrowLeft, Eye, EyeOff, Lock, Mail } from 'lucide-react-native';
 import { SITE_URL, api } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import type { Session } from '@/lib/session';
-import { appleAvailable, appleLogin, googleLogin, webLogin } from '@/lib/social';
+import { appleAvailable, appleLogin, confirmZaloOtp, googleLogin, sendZaloOtp, webLogin } from '@/lib/social';
 import { C, R } from '@/lib/theme';
 
 /** Zalo chặn lấy hồ sơ từ IP máy chủ ngoài Việt Nam (lỗi -501). Đặt true khi backend có IP Việt Nam hoặc proxy VN. */
 const SHOW_ZALO = false;
 
-/** Đăng nhập / Đăng ký giống web: email hoặc số điện thoại + mật khẩu, hoặc tiếp tục với Google, Facebook, Apple. Không dùng mã OTP. */
+/** Đăng nhập / Đăng ký giống web: email hoặc số điện thoại + mật khẩu, hoặc tiếp tục với Google, Facebook, Apple. Hoặc đăng nhập bằng mã OTP gửi qua Zalo. */
 export default function Login() {
   const { signIn } = useAuth();
   const [id, setId] = useState(''), [pw, setPw] = useState(''), [showPw, setShowPw] = useState(false);
   const [apple, setApple] = useState(false);
+  const [mode, setMode] = useState<'pw' | 'otp'>('pw'), [otpSent, setOtpSent] = useState(false), [otp, setOtp] = useState(''), [wait, setWait] = useState(0);
   const [busy, setBusy] = useState<string | null>(null), [error, setError] = useState('');
 
   useEffect(() => { Promise.resolve(appleAvailable()).then(v => setApple(!!v)).catch(() => setApple(false)); }, []);
@@ -29,6 +30,16 @@ export default function Login() {
     try { await done(await fn()); } catch (e) { setError((e as Error).message); } finally { setBusy(null); }
   };
   const goBack = () => { if (router.canGoBack()) router.back(); else router.replace('/'); };
+
+  useEffect(() => { if (wait <= 0) return; const t = setTimeout(() => setWait(wait - 1), 1000); return () => clearTimeout(t); }, [wait]);
+  const phone = id.trim().replace(/[\s.\-()]/g, '');
+  const validPhone = /^(0|\+?84)\d{9}$/.test(phone);
+  const requestOtp = async () => {
+    if (!validPhone || busy) return;
+    setBusy('otp-send'); setError('');
+    try { await sendZaloOtp(phone); setOtp(''); setOtpSent(true); setWait(60); } catch (e) { setError((e as Error).message); } finally { setBusy(null); }
+  };
+  const switchMode = (m: 'pw' | 'otp') => { setMode(m); setOtpSent(false); setOtp(''); setError(''); };
 
   const canSubmit = id.trim().length > 0 && pw.length >= 6;
   const submit = () => {
@@ -60,12 +71,13 @@ export default function Login() {
 
           <View style={{ gap: 14 }}>
             <View style={st.field}>
-              <Text style={st.label}>Email hoặc Số điện thoại</Text>
+              <Text style={st.label}>{mode === 'otp' ? 'Số điện thoại (đã đăng ký Zalo)' : 'Email hoặc Số điện thoại'}</Text>
               <View style={st.inputRow}>
                 <Mail size={18} color={C.muted} />
-                <TextInput value={id} onChangeText={t => { setId(t); setError(''); }} autoCapitalize="none" autoCorrect={false} keyboardType="email-address" textContentType="username" autoComplete="username" style={st.input} returnKeyType="next" />
+                <TextInput value={id} onChangeText={t => { setId(t); setError(''); }} autoCapitalize="none" autoCorrect={false} keyboardType={mode === 'otp' ? 'phone-pad' : 'email-address'} editable={!otpSent} textContentType="username" autoComplete="username" style={st.input} returnKeyType="next" />
               </View>
             </View>
+            {mode === 'pw' ? (<>
             <View style={st.field}>
               <Text style={st.label}>Mật khẩu</Text>
               <View style={st.inputRow}>
@@ -74,12 +86,41 @@ export default function Login() {
                 <Pressable hitSlop={10} onPress={() => setShowPw(!showPw)}>{showPw ? <EyeOff size={20} color={C.muted} /> : <Eye size={20} color={C.muted} />}</Pressable>
               </View>
             </View>
-            <View style={{ alignItems: 'flex-end' }}>
+            {mode === 'pw' ? <View style={{ alignItems: 'flex-end' }}>
               <Pressable hitSlop={8} onPress={() => router.push('/forgot-password')}><Text style={st.link}>Quên mật khẩu?</Text></Pressable>
-            </View>
+            </View> : null}
+            </>) : null}
+            {mode === 'otp' && otpSent ? (
+              <View style={st.field}>
+                <Text style={st.label}>Mã OTP (6 số, gửi qua Zalo)</Text>
+                <View style={st.inputRow}>
+                  <Lock size={18} color={C.muted} />
+                  <TextInput value={otp} onChangeText={t => { setOtp(t.replace(/\D/g, '').slice(0, 6)); setError(''); }} keyboardType="number-pad" autoFocus textContentType="oneTimeCode" maxLength={6} style={[st.input, { letterSpacing: 6 }]}
+                    onSubmitEditing={() => otp.length === 6 && run('otp', () => confirmZaloOtp(phone, otp))} />
+                </View>
+              </View>
+            ) : null}
             {error ? <Text style={st.error}>{error}</Text> : null}
-            <Pressable accessibilityRole="button" onPress={submit} disabled={!canSubmit || !!busy} style={[st.cta, canSubmit && st.ctaOn]}>
-              {busy === 'pw' ? <ActivityIndicator color={C.white} /> : <Text style={[st.ctaText, canSubmit && { color: C.white }]}>Đăng nhập</Text>}
+            {mode === 'pw' ? (
+              <Pressable accessibilityRole="button" onPress={submit} disabled={!canSubmit || !!busy} style={[st.cta, canSubmit && st.ctaOn]}>
+                {busy === 'pw' ? <ActivityIndicator color={C.white} /> : <Text style={[st.ctaText, canSubmit && { color: C.white }]}>Đăng nhập</Text>}
+              </Pressable>
+            ) : !otpSent ? (
+              <Pressable accessibilityRole="button" onPress={requestOtp} disabled={!validPhone || !!busy} style={[st.cta, validPhone && st.ctaOn]}>
+                {busy === 'otp-send' ? <ActivityIndicator color={C.white} /> : <Text style={[st.ctaText, validPhone && { color: C.white }]}>Gửi mã OTP qua Zalo</Text>}
+              </Pressable>
+            ) : (
+              <>
+                <Pressable accessibilityRole="button" onPress={() => run('otp', () => confirmZaloOtp(phone, otp))} disabled={otp.length < 6 || !!busy} style={[st.cta, otp.length === 6 && st.ctaOn]}>
+                  {busy === 'otp' ? <ActivityIndicator color={C.white} /> : <Text style={[st.ctaText, otp.length === 6 && { color: C.white }]}>Xác nhận</Text>}
+                </Pressable>
+                <Pressable hitSlop={8} disabled={wait > 0 || !!busy} onPress={requestOtp} style={{ alignSelf: 'center' }}>
+                  <Text style={[st.link, wait > 0 && { color: C.muted }]}>{wait > 0 ? `Gửi lại mã sau ${wait}s` : 'Gửi lại mã'}</Text>
+                </Pressable>
+              </>
+            )}
+            <Pressable hitSlop={8} onPress={() => switchMode(mode === 'pw' ? 'otp' : 'pw')} style={{ alignSelf: 'center' }}>
+              <Text style={st.link}>{mode === 'pw' ? 'Đăng nhập bằng mã OTP qua Zalo' : 'Đăng nhập bằng mật khẩu'}</Text>
             </Pressable>
           </View>
 
