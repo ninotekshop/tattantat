@@ -9,7 +9,7 @@ import type { ExpoConfig } from 'expo/config';
  *  - APP_VERSION / BUILD_NUMBER: phiên bản hiển thị và số build
  *  - GOOGLE_SERVICES_PLIST: đường dẫn GoogleService-Info.plist (iOS), mặc định ./GoogleService-Info.plist khi build iOS
  */
-const version = process.env.APP_VERSION ?? '1.0.1';
+const version = process.env.APP_VERSION ?? '1.0.2';
 const buildNumber = Number(process.env.BUILD_NUMBER ?? 1);
 const iosPlist = process.env.GOOGLE_SERVICES_PLIST ?? (process.env.EAS_BUILD_PLATFORM === 'ios' || process.env.BUILD_PLATFORM === 'ios' ? './GoogleService-Info.plist' : undefined);
 
