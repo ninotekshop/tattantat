@@ -2,14 +2,13 @@ import { memo, useState } from 'react';
 import { Alert, Modal, Pressable, Share, StyleSheet, Text, View } from 'react-native';
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
-import { BadgeCheck, EyeOff, Flag, Heart, MapPin, MessageCircle, MoreHorizontal, PlayCircle, Share2 } from 'lucide-react-native';
+import { EyeOff, Flag, Heart, MapPin, MessageCircle, MoreHorizontal, PlayCircle, Share2 } from 'lucide-react-native';
 import { SITE_URL, api, media } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { useFavorites } from '@/lib/favorites';
 import { useHiddenProducts } from '@/lib/hidden';
 import { vnd, timeAgo } from '@/lib/format';
 import { C, R, shadow } from '@/lib/theme';
-import { Avatar } from '@/components/ui';
 import type { Product } from '@/lib/types';
 
 const REASONS: [string, string][] = [['FRAUD', 'Nghi lừa đảo'], ['SPAM', 'Tin rác / trùng lặp'], ['PROHIBITED', 'Hàng cấm / vi phạm quy định'], ['ABUSE', 'Nội dung xúc phạm'], ['OTHER', 'Lý do khác']];
@@ -57,11 +56,6 @@ export const ProductCard = memo(function ProductCard({ p, width }: { p: Product;
           <Text numberOfLines={2} style={st.title}>{p.title}</Text>
           <Text style={st.price}>{vnd(p.price, p.priceMode)}</Text>
           <View style={st.row}><MapPin size={12} color={C.muted} /><Text numberOfLines={1} style={st.meta}>{p.location}</Text></View>
-          <View style={st.row}>
-            <Avatar name={p.sellerName} url={p.sellerAvatar ? media(p.sellerAvatar) : null} size={18} />
-            <Text numberOfLines={1} style={[st.meta, { flex: 0, flexShrink: 1, color: C.text }]}>{p.sellerName}</Text>
-            {p.sellerVerified ? <BadgeCheck size={12} color={C.brand} /> : <Text style={st.unverified}>Chưa xác thực</Text>}
-          </View>
           <Text numberOfLines={1} style={st.meta}>{timeAgo(p.postedAt)}</Text>
         </View>
         <View style={st.footer}>
@@ -105,7 +99,6 @@ const st = StyleSheet.create({
   title: { fontSize: 14, fontWeight: '600', color: C.ink, minHeight: 36 },
   price: { fontSize: 15, fontWeight: '800', color: C.danger },
   row: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  unverified: { fontSize: 11, color: '#94A3B8', fontWeight: '600' },
   meta: { fontSize: 12, color: C.muted, flex: 1 },
   heart: { position: 'absolute', right: 6, top: 6, width: 32, height: 32, borderRadius: 16, backgroundColor: 'rgba(255,255,255,.92)', alignItems: 'center', justifyContent: 'center' },
   vip: { position: 'absolute', left: 6, bottom: 6, backgroundColor: '#D97706', borderRadius: 6, paddingHorizontal: 7, paddingVertical: 2 },

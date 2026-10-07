@@ -1,7 +1,6 @@
 'use client';
 
 import { VipBadge } from './VipBadge';
-import { SellerAvatar } from './SellerAvatar';
 import { Ic } from './Ic';
 import { VideoBadge } from './VideoBadge';
 import Link from 'next/link';
@@ -13,7 +12,7 @@ import { readSession } from '../lib/auth';
 import {
   Search, MapPin, ChevronLeft, ChevronRight, X, ArrowUp, Sparkles,
   Clock, CheckCircle2, Gift, List, Eye, Crown,
-  MessageSquare, ChevronDown, BadgeCheck, Bell, Flag, Flame, Link2, Heart, Share2, EyeOff } from 'lucide-react';
+  MessageSquare, ChevronDown, Bell, Flag, Flame, Link2, Heart, Share2, EyeOff } from 'lucide-react';
 import { api, apiGet, memberRequest, type Product } from '../lib/api';
 import { useFavorites } from '../lib/favorites';
 import { CATEGORY_ENGINE_TAXONOMY } from '../lib/marketplace';
@@ -179,10 +178,7 @@ function ProductCard({ product, viewMode = 'GRID_4' }: { product: Product; viewM
           <div className="location-row" style={{ display: 'flex', alignItems: 'center', gap: 5, color: '#64748b' }}>
             <MapPin size={13} /> {product.location || 'Quy Nhơn'}
           </div>
-          <div className="card-seller-name" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 2, color: '#475569' }}>
-            <span style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0, overflowWrap: 'anywhere' }}><SellerAvatar name={product.sellerName} url={product.sellerAvatar} /><span style={{ minWidth: 0 }}>{product.sellerName}</span></span>
-            {product.sellerVerified ? <span className="verified-badge" style={{ alignSelf: 'flex-start' }}><Ic i={BadgeCheck}/>Đã xác thực</span> : <span className="unverified-badge" style={{ alignSelf: 'flex-start' }} title="Người bán chưa xác minh số điện thoại và CCCD">Chưa xác thực</span>}
-          </div>
+          
           <div className="card-posted-date" style={{ display: 'flex', alignItems: 'center', gap: 5, color: '#64748b' }}>
             <Clock size={13} /> Đăng {new Date(product.postedAt).toLocaleDateString('vi-VN')}
           </div>

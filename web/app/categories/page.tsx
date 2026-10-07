@@ -2,11 +2,10 @@
 
 import { Ic } from '../../components/Ic';
 import { VipBadge } from '../../components/VipBadge';
-import { SellerAvatar } from '../../components/SellerAvatar';
 import Link from 'next/link';
 import { useCallback, useEffect, useRef, useState, Suspense, type ReactNode } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { ChevronLeft, ChevronRight, Flame, Filter, MapPin as MapPinIcon, BadgeCheck, Heart } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Flame, Filter, MapPin as MapPinIcon, Heart } from 'lucide-react';
 import { api, type Product } from '../../lib/api';
 import { VideoBadge } from '../../components/VideoBadge';
 import { formatVnd, CATEGORY_ENGINE_TAXONOMY, LISTING_INTENTS, ParentCategorySpec, SubCategorySpec } from '../../lib/marketplace';
@@ -87,10 +86,7 @@ function ProductCard({ product }: { product: Product }) {
           <div className="location-row" style={{display:'flex', alignItems:'center', gap:4, color:'#64748b'}}>
             <MapPinIcon size={13} /> {product.location || 'Quy Nhơn'}
           </div>
-          <div className="card-seller-name" style={{fontSize:12, color:'#475569', marginTop:2, display:'flex', flexDirection:'column', alignItems:'flex-start', gap:2}}>
-            <span style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0, overflowWrap: 'anywhere' }}><SellerAvatar name={product.sellerName} url={product.sellerAvatar} /><span style={{ minWidth: 0 }}>{product.sellerName}</span></span>
-            {product.sellerVerified ? <span className="verified-badge" style={{ alignSelf: 'flex-start' }}><Ic i={BadgeCheck}/>Đã xác thực</span> : <span className="unverified-badge" style={{ alignSelf: 'flex-start' }} title="Người bán chưa xác minh số điện thoại và CCCD">Chưa xác thực</span>}
-          </div>
+          
         </Link>
       </div>
     </article>
