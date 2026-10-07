@@ -31,8 +31,10 @@ const config: ExpoConfig = {
     'expo-router',
     'expo-secure-store',
     ['expo-splash-screen', { image: './assets/splash-icon.png', imageWidth: 200, resizeMode: 'contain', backgroundColor: '#FFFFFF' }],
+    // Phải đứng TRƯỚC expo-notifications: mod của Expo chạy ngược thứ tự khai báo, nên plugin này mới chạy sau khi meta-data được thêm.
+    './plugins/withFirebaseColorFix',
     ['expo-notifications', { icon: './assets/notification-icon.png', color: '#00733E' }],
-    ...(hasGoogleServices ? ['@react-native-firebase/app', '@react-native-firebase/messaging', './plugins/withFirebaseColorFix'] as const : []),
+    ...(hasGoogleServices ? ['@react-native-firebase/app', '@react-native-firebase/messaging'] as const : []),
     ['expo-build-properties', { ios: { useFrameworks: 'static', deploymentTarget: '16.4' }, android: { minSdkVersion: 26 } }],
   ],
   experiments: { typedRoutes: true },
