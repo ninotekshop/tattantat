@@ -8,6 +8,7 @@ import { useAuth } from '@/lib/auth';
 import { C, R, shadow } from '@/lib/theme';
 import type { Me } from '@/lib/types';
 import { Avatar } from '@/components/ui';
+import TrustBadge from '@/components/TrustBadge';
 import { LoginRequired } from '@/components/LoginRequired';
 
 function Row({ icon: Icon, label, onPress, danger }: { icon: LucideIcon; label: string; onPress: () => void; danger?: boolean }) {
@@ -40,11 +41,17 @@ export default function Account() {
         <Avatar name={me?.full_name ?? session.user.fullName} url={media(me?.avatar_url ?? session.user.avatarUrl)} size={64} />
         <View style={{ flex: 1 }}>
           <Text style={st.name}>{me?.full_name ?? session.user.fullName}</Text>
+          <TrustBadge userId={session.user.id} />
           <Text style={st.sub}>{me?.email ?? me?.phone ?? 'Xem và sửa hồ sơ'}</Text>
           {me?.phone_verified ? <Text style={st.badge}>✓ Đã xác minh SĐT</Text> : null}
         </View>
         <ChevronRight size={20} color={C.muted} />
       </Pressable>
+      {!(me?.avatar_url ?? session.user.avatarUrl) ? (
+        <Pressable onPress={() => router.push('/edit-profile')} style={{ marginHorizontal: 14, marginTop: 8, padding: 12, borderRadius: 12, backgroundColor: C.brandSoft }}>
+          <Text style={{ color: C.brandDark, fontSize: 13.5, lineHeight: 19, fontWeight: '600' }}>Thêm ảnh chân dung thật để tăng điểm uy tín khi giao dịch. Chạm để cập nhật ảnh đại diện.</Text>
+        </Pressable>
+      ) : null}
 
       <Text style={st.groupTitle}>Mua bán</Text>
       <View style={st.group}>
@@ -57,7 +64,7 @@ export default function Account() {
       <Text style={st.groupTitle}>Tài khoản</Text>
       <View style={st.group}>
         <Row icon={UserRound} label="Hồ sơ cá nhân" onPress={() => router.push('/edit-profile')} />
-        <Row icon={ShieldCheck} label="Xác minh tài khoản (trên web)" onPress={() => web('/xac-minh')} />
+        <Row icon={ShieldCheck} label="Xác minh tài khoản" onPress={() => router.push('/verify')} />
         <Row icon={Bot} label="Trợ lý TTT" onPress={support} />
       </View>
 

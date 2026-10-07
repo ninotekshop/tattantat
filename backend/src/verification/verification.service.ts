@@ -4,6 +4,8 @@ import { DatabaseService } from '../database/database.service';
 import { NotificationsService } from '../account/notifications.service';
 import { StorageService } from '../storage/storage.service';
 import { AdminAuditLogService } from '../admin/admin-audit-log.service';
+import { sendZnsOtp, znsOtpEnabled } from '../auth/zns-otp';
+import { triggerTrustRecalc } from '../trust/trust.service';
 
 const BUCKET = 'identity-docs';
 const ok = <T>(data: T, message: string | null = null) => ({ success: true, data, message, errorCode: null });
@@ -35,6 +37,11 @@ export class VerificationService implements OnModuleInit {
 
   // ---------- SĐT ----------
   private async sendSms(phone: string, code: string) {
+    // Ưu tiên gửi mã qua Zalo (ZNS eTelecom) khi đã cấu hình.
+    if (znsOtpEnabled()) {
+      try { await sendZnsOtp(phone, code); return true; }
+      catch (e) { throw new BadRequestException((e as Error).message || 'Không gửi được mã qua Zalo. Vui lòng thử lại sau.'); }
+    }
     const url = process.env.SMS_WEBHOOK_URL;
     const message = `Ma xac minh Tat Tan Tat cua ban la ${code}. Co hieu luc 5 phut. Khong chia se ma nay cho bat ky ai.`;
     if (!url) { this.log.warn(`[SMS giả lập] ${phone}: ${message}`); return false; }
@@ -62,7 +69,7 @@ export class VerificationService implements OnModuleInit {
     await this.db.query(`INSERT INTO phone_otps(user_id,phone,code_hash,expires_at) VALUES($1,$2,$3,now()+interval '5 minutes')`, [uid, phone, sha(`${uid}:${phone}:${code}`)]);
     const sent = await this.sendSms(phone, code);
     const dev = !sent && process.env.NODE_ENV !== 'production';
-    return ok({ phone, expiresInSeconds: 300, ...(dev ? { devCode: code } : {}) }, sent ? `Đã gửi mã xác minh tới ${phone}.` : dev ? 'Chế độ thử nghiệm: chưa cấu hình SMS, mã hiển thị bên dưới.' : `Đã ghi nhận yêu cầu cho ${phone}.`);
+    return ok({ phone, expiresInSeconds: 300, ...(dev ? { devCode: code } : {}) }, sent ? `Đã gửi mã xác minh qua Zalo tới ${phone}.` : dev ? 'Chế độ thử nghiệm: chưa cấu hình SMS, mã hiển thị bên dưới.' : `Đã ghi nhận yêu cầu cho ${phone}.`);
   }
   async confirmPhone(uid: string, code: string) {
     const row = (await this.db.query(`SELECT id, phone, code_hash, attempts FROM phone_otps WHERE user_id=$1 AND consumed_at IS NULL AND expires_at > now() ORDER BY created_at DESC LIMIT 1`, [uid])).rows[0];
@@ -89,6 +96,7 @@ export class VerificationService implements OnModuleInit {
     const taken = (await this.db.query(`SELECT 1 FROM users WHERE phone=$1 AND id<>$2 AND COALESCE(phone_verified,false) LIMIT 1`, [phone, uid])).rowCount;
     if (taken) throw new BadRequestException('Số điện thoại này đã được xác minh bởi tài khoản khác.');
     await this.db.query(`UPDATE users SET phone=$1, phone_verified=true, updated_at=now() WHERE id=$2`, [phone, uid]);
+    triggerTrustRecalc(uid, 'phone_verified');
     void this.notifications.create(uid, 'ACCOUNT_PHONE_VERIFIED', 'Đã xác minh số điện thoại', `Số điện thoại ${phone} đã được xác minh cho tài khoản của bạn. Hoàn tất xác minh CCCD để nhận huy hiệu “Đã xác thực”.`, 'ACCOUNT', uid).catch(() => undefined);
     return ok({ phone, phoneVerified: true }, 'Đã xác minh số điện thoại.');
   }
@@ -180,6 +188,7 @@ export class VerificationService implements OnModuleInit {
       if (action === 'APPROVE') await c.query(`UPDATE users SET is_verified=true, updated_at=now() WHERE id=$1`, [v.user_id]);
       return v;
     });
+    triggerTrustRecalc(row.user_id, action === 'APPROVE' ? 'identity_verified' : 'identity_rejected');
     void this.audit?.log(adminId, 'Admin', action === 'APPROVE' ? 'IDENTITY_APPROVED' : 'IDENTITY_REJECTED', 'User', row.user_id, { verificationId: id, reason: reason ?? null });
     void this.notifications.create(row.user_id, action === 'APPROVE' ? 'ACCOUNT_VERIFIED' : 'IDENTITY_REJECTED', action === 'APPROVE' ? 'Đã xác minh danh tính' : 'Hồ sơ xác minh bị từ chối', action === 'APPROVE' ? 'Tài khoản của bạn đã có huy hiệu Đã xác thực.' : `Lý do: ${String(reason).trim()}. Bạn có thể gửi lại hồ sơ.`, 'USER', row.user_id).catch(() => undefined);
     return ok({ id, status: action === 'APPROVE' ? 'APPROVED' : 'REJECTED' }, action === 'APPROVE' ? 'Đã duyệt hồ sơ.' : 'Đã từ chối hồ sơ.');

@@ -7,6 +7,7 @@ import { FinanceAdminGuard } from '../finance/finance-admin.guard';
 import { ModeratorGuard } from '../admin/moderator.guard';
 import { ModerationBacklogService } from './moderation-backlog.service';
 import { ModerationPolicyService, type ModerationSettings } from './moderation-policy.service';
+import { triggerTrustRecalc } from '../trust/trust.service';
 
 class SettingsDto { @IsObject() settings!: Partial<ModerationSettings>; }
 class BulkDto {
@@ -40,6 +41,7 @@ export class ModerationAdminController {
       ? (await this.db.query(`UPDATE products SET status='ACTIVE', published_at=COALESCE(published_at,NOW()), updated_at=NOW() WHERE id=ANY($1::uuid[]) AND status='PENDING_REVIEW' AND deleted_at IS NULL RETURNING id, seller_id, title`, [ids])).rows
       : (await this.db.query(`UPDATE products SET status='REJECTED', updated_at=NOW() WHERE id=ANY($1::uuid[]) AND status='PENDING_REVIEW' AND deleted_at IS NULL RETURNING id, seller_id, title`, [ids])).rows;
     for (const row of rows) {
+      triggerTrustRecalc(row.seller_id, dto.action === 'approve' ? 'listing_approved' : 'listing_rejected');
       await this.policy.logEvent(row.id, 'ADMIN', dto.action === 'approve' ? 'APPROVED' : 'REJECTED', reason ? [reason] : [], r.user.id);
       void this.notifications.create(row.seller_id, dto.action === 'approve' ? 'LISTING_APPROVED' : 'LISTING_REJECTED',
         dto.action === 'approve' ? 'Tin đăng đã được duyệt' : 'Tin đăng bị từ chối',

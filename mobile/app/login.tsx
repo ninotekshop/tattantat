@@ -11,6 +11,9 @@ import type { Session } from '@/lib/session';
 import { appleAvailable, appleLogin, confirmZaloOtp, googleLogin, sendZaloOtp, webLogin } from '@/lib/social';
 import { C, R } from '@/lib/theme';
 
+/** Tạm khoá đăng nhập Facebook cho tới khi ứng dụng Meta được duyệt. Đặt false để bật lại. */
+const FACEBOOK_PAUSED = true;
+
 type Step = 'start' | 'password' | 'otp' | 'zalo';
 
 /** Đăng nhập / Đăng ký: Google, Facebook, Zalo (+ Apple trên iOS) hoặc nhập số điện thoại → mật khẩu hoặc mã OTP qua Zalo. */
@@ -82,7 +85,7 @@ export default function Login() {
   <Social title="Tiếp tục với Google" icon={<GoogleIcon />} loading={busy === 'google'} onPress={() => run('google', googleLogin)} />
                 <Image pointerEvents="none" source={require('../assets/mascot.png')} style={st.mascot} contentFit="contain" />
               </View>
-              <Social title="Tiếp tục với Facebook" icon={<FacebookIcon />} loading={busy === 'facebook'} onPress={() => run('facebook', () => webLogin('facebook'))} />
+              <Social title="Tiếp tục với Facebook" icon={<FacebookIcon />} loading={busy === 'facebook'} onPress={() => { if (FACEBOOK_PAUSED) { setError('Chức năng đăng nhập Facebook đang hoàn thiện, Quý khách vui lòng thử lại sau.'); return; } void run('facebook', () => webLogin('facebook')); }} />
               <Social title="Tiếp tục với Zalo" icon={<ZaloIcon />} onPress={() => { setError(''); setInfo(''); setStep('zalo'); }} />
               {apple ? <Social title="Tiếp tục với Apple" icon={<AppleIcon />} loading={busy === 'apple'} onPress={() => run('apple', appleLogin)} /> : null}
 
@@ -160,11 +163,11 @@ export default function Login() {
 
           <View style={{ flex: 1, minHeight: 40 }} />
           <View style={st.footLinks}>
-            <Pressable onPress={() => openSite('/regulations')} style={{ flexShrink: 1 }}><Text style={st.footText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>Quy chế sàn</Text></Pressable>
+            <Pressable onPress={() => openSite('/regulations')}><Text style={st.footText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>Quy chế sàn</Text></Pressable>
             <View style={st.sep} />
-            <Pressable onPress={() => openSite('/privacy')} style={{ flexShrink: 1 }}><Text style={st.footText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>Chính sách bảo mật</Text></Pressable>
+            <Pressable onPress={() => openSite('/privacy')}><Text style={st.footText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>Chính sách bảo mật</Text></Pressable>
             <View style={st.sep} />
-            <Pressable onPress={() => router.push('/support')} style={{ flexShrink: 1 }}><Text style={st.footText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>Liên hệ hỗ trợ</Text></Pressable>
+            <Pressable onPress={() => router.push('/support')}><Text style={st.footText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>Liên hệ hỗ trợ</Text></Pressable>
           </View>
           <Image source={require('../assets/logo.png')} style={st.brand} contentFit="contain" />
           <Pressable hitSlop={8} onPress={() => Linking.openURL(SITE_URL).catch(() => undefined)} style={{ alignSelf: 'center', marginTop: 6 }}>

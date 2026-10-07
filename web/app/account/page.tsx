@@ -10,6 +10,8 @@ import { MemberArea } from '../../components/MemberArea';
 import { memberRequest, type Product } from '../../lib/api';
 import { readSession, saveSession, type WebSession } from '../../lib/auth';
 import { listingPrice, type ListingSummary } from '../../lib/listings';
+import TrustBadge from '../../components/TrustBadge';
+import ReferralCard from '../../components/ReferralCard';
 type Profile = { id: string; full_name: string; avatar_url?: string | null; email: string | null; phone: string | null; phone_verified: boolean };
 type Notice = { id: string; type?: string; title: string; content: string; is_read: boolean; created_at: string; reference_type: string; reference_id: string };
 type Block = { id: string; full_name: string };
@@ -81,10 +83,10 @@ function Account({ session }: { session: WebSession }) {
         {loading ? <div className="ac-skel">{[0, 1, 2].map(i => <i key={i} />)}</div> : <section role="tabpanel" aria-label={sections[section]}>
 
           {section === 'profile' && profile && <form className="ac-card" onSubmit={save}>
-            <div className="ac-card-h"><h2><User size={19} />Hồ sơ cá nhân</h2><p>Thông tin hiển thị với người mua và người bán khi giao dịch.</p></div>
+            <div className="ac-card-h"><h2><User size={19} />Hồ sơ cá nhân</h2><p>Thông tin hiển thị với người mua và người bán khi giao dịch.</p><div style={{ marginTop: 8 }}><TrustBadge userId={profile.id} /></div></div>
             <div className="ac-avatar-edit">
               <div className="ac-avatar lg">{profile.avatar_url ? <img src={profile.avatar_url} alt="Ảnh đại diện" /> : (name.trim()[0] || 'T').toUpperCase()}</div>
-              <div><label className="ac-btn"><Pencil size={15} />Đổi ảnh đại diện<input type="file" accept="image/jpeg,image/png,image/webp" hidden disabled={busy} onChange={e => { void uploadAvatar(e.target.files?.[0]); e.target.value = ''; }} /></label><p className="ac-hint">JPG, PNG hoặc WebP. Ảnh sẽ được cắt vuông tự động.</p></div>
+              <div><label className="ac-btn"><Pencil size={15} />Đổi ảnh đại diện<input type="file" accept="image/jpeg,image/png,image/webp" hidden disabled={busy} onChange={e => { void uploadAvatar(e.target.files?.[0]); e.target.value = ''; }} /></label><p className="ac-hint">JPG, PNG hoặc WebP. Ảnh sẽ được cắt vuông tự động.</p><p className="ac-hint" style={{ color: '#0a7a45', fontWeight: 600 }}>Dùng ảnh chân dung thật, rõ khuôn mặt (không dùng logo hay ảnh người khác). Hồ sơ có ảnh thật giúp người mua và người bán tin tưởng hơn và tăng điểm uy tín khi giao dịch.</p></div>
             </div>
             <label className="ac-field"><span>Họ và tên</span><input value={name} onChange={e => setName(e.target.value)} minLength={2} maxLength={120} required /></label>
             <div className="ac-info">
@@ -96,6 +98,7 @@ function Account({ session }: { session: WebSession }) {
               <a className="ac-btn" href="/xac-minh"><ShieldCheck size={16} />Xác minh tài khoản (SĐT, CCCD)</a>
             </div>
           </form>}
+          {section === 'profile' && profile && <ReferralCard />}
 
           {section === 'listings' && <>
             <div className="ac-bar"><h2>Tin đã đăng <small>{products.length}</small></h2><a className="ac-btn primary" href="/sell"><PlusCircle size={16} />Đăng tin / tiếp tục bản nháp ({drafts.length})</a></div>

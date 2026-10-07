@@ -29,6 +29,7 @@ import { PaymentsModule } from './payments/payments.module';
 import { ReviewsModule } from './reviews/reviews.module';
 import { ListingsModule } from './listings/listings.module';
 import { SystemModule } from './system/system.module';
+import { TrustModule } from './trust/trust.module';
 
 @Module({
   imports: [
@@ -61,6 +62,7 @@ import { SystemModule } from './system/system.module';
     ReviewsModule,
     ListingsModule,
     SystemModule,
+    TrustModule,
   ],
   controllers: [HealthController],
 })

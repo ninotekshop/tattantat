@@ -4,6 +4,7 @@ import { Transform } from 'class-transformer';
 import * as bcrypt from 'bcryptjs';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { DatabaseService } from '../database/database.service';
+import { triggerTrustRecalc } from '../trust/trust.service';
 
 class RegisterPushDeviceDto {
   @IsString() @MinLength(20) @MaxLength(4096) token!: string;
@@ -39,9 +40,10 @@ export class AccountController {
   @Patch('me')
   async update(@Req() request: { user: { id: string } }, @Body() body: UpdateProfileDto) {
     const result = await this.db.query(
-      'UPDATE users SET full_name=COALESCE($1,full_name), avatar_url=COALESCE($2,avatar_url), updated_at=NOW() WHERE id=$3 RETURNING id, full_name, avatar_url, email, role',
+      `UPDATE users SET full_name=COALESCE($1,full_name), avatar_url=COALESCE($2,avatar_url), avatar_custom=CASE WHEN $2::text IS NOT NULL AND $2::text !~* '(googleusercontent|fbcdn|facebook\.com|fbsbx|zdn\.vn|zalo|appleid|apple\.com)' THEN TRUE ELSE avatar_custom END, updated_at=NOW() WHERE id=$3 RETURNING id, full_name, avatar_url, email, role`,
       [body.fullName || null, body.avatarUrl || null, request.user.id]
     );
+    if (body.avatarUrl) triggerTrustRecalc(request.user.id, 'portrait_updated');
     return { success: true, data: result.rows[0], message: 'Đã cập nhật thông tin cá nhân thành công', errorCode: null };
   }
 

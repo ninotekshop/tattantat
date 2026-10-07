@@ -2,10 +2,11 @@ import { Tabs } from 'expo-router';
 import { View } from 'react-native';
 import { House, ClipboardList, MessageCircle, Plus, UserRound } from 'lucide-react-native';
 import { C } from '@/lib/theme';
+import { tap } from '@/lib/haptic';
 
 export default function TabsLayout() {
   return (
-    <Tabs screenOptions={{
+    <Tabs screenListeners={{ tabPress: () => tap() }} screenOptions={{
       tabBarActiveTintColor: C.brand, tabBarInactiveTintColor: '#94A3B8',
       tabBarLabelStyle: { fontSize: 11, fontWeight: '600' }, headerShadowVisible: false,
       headerTitleStyle: { fontWeight: '800' }, tabBarStyle: { borderTopColor: C.line },

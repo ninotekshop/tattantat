@@ -3,7 +3,7 @@ import { FlatList, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
-import { Bell, Search } from 'lucide-react-native';
+import { Bell, Heart, Search } from 'lucide-react-native';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { C, R, shadow } from '@/lib/theme';
@@ -49,21 +49,31 @@ export default function Home() {
       .catch(() => undefined);
   }, [session, list.refreshing]);
 
-  const header = (
-    <View style={{ paddingBottom: 10 }}>
+  /** Phần đầu cố định (không cuộn): logo, tim, chuông, ô tìm kiếm. */
+  const fixedHeader = (
+    <View style={st.fixed}>
       <View style={st.top}>
         <Image source={require('../../assets/logo.png')} style={{ width: 132, height: 38 }} contentFit="contain" />
-        <Pressable hitSlop={10} onPress={() => router.push(session ? '/notifications' : '/login')} style={st.bell}>
-          <Bell size={22} color={C.ink} />
-          {unread > 0 ? <View style={st.badge}><Text style={st.badgeText}>{unread > 99 ? '99+' : unread}</Text></View> : null}
-        </Pressable>
+        <View style={{ flexDirection: 'row', gap: 10 }}>
+          <Pressable accessibilityLabel="Tin đã lưu" hitSlop={10} onPress={() => router.push(session ? '/favorites' : '/login')} style={st.bell}>
+            <Heart size={22} color={C.ink} />
+          </Pressable>
+          <Pressable accessibilityLabel="Thông báo" hitSlop={10} onPress={() => router.push(session ? '/notifications' : '/login')} style={st.bell}>
+            <Bell size={22} color={C.ink} />
+            {unread > 0 ? <View style={st.badge}><Text style={st.badgeText}>{unread > 99 ? '99+' : unread}</Text></View> : null}
+          </Pressable>
+        </View>
       </View>
 
       <Pressable onPress={() => router.push('/search')} style={st.search}>
         <Search size={20} color={C.brand} />
         <Text style={st.searchText}>Bạn muốn mua gì?</Text>
       </Pressable>
+    </View>
+  );
 
+  const header = (
+    <View style={{ paddingBottom: 10 }}>
       <View style={st.hero}>
         <View style={{ flex: 1 }}>
           <Text style={st.heroTitle}>Mua bán dễ dàng</Text>
@@ -105,6 +115,7 @@ export default function Home() {
 
   return (
     <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: C.paper }}>
+      {fixedHeader}
       <FlatList
         data={list.items}
         keyExtractor={i => i.id}
@@ -123,6 +134,7 @@ export default function Home() {
 }
 
 const st = StyleSheet.create({
+  fixed: { backgroundColor: C.paper, paddingBottom: 2, zIndex: 10 },
   top: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 14, paddingTop: 6 },
   bell: { width: 42, height: 42, borderRadius: 21, backgroundColor: C.white, alignItems: 'center', justifyContent: 'center', ...shadow },
   badge: { position: 'absolute', top: 2, right: 2, minWidth: 18, height: 18, borderRadius: 9, backgroundColor: C.danger, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4 },

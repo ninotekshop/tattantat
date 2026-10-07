@@ -54,7 +54,9 @@ export class AdminUsersController {
                 CASE WHEN u.is_verified THEN 'VERIFIED' ELSE 'UNVERIFIED' END AS verification_status,
                 u.created_at,
                 (SELECT COUNT(*)::int FROM products p WHERE p.seller_id = u.id AND p.deleted_at IS NULL) AS posts_count,
-                (SELECT COUNT(*)::int FROM orders o WHERE o.buyer_id = u.id) AS orders_count
+                (SELECT COUNT(*)::int FROM orders o WHERE o.buyer_id = u.id) AS orders_count,
+                (SELECT t.score FROM user_trust_scores t WHERE t.user_id = u.id) AS trust_score,
+                (SELECT t.stars FROM user_trust_scores t WHERE t.user_id = u.id) AS trust_stars
          FROM users u
          WHERE ($1::text IS NULL OR u.full_name ILIKE $1 OR u.email ILIKE $1 OR u.phone ILIKE $1 OR u.id::text ILIKE $1)
            AND ($2::text IS NULL OR u.status::text = $2)

@@ -7,8 +7,9 @@ import { MemberArea } from '../../components/MemberArea';
 import { ApiError, memberRequest, uploadRequest } from '../../lib/api';
 import type { WebSession } from '../../lib/auth';
 import { mergeMessages, selectConversation } from '../../lib/chat-ui';
+import TrustBadge from '../../components/TrustBadge';
 
-type Chat = { id: string; product_id: string; product_title: string; product_status: string; other_name: string; last_message: string | null; seller_id_is_me?: boolean; product_price?: string | null; product_price_mode?: string | null; product_address?: string | null; product_image?: string | null };
+type Chat = { id: string; product_id: string; product_title: string; product_status: string; other_id?: string; other_name: string; last_message: string | null; seller_id_is_me?: boolean; product_price?: string | null; product_price_mode?: string | null; product_address?: string | null; product_image?: string | null };
 const priceText = (c: Chat) => c.product_price_mode === 'FREE' ? 'Miễn phí' : c.product_price_mode === 'CONTACT' || !c.product_price ? 'Liên hệ' : Number(c.product_price).toLocaleString('vi-VN') + ' đ';
 function Thumb({ src, size }: { src?: string | null; size: number }) {
   const [bad, setBad] = useState(false);
@@ -243,7 +244,7 @@ function Messages({ session }: { session: WebSession }) {
       </aside>
       {!chat && <section className="msg-pane msg-none"><MessageSquare size={44} /><h2>Chọn một cuộc trò chuyện</h2><p>Nội dung trao đổi về từng tin đăng sẽ hiển thị ở đây.</p></section>}
       {chat && <section className="msg-pane">
-        <div className="msg-head"><button type="button" className="msg-back" aria-label="Quay lại danh sách" onClick={() => setMobileList(true)}><ChevronLeft size={22} /></button><h2>{chat.other_name}</h2><a className="msg-prodlink" href={'/products/' + chat.product_id} title={chat.product_title}><span>{chat.product_title}</span><ArrowRight size={14} /></a></div>
+        <div className="msg-head"><button type="button" className="msg-back" aria-label="Quay lại danh sách" onClick={() => setMobileList(true)}><ChevronLeft size={22} /></button><h2>{chat.other_name}</h2>{chat.other_id && <TrustBadge userId={chat.other_id} variant="compact" />}<a className="msg-prodlink" href={'/products/' + chat.product_id} title={chat.product_title}><span>{chat.product_title}</span><ArrowRight size={14} /></a></div>
         {chat.product_status !== 'ACTIVE' && <p className="member-muted">Tin không còn mở bán. Bạn vẫn có thể tiếp tục trao đổi tại đây.</p>}
         <p style={{ fontSize: 12, background: '#eef7f1', padding: '6px 10px', borderRadius: 8 }}><Ic i={ShieldCheck}/>Không chuyển khoản trước cho người lạ, không chia sẻ mã OTP/mật khẩu. Ưu tiên giao dịch có bảo vệ trong Tất Tần Tật.</p>
         <div ref={history} className="chat-history" role="log" aria-label="Lịch sử tin nhắn" aria-live="polite">

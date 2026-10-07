@@ -18,7 +18,7 @@ export default function VerifyPage() { return <MemberArea>{() => <Verify />}</Me
 function Verify() {
   const router = useRouter();
   const [st, setSt] = useState<Status | null>(null);
-  const [phone, setPhone] = useState('');
+  const [phone, setPhone] = useState(''); const [otpSent, setOtpSent] = useState(false); const [code, setCode] = useState('');
   const [capPhone, setCapPhone] = useState<CaptchaValue>({ token: '', answer: '' }); const [capId, setCapId] = useState<CaptchaValue>({ token: '', answer: '' }); const [capKey, setCapKey] = useState(0);
   const [name, setName] = useState(''); const [idNo, setIdNo] = useState(''); const [files, setFiles] = useState<{ front?: File; back?: File; selfie?: File }>({});
   const [busy, setBusy] = useState(false); const [error, setError] = useState(''); const [ok, setOk] = useState('');
@@ -30,9 +30,15 @@ function Verify() {
     setBusy(true); setError(''); setOk('');
     try { const m = await fn(); if (m) setOk(m); await load(); } catch (e) { setError(e instanceof Error ? e.message : 'Có lỗi xảy ra.'); } finally { setBusy(false); setCapKey(k => k + 1); }
   }
-  const requestPhone = () => run(async () => {
-    const r = await memberRequest<{ status: string }>('/me/verification/phone/request', 'POST', { phone, captchaToken: capPhone.token, captchaAnswer: capPhone.answer });
-    return r && 'Đã gửi yêu cầu. Quản trị viên sẽ duyệt và thông báo kết quả cho bạn.';
+  const sendOtp = () => run(async () => {
+    await memberRequest('/me/verification/phone/send-otp', 'POST', { phone });
+    setOtpSent(true); setCode('');
+    return 'Đã gửi mã OTP qua Zalo. Vui lòng nhập mã gồm 6 số.';
+  });
+  const confirmOtp = () => run(async () => {
+    await memberRequest('/me/verification/phone/confirm', 'POST', { code });
+    setOtpSent(false); setCode('');
+    return 'Đã xác minh số điện thoại.';
   });
   const submitId = () => run(async () => {
     if (!files.front || !files.back || !files.selfie) throw new Error('Vui lòng chọn đủ 3 ảnh.');
@@ -51,13 +57,19 @@ function Verify() {
     {!st ? <p>Đang tải…</p> : <>
       <div className="bl-card"><h3 style={{ marginTop: 0 }}>1. Số điện thoại {st.phoneVerified && <span style={{ color: '#1c7c4a', fontSize: 14 }}><Ic i={BadgeCheck}/>Đã xác minh</span>}</h3>
         {st.phoneVerified ? <p>Số <b>{st.phone}</b> đã được xác minh.</p>
-          : st.phoneRequest?.status === 'PENDING' ? <p>Yêu cầu xác minh số <b>{st.phoneRequest.phone}</b> đang chờ quản trị viên duyệt. Bạn sẽ nhận được thông báo khi có kết quả.</p>
           : <div style={{ display: 'grid', gap: 10 }}>
-            {st.phoneRequest?.status === 'REJECTED' && <div className="bl-msg err">Yêu cầu trước cho số {st.phoneRequest.phone} bị từ chối: {st.phoneRequest.rejectReason}. Bạn có thể kiểm tra lại số và gửi lại.</div>}
-            <input style={inp} inputMode="tel" placeholder="Số điện thoại, ví dụ 0912345678" value={phone} onChange={e => setPhone(e.target.value)} />
-            <small style={{ color: '#71817b' }}>Quản trị viên sẽ kiểm tra và duyệt thủ công, không cần nhập mã OTP.</small>
-            <Captcha value={capPhone} onChange={setCapPhone} resetKey={capKey} />
-            <div><button className="bl-btn" disabled={busy || !phone.trim() || capPhone.answer.length < 5} onClick={() => void requestPhone()}>Gửi yêu cầu xác minh</button></div>
+            <input style={inp} inputMode="tel" placeholder="Số điện thoại Zalo, ví dụ 0912345678" value={phone} onChange={e => setPhone(e.target.value)} disabled={otpSent} />
+            {!otpSent ? <>
+              <small style={{ color: '#71817b' }}>Chúng tôi sẽ gửi mã OTP 6 số qua Zalo tới số này. Xác minh xong ngay, không cần quản trị viên duyệt.</small>
+              <div><button className="bl-btn" disabled={busy || !phone.trim()} onClick={() => void sendOtp()}>Gửi mã OTP qua Zalo</button></div>
+            </> : <>
+              <input style={inp} inputMode="numeric" maxLength={6} placeholder="Nhập mã OTP 6 số" value={code} onChange={e => setCode(e.target.value.replace(/\D/g, ''))} />
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                <button className="bl-btn" disabled={busy || code.length < 6} onClick={() => void confirmOtp()}>Xác nhận</button>
+                <button className="bl-btn" disabled={busy} onClick={() => void sendOtp()}>Gửi lại mã</button>
+                <button className="bl-btn" disabled={busy} onClick={() => { setOtpSent(false); setCode(''); }}>Đổi số</button>
+              </div>
+            </>}
           </div>}
       </div>
       <div className="bl-card"><h3 style={{ marginTop: 0 }}>2. Danh tính (CMND/CCCD) {st.identityVerified && <span style={{ color: '#1c7c4a', fontSize: 14 }}><Ic i={BadgeCheck}/>Đã xác thực</span>}</h3>

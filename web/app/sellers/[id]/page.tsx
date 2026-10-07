@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { Stars } from '../../../components/reviews/Stars';
+import TrustBadge from '../../../components/TrustBadge';
 
 type Profile = { user: { name: string; avatarUrl: string | null; verified: boolean; joinedAt: string; activeListings: number }; role: 'seller' | 'buyer'; summary: { count: number; average: number; distribution: Record<string, number> };
   reviews: { id: string; rating: number; comment: string | null; reply: string | null; created_at: string; author_name: string }[] };
@@ -33,6 +34,7 @@ export default function SellerProfilePage() {
       <section style={{ ...card, display: 'flex', gap: 16, alignItems: 'center', flexWrap: 'wrap' }}>
         {p.user.avatarUrl ? <img src={p.user.avatarUrl} alt="" style={{ width: 72, height: 72, borderRadius: '50%', objectFit: 'cover' }} /> : <div style={{ width: 72, height: 72, borderRadius: '50%', background: '#e6f6ed', display: 'grid', placeItems: 'center', fontSize: 28, color: '#007c4b', fontWeight: 800 }}>{p.user.name.slice(0, 1).toUpperCase()}</div>}
         <div><h1 style={{ margin: 0, fontSize: 22 }}>{p.user.name} {p.user.verified && <span style={{ fontSize: 12, background: '#dff3e6', color: '#137a4a', borderRadius: 10, padding: '2px 9px', verticalAlign: 'middle' }}><Ic i={BadgeCheck}/>Đã xác minh</span>}</h1>
+          <div style={{ margin: '4px 0' }}><TrustBadge userId={String(id)} /></div>
           <div style={{ color: '#64748b', fontSize: 13.5 }}>{joined(p.user.joinedAt)} · {p.user.activeListings} tin đang đăng</div></div>
       </section>
       <section style={card}>

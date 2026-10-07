@@ -12,8 +12,9 @@ class ConfirmDto { @IsOptional() @IsNumber() receivedAmount?: number; }
 class RejectDto { @IsString() @MaxLength(300) reason!: string; }
 class ExtendDto { @IsInt() days!: number; }
 class AdjustDto { @IsNumber() amount!: number; @IsString() @MaxLength(300) note!: string; }
+class RefundDto { @IsString() @MaxLength(300) reason!: string; }
 class BankDto { @IsString() @MaxLength(10) bankBin!: string; @IsString() @MaxLength(60) bankName!: string; @IsString() @MaxLength(30) accountNumber!: string; @IsString() @MaxLength(60) accountName!: string; }
-type Req_ = { user: { id: string } };
+type Req_ = { user: { id: string }; ip?: string };
 
 @Controller('billing')
 @UseGuards(JwtAuthGuard, ThrottlerGuard)
@@ -39,7 +40,8 @@ export class BillingAdminController {
   @Post('topups/:id/reject') reject(@Req() r: Req_, @Param('id') id: string, @Body() dto: RejectDto) { return this.billing.rejectTopup(r.user.id, id, dto.reason); }
   @Post('subscriptions/:id/cancel') cancel(@Req() r: Req_, @Param('id') id: string) { return this.billing.adminCancel(r.user.id, id); }
   @Post('subscriptions/:id/extend') extend(@Req() r: Req_, @Param('id') id: string, @Body() dto: ExtendDto) { return this.billing.adminExtend(r.user.id, id, dto.days); }
-  @Post('users/:userId/credit') adjust(@Req() r: Req_, @Param('userId') userId: string, @Body() dto: AdjustDto) { return this.billing.adjustCredit(r.user.id, userId, dto.amount, dto.note); }
+  @Post('users/:userId/credit') adjust(@Req() r: Req_, @Param('userId') userId: string, @Body() dto: AdjustDto) { return this.billing.adjustCredit(r.user.id, userId, dto.amount, dto.note, r.ip); }
+  @Post('topups/:id/refund') refund(@Req() r: Req_, @Param('id') id: string, @Body() dto: RefundDto) { return this.billing.refundTopup(r.user.id, id, dto.reason, r.ip); }
   @Get('bank') async bank() { return { success: true, data: await this.billing.bank(), message: null, errorCode: null }; }
   @Put('bank') saveBank(@Req() r: Req_, @Body() dto: BankDto) { return this.billing.saveBank(r.user.id, dto); }
 }

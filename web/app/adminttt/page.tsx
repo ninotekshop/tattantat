@@ -26,8 +26,10 @@ import { DisputesAdmin } from '../../components/admin/orders/DisputesAdmin';
 import { OrdersAdmin } from '../../components/admin/orders/OrdersAdmin';
 import { AdvertisingAdmin } from '../../components/admin/billing/AdvertisingAdmin';
 import { CustomerPackagesAdmin } from '../../components/admin/billing/CustomerPackagesAdmin';
+import { CoinAdmin } from '../../components/admin/billing/CoinAdmin';
 import { ListingManagementPage } from '../../components/admin/listing/ListingManagementPage';
 import { saveSession, readSession } from '../../lib/auth';
+import { AdminTrustCell } from '../../components/admin/AdminTrustCell';
 import '../admin.css';
 
 interface AdminSession {
@@ -95,6 +97,8 @@ interface UserItem {
   status: string;
   verification_status: string;
   posts_count: number;
+  trust_score?: number | null;
+  trust_stars?: number | null;
   orders_count: number;
   created_at: string;
 }
@@ -1496,6 +1500,7 @@ export default function AdminDashboardPage() {
                 { key: 'thanh-toan-online', label: 'Thanh toán đảm bảo', icon: <Wallet size={18} />, badge: bd(navCounts['thanh-toan-online'], 'red') },
               ] },
               { id: 'dt', title: 'GÓI & QUẢNG CÁO', items: [
+                { key: 'ttt-coin', label: 'Quản lý TTTCoin', icon: <DollarSign size={18} /> },
                 { key: 'goi-dich-vu', label: 'Khách hàng mua Gói', icon: <PackageCheck size={18} />, badge: bd(subscriptions.length, 'green') },
                 { key: 'goi-quang-cao', label: 'Khách hàng Quảng cáo', icon: <Megaphone size={18} />, badge: bd(advertising.length, 'blue') },
               ] },
@@ -1637,6 +1642,7 @@ export default function AdminDashboardPage() {
                       : activeNav === 'kiem-duyet' ? 'Chọn kiểm duyệt tự động hoặc thủ công, thiết lập quy tắc và xử lý hàng chờ duyệt.'
                     : activeNav === 'thong-bao' ? 'Gửi thông báo tới người dùng'
                       : activeNav === 'bang-gia-goi' ? 'Bảng giá & cấu hình gói đăng tin, đẩy tin'
+                      : activeNav === 'ttt-coin' ? 'Quản lý TTTCoin'
                       : activeNav === 'goi-dich-vu' ? 'Khách hàng mua Gói Đẩy tin & Đăng tin'
                       : activeNav === 'goi-quang-cao' ? 'Khách hàng mua Gói Quảng cáo & Banner'
                       : activeNav === 'reports' ? 'Báo cáo vi phạm & Moderation'
@@ -1656,6 +1662,7 @@ export default function AdminDashboardPage() {
                     : activeNav === 'don-hang' ? 'Theo dõi mọi đơn hàng, lọc nâng cao, xem chi tiết và dòng thời gian, đổi trạng thái vận hành, in phiếu và xuất Excel.'
                     : activeNav === 'thong-bao' ? 'Gửi thông báo từ quản trị tới toàn bộ người dùng, người bán hoặc một tài khoản cụ thể.'
                     : activeNav === 'bang-gia-goi' ? 'Thêm gói, chỉnh giá, thời lượng, hạn mức tin; mỗi lần đổi giá được lưu lịch sử kèm lý do.'
+                    : activeNav === 'ttt-coin' ? 'Thống kê TTTCoin, giao dịch nạp, hoàn nạp và điều chỉnh Coin (luôn ghi sổ cái).'
                     : activeNav === 'goi-dich-vu' ? 'Quản lý danh sách khách hàng và các shop đã mua gói đẩy tin, tăng hạn mức đăng tin trên nền tảng.'
                     : activeNav === 'goi-quang-cao' ? 'Quản lý danh sách nhà quảng cáo mua gói Banner VIP, ưu tiên hiển thị sản phẩm trên ứng dụng.'
                     : activeNav === 'reports' ? 'Xử lý các báo cáo vi phạm sản phẩm và người dùng từ cộng đồng.'
@@ -1692,6 +1699,8 @@ export default function AdminDashboardPage() {
             <ModerationAdmin authHeaders={getAuthHeaders} />
           ) : activeNav === 'thong-bao' ? (
             <AdminBroadcast authHeaders={getAuthHeaders} />
+          ) : activeNav === 'ttt-coin' ? (
+            <CoinAdmin authHeaders={getAuthHeaders} />
           ) : activeNav === 'goi-dich-vu' ? (
             <CustomerPackagesAdmin authHeaders={getAuthHeaders} />
           ) : activeNav === 'goi-quang-cao' ? (
@@ -1758,6 +1767,7 @@ export default function AdminDashboardPage() {
                       <th>Email / SĐT</th>
                       <th>Tin đăng</th>
                       <th>Đơn hàng</th>
+                      <th>Điểm uy tín</th>
                       <th>Xác minh</th>
                       <th>Trạng thái</th>
                       <th>Thao tác</th>
@@ -1774,6 +1784,7 @@ export default function AdminDashboardPage() {
                           </td>
                           <td style={{fontWeight:600}}>{u.posts_count} tin</td>
                           <td style={{fontWeight:600}}>{u.orders_count} đơn</td>
+                          <td><AdminTrustCell userId={u.id} score={u.trust_score} stars={u.trust_stars} /></td>
                           <td>
                             <span className={`status-badge ${u.verification_status === 'VERIFIED' ? 'approved' : 'pending'}`}>
                               {u.verification_status === 'VERIFIED' ? <><Ic i={BadgeCheck}/>Đã xác minh</> : 'Chưa xác minh'}

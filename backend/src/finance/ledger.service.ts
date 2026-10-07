@@ -2,10 +2,12 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { DatabaseService } from '../database/database.service';
 import { decimalToVnd } from './finance-money';
 import { LedgerLine, LedgerWriterService } from './ledger-writer.service';
+import { triggerTrustRecalc } from '../trust/trust.service';
 
 interface CompletedOrder {
   id: string;
   seller_id: string;
+  buyer_id: string;
   product_id: string;
   total_amount: string;
   platform_fee_amount: string;
@@ -25,7 +27,7 @@ export class LedgerService {
   async completeOrder(orderId: string, sellerId: string) {
     return this.db.transaction(async (client) => {
       const order = await client.query<CompletedOrder>(
-        `SELECT id, seller_id, product_id, total_amount::text, platform_fee_amount::text,
+        `SELECT id, seller_id, buyer_id, product_id, total_amount::text, platform_fee_amount::text,
                 payment_fee_amount::text, seller_payout_amount::text, shipping_fee_amount::text,
                 payment_plan, deposit_amount::text
          FROM orders WHERE id=$1 FOR UPDATE`,
@@ -52,6 +54,8 @@ export class LedgerService {
       );
       if (!eligible.rows[0]) throw new BadRequestException('Đơn hàng chưa đủ điều kiện hoàn tất');
       await client.query(`UPDATE products SET status='SOLD',updated_at=NOW() WHERE id=$1 AND status='RESERVED'`, [row.product_id]);
+      triggerTrustRecalc(sellerId, 'transaction_completed');
+      triggerTrustRecalc(row.buyer_id, 'transaction_completed');
 
       let gross = decimalToVnd(row.total_amount, 'Tổng đơn hàng');
       let platformFee = decimalToVnd(row.platform_fee_amount, 'Phí nền tảng');

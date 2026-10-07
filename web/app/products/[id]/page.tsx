@@ -12,6 +12,7 @@ import {
 import { api, memberRequest, Product } from '../../../lib/api';
 import { formatVnd } from '../../../lib/marketplace';
 import { ProductTools } from '../../../components/vertical/ProductTools';
+import TrustBadge from '../../../components/TrustBadge';
 import './listing-detail.css';
 
 function formatCondition(condition?: string | null) {
@@ -413,6 +414,7 @@ export default function ProductDetailPage() {
                     <h3>{product.sellerName}</h3>
                     {sellerInfo?.user.verified && <span className="verified-badge"><Ic i={BadgeCheck}/>Đã xác minh</span>}
                   </div>
+                  <div style={{ margin: '2px 0 4px' }}><TrustBadge userId={product.sellerId} /></div>
                   <p className="seller-joined">{sellerInfo ? <>{sellerInfo.summary.count ? <><Ic i={Star} fill="#f5a623" style={{ color: '#f5a623' }}/>{sellerInfo.summary.average.toFixed(1)} ({sellerInfo.summary.count} đánh giá) · </> : 'Chưa có đánh giá · '}{sellerInfo.user.activeListings} tin đang đăng</> : ' '}</p>
                 </div>
               </Link>

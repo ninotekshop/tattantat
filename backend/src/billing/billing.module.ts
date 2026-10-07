@@ -5,6 +5,7 @@ import { FinanceModule } from '../finance/finance.module';
 import { BillingAdminController, BillingController } from './billing.controller';
 import { BillingService } from './billing.service';
 import { BillingExpiryService } from './billing-expiry.service';
+import { CoinAdminController, WalletController } from './wallet.controller';
 
-@Module({ imports: [AuthModule, FinanceModule, AccountModule], controllers: [BillingController, BillingAdminController], providers: [BillingService, BillingExpiryService], exports: [BillingService] })
+@Module({ imports: [AuthModule, FinanceModule, AccountModule], controllers: [BillingController, BillingAdminController, WalletController, CoinAdminController], providers: [BillingService, BillingExpiryService], exports: [BillingService] })
 export class BillingModule {}

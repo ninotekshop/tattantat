@@ -27,7 +27,7 @@ export default function Messages() {
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} tintColor={C.brand} />}
       ListEmptyComponent={<Empty title="Chưa có tin nhắn" text="Bấm “Nhắn tin với người bán” ở một tin đăng để bắt đầu trò chuyện." />}
       renderItem={({ item }) => (
-        <Pressable onPress={() => router.push({ pathname: '/chat/[id]', params: { id: item.id, title: item.other_name } })} style={({ pressed }) => [st.item, pressed && { opacity: 0.85 }]}>
+        <Pressable onPress={() => router.push({ pathname: '/chat/[id]', params: { id: item.id, title: item.other_name, otherId: item.other_id } })} style={({ pressed }) => [st.item, pressed && { opacity: 0.85 }]}>
           <Image source={{ uri: media(item.product_image) }} style={st.thumb} contentFit="cover" />
           <View style={{ flex: 1, gap: 2 }}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 8 }}>

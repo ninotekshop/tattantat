@@ -11,11 +11,12 @@ import { uid } from '@/lib/format';
 import { C, R } from '@/lib/theme';
 import type { Message } from '@/lib/types';
 import { Loading } from '@/components/ui';
+import TrustBadge from '@/components/TrustBadge';
 
 const time = (iso: string) => new Date(iso).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
 
 export default function ChatRoom() {
-  const { id, title } = useLocalSearchParams<{ id: string; title?: string }>();
+  const { id, title, otherId } = useLocalSearchParams<{ id: string; title?: string; otherId?: string }>();
   const { session } = useAuth();
   const [msgs, setMsgs] = useState<Message[] | null>(null);
   const [text, setText] = useState(''), [sending, setSending] = useState(false);
@@ -44,7 +45,7 @@ export default function ChatRoom() {
   const data = [...(msgs ?? [])].reverse();
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={90}>
-      <Stack.Screen options={{ title: title || 'Tin nhắn' }} />
+      <Stack.Screen options={{ headerTitle: () => (<View><Text numberOfLines={1} style={{ fontSize: 16, fontWeight: '700', color: C.ink }}>{title || 'Tin nhắn'}</Text>{otherId ? <TrustBadge userId={otherId} compact /> : null}</View>) }} />
       {!msgs ? <Loading /> : <FlatList ref={list} inverted data={data} keyExtractor={m => m.id} contentContainerStyle={{ padding: 12, gap: 6 }}
         renderItem={({ item }) => {
           const mine = item.sender_id === session?.user.id;

@@ -10,6 +10,7 @@ import { timeAgo, vnd } from '@/lib/format';
 import { C, R, shadow } from '@/lib/theme';
 import type { Product } from '@/lib/types';
 import { Avatar, Button, ErrorBox, Loading } from '@/components/ui';
+import TrustBadge from '@/components/TrustBadge';
 
 const CONDITION: Record<string, string> = { NEW: 'Mới', LIKE_NEW: 'Như mới', USED_GOOD: 'Đã dùng, còn tốt', USED_FAIR: 'Đã dùng, có hao mòn', FOR_PARTS: 'Cần sửa / lấy linh kiện' };
 const REASONS: [string, string][] = [['FRAUD', 'Lừa đảo'], ['PROHIBITED', 'Hàng cấm'], ['SPAM', 'Tin rác / trùng lặp'], ['OTHER', 'Lý do khác']];
@@ -89,6 +90,7 @@ export default function ProductDetail() {
             <View style={{ flex: 1 }}>
               <Text style={{ fontWeight: '700', fontSize: 16, color: C.ink }}>{p.sellerName}</Text>
               <Text style={{ color: C.muted, fontSize: 13 }}>{p.sellerVerified ? 'Đã xác thực danh tính' : 'Người bán'}</Text>
+              <View style={{ marginTop: 3 }}><TrustBadge userId={p.sellerId} /></View>
             </View>
           </View>
         </View>

@@ -9,6 +9,7 @@ import { toLocalPhone, phoneVariants, verifyFirebasePhone } from './firebase-pho
 import { sendZnsOtp, znsOtpEnabled } from './zns-otp';
 import { SocialIdentity, verifyApple, verifyFacebook, verifyGoogle } from './social-verify';
 import { LoginDto, RegisterDto, RefreshDto, VerifyOtpDto, SendOtpDto, ForgotPasswordDto, ResetPasswordDto, SocialLoginDto } from './dto/auth.dto';
+import { triggerTrustRecalc } from '../trust/trust.service';
 
 const DEFAULT_JWT_REFRESH = 'tat_tan_tat_jwt_refresh_secret_key_2026';
 
@@ -177,6 +178,7 @@ export class AuthService {
     if (!user) throw new BadRequestException('Xác thực OTP không thành công');
     if (user.status !== 'ACTIVE') throw new UnauthorizedException('Tài khoản đang bị khóa hoặc chưa hoạt động.');
     await this.database.query('UPDATE users SET phone_verified = TRUE, last_login_at = NOW() WHERE id = $1', [user.id]);
+    triggerTrustRecalc(user.id, 'phone_verified');
 
     return this.envelope(await this.tokensFor(user));
   }
@@ -191,6 +193,7 @@ export class AuthService {
       user = (await this.database.query<UserRow>(`INSERT INTO users (phone, full_name, phone_verified) VALUES ($1, $2, TRUE) RETURNING id, phone, email, password_hash, full_name, avatar_url, role, status`, [local, `Thành viên ${local.slice(-4)}`])).rows[0];
     } else {
       await this.database.query('UPDATE users SET phone_verified = TRUE, last_login_at = NOW() WHERE id = $1', [user.id]);
+    triggerTrustRecalc(user.id, 'phone_verified');
       if (user.email) this.mailService.sendLoginEmail(user.email, user.full_name, 'Mã OTP qua số điện thoại').catch(() => {});
     }
     return this.envelope(await this.tokensFor(user));

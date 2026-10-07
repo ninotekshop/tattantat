@@ -6,6 +6,8 @@ import { NotificationsService } from '../account/notifications.service';
 import { DatabaseService } from '../database/database.service';
 import { IdempotencyService } from '../finance/idempotency.service';
 import { LedgerWriterService } from '../finance/ledger-writer.service';
+import { triggerTrustRecalc } from '../trust/trust.service';
+import { quoteDeposit, vndNeededForCoin } from './coin';
 
 const envelope = <T>(data: T, message: string | null = null) => ({ success: true, data, message, errorCode: null });
 export const MIN_TOPUP = 10_000;
@@ -17,7 +19,7 @@ const BANK_NAMES: Record<string, string> = { '970436': 'Vietcombank', '970415': 
 export type BankSettings = { bankBin: string; bankName: string; accountNumber: string; accountName: string };
 type PlanVersion = { id: string; name: string; version_id: string; price: string; billing_cycle: 'MONTHLY' | 'YEARLY'; max_listings: number | null; features: unknown };
 class Insufficient extends BadRequestException {
-  constructor(missing: bigint) { super({ success: false, message: `Số dư không đủ. Bạn cần nạp thêm ${missing.toLocaleString('vi-VN')} đ.`, errorCode: 'INSUFFICIENT_BALANCE', data: { missing: missing.toString() } }); }
+  constructor(missing: bigint, balance: bigint = 0n, price: bigint = 0n) { super({ success: false, message: `Số dư TTTCoin không đủ. Bạn cần nạp thêm ${missing.toLocaleString('vi-VN')} TTTCoin.`, errorCode: 'INSUFFICIENT_BALANCE', data: { missing: missing.toString(), balance: balance.toString(), price: price.toString(), suggestedAmount: vndNeededForCoin(Number(missing)) } }); }
 }
 
 /** Ví trả trước, nạp tiền QR/chuyển khoản (admin xác nhận) và mua gói đăng tin / đẩy tin bằng số dư. */
@@ -39,6 +41,11 @@ export class BillingService implements OnModuleInit {
       await this.db.query(`CREATE INDEX IF NOT EXISTS credit_transactions_user_idx ON credit_transactions(user_id, created_at DESC)`);
       await this.db.query(`CREATE TABLE IF NOT EXISTS topup_requests (id UUID PRIMARY KEY DEFAULT gen_random_uuid(), user_id UUID NOT NULL REFERENCES users(id), amount BIGINT NOT NULL CHECK(amount>0), code TEXT NOT NULL UNIQUE, status TEXT NOT NULL DEFAULT 'PENDING', received_amount BIGINT, bank_snapshot JSONB, created_at TIMESTAMPTZ NOT NULL DEFAULT now(), expires_at TIMESTAMPTZ NOT NULL, decided_by UUID, decided_at TIMESTAMPTZ, reject_reason TEXT)`);
       await this.db.query(`ALTER TABLE topup_requests ADD COLUMN IF NOT EXISTS provider TEXT NOT NULL DEFAULT 'MANUAL'`);
+      // TTTCoin: lưu VAT/Coin thực tế đã cộng, tổng nạp/đã dùng và IP thao tác quản trị.
+      await this.db.query(`ALTER TABLE topup_requests ADD COLUMN IF NOT EXISTS amount_before_vat BIGINT, ADD COLUMN IF NOT EXISTS vat_amount BIGINT, ADD COLUMN IF NOT EXISTS coin_amount BIGINT, ADD COLUMN IF NOT EXISTS vat_rate SMALLINT NOT NULL DEFAULT 8`);
+      await this.db.query(`ALTER TABLE credit_accounts ADD COLUMN IF NOT EXISTS total_coin_deposited BIGINT NOT NULL DEFAULT 0, ADD COLUMN IF NOT EXISTS total_coin_spent BIGINT NOT NULL DEFAULT 0, ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ NOT NULL DEFAULT now()`);
+      await this.db.query(`ALTER TABLE credit_transactions ADD COLUMN IF NOT EXISTS ip_address TEXT`);
+      await this.db.query(`UPDATE credit_accounts a SET total_coin_deposited=COALESCE(s.dep,0), total_coin_spent=COALESCE(s.sp,0) FROM (SELECT user_id, sum(amount) FILTER (WHERE type='TOPUP' AND amount>0) AS dep, -sum(amount) FILTER (WHERE type='SPEND' AND amount<0) AS sp FROM credit_transactions GROUP BY user_id) s WHERE s.user_id=a.user_id AND a.total_coin_deposited=0 AND a.total_coin_spent=0`);
       await this.db.query(`ALTER TABLE topup_requests ADD COLUMN IF NOT EXISTS provider_code BIGINT`);
       await this.db.query(`ALTER TABLE topup_requests ADD COLUMN IF NOT EXISTS checkout_url TEXT`);
       await this.db.query(`CREATE UNIQUE INDEX IF NOT EXISTS uq_topup_provider_code ON topup_requests(provider, provider_code) WHERE provider_code IS NOT NULL`);
@@ -143,9 +150,10 @@ export class BillingService implements OnModuleInit {
       const amount = BigInt(Math.trunc(Number(r.amount)));
       if (amount <= 0n) return true;
       if (amount !== BigInt(t.amount)) this.log.warn(`Nạp ${t.code}: yêu cầu ${t.amount}, cổng báo ${amount}. Cộng theo số tiền thực nhận.`);
-      await this.move(client, t.user_id, amount, 'TOPUP', 'TOPUP_REQUEST', t.id, `Nạp tiền ${t.code} (PayOS)`);
-      await client.query(`UPDATE topup_requests SET status='CONFIRMED', received_amount=$2, decided_at=now() WHERE id=$1`, [t.id, amount.toString()]);
-      this.notify(t.user_id, 'TOPUP_CONFIRMED', 'Nạp tiền thành công', `Ví của bạn vừa được cộng ${amount.toLocaleString('vi-VN')} đ (mã ${t.code}).`, 'TOPUP', t.id);
+      const qd = quoteDeposit(Number(amount));
+      await this.move(client, t.user_id, BigInt(qd.coinAmount), 'TOPUP', 'TOPUP_REQUEST', t.id, `Nạp ${qd.coinAmount.toLocaleString('vi-VN')} TTTCoin (${t.code}, PayOS)`);
+      await client.query(`UPDATE topup_requests SET status='CONFIRMED', received_amount=$2, amount_before_vat=$3, vat_amount=$4, coin_amount=$5, decided_at=now() WHERE id=$1`, [t.id, amount.toString(), qd.amountBeforeVat, qd.vatAmount, qd.coinAmount]);
+      this.notify(t.user_id, 'TOPUP_CONFIRMED', 'Nạp TTTCoin thành công', `Ví của bạn vừa được cộng ${qd.coinAmount.toLocaleString('vi-VN')} TTTCoin (mã ${t.code}).`, 'TOPUP', t.id);
       return true;
     });
   }
@@ -163,8 +171,8 @@ export class BillingService implements OnModuleInit {
   }
 
   async myTopups(userId: string) {
-    const rows = (await this.db.query(`SELECT id, code, amount::text, status, provider, checkout_url AS "checkoutUrl", received_amount::text AS "receivedAmount", created_at AS "createdAt", expires_at AS "expiresAt", reject_reason AS "rejectReason", bank_snapshot AS bank FROM topup_requests WHERE user_id=$1 ORDER BY created_at DESC LIMIT 20`, [userId])).rows;
-    return envelope(rows.map(r => ({ ...r, status: r.status === 'PENDING' && new Date(r.expiresAt) < new Date() ? 'EXPIRED' : r.status, qrUrl: r.status === 'PENDING' && r.bank ? this.qrUrl(r.bank, r.amount, r.code) : null })));
+    const rows = (await this.db.query(`SELECT id, code, amount::text, status, provider, checkout_url AS "checkoutUrl", received_amount::text AS "receivedAmount", coin_amount::text AS "storedCoin", vat_amount::text AS "storedVat", created_at AS "createdAt", expires_at AS "expiresAt", reject_reason AS "rejectReason", bank_snapshot AS bank FROM topup_requests WHERE user_id=$1 ORDER BY created_at DESC LIMIT 20`, [userId])).rows;
+    return envelope(rows.map(r => { const qd = quoteDeposit(Number(r.receivedAmount ?? r.amount)); return { ...r, coinAmount: r.storedCoin ?? String(qd.coinAmount), vatAmount: r.storedVat ?? String(qd.vatAmount), status: r.status === 'PENDING' && new Date(r.expiresAt) < new Date() ? 'EXPIRED' : r.status, qrUrl: r.status === 'PENDING' && r.bank ? this.qrUrl(r.bank, r.amount, r.code) : null }; }));
   }
   async cancelTopup(userId: string, id: string) {
     const r = await this.db.query(`UPDATE topup_requests SET status='CANCELLED', decided_at=now() WHERE id=$1 AND user_id=$2 AND status='PENDING'`, [id, userId]);
@@ -180,12 +188,13 @@ export class BillingService implements OnModuleInit {
     await client.query('INSERT INTO credit_accounts(user_id) VALUES($1) ON CONFLICT DO NOTHING', [userId]);
     return BigInt((await client.query('SELECT balance::text FROM credit_accounts WHERE user_id=$1 FOR UPDATE', [userId])).rows[0].balance);
   }
-  private async move(client: PoolClient, userId: string, delta: bigint, type: string, refType: string | null, refId: string | null, note: string, actor?: string) {
+  private async move(client: PoolClient, userId: string, delta: bigint, type: string, refType: string | null, refId: string | null, note: string, actor?: string, ip?: string) {
     const current = await this.lockAccount(client, userId);
     const next = current + delta;
-    if (next < 0n) throw new Insufficient(-next);
-    await client.query('UPDATE credit_accounts SET balance=$2, updated_at=now() WHERE user_id=$1', [userId, next.toString()]);
-    await client.query('INSERT INTO credit_transactions(user_id,type,amount,balance_after,ref_type,ref_id,note,created_by) VALUES($1,$2,$3,$4,$5,$6,$7,$8)', [userId, type, delta.toString(), next.toString(), refType, refId, note, actor ?? null]);
+    if (next < 0n) throw new Insufficient(-next, current, -delta);
+    const dep = type === 'TOPUP' && delta > 0n ? delta : 0n; const spent = type === 'SPEND' && delta < 0n ? -delta : 0n;
+    await client.query('UPDATE credit_accounts SET balance=$2, total_coin_deposited=total_coin_deposited+$3, total_coin_spent=total_coin_spent+$4, updated_at=now() WHERE user_id=$1', [userId, next.toString(), dep.toString(), spent.toString()]);
+    await client.query('INSERT INTO credit_transactions(user_id,type,amount,balance_after,ref_type,ref_id,note,created_by,ip_address) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9)', [userId, type, delta.toString(), next.toString(), refType, refId, note, actor ?? null, ip ?? null]);
     return next;
   }
 
@@ -210,6 +219,7 @@ export class BillingService implements OnModuleInit {
       }
       const subscriptionId = await this.activate(client, userId, plan, price);
       await client.query(`UPDATE subscription_orders SET status='PAID', ledger_transaction_id=$2, subscription_id=$3, paid_at=now(), updated_at=now() WHERE id=$1`, [order.id, ledgerId, subscriptionId]);
+      triggerTrustRecalc(userId, 'package_purchased');
       const response = envelope({ orderId: order.id, subscriptionId }, `Đã kích hoạt ${plan.name}.`);
       await this.idempotency.complete(client, claim.scopedKey, response);
       this.notify(userId, 'SUBSCRIPTION_ACTIVATED', 'Đã kích hoạt gói đăng tin', `${plan.name} đã được kích hoạt. Cảm ơn bạn đã sử dụng dịch vụ.`, 'SUBSCRIPTION', subscriptionId);
@@ -255,12 +265,88 @@ export class BillingService implements OnModuleInit {
         await this.ledger.finalize(client, ledgerId, [{ accountCode: 'PLATFORM_CASH', amount: price, userId }, { accountCode: 'PROMOTION_REVENUE', amount: -price, userId }]);
       }
       await client.query(`UPDATE promotion_orders SET status='PAID', paid_at=now() WHERE id=$1`, [order.id]);
+      triggerTrustRecalc(userId, 'package_purchased');
       await client.query(`INSERT INTO promotion_activations(promotion_order_id,product_id,promotion_type,starts_at,ends_at) VALUES($1,$2,$3::promotion_type,NOW(),NOW()+($4::text||' hours')::interval) ON CONFLICT(promotion_order_id) DO NOTHING`, [order.id, productId, pk.promotion_type, pk.duration_hours]);
       if (pk.promotion_type === 'FEATURED') await client.query('UPDATE products SET is_featured=TRUE WHERE id=$1', [productId]);
       const response = envelope({ orderId: order.id }, `Đã kích hoạt ${pk.name} cho tin của bạn.`);
       await this.idempotency.complete(client, claim.scopedKey, response);
       this.notify(userId, 'PROMOTION_ACTIVATED', 'Đã kích hoạt gói đẩy tin', `${pk.name} đã được áp dụng cho tin “${String(product.title).slice(0, 80)}”.`, 'PRODUCT', productId);
       return response;
+    });
+  }
+
+
+  // ---------- Ví TTTCoin ----------
+  async walletSummary(userId: string) {
+    const r = (await this.db.query(`SELECT balance::text AS "coinBalance", total_coin_deposited::text AS "totalDeposited", total_coin_spent::text AS "totalSpent" FROM credit_accounts WHERE user_id=$1`, [userId])).rows[0];
+    return envelope({ coinBalance: Number(r?.coinBalance ?? 0), totalDeposited: Number(r?.totalDeposited ?? 0), totalSpent: Number(r?.totalSpent ?? 0) });
+  }
+
+  /** Lịch sử ví (sổ cái). filter: ALL | DEPOSIT | PURCHASE | REFUND | PROMOTION. */
+  async walletTransactions(userId: string, filter: string | undefined, page: number, limit: number) {
+    const f = String(filter ?? 'ALL').toUpperCase();
+    const types: Record<string, string[]> = { DEPOSIT: ['TOPUP'], PURCHASE: ['SPEND'], REFUND: ['REFUND'], PROMOTION: ['BONUS'] };
+    const where = types[f] ? 'AND ct.type = ANY($2::text[])' : '';
+    const params: unknown[] = types[f] ? [userId, types[f]] : [userId];
+    const size = Math.min(Math.max(Math.trunc(limit) || 20, 1), 100); const p = Math.max(Math.trunc(page) || 1, 1);
+    const total = Number((await this.db.query(`SELECT count(*)::int AS n FROM credit_transactions ct WHERE ct.user_id=$1 ${where}`, params)).rows[0].n);
+    const rows = (await this.db.query(`SELECT ct.id, ct.type, ct.amount::text AS amount, (ct.balance_after - ct.amount)::text AS "balanceBefore", ct.balance_after::text AS "balanceAfter",
+        ct.ref_type AS "referenceType", ct.ref_id AS "referenceId", ct.note AS description, ct.created_at AS "createdAt", t.received_amount::text AS "amountVnd", t.status AS "paymentStatus"
+      FROM credit_transactions ct LEFT JOIN topup_requests t ON ct.ref_type='TOPUP_REQUEST' AND t.id::text=ct.ref_id
+      WHERE ct.user_id=$1 ${where} ORDER BY ct.created_at DESC, ct.id DESC LIMIT ${size} OFFSET ${(p - 1) * size}`, params)).rows;
+    return envelope({ items: rows.map(r => ({ ...r, direction: BigInt(r.amount) >= 0n ? 'CREDIT' : 'DEBIT', status: 'SUCCESS' })), page: p, limit: size, total });
+  }
+
+  private static readonly STATUS_OUT = `CASE t.status WHEN 'CONFIRMED' THEN 'SUCCESS' WHEN 'REJECTED' THEN 'FAILED' WHEN 'PENDING' THEN (CASE WHEN t.expires_at < now() THEN 'EXPIRED' ELSE 'PENDING' END) ELSE t.status END`;
+  private static readonly STATUS_IN: Record<string, string> = { SUCCESS: 'CONFIRMED', FAILED: 'REJECTED', PENDING: 'PENDING', CANCELLED: 'CANCELLED', EXPIRED: 'EXPIRED', REFUNDED: 'REFUNDED' };
+
+  async coinAdminSummary() {
+    const r = (await this.db.query(`SELECT
+        COALESCE((SELECT sum(balance) FROM credit_accounts),0)::text AS "totalHeld",
+        COALESCE((SELECT sum(total_coin_deposited) FROM credit_accounts),0)::text AS "totalDeposited",
+        COALESCE((SELECT sum(total_coin_spent) FROM credit_accounts),0)::text AS "totalSpent",
+        COALESCE((SELECT sum(received_amount) FROM topup_requests WHERE status='CONFIRMED'),0)::text AS "totalMoney",
+        COALESCE((SELECT sum(vat_amount) FROM topup_requests WHERE status='CONFIRMED'),0)::text AS "totalVat",
+        (SELECT count(*) FROM topup_requests WHERE status='CONFIRMED')::int AS "successCount",
+        (SELECT count(*) FROM topup_requests WHERE status='PENDING' AND expires_at>=now())::int AS "pendingCount",
+        (SELECT count(*) FROM topup_requests WHERE status IN ('REJECTED','CANCELLED','EXPIRED') OR (status='PENDING' AND expires_at<now()))::int AS "failedCount"`)).rows[0];
+    return envelope(r);
+  }
+
+  async coinAdminTransactions(q: { q?: string; status?: string; method?: string; from?: string; to?: string; page: number; limit: number }) {
+    const cond: string[] = []; const v: unknown[] = [];
+    const add = (sql: string, val: unknown) => { v.push(val); cond.push(sql.replace('?', `$${v.length}`)); };
+    if (q.q?.trim()) { v.push('%' + q.q.trim().toLowerCase() + '%'); const i = v.length; v.push(q.q.trim()); const j = v.length; cond.push(`(lower(t.code) LIKE $${i} OR lower(COALESCE(u.full_name,'')) LIKE $${i} OR lower(COALESCE(u.email,'')) LIKE $${i} OR COALESCE(u.phone,'') LIKE $${i} OR t.user_id::text = $${j})`); }
+    const st = BillingService.STATUS_IN[String(q.status ?? '').toUpperCase()];
+    if (st) add('t.status = ?', st);
+    if (q.method?.trim()) add('t.provider = ?', q.method.trim().toUpperCase());
+    if (q.from && !Number.isNaN(Date.parse(q.from))) add('t.created_at >= ?::timestamptz', q.from);
+    if (q.to && !Number.isNaN(Date.parse(q.to))) add('t.created_at < (?::timestamptz + interval \'1 day\')', q.to);
+    const where = cond.length ? 'WHERE ' + cond.join(' AND ') : '';
+    const size = Math.min(Math.max(Math.trunc(q.limit) || 20, 1), 100); const p = Math.max(Math.trunc(q.page) || 1, 1);
+    const total = Number((await this.db.query(`SELECT count(*)::int AS n FROM topup_requests t LEFT JOIN users u ON u.id=t.user_id ${where}`, v)).rows[0].n);
+    const rows = (await this.db.query(`SELECT t.id, t.code, t.user_id AS "userId", COALESCE(u.full_name,'') AS "userName", u.email, u.phone,
+        COALESCE(t.received_amount, t.amount)::text AS amount, t.vat_amount::text AS vat, t.coin_amount::text AS coin, t.provider AS method, ${BillingService.STATUS_OUT} AS status, t.created_at AS "createdAt", t.decided_at AS "paidAt"
+      FROM topup_requests t LEFT JOIN users u ON u.id=t.user_id ${where} ORDER BY t.created_at DESC LIMIT ${size} OFFSET ${(p - 1) * size}`, v)).rows;
+    const items = rows.map(r => { const qd = quoteDeposit(Number(r.amount)); return { ...r, vat: r.vat ?? String(qd.vatAmount), coin: r.coin ?? String(qd.coinAmount) }; });
+    return envelope({ items, page: p, limit: size, total });
+  }
+
+  /** Hoàn nạp: thu hồi đúng số TTTCoin đã cộng (chỉ khi thành viên chưa dùng số Coin đó). Ghi sổ cái loại REFUND. */
+  async refundTopup(actorId: string, id: string, reason: string, ip?: string) {
+    const text = String(reason ?? '').trim();
+    if (text.length < 3 || text.length > 300) throw new BadRequestException('Nhập lý do hoàn (3–300 ký tự).');
+    return this.db.transaction(async client => {
+      const t = (await client.query(`SELECT id,user_id,code,status,coin_amount::text AS coin FROM topup_requests WHERE id=$1 FOR UPDATE`, [id])).rows[0];
+      if (!t) throw new NotFoundException('Không tìm thấy giao dịch nạp.');
+      if (t.status !== 'CONFIRMED' || !t.coin) throw new ConflictException('Chỉ hoàn được giao dịch nạp đã thành công.');
+      const coin = BigInt(t.coin);
+      const bal = await this.lockAccount(client, t.user_id);
+      if (bal < coin) throw new BadRequestException('Thành viên đã sử dụng một phần TTTCoin của giao dịch này nên không thể hoàn toàn bộ. Hãy điều chỉnh thủ công kèm lý do.');
+      const balance = await this.move(client, t.user_id, -coin, 'REFUND', 'TOPUP_REQUEST', t.id, `Hoàn nạp ${t.code}: ${text}`, actorId, ip);
+      await client.query(`UPDATE topup_requests SET status='REFUNDED', decided_by=$2, decided_at=now() WHERE id=$1`, [id, actorId]);
+      this.notify(t.user_id, 'TOPUP_REFUNDED', 'Giao dịch nạp được hoàn', `Giao dịch ${t.code} đã được hoàn, thu hồi ${coin.toLocaleString('vi-VN')} TTTCoin.`, 'TOPUP', t.id);
+      return envelope({ id, balance: balance.toString() }, 'Đã hoàn giao dịch nạp.');
     });
   }
 
@@ -278,9 +364,10 @@ export class BillingService implements OnModuleInit {
       if (!['PENDING', 'EXPIRED'].includes(t.status)) throw new ConflictException('Yêu cầu này đã được xử lý.');
       const amount = received === undefined ? BigInt(t.amount) : BigInt(Math.trunc(Number(received)));
       if (amount <= 0n || amount > BigInt(MAX_TOPUP) * 10n) throw new BadRequestException('Số tiền thực nhận không hợp lệ.');
-      const balance = await this.move(client, t.user_id, amount, 'TOPUP', 'TOPUP_REQUEST', t.id, `Nạp tiền ${t.code}`, actorId);
-      await client.query(`UPDATE topup_requests SET status='CONFIRMED', received_amount=$2, decided_by=$3, decided_at=now() WHERE id=$1`, [id, amount.toString(), actorId]);
-      this.notify(t.user_id, 'TOPUP_CONFIRMED', 'Nạp tiền thành công', `Ví của bạn vừa được cộng ${amount.toLocaleString('vi-VN')} đ (mã ${t.code}).`, 'TOPUP', t.id);
+      const qd = quoteDeposit(Number(amount));
+      const balance = await this.move(client, t.user_id, BigInt(qd.coinAmount), 'TOPUP', 'TOPUP_REQUEST', t.id, `Nạp ${qd.coinAmount.toLocaleString('vi-VN')} TTTCoin (${t.code})`, actorId);
+      await client.query(`UPDATE topup_requests SET status='CONFIRMED', received_amount=$2, amount_before_vat=$4, vat_amount=$5, coin_amount=$6, decided_by=$3, decided_at=now() WHERE id=$1`, [id, amount.toString(), actorId, qd.amountBeforeVat, qd.vatAmount, qd.coinAmount]);
+      this.notify(t.user_id, 'TOPUP_CONFIRMED', 'Nạp TTTCoin thành công', `Ví của bạn vừa được cộng ${qd.coinAmount.toLocaleString('vi-VN')} TTTCoin (mã ${t.code}).`, 'TOPUP', t.id);
       return envelope({ id, balance: balance.toString() }, 'Đã cộng tiền vào ví khách hàng.');
     });
   }
@@ -292,14 +379,14 @@ export class BillingService implements OnModuleInit {
     this.notify(r.rows[0].user_id, 'TOPUP_REJECTED', 'Yêu cầu nạp tiền bị từ chối', `Yêu cầu nạp ${r.rows[0].code} bị từ chối. Lý do: ${text}`, 'TOPUP', id);
     return envelope({ id }, 'Đã từ chối yêu cầu.');
   }
-  async adjustCredit(actorId: string, userId: string, amountInput: number, note: string) {
+  async adjustCredit(actorId: string, userId: string, amountInput: number, note: string, ip?: string) {
     const amount = Math.trunc(Number(amountInput)); const text = String(note ?? '').trim();
     if (!Number.isFinite(amount) || amount === 0 || Math.abs(amount) > 500_000_000) throw new BadRequestException('Số tiền điều chỉnh không hợp lệ.');
     if (text.length < 3 || text.length > 300) throw new BadRequestException('Nhập lý do điều chỉnh (3–300 ký tự).');
     if (!/^[0-9a-f-]{36}$/i.test(userId)) throw new BadRequestException('Người dùng không hợp lệ.');
     return this.db.transaction(async client => {
       if (!(await client.query('SELECT 1 FROM users WHERE id=$1', [userId])).rows.length) throw new NotFoundException('Không tìm thấy người dùng.');
-      const balance = await this.move(client, userId, BigInt(amount), 'ADJUST', 'ADMIN', null, text, actorId);
+      const balance = await this.move(client, userId, BigInt(amount), 'ADJUST', 'ADMIN_ADJUSTMENT', null, text, actorId, ip);
       return envelope({ balance: balance.toString() }, 'Đã điều chỉnh số dư.');
     });
   }

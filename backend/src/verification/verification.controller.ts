@@ -7,6 +7,7 @@ import { VerificationService } from './verification.service';
 import { createCaptcha, verifyCaptcha } from './captcha';
 
 class PhoneDto { @IsString() @MaxLength(20) phone!: string; @IsOptional() @IsString() @MaxLength(600) captchaToken?: string; @IsOptional() @IsString() @MaxLength(10) captchaAnswer?: string; }
+class ConfirmPhoneDto { @IsString() @MaxLength(10) code!: string; }
 class ReviewDto { @IsIn(['APPROVE', 'REJECT']) action!: 'APPROVE' | 'REJECT'; @IsOptional() @IsString() @MaxLength(500) reason?: string; }
 type Img = { buffer: Buffer; mimetype: string };
 const uuid = (id: string) => { if (!/^[0-9a-f-]{36}$/i.test(id)) throw new BadRequestException('Mã hồ sơ không hợp lệ'); return id; };
@@ -17,6 +18,9 @@ export class VerificationController {
   constructor(private readonly svc: VerificationService) {}
   @Get('captcha') captcha() { return { success: true, data: createCaptcha(), message: null, errorCode: null }; }
   @Get() status(@Req() r: { user: { id: string } }) { return this.svc.status(r.user.id); }
+  /** Xác minh SĐT bằng mã OTP gửi qua Zalo (không cần quản trị viên duyệt). */
+  @Post('phone/send-otp') sendPhoneOtp(@Req() r: { user: { id: string } }, @Body() b: PhoneDto) { return this.svc.sendPhoneOtp(r.user.id, b.phone); }
+  @Post('phone/confirm') confirmPhone(@Req() r: { user: { id: string } }, @Body() b: ConfirmPhoneDto) { return this.svc.confirmPhone(r.user.id, b.code); }
   @Post('phone/request') requestPhone(@Req() r: { user: { id: string } }, @Body() b: PhoneDto) { verifyCaptcha(b.captchaToken, b.captchaAnswer); return this.svc.requestPhoneReview(r.user.id, b.phone); }
   @Post('identity')
   @UseInterceptors(FileFieldsInterceptor([{ name: 'front', maxCount: 1 }, { name: 'back', maxCount: 1 }, { name: 'selfie', maxCount: 1 }], { limits: { fileSize: 8 * 1024 * 1024 } }))

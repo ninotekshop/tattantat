@@ -75,6 +75,7 @@ function Root() {
       <Stack.Screen name="my-listings" options={{ title: 'Tin đăng của tôi' }} />
       <Stack.Screen name="edit-profile" options={{ title: 'Hồ sơ' }} />
       <Stack.Screen name="delete-account" options={{ title: 'Xóa tài khoản' }} />
+      <Stack.Screen name="verify" options={{ title: 'Xác minh tài khoản' }} />
       <Stack.Screen name="wallet" options={{ title: 'Số dư & gói của tôi' }} />
       <Stack.Screen name="support" options={{ title: 'Trợ lý TTT' }} />
     </Stack>
