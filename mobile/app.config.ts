@@ -50,7 +50,7 @@ const config: ExpoConfig = {
     'expo-router',
     'expo-secure-store',
     'expo-apple-authentication',
-    ['expo-splash-screen', { image: './assets/splash-icon.png', imageWidth: 200, resizeMode: 'contain', backgroundColor: '#FFFFFF' }],
+    ['expo-splash-screen', { image: './assets/splash-icon.png', imageWidth: 240, resizeMode: 'contain', backgroundColor: '#FFFFFF' }],
     ['expo-notifications', { icon: './assets/notification-icon.png', color: '#00A65A' }],
     ['expo-image-picker', { photosPermission: 'Tất Tần Tật cần truy cập thư viện ảnh để bạn chọn ảnh sản phẩm khi đăng tin.', cameraPermission: 'Tất Tần Tật cần dùng camera để bạn chụp ảnh sản phẩm khi đăng tin.', microphonePermission: false }],
     ['expo-location', { locationWhenInUsePermission: 'Tất Tần Tật dùng vị trí để điền địa chỉ tin đăng và gợi ý tin gần bạn.' }],

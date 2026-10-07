@@ -4,50 +4,60 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import Svg, { Path, Circle } from 'react-native-svg';
-import { ArrowLeft, Eye, EyeOff, Lock, Mail } from 'lucide-react-native';
+import { ArrowLeft, Eye, EyeOff } from 'lucide-react-native';
 import { SITE_URL, api } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import type { Session } from '@/lib/session';
 import { appleAvailable, appleLogin, confirmZaloOtp, googleLogin, sendZaloOtp, webLogin } from '@/lib/social';
 import { C, R } from '@/lib/theme';
 
-/** Zalo chặn lấy hồ sơ từ IP máy chủ ngoài Việt Nam (lỗi -501). Đặt true khi backend có IP Việt Nam hoặc proxy VN. */
-const SHOW_ZALO = false;
+type Step = 'start' | 'password' | 'otp';
 
-/** Đăng nhập / Đăng ký giống web: email hoặc số điện thoại + mật khẩu, hoặc tiếp tục với Google, Facebook, Apple. Hoặc đăng nhập bằng mã OTP gửi qua Zalo. */
+/** Đăng nhập / Đăng ký: Google, Facebook, Zalo (+ Apple trên iOS) hoặc nhập số điện thoại → mật khẩu hoặc mã OTP qua Zalo. */
 export default function Login() {
   const { signIn } = useAuth();
-  const [id, setId] = useState(''), [pw, setPw] = useState(''), [showPw, setShowPw] = useState(false);
-  const [apple, setApple] = useState(false);
-  const [mode, setMode] = useState<'pw' | 'otp'>('pw'), [otpSent, setOtpSent] = useState(false), [otp, setOtp] = useState(''), [wait, setWait] = useState(0);
-  const [busy, setBusy] = useState<string | null>(null), [error, setError] = useState('');
+  const [step, setStep] = useState<Step>('start');
+  const [phone, setPhone] = useState(''), [pw, setPw] = useState(''), [showPw, setShowPw] = useState(false), [otp, setOtp] = useState('');
+  const [apple, setApple] = useState(false), [focus, setFocus] = useState(false), [wait, setWait] = useState(0);
+  const [busy, setBusy] = useState<string | null>(null), [error, setError] = useState(''), [info, setInfo] = useState('');
+
+  const normalized = phone.replace(/[\s.\-()]/g, '');
+  const validPhone = /^(0|\+?84)\d{9}$/.test(normalized);
 
   useEffect(() => { Promise.resolve(appleAvailable()).then(v => setApple(!!v)).catch(() => setApple(false)); }, []);
+  useEffect(() => { if (wait <= 0) return; const t = setTimeout(() => setWait(wait - 1), 1000); return () => clearTimeout(t); }, [wait]);
 
   const done = async (s: Session | null) => { if (!s) return; await signIn(s); if (router.canGoBack()) router.back(); else router.replace('/'); };
   const run = async (key: string, fn: () => Promise<Session | null>) => {
     setBusy(key); setError('');
     try { await done(await fn()); } catch (e) { setError((e as Error).message); } finally { setBusy(null); }
   };
-  const goBack = () => { if (router.canGoBack()) router.back(); else router.replace('/'); };
+  const goBack = () => {
+    if (step !== 'start') { setStep('start'); setPw(''); setOtp(''); setError(''); setInfo(''); return; }
+    if (router.canGoBack()) router.back(); else router.replace('/');
+  };
 
-  useEffect(() => { if (wait <= 0) return; const t = setTimeout(() => setWait(wait - 1), 1000); return () => clearTimeout(t); }, [wait]);
-  const phone = id.trim().replace(/[\s.\-()]/g, '');
-  const validPhone = /^(0|\+?84)\d{9}$/.test(phone);
   const requestOtp = async () => {
-    if (!validPhone || busy) return;
     setBusy('otp-send'); setError('');
-    try { await sendZaloOtp(phone); setOtp(''); setOtpSent(true); setWait(60); } catch (e) { setError((e as Error).message); } finally { setBusy(null); }
+    try { await sendZaloOtp(normalized); setOtp(''); setWait(60); setStep('otp'); }
+    catch (e) { setError((e as Error).message); }
+    finally { setBusy(null); }
   };
-  const switchMode = (m: 'pw' | 'otp') => { setMode(m); setOtpSent(false); setOtp(''); setError(''); };
-
-  const canSubmit = id.trim().length > 0 && pw.length >= 6;
-  const submit = () => {
-    if (!canSubmit || busy) return;
-    const phoneOrEmail = id.trim().replace(/^(\+?84|0)(\d[\d\s.\-()]{8,})$/, (m) => m.replace(/[\s.\-()]/g, ''));
-    void run('pw', () => api<Session>('/auth/login', { method: 'POST', body: { phoneOrEmail, password: pw } }));
+  /** Bước 1: kiểm tra số đã có tài khoản chưa. Có → nhập mật khẩu; chưa → gửi OTP để tạo tài khoản. */
+  const next = async () => {
+    if (!validPhone || busy) return;
+    setBusy('phone'); setError(''); setInfo('');
+    try {
+      const r = await api<{ exists: boolean }>('/auth/phone/check', { method: 'POST', body: { phone: normalized } });
+      setBusy(null);
+      if (r.exists) { setPw(''); setStep('password'); return; }
+      setInfo('Số điện thoại này chưa có tài khoản. Chúng tôi sẽ gửi mã OTP qua Zalo để tạo tài khoản mới.');
+      await requestOtp();
+    } catch (e) { setError((e as Error).message); setBusy(null); }
   };
 
+  const heading = step === 'start' ? 'Chào mừng đến Tất Tần Tật' : step === 'password' ? 'Nhập mật khẩu' : 'Nhập mã OTP';
+  const sub = step === 'start' ? 'Chọn một cách bên dưới để đăng nhập hoặc tạo tài khoản mới.' : '';
   const openSite = (path: string) => Linking.openURL(SITE_URL + path).catch(() => undefined);
 
   return (
@@ -57,81 +67,81 @@ export default function Login() {
           <Pressable accessibilityLabel="Quay lại" hitSlop={12} onPress={goBack} style={st.back}><ArrowLeft size={26} color={C.ink} /></Pressable>
 
           <View style={st.titleRow}>
-            <View style={{ flexShrink: 1 }}>
-              <Text style={st.h1}>Chào mừng đến Tất Tần Tật</Text>
-              <Text style={st.sub}>Mua bán dễ dàng - Kết nối mọi người</Text>
+            <View style={{ paddingBottom: 6 }}>
+              {step === 'start' ? (<>
+                <Text style={st.h0}>Chào mừng đến với</Text>
+                <Text style={st.h1} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.5}>Tất Tần Tật - Mua Nhanh Bán Gọn</Text>
+              </>) : <Text style={st.h1}>{heading}</Text>}
+              {sub ? <Text style={st.sub}>{sub}</Text> : null}
             </View>
-            <Image source={require('../assets/mascot.png')} style={st.mascot} contentFit="contain" />
           </View>
 
-          <View style={st.tabs}>
-            <View style={[st.tab, st.tabOn]}><Text style={[st.tabText, st.tabTextOn]}>Đăng nhập</Text></View>
-            <Pressable style={st.tab} onPress={() => router.replace('/register')}><Text style={st.tabText}>Đăng ký</Text></Pressable>
-          </View>
-
-          <View style={{ gap: 14 }}>
-            <View style={st.field}>
-              <Text style={st.label}>{mode === 'otp' ? 'Số điện thoại (đã đăng ký Zalo)' : 'Email hoặc Số điện thoại'}</Text>
-              <View style={st.inputRow}>
-                <Mail size={18} color={C.muted} />
-                <TextInput value={id} onChangeText={t => { setId(t); setError(''); }} autoCapitalize="none" autoCorrect={false} keyboardType={mode === 'otp' ? 'phone-pad' : 'email-address'} editable={!otpSent} textContentType="username" autoComplete="username" style={st.input} returnKeyType="next" />
+          {step === 'start' ? (
+            <View style={{ gap: 14 }}>
+              <View style={{ marginTop: 52 }}>
+  <Social title="Tiếp tục với Google" icon={<GoogleIcon />} loading={busy === 'google'} onPress={() => run('google', googleLogin)} />
+                <Image pointerEvents="none" source={require('../assets/mascot.png')} style={st.mascot} contentFit="contain" />
               </View>
+              <Social title="Tiếp tục với Facebook" icon={<FacebookIcon />} loading={busy === 'facebook'} onPress={() => run('facebook', () => webLogin('facebook'))} />
+              <Social title="Tiếp tục với Zalo" icon={<ZaloIcon />} loading={busy === 'zalo'} onPress={() => run('zalo', () => webLogin('zalo'))} />
+              {apple ? <Social title="Tiếp tục với Apple" icon={<AppleIcon />} loading={busy === 'apple'} onPress={() => run('apple', appleLogin)} /> : null}
+
+              <View style={st.or}><View style={st.line} /><Text style={st.orText}>Hoặc</Text><View style={st.line} /></View>
+
+              <View style={[st.phoneBox, focus && st.phoneBoxOn]}>
+                <Text style={st.phoneLabel}>Số điện thoại</Text>
+                <TextInput value={phone} onChangeText={t => { setPhone(t); setError(''); setInfo(''); }} onFocus={() => setFocus(true)} onBlur={() => setFocus(false)}
+                  keyboardType="phone-pad" textContentType="telephoneNumber" autoComplete="tel" maxLength={16} style={st.phoneInput} onSubmitEditing={next} returnKeyType="go" />
+              </View>
+              {error ? <Text style={st.error}>{error}</Text> : null}
+              <Pressable accessibilityRole="button" onPress={next} disabled={!validPhone || !!busy} style={[st.cta, validPhone && st.ctaOn]}>
+                {busy === 'phone' || busy === 'otp-send' ? <ActivityIndicator color={validPhone ? C.white : C.ink} /> : <Text style={[st.ctaText, validPhone && { color: C.white }]}>Tiếp tục</Text>}
+              </Pressable>
             </View>
-            {mode === 'pw' ? (<>
-            <View style={st.field}>
-              <Text style={st.label}>Mật khẩu</Text>
-              <View style={st.inputRow}>
-                <Lock size={18} color={C.muted} />
-                <TextInput value={pw} onChangeText={t => { setPw(t); setError(''); }} secureTextEntry={!showPw} autoCapitalize="none" textContentType="password" autoComplete="password" style={st.input} onSubmitEditing={submit} returnKeyType="go" />
+          ) : null}
+
+          {step === 'password' ? (
+            <View style={{ gap: 14 }}>
+              <Text style={st.hint}>Số điện thoại: <Text style={{ fontWeight: '800', color: C.ink }}>{normalized}</Text></Text>
+              <View style={[st.phoneBox, st.phoneBoxOn, { flexDirection: 'row', alignItems: 'center' }]}>
+                <View style={{ flex: 1 }}>
+                  <Text style={st.phoneLabel}>Mật khẩu</Text>
+                  <TextInput value={pw} onChangeText={t => { setPw(t); setError(''); }} secureTextEntry={!showPw} autoFocus textContentType="password" autoCapitalize="none" style={st.phoneInput}
+                    onSubmitEditing={() => pw.length >= 6 && run('pw', () => api<Session>('/auth/login', { method: 'POST', body: { phoneOrEmail: normalized, password: pw } }))} />
+                </View>
                 <Pressable hitSlop={10} onPress={() => setShowPw(!showPw)}>{showPw ? <EyeOff size={20} color={C.muted} /> : <Eye size={20} color={C.muted} />}</Pressable>
               </View>
-            </View>
-            {mode === 'pw' ? <View style={{ alignItems: 'flex-end' }}>
-              <Pressable hitSlop={8} onPress={() => router.push('/forgot-password')}><Text style={st.link}>Quên mật khẩu?</Text></Pressable>
-            </View> : null}
-            </>) : null}
-            {mode === 'otp' && otpSent ? (
-              <View style={st.field}>
-                <Text style={st.label}>Mã OTP (6 số, gửi qua Zalo)</Text>
-                <View style={st.inputRow}>
-                  <Lock size={18} color={C.muted} />
-                  <TextInput value={otp} onChangeText={t => { setOtp(t.replace(/\D/g, '').slice(0, 6)); setError(''); }} keyboardType="number-pad" autoFocus textContentType="oneTimeCode" maxLength={6} style={[st.input, { letterSpacing: 6 }]}
-                    onSubmitEditing={() => otp.length === 6 && run('otp', () => confirmZaloOtp(phone, otp))} />
-                </View>
+              {error ? <Text style={st.error}>{error}</Text> : null}
+              <Pressable accessibilityRole="button" disabled={pw.length < 6 || !!busy} style={[st.cta, pw.length >= 6 && st.ctaOn]}
+                onPress={() => run('pw', () => api<Session>('/auth/login', { method: 'POST', body: { phoneOrEmail: normalized, password: pw } }))}>
+                {busy === 'pw' ? <ActivityIndicator color={C.white} /> : <Text style={[st.ctaText, pw.length >= 6 && { color: C.white }]}>Đăng nhập</Text>}
+              </Pressable>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                <Pressable hitSlop={8} disabled={!!busy} onPress={requestOtp}>{busy === 'otp-send' ? <ActivityIndicator color={C.brand} /> : <Text style={st.link}>Đăng nhập bằng mã OTP Zalo</Text>}</Pressable>
+                <Pressable hitSlop={8} onPress={() => router.push('/forgot-password')}><Text style={st.link}>Quên mật khẩu?</Text></Pressable>
               </View>
-            ) : null}
-            {error ? <Text style={st.error}>{error}</Text> : null}
-            {mode === 'pw' ? (
-              <Pressable accessibilityRole="button" onPress={submit} disabled={!canSubmit || !!busy} style={[st.cta, canSubmit && st.ctaOn]}>
-                {busy === 'pw' ? <ActivityIndicator color={C.white} /> : <Text style={[st.ctaText, canSubmit && { color: C.white }]}>Đăng nhập</Text>}
-              </Pressable>
-            ) : !otpSent ? (
-              <Pressable accessibilityRole="button" onPress={requestOtp} disabled={!validPhone || !!busy} style={[st.cta, validPhone && st.ctaOn]}>
-                {busy === 'otp-send' ? <ActivityIndicator color={C.white} /> : <Text style={[st.ctaText, validPhone && { color: C.white }]}>Gửi mã OTP qua Zalo</Text>}
-              </Pressable>
-            ) : (
-              <>
-                <Pressable accessibilityRole="button" onPress={() => run('otp', () => confirmZaloOtp(phone, otp))} disabled={otp.length < 6 || !!busy} style={[st.cta, otp.length === 6 && st.ctaOn]}>
-                  {busy === 'otp' ? <ActivityIndicator color={C.white} /> : <Text style={[st.ctaText, otp.length === 6 && { color: C.white }]}>Xác nhận</Text>}
-                </Pressable>
-                <Pressable hitSlop={8} disabled={wait > 0 || !!busy} onPress={requestOtp} style={{ alignSelf: 'center' }}>
-                  <Text style={[st.link, wait > 0 && { color: C.muted }]}>{wait > 0 ? `Gửi lại mã sau ${wait}s` : 'Gửi lại mã'}</Text>
-                </Pressable>
-              </>
-            )}
-            <Pressable hitSlop={8} onPress={() => switchMode(mode === 'pw' ? 'otp' : 'pw')} style={{ alignSelf: 'center' }}>
-              <Text style={st.link}>{mode === 'pw' ? 'Đăng nhập bằng mã OTP qua Zalo' : 'Đăng nhập bằng mật khẩu'}</Text>
-            </Pressable>
-          </View>
+            </View>
+          ) : null}
 
-          <View style={st.or}><View style={st.line} /><Text style={st.orText}>HOẶC TIẾP TỤC VỚI</Text><View style={st.line} /></View>
-
-          <View style={st.socialRow}>
-            <Social title="Google" icon={<GoogleIcon />} loading={busy === 'google'} onPress={() => run('google', googleLogin)} />
-            <Social title="Facebook" icon={<FacebookIcon />} loading={busy === 'facebook'} onPress={() => run('facebook', () => webLogin('facebook'))} />
-            {SHOW_ZALO ? <Social title="Zalo" icon={<ZaloIcon />} loading={busy === 'zalo'} onPress={() => run('zalo', () => webLogin('zalo'))} /> : null}
-            {apple ? <Social title="Apple" icon={<AppleIcon />} loading={busy === 'apple'} onPress={() => run('apple', appleLogin)} /> : null}
-          </View>
+          {step === 'otp' ? (
+            <View style={{ gap: 14 }}>
+              {info ? <Text style={st.hint}>{info}</Text> : null}
+              <Text style={st.hint}>Mã gồm 6 số đã được gửi qua Zalo tới <Text style={{ fontWeight: '800', color: C.ink }}>{normalized}</Text>.</Text>
+              <View style={[st.phoneBox, st.phoneBoxOn]}>
+                <Text style={st.phoneLabel}>Mã OTP</Text>
+                <TextInput value={otp} onChangeText={t => { setOtp(t.replace(/\D/g, '').slice(0, 6)); setError(''); }} keyboardType="number-pad" autoFocus textContentType="oneTimeCode" autoComplete="sms-otp" maxLength={6}
+                  style={[st.phoneInput, { letterSpacing: 6 }]} onSubmitEditing={() => otp.length === 6 && run('otp', () => confirmZaloOtp(normalized, otp))} />
+              </View>
+              {error ? <Text style={st.error}>{error}</Text> : null}
+              <Pressable accessibilityRole="button" disabled={otp.length < 6 || !!busy} style={[st.cta, otp.length === 6 && st.ctaOn]}
+                onPress={() => run('otp', () => confirmZaloOtp(normalized, otp))}>
+                {busy === 'otp' ? <ActivityIndicator color={C.white} /> : <Text style={[st.ctaText, otp.length === 6 && { color: C.white }]}>Xác nhận</Text>}
+              </Pressable>
+              <Pressable hitSlop={8} disabled={wait > 0 || !!busy} onPress={requestOtp} style={{ alignSelf: 'center' }}>
+                <Text style={[st.link, wait > 0 && { color: C.muted }]}>{wait > 0 ? `Gửi lại mã sau ${wait}s` : 'Gửi lại mã'}</Text>
+              </Pressable>
+            </View>
+          ) : null}
 
           <View style={{ flex: 1, minHeight: 40 }} />
           <View style={st.footLinks}>
@@ -141,6 +151,10 @@ export default function Login() {
             <View style={st.sep} />
             <Pressable onPress={() => router.push('/support')}><Text style={st.footText}>Liên hệ hỗ trợ</Text></Pressable>
           </View>
+          <Image source={require('../assets/logo.png')} style={st.brand} contentFit="contain" />
+          <Pressable hitSlop={8} onPress={() => Linking.openURL(SITE_URL).catch(() => undefined)} style={{ alignSelf: 'center', marginTop: 6 }}>
+            <Text style={st.site}>www.tattantat.vn</Text>
+          </Pressable>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -149,8 +163,12 @@ export default function Login() {
 
 function Social({ title, icon, onPress, loading }: { title: string; icon: ReactNode; onPress: () => void; loading?: boolean }) {
   return (
-    <Pressable accessibilityRole="button" accessibilityLabel={`Tiếp tục với ${title}`} onPress={onPress} disabled={loading} style={({ pressed }) => [st.social, pressed && { backgroundColor: C.paper }]}>
-      {loading ? <ActivityIndicator color={C.ink} /> : <><View style={st.socialIcon}>{icon}</View><Text style={st.socialText} numberOfLines={1}>{title}</Text></>}
+    <Pressable accessibilityRole="button" accessibilityLabel={title} onPress={onPress} disabled={loading} style={({ pressed }) => [st.social, pressed && { backgroundColor: C.paper }]}>
+      {loading ? <ActivityIndicator color={C.ink} /> : <>
+        <View style={st.socialIcon}>{icon}</View>
+        <Text style={st.socialText} numberOfLines={1}>{title}</Text>
+        <View style={st.socialIcon} />
+      </>}
     </Pressable>
   );
 }
@@ -183,32 +201,30 @@ const AppleIcon = () => (
 const st = StyleSheet.create({
   wrap: { flexGrow: 1, paddingHorizontal: 20, paddingTop: 8, paddingBottom: 20 },
   back: { width: 40, height: 40, justifyContent: 'center' },
-  titleRow: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', marginTop: 12, marginBottom: 18 },
-  h1: { fontSize: 24, fontWeight: '800', color: C.ink, paddingRight: 8 },
-  sub: { fontSize: 14, lineHeight: 20, color: C.muted, marginTop: 4 },
-  mascot: { width: 76, height: 76 },
-  tabs: { flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: '#E2E8F0', marginBottom: 18 },
-  tab: { flex: 1, alignItems: 'center', paddingVertical: 12, borderBottomWidth: 2, borderBottomColor: 'transparent' },
-  tabOn: { borderBottomColor: C.brand },
-  tabText: { fontSize: 16, fontWeight: '700', color: C.muted },
-  tabTextOn: { color: C.brand },
-  field: { gap: 6 },
-  label: { fontSize: 13, fontWeight: '700', color: C.ink },
-  inputRow: { flexDirection: 'row', alignItems: 'center', gap: 10, borderRadius: R.md, borderWidth: 1.5, borderColor: '#CBD5E1', paddingHorizontal: 14, backgroundColor: C.white },
-  input: { flex: 1, fontSize: 16, color: C.ink, paddingVertical: 12, minHeight: 48 },
-  socialRow: { flexDirection: 'row', gap: 10 },
-  social: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, height: 52, borderRadius: R.md, borderWidth: 1.5, borderColor: '#E2E8F0', backgroundColor: C.white, paddingHorizontal: 8 },
-  socialIcon: { alignItems: 'center', justifyContent: 'center' },
-  socialText: { fontSize: 14, fontWeight: '800', color: C.ink },
-  or: { flexDirection: 'row', alignItems: 'center', gap: 12, marginVertical: 22 },
+  titleRow: { marginTop: 20, marginBottom: 4 },
+  h0: { fontSize: 17, fontWeight: '600', color: C.text, marginBottom: 2 },
+  h1: { fontSize: 25, fontWeight: '800', color: C.ink },
+  sub: { fontSize: 13.5, lineHeight: 19, color: C.muted, marginTop: 6, paddingRight: 6 },
+  mascot: { position: 'absolute', right: 18, top: -58, width: 76, height: 76, zIndex: 5, elevation: 5 },
+  social: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', height: 56, borderRadius: 28, borderWidth: 1.5, borderColor: '#E2E8F0', backgroundColor: C.white, paddingHorizontal: 18 },
+  socialIcon: { width: 30, alignItems: 'center', justifyContent: 'center' },
+  socialText: { flex: 1, textAlign: 'center', fontSize: 16, fontWeight: '800', color: C.ink },
+  or: { flexDirection: 'row', alignItems: 'center', gap: 12, marginVertical: 4 },
   line: { flex: 1, height: 1, backgroundColor: '#E2E8F0' },
-  orText: { color: C.muted, fontSize: 12, fontWeight: '600' },
-  cta: { marginTop: 4, height: 54, borderRadius: R.md, alignItems: 'center', justifyContent: 'center', backgroundColor: '#F1F5F4' },
+  orText: { color: C.muted, fontSize: 15 },
+  phoneBox: { minHeight: 64, borderRadius: R.lg ?? 18, borderWidth: 1.5, borderColor: '#CBD5E1', paddingHorizontal: 16, paddingTop: 8, paddingBottom: 4, backgroundColor: C.white },
+  phoneBoxOn: { borderColor: C.ink, borderWidth: 2 },
+  phoneLabel: { fontSize: 12.5, fontWeight: '700', color: C.ink },
+  phoneInput: { fontSize: 17, color: C.ink, paddingVertical: 6, minHeight: 32 },
+  cta: { height: 54, borderRadius: R.md, alignItems: 'center', justifyContent: 'center', backgroundColor: '#F1F5F4' },
   ctaOn: { backgroundColor: C.brand },
   ctaText: { fontSize: 18, fontWeight: '800', color: C.ink },
   error: { color: C.danger, fontSize: 14, lineHeight: 20 },
+  hint: { color: C.muted, fontSize: 14, lineHeight: 20 },
   link: { color: C.brand, fontWeight: '800', fontSize: 14 },
   footLinks: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', flexWrap: 'wrap', gap: 4, paddingTop: 10 },
   footText: { color: C.muted, fontSize: 13.5, paddingHorizontal: 6 },
   sep: { width: 1, height: 16, backgroundColor: '#E2E8F0' },
+  site: { color: C.brand, fontSize: 13.5, fontWeight: '700', textDecorationLine: 'underline' },
+  brand: { alignSelf: 'center', width: 150, height: 43, marginTop: 14 },
 });

@@ -1,4 +1,6 @@
-import { useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { Animated, Easing, StyleSheet, Text, View } from 'react-native';
+import { Image } from 'expo-image';
 import { Stack, router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
@@ -18,15 +20,42 @@ function openFromNotification(data: Record<string, unknown> | undefined) {
   else router.push('/notifications');
 }
 
+/** Màn chào: logo + tên app + khẩu hiệu, hiện tối thiểu ~1,2 giây trong lúc app khởi động. */
+function Splash() {
+  const fade = useRef(new Animated.Value(0)).current, rise = useRef(new Animated.Value(14)).current;
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fade, { toValue: 1, duration: 500, delay: 150, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
+      Animated.timing(rise, { toValue: 0, duration: 500, delay: 150, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
+    ]).start();
+  }, [fade, rise]);
+  return (
+    <View style={sp.wrap} onLayout={() => SplashScreen.hideAsync().catch(() => undefined)}>
+      <Image source={require('../assets/splash-icon.png')} style={sp.logo} contentFit="contain" />
+      <Animated.View style={{ alignItems: 'center', opacity: fade, transform: [{ translateY: rise }] }}>
+        <Text style={sp.name}>Tất Tần Tật</Text>
+        <Text style={sp.tag}>Mua bán dễ dàng - Kết nối mọi người</Text>
+      </Animated.View>
+    </View>
+  );
+}
+const sp = StyleSheet.create({
+  wrap: { flex: 1, backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center', gap: 4 },
+  logo: { width: 240, height: 240 },
+  name: { fontSize: 34, fontWeight: '800', color: '#0B7A43', letterSpacing: 0.3 },
+  tag: { marginTop: 6, fontSize: 14, color: '#64748B' },
+});
+
 function Root() {
   const { ready } = useAuth();
-  useEffect(() => { if (ready) SplashScreen.hideAsync().catch(() => undefined); }, [ready]);
+  const [minDone, setMinDone] = useState(false);
+  useEffect(() => { const t = setTimeout(() => setMinDone(true), 1200); return () => clearTimeout(t); }, []);
   useEffect(() => {
     const sub = Notifications.addNotificationResponseReceivedListener(r => openFromNotification(r.notification.request.content.data as Record<string, unknown>));
     Notifications.getLastNotificationResponseAsync().then(r => { if (r) openFromNotification(r.notification.request.content.data as Record<string, unknown>); }).catch(() => undefined);
     return () => sub.remove();
   }, []);
-  if (!ready) return null;
+  if (!ready || !minDone) return <Splash />;
   return (
     <Stack screenOptions={{
       headerTintColor: C.ink, headerTitleStyle: { fontWeight: '700' }, headerShadowVisible: false,
