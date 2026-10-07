@@ -135,28 +135,26 @@ export class AiService implements OnModuleInit {
   mock(i: ReturnType<AiService['normalize']>): Draft {
     const cond = COND[i.condition];
     const lines = [`${i.title || 'Sản phẩm cần bán'}${cond ? ` — ${cond}` : ''}.`];
-    if (i.category) lines.push(`Danh mục: ${i.category}.`);
-    if (i.specs) lines.push('', 'Thông số:', ...i.specs.split('\n').map(l => '- ' + l));
-    if (i.notes) lines.push('', i.notes);
-    lines.push('', 'Hàng thực tế như hình, xem trực tiếp trước khi mua. Ưu tiên trao đổi và giao dịch qua Tất Tần Tật để được bảo vệ. Vui lòng nhắn tin qua chat nếu cần thêm thông tin.');
+    if (i.specs) lines.push('', 'Thông số kỹ thuật:', ...i.specs.split('\n').map(l => '- ' + l));
+    if (i.notes) lines.push('', 'Ghi chú của người bán:', i.notes);
     return { title: i.title, description: scrubContact(lines.join('\n')), provider: 'mock' };
   }
   private normalize(i: DraftInput) { return { title: '', condition: '', category: '', price: '', notes: '', specs: '', ...i }; }
 
   private async callModel(i: ReturnType<AiService['normalize']>): Promise<Draft> {
-    const prompt = `Bạn là trợ lý viết tin rao vặt cho sàn mua bán "Tất Tần Tật". Viết lại tin đăng bằng tiếng Việt tự nhiên, trung thực, cụ thể và dễ đọc.
-Cách viết:
-- Mở đầu 1–2 câu nêu rõ sản phẩm, tình trạng.
-- Sau đó liệt kê THÔNG SỐ / ĐẶC ĐIỂM bằng gạch đầu dòng ("- Tên thông số: giá trị"). Ưu tiên tuyệt đối các thông số người bán đã nhập bên dưới, dùng đúng giá trị, không đổi số liệu.
-- Nếu tên/model sản phẩm rõ ràng và bạn CHẮC CHẮN về thông số công khai của hãng (ví dụ công suất, kết nối, kích thước, cấu hình), có thể bổ sung thêm vài gạch đầu dòng; chỗ nào không chắc thì bỏ qua, tuyệt đối không đoán.
-- Kết bằng 1 câu về xem hàng/trao đổi qua chat của sàn.
-Quy tắc: KHÔNG bịa xuất xứ, bảo hành, phụ kiện đi kèm hay tình trạng không có trong dữ liệu; KHÔNG ghi số điện thoại, link, Zalo/Facebook hay kêu gọi giao dịch ngoài sàn; KHÔNG dùng từ phóng đại như "số 1", "rẻ nhất", "cơ hội sở hữu"; tiêu đề ≤ 100 ký tự; mô tả 80–250 từ.
+    const prompt = `Bạn là trợ lý thu thập THÔNG SỐ KỸ THUẬT cho tin rao vặt trên sàn "Tất Tần Tật". Nhiệm vụ DUY NHẤT: liệt kê thông số kỹ thuật chi tiết, chính xác của đúng sản phẩm trong tin. Đây không phải bài quảng cáo.
+Cách làm:
+- Xác định chính xác hãng và model từ tiêu đề / ghi chú. Liệt kê thông số kỹ thuật công khai của hãng cho model đó (ví dụ: màn hình, chip/CPU, RAM, bộ nhớ, camera, pin, cổng kết nối, kích thước, trọng lượng, công suất, hệ điều hành… tùy loại sản phẩm), mỗi thông số một dòng dạng "- Tên thông số: giá trị".
+- Thông số người bán đã nhập bên dưới là chính xác nhất: dùng đúng giá trị, không đổi số liệu, đặt lên trước.
+- Chỉ ghi thông số bạn CHẮC CHẮN đúng với model đó. Không chắc thì bỏ dòng đó, không đoán, không ghi khoảng ước chừng. Nếu không xác định được model cụ thể thì chỉ ghi lại thông số người bán đã cung cấp.
+- Dòng đầu tiên là "Thông số kỹ thuật:" rồi đến danh sách. Không viết câu mở đầu, câu kết, lời giới thiệu hay lời kêu gọi mua hàng.
+Quy tắc cấm: KHÔNG bịa hoặc suy diễn tình trạng, lỗi, bảo hành, xuất xứ, phụ kiện đi kèm, lý do bán hay bất kỳ thông tin nào không phải thông số kỹ thuật và không có trong dữ liệu; KHÔNG khen, KHÔNG so sánh, KHÔNG dùng từ phóng đại; KHÔNG ghi số điện thoại, link, Zalo/Facebook hay giao dịch ngoài sàn. Giữ nguyên tiêu đề người bán đã nhập (chỉ tạo tiêu đề ngắn gọn ≤ 100 ký tự nếu chưa có). Nếu ghi chú của người bán có thông tin hợp lệ (tình trạng, phụ kiện thực tế), giữ nguyên ý, đặt ở cuối thành một mục "Ghi chú của người bán:".
 Dữ liệu người bán:
 - Tiêu đề hiện tại: ${i.title || '(chưa có)'}
 - Danh mục: ${i.category || '(chưa rõ)'}
 - Tình trạng: ${COND[i.condition] ?? '(chưa rõ)'}
 - Giá: ${i.price || '(chưa rõ)'}
-- Ghi chú/mô tả nháp: ${i.notes || '(không có)'}
+- Ghi chú của người bán: ${i.notes || '(không có)'}
 - Thông số người bán đã nhập:
 ${i.specs || '(chưa nhập)'}
 Trả về đúng định dạng sau, không thêm lời dẫn hay ký tự markdown:

@@ -303,7 +303,7 @@ export function ListingWizard() {
       const cur = current.current;
       const r = await memberRequest<{ title: string; description: string; provider: string; remaining: number }>('/ai/listing-draft', 'POST', { title: cur.title || undefined, condition: cur.condition || undefined, category: template?.name || undefined, price: cur.price ? String(cur.price) : undefined, notes: cur.description || undefined, specs: specsForAi(cur) || undefined });
       patch({ description: r.description, ...(cur.title ? {} : { title: r.title }) });
-      setAiMsg(`Đã viết xong — hãy đọc lại và chỉnh cho đúng thực tế. Còn ${r.remaining} lượt hôm nay${r.provider === 'mock' ? ' (chế độ mẫu, chưa bật AI)' : ''}.`);
+      setAiMsg(`Đã điền thông số kỹ thuật — hãy đối chiếu và sửa lại cho đúng sản phẩm của bạn. Còn ${r.remaining} lượt hôm nay${r.provider === 'mock' ? ' (chế độ mẫu, chưa bật AI)' : ''}.`);
     } catch (e) { setAiMsg(e instanceof Error ? e.message : 'Không tạo được nội dung.'); } finally { setAiBusy(false); }
   }
 
@@ -798,7 +798,7 @@ export function ListingWizard() {
 
                         <div className="lf-field">
                           <label htmlFor="listing-description">Mô tả chi tiết</label>
-                          {aiOn && <div style={{ margin: '4px 0' }}><button type="button" disabled={aiBusy} onClick={() => void aiWrite()} style={{ padding: '6px 12px', border: '1px solid #00a65a', color: '#00a65a', background: '#fff', borderRadius: 8, fontWeight: 600, cursor: 'pointer' }}>{aiBusy ? 'Đang viết…' : <><Ic i={Sparkles}/>AI viết giúp mô tả</>}</button> {aiMsg && <small role="status" style={{ color: '#0f766e' }}>{aiMsg}</small>}</div>}
+                          {aiOn && <div style={{ margin: '4px 0' }}><button type="button" disabled={aiBusy} onClick={() => void aiWrite()} style={{ padding: '6px 12px', border: '1px solid #00a65a', color: '#00a65a', background: '#fff', borderRadius: 8, fontWeight: 600, cursor: 'pointer' }}>{aiBusy ? 'Đang thu thập…' : <><Ic i={Sparkles}/>AI điền thông số kỹ thuật</>}</button> {aiMsg && <small role="status" style={{ color: '#0f766e' }}>{aiMsg}</small>}</div>}
                           <textarea
                             id="listing-description"
                             rows={6}
