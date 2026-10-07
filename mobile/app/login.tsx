@@ -160,11 +160,11 @@ export default function Login() {
 
           <View style={{ flex: 1, minHeight: 40 }} />
           <View style={st.footLinks}>
-            <Pressable onPress={() => openSite('/regulations')}><Text style={st.footText}>Quy chế hoạt động sàn</Text></Pressable>
+            <Pressable onPress={() => openSite('/regulations')} style={{ flexShrink: 1 }}><Text style={st.footText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>Quy chế sàn</Text></Pressable>
             <View style={st.sep} />
-            <Pressable onPress={() => openSite('/privacy')}><Text style={st.footText}>Chính sách bảo mật</Text></Pressable>
+            <Pressable onPress={() => openSite('/privacy')} style={{ flexShrink: 1 }}><Text style={st.footText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>Chính sách bảo mật</Text></Pressable>
             <View style={st.sep} />
-            <Pressable onPress={() => router.push('/support')}><Text style={st.footText}>Liên hệ hỗ trợ</Text></Pressable>
+            <Pressable onPress={() => router.push('/support')} style={{ flexShrink: 1 }}><Text style={st.footText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>Liên hệ hỗ trợ</Text></Pressable>
           </View>
           <Image source={require('../assets/logo.png')} style={st.brand} contentFit="contain" />
           <Pressable hitSlop={8} onPress={() => Linking.openURL(SITE_URL).catch(() => undefined)} style={{ alignSelf: 'center', marginTop: 6 }}>
@@ -237,8 +237,8 @@ const st = StyleSheet.create({
   error: { color: C.danger, fontSize: 14, lineHeight: 20 },
   hint: { color: C.muted, fontSize: 14, lineHeight: 20 },
   link: { color: C.brand, fontWeight: '800', fontSize: 14 },
-  footLinks: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', flexWrap: 'wrap', gap: 4, paddingTop: 10 },
-  footText: { color: C.muted, fontSize: 13.5, paddingHorizontal: 6 },
+  footLinks: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', flexWrap: 'nowrap', paddingTop: 10, paddingHorizontal: 4 },
+  footText: { color: C.muted, fontSize: 12.5, paddingHorizontal: 4, flexShrink: 1 },
   sep: { width: 1, height: 16, backgroundColor: '#E2E8F0' },
   site: { color: C.brand, fontSize: 13.5, fontWeight: '700', textDecorationLine: 'underline' },
   brand: { alignSelf: 'center', width: 150, height: 43, marginTop: 14 },

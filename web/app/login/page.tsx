@@ -8,6 +8,9 @@ import { Eye, EyeOff, Lock, Mail, ArrowLeft, CheckCircle, ShieldCheck, TriangleA
 import { saveSession } from '../../lib/auth';
 import { safeReturnPath } from '../../lib/session-fetch';
 
+/** Tạm khoá đăng nhập Facebook cho tới khi ứng dụng Meta được duyệt. Đặt false để bật lại. */
+const FACEBOOK_PAUSED = true;
+
 function GoogleIcon() {
   return <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.2 1.03-.78 1.93-1.63 2.52v2.12h2.63c1.54-1.42 2.43-3.51 2.43-6.08z"/><path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-2.63-2.12c-1.07.72-2.45 1.16-4.3 1.16-3.3 0-6.1-2.23-7.1-5.23H3.16v2.19C5.14 21.01 8.35 24 12 24z"/><path fill="#FBBC05" d="M4.9 14.9c-.25-.72-.39-1.49-.39-2.9s.14-2.18.39-2.9V6.91H3.16C2.42 8.44 2 10.16 2 12s.42 3.56 1.16 5.09l2.74-2.19z"/><path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 8.35 0 5.14 2.99 3.16 6.91l2.74 2.19c1-3 3.8-5.35 7.1-5.35z"/></svg>;
 }
@@ -171,6 +174,7 @@ function LoginContent() {
   }, []);
 
   const handleFacebookAuth = () => {
+    if (FACEBOOK_PAUSED) { setError('Chức năng đăng nhập Facebook đang hoàn thiện, Quý khách vui lòng thử lại sau.'); return; }
     const fbAppId = process.env.NEXT_PUBLIC_FACEBOOK_APP_ID;
     if ((window as any).FB && fbAppId) {
       (window as any).FB.login(

@@ -9,6 +9,9 @@ import { WelcomeDialog } from './WelcomeDialog';
 import { useRouter } from 'next/navigation';
 import { ALL_PROVINCES } from '../lib/locations';
 
+/** Tạm khoá đăng nhập Facebook cho tới khi ứng dụng Meta được duyệt. Đặt false để bật lại. */
+const FACEBOOK_PAUSED = true;
+
 type ModalMode = 'LOGIN' | 'REGISTER' | 'FORGOT_PASSWORD' | 'RESET_SENT';
 
 interface AuthModalProps {
@@ -354,6 +357,7 @@ export function AuthModal({ isOpen, onClose, initialMode = 'LOGIN', onSuccess }:
 
 
   const handleFacebookAuth = () => {
+    if (FACEBOOK_PAUSED) { setError('Chức năng đăng nhập Facebook đang hoàn thiện, Quý khách vui lòng thử lại sau.'); return; }
     const fbAppId = process.env.NEXT_PUBLIC_FACEBOOK_APP_ID || '2833629363678891';
     if ((window as any).FB) {
       (window as any).FB.login(
