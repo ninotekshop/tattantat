@@ -49,6 +49,7 @@ const config: ExpoConfig = {
   plugins: [
     'expo-router',
     'expo-secure-store',
+    'expo-video',
     ['expo-local-authentication', { faceIDPermission: 'Tất Tần Tật dùng Face ID để mở khóa ứng dụng khi bạn bật tính năng này.' }],
     'expo-apple-authentication',
     ['expo-splash-screen', { image: './assets/splash-icon.png', imageWidth: 240, resizeMode: 'contain', backgroundColor: '#FFFFFF' }],

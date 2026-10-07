@@ -85,5 +85,29 @@ export function upload<T>(path: string, file: { uri: string; name: string; type:
   });
 }
 
+/** Tải nhiều tệp một lần (trường `files`) kèm các trường văn bản, có tiến độ. */
+export function uploadMany<T>(path: string, files: { uri: string; name: string; type: string }[], onProgress?: (p: number) => void, fields: Record<string, string> = {}, field = 'files'): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const doSend = (token?: string, retried = false) => {
+      const xhr = new XMLHttpRequest();
+      xhr.open('POST', API_URL + path);
+      if (token) xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+      xhr.timeout = 300_000;
+      xhr.upload.onprogress = e => { if (e.lengthComputable) onProgress?.(Math.round((e.loaded / e.total) * 100)); };
+      xhr.onerror = xhr.ontimeout = () => reject(new ApiError('Tải tệp lên chưa thành công. Kiểm tra mạng và thử lại.', 0));
+      xhr.onload = async () => {
+        const s = currentSession();
+        if (xhr.status === 401 && s && !retried) { const n = await refresh(s); if (n) return doSend(n.accessToken, true); }
+        try { resolve(await parse<T>(new Response(xhr.responseText, { status: xhr.status }))); } catch (e) { reject(e); }
+      };
+      const fd = new FormData();
+      files.forEach(f => fd.append(field, f as unknown as Blob));
+      Object.entries(fields).forEach(([k, v]) => fd.append(k, v));
+      xhr.send(fd);
+    };
+    doSend(currentSession()?.accessToken);
+  });
+}
+
 /** Đường dẫn ảnh tương đối → tuyệt đối. */
 export const media = (url?: string | null) => !url ? '' : /^(https?:\/\/|data:)/.test(url) ? url : SITE_URL + (url.startsWith('/') ? url : '/' + url);

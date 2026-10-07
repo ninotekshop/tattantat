@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
+import { FlatList, Pressable, RefreshControl, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Image } from 'expo-image';
 import { router, useFocusEffect } from 'expo-router';
 import { api, media } from '@/lib/api';
@@ -13,7 +13,7 @@ import { LoginRequired } from '@/components/LoginRequired';
 export default function Messages() {
   const { session } = useAuth();
   const [items, setItems] = useState<Chat[] | null>(null);
-  const [error, setError] = useState(''), [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState(''), [refreshing, setRefreshing] = useState(false), [q, setQ] = useState('');
   const load = useCallback(() => {
     if (!session) return;
     api<Chat[]>('/chats', { auth: true }).then(setItems).catch(e => setError(e.message)).finally(() => setRefreshing(false));
@@ -23,7 +23,8 @@ export default function Messages() {
   if (!session) return <LoginRequired text="Đăng nhập để nhắn tin với người mua và người bán." />;
   if (!items) return error ? <ErrorBox message={error} onRetry={load} /> : <Loading />;
   return (
-    <FlatList data={items} keyExtractor={c => c.id} contentContainerStyle={{ padding: 12, gap: 10, flexGrow: 1 }}
+    <FlatList data={q.trim() ? items.filter(c => [c.other_name, c.product_title].some(v => (v ?? '').toLowerCase().includes(q.trim().toLowerCase()))) : items} keyExtractor={c => c.id} contentContainerStyle={{ padding: 12, gap: 10, flexGrow: 1 }}
+      ListHeaderComponent={items.length ? <TextInput value={q} onChangeText={setQ} placeholder="Tìm hội thoại…" placeholderTextColor="#94A3B8" style={st.search} /> : null}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} tintColor={C.brand} />}
       ListEmptyComponent={<Empty title="Chưa có tin nhắn" text="Bấm “Nhắn tin với người bán” ở một tin đăng để bắt đầu trò chuyện." />}
       renderItem={({ item }) => (
@@ -43,6 +44,7 @@ export default function Messages() {
 }
 
 const st = StyleSheet.create({
+  search: { backgroundColor: C.white, borderRadius: R.xl, paddingHorizontal: 14, height: 42, fontSize: 15, color: C.ink, marginBottom: 2 },
   item: { flexDirection: 'row', gap: 12, backgroundColor: C.white, borderRadius: R.lg, padding: 12, ...shadow },
   thumb: { width: 60, height: 60, borderRadius: 12, backgroundColor: C.paper },
   name: { fontSize: 16, fontWeight: '700', color: C.ink, flex: 1 },
