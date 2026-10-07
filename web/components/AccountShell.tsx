@@ -6,6 +6,7 @@ import { Suspense, useEffect, useState, type ReactNode } from 'react';
 import { BadgeCheck, Ban, Bell, BarChart3, Bookmark, ChevronRight, FileText, Heart, Mail, MessageCircle, Phone, PlusCircle, ShieldCheck, ShoppingBag, SlidersHorizontal, PanelLeftClose, PanelLeftOpen, User, Wallet, type LucideIcon } from 'lucide-react';
 import { memberRequest } from '../lib/api';
 import type { WebSession } from '../lib/auth';
+import TrustBadge from './TrustBadge';
 
 type Me = { full_name: string; avatar_url?: string | null; email: string | null; phone: string | null; phone_verified: boolean };
 type Item = { key: string; href: string; label: string; icon: LucideIcon };
@@ -49,6 +50,7 @@ function Inner({ session, children }: { session: WebSession; children: ReactNode
       <div className="ac-who">
         <p className="ac-hello">Xin chào,</p>
         <h1>{shown || 'Tài khoản của bạn'}</h1>
+        <div style={{ margin: '4px 0 6px' }}><TrustBadge userId={session.user.id} light /></div>
         <div className="ac-contact">
           <span><Mail size={15} />{me?.email || 'Chưa cập nhật email'}</span>
           <span><Phone size={15} />{me?.phone || 'Chưa có số điện thoại'}{me?.phone_verified && <em className="ac-ok"><BadgeCheck size={14} />Đã xác minh</em>}</span>

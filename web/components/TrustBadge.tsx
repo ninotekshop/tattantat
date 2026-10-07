@@ -28,7 +28,7 @@ export function Stars({ n, size = 15 }: { n: number; size?: number }) {
  * Huy hiệu điểm uy tín. variant="full": sao + điểm + cấp độ; "compact": ★★★★☆ 8/10 (dùng trên mobile/chat).
  * Bấm vào để xem chi tiết tiêu chí.
  */
-export default function TrustBadge({ userId, variant = 'full' }: { userId: string; variant?: 'full' | 'compact' }) {
+export default function TrustBadge({ userId, variant = 'full', light = false }: { userId: string; variant?: 'full' | 'compact'; light?: boolean }) {
   const [data, setData] = useState<TrustData | null>(null);
   const [open, setOpen] = useState(false);
 
@@ -51,10 +51,10 @@ export default function TrustBadge({ userId, variant = 'full' }: { userId: strin
   return (
     <>
       <button type="button" onClick={e => { e.preventDefault(); e.stopPropagation(); setOpen(true); }} title={`${data.score}/${data.maxScore} điểm uy tín · ${data.level}`}
-        style={{ display: 'inline-flex', alignItems: 'center', flexWrap: 'wrap', gap: compact ? 5 : 8, border: 0, background: 'transparent', padding: 0, cursor: 'pointer', font: 'inherit', color: '#334155', textAlign: 'left' }}>
+        style={{ display: 'inline-flex', alignItems: 'center', flexWrap: 'wrap', gap: compact ? 5 : 8, border: 0, background: 'transparent', padding: 0, cursor: 'pointer', font: 'inherit', color: light ? '#fff' : '#334155', textAlign: 'left' }}>
         <Stars n={data.stars} size={compact ? 13 : 16} />
         <span style={{ fontWeight: 700, fontSize: compact ? 12 : 13 }}>{data.score}/{data.maxScore}{compact ? '' : ' điểm uy tín'}</span>
-        {!compact && <span style={{ fontSize: 12, color: '#007c4b', background: '#e6f6ed', borderRadius: 10, padding: '2px 9px', fontWeight: 600 }}>{data.level}</span>}
+        {!compact && <span style={{ fontSize: 12, color: light ? '#fff' : '#007c4b', background: light ? 'rgba(255,255,255,.2)' : '#e6f6ed', borderRadius: 10, padding: '2px 9px', fontWeight: 600 }}>{data.level}</span>}
       </button>
 
       {open && (

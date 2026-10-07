@@ -39,6 +39,7 @@ export class TrustService implements OnModuleInit, OnModuleDestroy {
     try {
       await this.db.query(`
         ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_custom BOOLEAN NOT NULL DEFAULT FALSE;
+        UPDATE users SET avatar_custom = TRUE WHERE avatar_custom = FALSE AND avatar_url LIKE 'data:image/%';
         CREATE TABLE IF NOT EXISTS user_referrals (
           id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
           referrer_user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,

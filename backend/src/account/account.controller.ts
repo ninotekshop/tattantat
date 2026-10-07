@@ -40,7 +40,7 @@ export class AccountController {
   @Patch('me')
   async update(@Req() request: { user: { id: string } }, @Body() body: UpdateProfileDto) {
     const result = await this.db.query(
-      `UPDATE users SET full_name=COALESCE($1,full_name), avatar_url=COALESCE($2,avatar_url), avatar_custom=CASE WHEN $2::text IS NOT NULL AND $2::text !~* '(googleusercontent|fbcdn|facebook\.com|fbsbx|zdn\.vn|zalo|appleid|apple\.com)' THEN TRUE ELSE avatar_custom END, updated_at=NOW() WHERE id=$3 RETURNING id, full_name, avatar_url, email, role`,
+      `UPDATE users SET full_name=COALESCE($1,full_name), avatar_url=COALESCE($2,avatar_url), avatar_custom=CASE WHEN $2::text IS NULL THEN avatar_custom WHEN $2::text LIKE 'data:image/%' THEN TRUE WHEN $2::text !~* '^https://[^/]*(googleusercontent|fbcdn|facebook|fbsbx|zdn\.vn|zalo|appleid|apple\.com)' THEN TRUE ELSE avatar_custom END, updated_at=NOW() WHERE id=$3 RETURNING id, full_name, avatar_url, email, role`,
       [body.fullName || null, body.avatarUrl || null, request.user.id]
     );
     if (body.avatarUrl) triggerTrustRecalc(request.user.id, 'portrait_updated');
