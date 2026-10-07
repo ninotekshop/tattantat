@@ -32,7 +32,7 @@ const config: ExpoConfig = {
     'expo-secure-store',
     ['expo-splash-screen', { image: './assets/splash-icon.png', imageWidth: 200, resizeMode: 'contain', backgroundColor: '#FFFFFF' }],
     ['expo-notifications', { icon: './assets/notification-icon.png', color: '#00733E' }],
-    ...(hasGoogleServices ? ['@react-native-firebase/app', '@react-native-firebase/messaging'] as const : []),
+    ...(hasGoogleServices ? ['@react-native-firebase/app', '@react-native-firebase/messaging', './plugins/withFirebaseColorFix'] as const : []),
     ['expo-build-properties', { ios: { useFrameworks: 'static', deploymentTarget: '16.4' }, android: { minSdkVersion: 26 } }],
   ],
   experiments: { typedRoutes: true },
