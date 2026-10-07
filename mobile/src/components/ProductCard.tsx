@@ -59,10 +59,10 @@ export const ProductCard = memo(function ProductCard({ p, width }: { p: Product;
           <View style={st.row}><MapPin size={12} color={C.muted} /><Text numberOfLines={1} style={st.meta}>{p.location}</Text></View>
           <View style={st.row}>
             <Avatar name={p.sellerName} url={p.sellerAvatar ? media(p.sellerAvatar) : null} size={18} />
-            <Text numberOfLines={1} style={[st.meta, { flex: 0, maxWidth: '50%', color: C.text }]}>{p.sellerName}</Text>
+            <Text numberOfLines={1} style={[st.meta, { flex: 0, flexShrink: 1, color: C.text }]}>{p.sellerName}</Text>
             {p.sellerVerified ? <BadgeCheck size={12} color={C.brand} /> : null}
-            <Text numberOfLines={1} style={st.meta}>· {timeAgo(p.postedAt)}</Text>
           </View>
+          <Text numberOfLines={1} style={st.meta}>{timeAgo(p.postedAt)}</Text>
         </View>
         <View style={st.footer}>
           {mine ? <View style={{ flex: 1 }} /> : (
