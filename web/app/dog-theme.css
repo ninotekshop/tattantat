@@ -722,6 +722,12 @@ body {
   font-size: 12px;
 }
 
+.unverified-badge {
+  color: #94a3b8;
+  font-weight: 600;
+  font-size: 12px;
+}
+
 .card-footer-flex {
   border-top: 1px dashed #e2e8f0;
   padding-top: 8px;
@@ -1573,7 +1579,8 @@ body {
     font-size: 11px !important;
   }
 
-  .verified-badge {
+  .verified-badge,
+  .unverified-badge {
     font-size: 10.5px !important;
   }
 

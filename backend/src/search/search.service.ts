@@ -98,7 +98,7 @@ export class SearchService implements OnModuleInit {
     const { sql, values } = this.buildWhere(p, viewerId);
     const order = SORTS[p.sort ?? 'new'] ?? SORTS.new;
     const [rows, total] = await Promise.all([
-      this.db.query(`SELECT p.id, p.title, p.price::text, p.address, p.created_at, p.status::text, p.seller_id, p.listing_price_mode, p.is_featured AS is_featured, u.full_name AS seller_name, CASE WHEN u.avatar_url LIKE 'data:%' THEN NULL ELSE u.avatar_url END AS seller_avatar, COALESCE(u.is_verified,false) AS seller_verified,
+      this.db.query(`SELECT p.id, p.title, p.price::text, p.address, p.created_at, p.status::text, p.seller_id, p.listing_price_mode, p.is_featured AS is_featured, u.full_name AS seller_name, CASE WHEN u.avatar_url LIKE 'data:%' THEN NULL ELSE u.avatar_url END AS seller_avatar, (COALESCE(u.is_verified,false) AND COALESCE(u.phone_verified,false)) AS seller_verified,
         (SELECT l.published_snapshot->'data'->'values' FROM listings l WHERE l.product_id=p.id LIMIT 1) AS attrs,
         (SELECT url FROM product_images WHERE product_id=p.id ORDER BY sort_order LIMIT 1) AS image_url,
         EXISTS(SELECT 1 FROM listings lv WHERE lv.product_id=p.id AND CASE WHEN jsonb_typeof(lv.published_snapshot->'data'->'videos')='array' THEN jsonb_array_length(lv.published_snapshot->'data'->'videos')>0 ELSE false END) AS has_video

@@ -89,7 +89,7 @@ export default function ProductDetail() {
             <Avatar name={p.sellerName} url={p.sellerAvatar ? media(p.sellerAvatar) : null} />
             <View style={{ flex: 1 }}>
               <Text style={{ fontWeight: '700', fontSize: 16, color: C.ink }}>{p.sellerName}</Text>
-              <Text style={{ color: C.muted, fontSize: 13 }}>{p.sellerVerified ? 'Đã xác thực danh tính' : 'Người bán'}</Text>
+              <Text style={{ color: C.muted, fontSize: 13 }}>{p.sellerVerified ? 'Đã xác thực (SĐT + CCCD)' : 'Chưa xác thực'}</Text>
               <View style={{ marginTop: 3 }}><TrustBadge userId={p.sellerId} /></View>
             </View>
           </View>

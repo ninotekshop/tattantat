@@ -60,7 +60,7 @@ export const ProductCard = memo(function ProductCard({ p, width }: { p: Product;
           <View style={st.row}>
             <Avatar name={p.sellerName} url={p.sellerAvatar ? media(p.sellerAvatar) : null} size={18} />
             <Text numberOfLines={1} style={[st.meta, { flex: 0, flexShrink: 1, color: C.text }]}>{p.sellerName}</Text>
-            {p.sellerVerified ? <BadgeCheck size={12} color={C.brand} /> : null}
+            {p.sellerVerified ? <BadgeCheck size={12} color={C.brand} /> : <Text style={st.unverified}>Chưa xác thực</Text>}
           </View>
           <Text numberOfLines={1} style={st.meta}>{timeAgo(p.postedAt)}</Text>
         </View>
@@ -105,6 +105,7 @@ const st = StyleSheet.create({
   title: { fontSize: 14, fontWeight: '600', color: C.ink, minHeight: 36 },
   price: { fontSize: 15, fontWeight: '800', color: C.danger },
   row: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  unverified: { fontSize: 11, color: '#94A3B8', fontWeight: '600' },
   meta: { fontSize: 12, color: C.muted, flex: 1 },
   heart: { position: 'absolute', right: 6, top: 6, width: 32, height: 32, borderRadius: 16, backgroundColor: 'rgba(255,255,255,.92)', alignItems: 'center', justifyContent: 'center' },
   vip: { position: 'absolute', left: 6, bottom: 6, backgroundColor: '#D97706', borderRadius: 6, paddingHorizontal: 7, paddingVertical: 2 },

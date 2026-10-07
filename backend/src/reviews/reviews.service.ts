@@ -106,7 +106,7 @@ export class ReviewsService implements OnModuleInit {
         FROM ${t} WHERE ${owner}=$1 AND status='VISIBLE'`, [userId]),
       this.db.query(`SELECT r.id::text, r.rating, r.comment, r.reply, r.replied_at, r.created_at, LEFT(COALESCE(u.full_name,'Thành viên'), 40) AS author_name FROM ${t} r LEFT JOIN users u ON u.id=r.${author}
         WHERE r.${owner}=$1 AND r.status='VISIBLE' ORDER BY r.created_at DESC LIMIT 10 OFFSET $2`, [userId, (Math.max(1, page) - 1) * 10]),
-      this.db.query(`SELECT full_name, avatar_url, is_verified, created_at, (SELECT COUNT(*)::int FROM products p WHERE p.seller_id=users.id AND p.status='ACTIVE' AND p.deleted_at IS NULL) AS active_listings FROM users WHERE id=$1 AND deleted_at IS NULL`, [userId]),
+      this.db.query(`SELECT full_name, avatar_url, (COALESCE(is_verified,false) AND COALESCE(phone_verified,false)) AS is_verified, created_at, (SELECT COUNT(*)::int FROM products p WHERE p.seller_id=users.id AND p.status='ACTIVE' AND p.deleted_at IS NULL) AS active_listings FROM users WHERE id=$1 AND deleted_at IS NULL`, [userId]),
     ]);
     if (!user.rows[0]) throw new NotFoundException('Không tìm thấy người dùng.');
     const s = sum.rows[0];
