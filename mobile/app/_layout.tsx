@@ -9,6 +9,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AuthProvider, useAuth } from '@/lib/auth';
 import { C } from '@/lib/theme';
+import { BiometricGate } from '@/components/BiometricGate';
 
 SplashScreen.preventAutoHideAsync().catch(() => undefined);
 
@@ -88,7 +89,7 @@ export default function Layout() {
       <SafeAreaProvider>
         <AuthProvider>
           <StatusBar style="dark" />
-          <Root />
+          <BiometricGate><Root /></BiometricGate>
         </AuthProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>

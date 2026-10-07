@@ -1,5 +1,5 @@
-import { useCallback, useState } from 'react';
-import { Alert, Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useCallback, useEffect, useState } from 'react';
+import { Alert, Linking, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
 import Constants from 'expo-constants';
 import { Bell, Bot, ChevronRight, FileText, Heart, LogOut, PackageOpen, ShieldCheck, Sparkles, Trash2, UserRound, type LucideIcon } from 'lucide-react-native';
@@ -7,6 +7,7 @@ import { api, media, SITE_URL } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { C, R, shadow } from '@/lib/theme';
 import type { Me } from '@/lib/types';
+import { authenticateUser, biometricAvailable, biometricEnabled, setBiometricEnabled } from '@/lib/biometric';
 import { Avatar } from '@/components/ui';
 import TrustBadge from '@/components/TrustBadge';
 import { LoginRequired } from '@/components/LoginRequired';
@@ -17,6 +18,21 @@ function Row({ icon: Icon, label, onPress, danger }: { icon: LucideIcon; label: 
     <Text style={[st.rowText, danger && { color: C.danger }]}>{label}</Text>
     <ChevronRight size={18} color="#CBD5E1" />
   </Pressable>;
+}
+
+function BiometricRow() {
+  const [avail, setAvail] = useState(false), [on, setOn] = useState(false);
+  useEffect(() => { void biometricAvailable().then(setAvail); void biometricEnabled().then(setOn); }, []);
+  if (!avail) return null;
+  const toggle = async (v: boolean) => {
+    if (!(await authenticateUser(v ? 'Xác nhận để bật mở khóa bằng vân tay' : 'Xác nhận để tắt mở khóa bằng vân tay'))) return;
+    await setBiometricEnabled(v); setOn(v);
+  };
+  return <View style={st.row}>
+    <View style={st.rowIcon}><ShieldCheck size={19} color={C.brand} /></View>
+    <Text style={st.rowText}>Mở khóa bằng vân tay</Text>
+    <Switch value={on} onValueChange={v => void toggle(v)} trackColor={{ true: C.brand }} />
+  </View>;
 }
 
 export default function Account() {
@@ -65,6 +81,7 @@ export default function Account() {
       <View style={st.group}>
         <Row icon={UserRound} label="Hồ sơ cá nhân" onPress={() => router.push('/edit-profile')} />
         <Row icon={ShieldCheck} label="Xác minh tài khoản" onPress={() => router.push('/verify')} />
+        <BiometricRow />
         <Row icon={Bot} label="Trợ lý TTT" onPress={support} />
       </View>
 
