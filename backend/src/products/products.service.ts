@@ -7,7 +7,7 @@ import { ModerationService } from '../admin/moderation.service';
 import { randomUUID } from 'crypto';
 import { compactLocation, convertAddress } from '../geo/vn-merge';
 
-type ProductRow = { id: string; title: string; price: string; address: string | null; created_at: string; seller_id?: string; seller_name: string; seller_avatar?: string | null; image_url: string | null; description?: string | null; condition?: string; category_id?: number; status?: string; listing_price_mode?:string; listing_id?:string|null };
+type ProductRow = { id: string; title: string; price: string; address: string | null; created_at: string; seller_id?: string; seller_name: string; is_featured?: boolean; seller_avatar?: string | null; image_url: string | null; description?: string | null; condition?: string; category_id?: number; status?: string; listing_price_mode?:string; listing_id?:string|null };
 
 @Injectable()
 export class ProductsService {
@@ -24,14 +24,14 @@ export class ProductsService {
       throw new BadRequestException('Danh mục không hợp lệ');
     }
     const result = await this.database.query<ProductRow>(
-      `SELECT p.id, p.title, p.price::text, p.address, p.created_at, p.status::text, p.seller_id, p.listing_price_mode, u.full_name AS seller_name, CASE WHEN u.avatar_url LIKE 'data:%' THEN NULL ELSE u.avatar_url END AS seller_avatar,
+      `SELECT p.id, p.title, p.price::text, p.address, p.created_at, p.status::text, p.seller_id, p.listing_price_mode, p.is_featured AS is_featured, u.full_name AS seller_name, CASE WHEN u.avatar_url LIKE 'data:%' THEN NULL ELSE u.avatar_url END AS seller_avatar,
        (SELECT url FROM product_images WHERE product_id = p.id ORDER BY sort_order LIMIT 1) AS image_url,
        EXISTS(SELECT 1 FROM listings lv WHERE lv.product_id=p.id AND CASE WHEN jsonb_typeof(lv.published_snapshot->'data'->'videos')='array' THEN jsonb_array_length(lv.published_snapshot->'data'->'videos')>0 ELSE false END) AS has_video
        FROM products p JOIN users u ON u.id = p.seller_id
        WHERE p.status = 'ACTIVE' AND p.deleted_at IS NULL AND ($1 = '' OR p.title ILIKE '%' || $1 || '%')
          AND ($2::bigint IS NULL OR p.category_id IN (WITH RECURSIVE tree AS (SELECT id FROM categories WHERE id=$2::bigint UNION SELECT c.id FROM categories c JOIN tree t ON c.parent_id=t.id) SELECT id FROM tree))
          AND NOT EXISTS (SELECT 1 FROM user_blocks b WHERE $3::uuid IS NOT NULL AND ((b.blocker_id=$3::uuid AND b.blocked_id=p.seller_id) OR (b.blocker_id=p.seller_id AND b.blocked_id=$3::uuid)))
-       ORDER BY p.published_at DESC LIMIT 50`, [query?.trim() ?? '', categoryId ?? null, viewerId ?? null],
+       ORDER BY p.is_featured DESC, p.published_at DESC LIMIT 50`, [query?.trim() ?? '', categoryId ?? null, viewerId ?? null],
     );
     return this.envelope(result.rows.map((row) => this.productPayload(row)));
   }
@@ -51,7 +51,7 @@ export class ProductsService {
     const result = await this.database.query<ProductRow & { images: string[] }>(
       `SELECT p.id, p.title, p.price::text, p.address, p.created_at, p.status::text, p.seller_id, p.description,
        CASE WHEN EXISTS(SELECT 1 FROM listings lc WHERE lc.product_id=p.id) THEN (SELECT lc.published_snapshot->'data'->>'condition' FROM listings lc WHERE lc.product_id=p.id LIMIT 1) ELSE p.condition::text END AS condition,
-       p.category_id, p.listing_price_mode, (SELECT l.id FROM listings l WHERE l.product_id=p.id) AS listing_id, u.full_name AS seller_name, CASE WHEN u.avatar_url LIKE 'data:%' THEN NULL ELSE u.avatar_url END AS seller_avatar,
+       p.category_id, p.listing_price_mode, (SELECT l.id FROM listings l WHERE l.product_id=p.id) AS listing_id, p.is_featured AS is_featured, u.full_name AS seller_name, CASE WHEN u.avatar_url LIKE 'data:%' THEN NULL ELSE u.avatar_url END AS seller_avatar,
        (SELECT url FROM product_images WHERE product_id = p.id ORDER BY sort_order LIMIT 1) AS image_url,
        COALESCE((SELECT jsonb_agg(url ORDER BY sort_order) FROM product_images WHERE product_id = p.id), '[]'::jsonb) AS images,
        COALESCE((SELECT lc.published_snapshot->'data'->'videos' FROM listings lc WHERE lc.product_id=p.id LIMIT 1), '[]'::jsonb) AS video_ids,
@@ -66,7 +66,7 @@ export class ProductsService {
   }
 
   async mine(userId: string) {
-    const result = await this.database.query<ProductRow>(`SELECT p.id,p.title,p.price::text,p.address,p.created_at,p.status::text,p.seller_id,p.listing_price_mode,(SELECT l.id FROM listings l WHERE l.product_id=p.id) AS listing_id,u.full_name AS seller_name, CASE WHEN u.avatar_url LIKE 'data:%' THEN NULL ELSE u.avatar_url END AS seller_avatar,(SELECT url FROM product_images WHERE product_id=p.id ORDER BY sort_order LIMIT 1) AS image_url FROM products p JOIN users u ON u.id=p.seller_id WHERE p.seller_id=$1 AND p.deleted_at IS NULL ORDER BY p.created_at DESC`, [userId]);
+    const result = await this.database.query<ProductRow>(`SELECT p.id,p.title,p.price::text,p.address,p.created_at,p.status::text,p.seller_id,p.listing_price_mode,(SELECT l.id FROM listings l WHERE l.product_id=p.id) AS listing_id,p.is_featured AS is_featured, u.full_name AS seller_name, CASE WHEN u.avatar_url LIKE 'data:%' THEN NULL ELSE u.avatar_url END AS seller_avatar,(SELECT url FROM product_images WHERE product_id=p.id ORDER BY sort_order LIMIT 1) AS image_url FROM products p JOIN users u ON u.id=p.seller_id WHERE p.seller_id=$1 AND p.deleted_at IS NULL ORDER BY p.created_at DESC`, [userId]);
     return this.envelope(result.rows.map((row) => this.productPayload(row)));
   }
 
@@ -186,6 +186,7 @@ export class ProductsService {
       postedAt: row.created_at,
       sellerId: row.seller_id ?? '',
       sellerName: row.seller_name,
+      isFeatured: !!row.is_featured,
       sellerAvatar: avatarThumb(row.seller_avatar),
       imageUrl: row.image_url ?? '',
       images: row.images && row.images.length > 0 ? row.images : (row.image_url ? [row.image_url] : []),

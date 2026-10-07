@@ -47,6 +47,7 @@ export const ProductCard = memo(function ProductCard({ p, width }: { p: Product;
       <Pressable onPress={() => router.push({ pathname: '/products/[id]', params: { id: p.id } })} style={({ pressed }) => [st.card, { width }, pressed && { opacity: 0.9 }]}>
         <View>
           <Image source={{ uri: media(p.imageUrl || p.images?.[0]) }} style={{ width, height: width, backgroundColor: C.paper }} contentFit="cover" transition={150} placeholder={require('../../assets/splash-icon.png')} placeholderContentFit="contain" />
+          {p.isFeatured ? <View style={st.vip}><Text style={st.vipText}>VIP</Text></View> : null}
           {p.hasVideo ? <View style={st.video}><PlayCircle size={18} color={C.white} /></View> : null}
           <Pressable accessibilityLabel={fav ? 'Bỏ lưu tin' : 'Lưu tin'} hitSlop={8} onPress={() => void toggle(p.id)} style={st.heart}>
             <Heart size={18} color={fav ? C.danger : C.ink} fill={fav ? C.danger : 'none'} />
@@ -106,6 +107,8 @@ const st = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   meta: { fontSize: 12, color: C.muted, flex: 1 },
   heart: { position: 'absolute', right: 6, top: 6, width: 32, height: 32, borderRadius: 16, backgroundColor: 'rgba(255,255,255,.92)', alignItems: 'center', justifyContent: 'center' },
+  vip: { position: 'absolute', left: 6, bottom: 6, backgroundColor: '#D97706', borderRadius: 6, paddingHorizontal: 7, paddingVertical: 2 },
+  vipText: { color: C.white, fontWeight: '800', fontSize: 11, letterSpacing: 0.5 },
   video: { position: 'absolute', left: 6, top: 6, backgroundColor: 'rgba(0,0,0,.45)', borderRadius: 99, padding: 3 },
   footer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderTopWidth: 1, borderTopColor: C.line, paddingHorizontal: 10, height: 38 },
   msg: { flexDirection: 'row', alignItems: 'center', gap: 5 },

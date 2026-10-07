@@ -1,6 +1,7 @@
 'use client';
 
 import { Ic } from '../../components/Ic';
+import { VipBadge } from '../../components/VipBadge';
 import { SellerAvatar } from '../../components/SellerAvatar';
 import Link from 'next/link';
 import { useCallback, useEffect, useRef, useState, Suspense, type ReactNode } from 'react';
@@ -74,7 +75,7 @@ function ProductCard({ product }: { product: Product }) {
             }}
           />
         </Link>
-        <VideoBadge show={product.hasVideo} />
+        <VideoBadge show={product.hasVideo} /><VipBadge show={product.isFeatured} />
       </div>
 
       <div className="card-body">

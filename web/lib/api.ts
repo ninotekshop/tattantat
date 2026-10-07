@@ -12,6 +12,7 @@ export type Product = {
   sellerName: string;
   sellerVerified?: boolean;
   sellerAvatar?: string | null;
+  isFeatured?: boolean;
   imageUrl: string;
   images?: string[];
   videos?: string[];

@@ -5,7 +5,8 @@ import { Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { MemberArea } from '../../components/MemberArea';
 import { apiGet, memberRequest } from '../../lib/api';
-import { PromoPackage, dateTimeVi, dateVi, daysLeft, durationLabel, newKey, promoLabel, vnd } from '../../lib/billing';
+import { PromoPackage, dateTimeVi, dateVi, daysLeft, durationLabel, newKey, promoDesc, promoLabel, vnd } from '../../lib/billing';
+import { PromoGuide } from '../../components/PromoGuide';
 import { MoneyInput } from '../../components/MoneyInput';
 import { ErrorDialog } from '../../components/ErrorDialog';
 import { CelebrationDialog, type CelebrationKind } from '../../components/CelebrationDialog';
@@ -189,7 +190,8 @@ function Wallet() {
       {!listings.length ? <p style={{ color: '#71817b' }}>Bạn chưa có tin đang hiển thị. <Link href="/sell" style={{ color: '#007c4b', fontWeight: 700 }}>Đăng tin ngay</Link></p> : <>
         <div className="bl-f" style={{ marginBottom: 14 }}><label htmlFor="promo-listing" style={{ fontWeight: 700, display: 'block', marginBottom: 6 }}>Chọn tin cần đẩy</label>
           <select id="promo-listing" className="bl-in" style={{ maxWidth: 480 }} value={productId} onChange={e => setProductId(e.target.value)}><option value="">— Chọn tin đăng —</option>{listings.map(l => <option key={l.id} value={l.productId ?? ''}>{l.title || '(Chưa đặt tiêu đề)'}</option>)}</select></div>
-        <div className="bl-grid plans">{promos.map(p => <div key={p.id} className="bl-plan"><div className="name">{p.name}</div><div><span className="bl-pill ok">{promoLabel(p.promotion_type)}</span></div>
+        <PromoGuide />
+        <div className="bl-grid plans">{promos.map(p => <div key={p.id} className="bl-plan"><div className="name">{p.name}</div><div><span className="bl-pill ok">{promoLabel(p.promotion_type)}</span></div><div style={{ color: '#4b5d56', fontSize: 13.5 }}>{promoDesc(p.promotion_type)}</div>
           <div className="bl-price" style={{ fontSize: 24 }}>{coin(p.price)}<small> / {durationLabel(p.duration_hours)}</small></div>
           <button className="bl-btn primary" disabled={busy || !productId} onClick={() => buyPromo(p)}>Mua gói này</button></div>)}</div></>}
       {!!overview?.promotions.length && <table className="bl-tbl" style={{ marginTop: 16 }}><thead><tr><th>Gói</th><th>Tin đăng</th><th>Giá</th><th>Hết hạn</th></tr></thead><tbody>

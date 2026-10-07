@@ -1,5 +1,6 @@
 'use client';
 
+import { VipBadge } from './VipBadge';
 import { SellerAvatar } from './SellerAvatar';
 import { Ic } from './Ic';
 import { VideoBadge } from './VideoBadge';
@@ -164,7 +165,7 @@ function ProductCard({ product, viewMode = 'GRID_4' }: { product: Product; viewM
             onError={() => setFailedImage(true)}
           />
         </Link>
-        <VideoBadge show={product.hasVideo} />
+        <VideoBadge show={product.hasVideo} /><VipBadge show={product.isFeatured} />
       </div>
 
       <div className="card-body">

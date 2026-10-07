@@ -6,7 +6,8 @@ export const newKey = () => (typeof crypto !== 'undefined' && 'randomUUID' in cr
 export type Plan = { id: string; code: string; name: string; version_id: string; price: string; billing_cycle: 'MONTHLY' | 'YEARLY'; max_listings: number | null; features: unknown };
 export type PromoPackage = { id: string; code: string; name: string; version_id: string; price: string; duration_hours: number; promotion_type: 'FEATURED' | 'BOOST' | 'TOP_SEARCH' };
 export const featureList = (features: unknown): string[] => (Array.isArray(features) ? features.filter((f): f is string => typeof f === 'string') : []);
-export const promoLabel = (type: string) => (type === 'FEATURED' ? 'Tin nổi bật' : type === 'BOOST' ? 'Đẩy tin lên đầu' : 'Hiện đầu tìm kiếm');
+export const promoLabel = (type: string) => (type === 'FEATURED' ? 'VIP · Tin nổi bật' : type === 'BOOST' ? 'Đẩy tin lên đầu' : 'Hiện đầu tìm kiếm');
+export const promoDesc = (type: string) => (type === 'FEATURED' ? 'Tin luôn nằm trên tin thường và có nhãn VIP nổi bật.' : type === 'BOOST' ? 'Tin tự nhảy lên đầu danh sách mỗi 3 giờ.' : 'Tin hiện đầu kết quả tìm kiếm.');
 export const durationLabel = (hours: number) => (hours % 24 === 0 ? `${hours / 24} ngày` : `${hours} giờ`);
 
 const PLAN_LABELS: Record<string, string> = { free: 'Free (Miễn phí)', 'gói free': 'Free (Miễn phí)', 'gói miễn phí': 'Free (Miễn phí)', 'miễn phí': 'Free (Miễn phí)', pro: 'Pro (Chuyên nghiệp)', 'gói pro': 'Pro (Chuyên nghiệp)', business: 'Business (Kinh doanh)', 'gói business': 'Business (Kinh doanh)', enterprise: 'Enterprise (Cao cấp)', 'gói enterprise': 'Enterprise (Cao cấp)' };

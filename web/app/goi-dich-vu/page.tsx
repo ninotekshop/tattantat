@@ -5,8 +5,9 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { apiGet, memberRequest } from '../../lib/api';
 import { readSession } from '../../lib/auth';
+import { PromoGuide } from '../../components/PromoGuide';
 import { coin, vndNeededForCoin } from '../../lib/coin';
-import { Plan, PromoPackage, dateVi, durationLabel, featureList, newKey, planLabel, FREE_PLAN_LABEL, promoLabel, vnd } from '../../lib/billing';
+import { Plan, PromoPackage, dateVi, durationLabel, featureList, newKey, planLabel, FREE_PLAN_LABEL, promoDesc, promoLabel, vnd } from '../../lib/billing';
 
 type Overview = { balance: string; subscription: { name: string; endsAt: string | null } | null };
 
@@ -117,7 +118,8 @@ export default function PricingPage() {
     <div className="bl-card" style={{ marginTop: 28 }}>
       <h2>Gói đẩy tin & tin nổi bật</h2>
       <p className="sub" style={{ marginTop: -6 }}>Mua cho từng tin đăng để tiếp cận nhiều người mua hơn. Chọn tin trong trang <Link href="/vi-tien#day-tin" style={{ color: '#007c4b', fontWeight: 700 }}>Ví & gói của tôi</Link>.</p>
-      <div className="bl-grid plans">{promos.map(p => <div key={p.id} className="bl-plan"><div className="name">{p.name}</div><div><span className="bl-pill ok">{promoLabel(p.promotion_type)}</span></div>
+      <PromoGuide />
+        <div className="bl-grid plans">{promos.map(p => <div key={p.id} className="bl-plan"><div className="name">{p.name}</div><div><span className="bl-pill ok">{promoLabel(p.promotion_type)}</span></div><div style={{ color: '#4b5d56', fontSize: 13.5 }}>{promoDesc(p.promotion_type)}</div>
         <div className="bl-price">{coin(p.price)}<small> / {durationLabel(p.duration_hours)}</small></div>
         <Link className="bl-btn" href="/vi-tien#day-tin">Chọn tin để đẩy</Link></div>)}
         {!promos.length && !loading && <p style={{ color: '#71817b' }}>Chưa có gói đẩy tin.</p>}</div>
