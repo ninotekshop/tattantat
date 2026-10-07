@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { tap } from '@/lib/haptic';
 import { FlatList, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
@@ -55,10 +56,10 @@ export default function Home() {
       <View style={st.top}>
         <Image source={require('../../assets/logo.png')} style={{ width: 132, height: 38 }} contentFit="contain" />
         <View style={{ flexDirection: 'row', gap: 10 }}>
-          <Pressable accessibilityLabel="Tin đã lưu" hitSlop={10} onPress={() => router.push(session ? '/favorites' : '/login')} style={st.bell}>
+          <Pressable accessibilityLabel="Tin đã lưu" hitSlop={10} onPress={() => { tap(); router.push(session ? '/favorites' : '/login'); }} style={st.bell}>
             <Heart size={22} color={C.ink} />
           </Pressable>
-          <Pressable accessibilityLabel="Thông báo" hitSlop={10} onPress={() => router.push(session ? '/notifications' : '/login')} style={st.bell}>
+          <Pressable accessibilityLabel="Thông báo" hitSlop={10} onPress={() => { tap(); router.push(session ? '/notifications' : '/login'); }} style={st.bell}>
             <Bell size={22} color={C.ink} />
             {unread > 0 ? <View style={st.badge}><Text style={st.badgeText}>{unread > 99 ? '99+' : unread}</Text></View> : null}
           </Pressable>
@@ -87,7 +88,7 @@ export default function Home() {
         {TAXONOMY.map(c => (
           <Pressable
             key={c.slug}
-            onPress={() => router.push({ pathname: '/categories/[id]', params: { id: c.slug, title: c.label } })}
+            onPress={() => { tap(); router.push({ pathname: '/categories/[id]', params: { id: c.slug, title: c.label } }); }}
             style={st.cat}
           >
             <Image source={c.icon} style={{ width: 56, height: 56 }} contentFit="contain" />
@@ -101,7 +102,7 @@ export default function Home() {
           {TABS.map(t => {
             const active = activeTab === t.key;
             return (
-              <Pressable key={t.key} onPress={() => setActiveTab(t.key)} style={[st.tabItem, active && st.tabItemActive]}>
+              <Pressable key={t.key} onPress={() => { tap(); setActiveTab(t.key); }} style={[st.tabItem, active && st.tabItemActive]}>
                 <Text style={[st.tabText, active && st.tabTextActive]}>{t.label}</Text>
               </Pressable>
             );
