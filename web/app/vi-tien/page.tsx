@@ -163,7 +163,7 @@ function Wallet() {
         <tr><td><b>Bạn nhận được</b></td><td style={{ textAlign: 'right' }}><b className="bl-pos">{coin(q.coinAmount)}</b></td></tr></tbody></table>; })()}
       <p style={{ color: '#71817b', fontSize: 13, margin: '10px 0 0' }}>{COIN_NOTE}</p>
       <ul style={{ color: '#71817b', fontSize: 12.5, margin: '6px 0 8px', paddingLeft: 18 }}>{COIN_TERMS.map(t => <li key={t}>{t}</li>)}</ul>
-      <label style={{ display: 'flex', gap: 8, alignItems: 'center', fontSize: 13, margin: '0 0 10px' }}><input type="checkbox" checked={agreed} onChange={e => setAgreed(e.target.checked)} />Tôi đã đọc và đồng ý với quy định TTTCoin.</label>
+      <label style={{ display: 'flex', justifyContent: 'flex-start', gap: 8, alignItems: 'center', fontSize: 13, margin: '0 0 10px', width: 'fit-content' }}><input type="checkbox" checked={agreed} onChange={e => setAgreed(e.target.checked)} style={{ width: 18, height: 18, margin: 0, padding: 0, flex: 'none' }} />Tôi đã đọc và đồng ý với quy định TTTCoin.</label>
       {shown && !shown.bank && shown.checkoutUrl && <div className="bl-msg info" style={{ marginTop: 18 }}>Mã nạp <b>{shown.code}</b> đã sẵn sàng. <a href={shown.checkoutUrl} target="_blank" rel="noreferrer" className="bl-btn sm primary">Mở trang thanh toán PayOS</a></div>}
       {shown && shown.bank && <div className="bl-qr" style={{ marginTop: 18 }}>
         <img src={shown.qrUrl ?? ''} alt="Mã QR chuyển khoản" />
