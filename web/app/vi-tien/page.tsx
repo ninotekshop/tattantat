@@ -4,13 +4,12 @@ import Link from 'next/link';
 import { Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { MemberArea } from '../../components/MemberArea';
-import { apiGet, memberRequest } from '../../lib/api';
-import { PromoPackage, dateTimeVi, dateVi, daysLeft, durationLabel, newKey, promoDesc, promoLabel, vnd } from '../../lib/billing';
-import { PromoGuide } from '../../components/PromoGuide';
+import { memberRequest } from '../../lib/api';
+import { dateTimeVi, vnd } from '../../lib/billing';
 import { MoneyInput } from '../../components/MoneyInput';
 import { ErrorDialog } from '../../components/ErrorDialog';
 import { CelebrationDialog, type CelebrationKind } from '../../components/CelebrationDialog';
-import { COIN_NOTE, COIN_TERMS, coin, previewDeposit, vndNeededForCoin } from '../../lib/coin';
+import { COIN_NOTE, COIN_TERMS, coin, previewDeposit } from '../../lib/coin';
 
 type Overview = {
   balance: string;
@@ -25,7 +24,6 @@ type NewTopup = Topup & { bank: Bank | null; qrUrl: string | null };
 type Tx = { id: string; type: string; amount: string; balanceAfter: string; description: string | null; createdAt: string; direction: 'CREDIT' | 'DEBIT'; amountVnd: string | null };
 type WalletSum = { coinBalance: number; totalDeposited: number; totalSpent: number };
 const TX_FILTERS: [string, string][] = [['ALL', 'Tất cả'], ['DEPOSIT', 'Nạp Coin'], ['PURCHASE', 'Mua gói'], ['REFUND', 'Hoàn'], ['PROMOTION', 'Khuyến mãi']];
-type MyListing = { id: string; title: string | null; status: string; productId: string | null };
 
 const PRESETS = [50_000, 100_000, 200_000, 500_000, 1_000_000];
 const TX_LABEL: Record<string, string> = { TOPUP: 'Nạp TTTCoin', SPEND: 'Thanh toán bằng TTTCoin', REFUND: 'Hoàn', ADJUST: 'Điều chỉnh', BONUS: 'Khuyến mãi' };
@@ -50,18 +48,14 @@ function Wallet() {
   const [txPage, setTxPage] = useState(1);
   const [txTotal, setTxTotal] = useState(0);
   const [txLoading, setTxLoading] = useState(true);
-  const [lack, setLack] = useState<{ missing: number; balance: number; price: number } | null>(null);
   const [agreed, setAgreed] = useState(false);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
-  const [celebrate, setCelebrate] = useState<{ kind: CelebrationKind; amount?: string } | null>(params.get('bought') ? { kind: 'plan' } : null);
+  const [celebrate, setCelebrate] = useState<{ kind: CelebrationKind; amount?: string } | null>(null);
   const prevTopups = useRef<Record<string, string> | null>(null);
   const [amount, setAmount] = useState<number>(Math.max(10_000, Number(params.get('topup')) || 200_000));
   const [busy, setBusy] = useState(false);
   const [fresh, setFresh] = useState<NewTopup | null>(null);
-  const [promos, setPromos] = useState<PromoPackage[]>([]);
-  const [listings, setListings] = useState<MyListing[]>([]);
-  const [productId, setProductId] = useState('');
 
   const load = useCallback(async () => {
     try {
@@ -81,10 +75,6 @@ function Wallet() {
   const confirmedCount = topups.filter(t => t.status === 'CONFIRMED').length;
   useEffect(() => { void loadTxs(); }, [loadTxs, confirmedCount]);
   useEffect(() => { void load(); }, [load]);
-  useEffect(() => {
-    apiGet<PromoPackage[]>('/promotions/packages').then(setPromos).catch(() => undefined);
-    memberRequest<MyListing[]>('/listings/mine').then(list => setListings(list.filter(l => l.status === 'PUBLISHED' && l.productId))).catch(() => undefined);
-  }, []);
   const hasPending = topups.some(t => t.status === 'PENDING');
   const payosPending = topups.filter(t => t.status === 'PENDING' && t.provider === 'PAYOS');
   const payosKey = payosPending.map(t => t.id).join(',');
@@ -100,34 +90,18 @@ function Wallet() {
     if (amount > 50_000_000) { setError('Số tiền nạp tối đa là 50.000.000 đ mỗi lần.'); return; }
     if (!agreed) { setError('Vui lòng đọc và đồng ý với quy định TTTCoin trước khi nạp.'); return; }
     setBusy(true); setError(''); setNotice('');
-    try { const result = await memberRequest<NewTopup>('/wallet/coin/deposit', 'POST', { amount }); setFresh(result); setLack(null); await load(); }
+    try { const result = await memberRequest<NewTopup>('/wallet/coin/deposit', 'POST', { amount }); setFresh(result); await load(); }
     catch (e) { setError(e instanceof Error ? e.message : 'Không tạo được yêu cầu nạp.'); } finally { setBusy(false); }
   }
   async function cancelTopup(id: string) {
     setBusy(true);
     try { await memberRequest(`/billing/topups/${id}/cancel`, 'POST', {}); if (fresh?.id === id) setFresh(null); await load(); } catch (e) { setError(e instanceof Error ? e.message : 'Không hủy được.'); } finally { setBusy(false); }
   }
-  async function buyPromo(pkg: PromoPackage) {
-    if (!productId) { setError('Hãy chọn tin đăng cần đẩy.'); return; }
-    if (!window.confirm(`Mua "${pkg.name}" (${coin(pkg.price)}) cho tin đã chọn?`)) return;
-    setBusy(true); setError(''); setNotice('');
-    try { await memberRequest('/billing/promotions/purchase', 'POST', { productId, packageId: pkg.id }, newKey()); setCelebrate({ kind: 'promo' }); await load(); }
-    catch (e) {
-      const message = e instanceof Error ? e.message : 'Không mua được gói.';
-      const m = /nạp thêm ([\d.]+)/.exec(message);
-      if (m) { const missing = Number(m[1].replace(/\./g, '')); setLack({ missing, balance: Number(overview?.balance ?? 0), price: Number(pkg.price) }); setAmount(vndNeededForCoin(missing)); }
-      else setError(message);
-    } finally { setBusy(false); }
-  }
-
-  const sub = overview?.subscription; const left = daysLeft(sub?.endsAt);
-  const used = overview?.listing.used ?? 0; const limit = overview?.listing.limit ?? null;
-  const pct = limit ? Math.min(100, Math.round((used / limit) * 100)) : 0;
   const shown = ((fresh && topups.find(t => t.id === fresh.id)?.status === 'PENDING') ? fresh : topups.find(t => t.status === 'PENDING' && (t.qrUrl || t.checkoutUrl))) as NewTopup | undefined;
 
   return <div className="bl">
-    <h1>Ví TTTCoin & gói của tôi</h1>
-    <p className="sub">Quản lý số dư TTTCoin, nạp Coin, gói đăng tin và các gói đẩy tin.</p>
+    <h1>Ví TTTCoin</h1>
+    <p className="sub">Quản lý số dư, nạp TTTCoin và xem lịch sử giao dịch. Cần mua gói? Vào mục <Link href="/vi-tien/mua-goi" style={{ color: '#007c4b', fontWeight: 700 }}>Mua gói</Link>.</p>
     {celebrate && <CelebrationDialog kind={celebrate.kind} amount={celebrate.amount} onClose={() => setCelebrate(null)} />}
     <ErrorDialog message={error} title="Chưa thực hiện được" onClose={() => setError('')} />
     {notice && <div className="bl-msg ok" role="status">{notice}</div>}
@@ -136,20 +110,9 @@ function Wallet() {
       <div className="bl-card"><h2>Ví TTTCoin</h2>
         <div className="bl-balance"><div className="n">{coin(overview?.balance)}</div><a href="#nap-tien" className="bl-btn primary">Nạp TTTCoin</a><a href="#lich-su" className="bl-btn sm">Lịch sử giao dịch</a></div>
         <p style={{ color: '#71817b', margin: '8px 0 0' }}>Tổng đã nạp: <b>{coin(sum?.totalDeposited)}</b> · Tổng đã sử dụng: <b>{coin(sum?.totalSpent)}</b></p>
-        <p style={{ color: '#71817b', margin: '4px 0 0', fontSize: 13 }}>Dùng để mua gói đăng tin và gói đẩy tin.</p></div>
-      <div className="bl-card"><h2>Gói đăng tin hiện tại</h2>
-        {sub ? <>
-          <div style={{ fontSize: 20, fontWeight: 800 }}>{sub.name}</div>
-          <div style={{ color: '#71817b' }}>Hiệu lực đến <b>{dateVi(sub.endsAt)}</b>{left !== null && <> · còn <b style={{ color: left <= 7 ? '#b53434' : '#007c4b' }}>{left} ngày</b></>}</div>
-        </> : <div style={{ fontSize: 18, fontWeight: 800 }}>Gói miễn phí</div>}
-        <div style={{ marginTop: 12, fontSize: 13 }}>Tin đang có: <b>{used}</b> / {limit === null ? 'không giới hạn' : limit}</div>
-        {limit !== null && <div className="bl-bar"><i className={pct >= 100 ? 'full' : pct >= 80 ? 'warn' : ''} style={{ width: pct + '%' }} /></div>}
-        <Link href="/goi-dich-vu" className="bl-btn sm" style={{ marginTop: 6 }}>{sub ? 'Gia hạn / đổi gói' : 'Nâng cấp gói'}</Link></div>
+        <p style={{ color: '#71817b', margin: '4px 0 0', fontSize: 13 }}>Dùng để mua gói đăng tin và gói đẩy tin. <Link href="/vi-tien/mua-goi" style={{ color: '#007c4b', fontWeight: 700 }}>Mua gói →</Link></p></div>
     </div>
 
-    {lack && <div className="bl-msg info" role="alert" style={{ marginBottom: 14 }}><b>Số dư TTTCoin không đủ</b>
-      <div>Số dư hiện tại: <b>{coin(lack.balance)}</b> · Giá gói: <b>{coin(lack.price)}</b> · Còn thiếu: <b>{coin(lack.missing)}</b></div>
-      <a href="#nap-tien" className="bl-btn primary sm" style={{ marginTop: 8 }}>NẠP THÊM TTTCoin</a> <small>(đã gợi ý {vnd(amount)} để đủ mua gói)</small></div>}
     <div className="bl-card" id="nap-tien"><h2>Nạp TTTCoin</h2>
       <div className="bl-chips">{PRESETS.map(p => <button key={p} type="button" className={`bl-chip ${amount === p ? 'on' : ''}`} onClick={() => setAmount(p)}>{vnd(p)}</button>)}</div>
       <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
@@ -186,18 +149,6 @@ function Wallet() {
           <td>{t.status === 'PENDING' && <button className="bl-btn sm" disabled={busy} onClick={() => cancelTopup(t.id)}>Hủy</button>}</td></tr>; })}</tbody></table>}
     </div>
 
-    <div className="bl-card" id="day-tin"><h2>Đẩy tin & tin nổi bật</h2>
-      {!listings.length ? <p style={{ color: '#71817b' }}>Bạn chưa có tin đang hiển thị. <Link href="/sell" style={{ color: '#007c4b', fontWeight: 700 }}>Đăng tin ngay</Link></p> : <>
-        <div className="bl-f" style={{ marginBottom: 14 }}><label htmlFor="promo-listing" style={{ fontWeight: 700, display: 'block', marginBottom: 6 }}>Chọn tin cần đẩy</label>
-          <select id="promo-listing" className="bl-in" style={{ maxWidth: 480 }} value={productId} onChange={e => setProductId(e.target.value)}><option value="">— Chọn tin đăng —</option>{listings.map(l => <option key={l.id} value={l.productId ?? ''}>{l.title || '(Chưa đặt tiêu đề)'}</option>)}</select></div>
-        <PromoGuide />
-        <div className="bl-grid plans">{promos.map(p => <div key={p.id} className="bl-plan"><div className="name">{p.name}</div><div><span className="bl-pill ok">{promoLabel(p.promotion_type)}</span></div><div style={{ color: '#4b5d56', fontSize: 13.5 }}>{promoDesc(p.promotion_type)}</div>
-          <div className="bl-price" style={{ fontSize: 24 }}>{coin(p.price)}<small> / {durationLabel(p.duration_hours)}</small></div>
-          <button className="bl-btn primary" disabled={busy || !productId} onClick={() => buyPromo(p)}>Mua gói này</button></div>)}</div></>}
-      {!!overview?.promotions.length && <table className="bl-tbl" style={{ marginTop: 16 }}><thead><tr><th>Gói</th><th>Tin đăng</th><th>Giá</th><th>Hết hạn</th></tr></thead><tbody>
-        {overview.promotions.map(p => <tr key={p.id}><td>{p.name}</td><td>{p.productTitle ?? '—'}</td><td>{coin(p.price)}</td><td>{p.status === 'PAID' ? dateTimeVi(p.endsAt) : p.status}</td></tr>)}</tbody></table>}
-    </div>
-
     <div className="bl-card" id="lich-su"><h2>Lịch sử giao dịch TTTCoin</h2>
       <div className="bl-chips">{TX_FILTERS.map(([k, l]) => <button key={k} type="button" className={`bl-chip ${txFilter === k ? 'on' : ''}`} onClick={() => { setTxFilter(k); setTxPage(1); }}>{l}</button>)}</div>
       {txLoading ? <p style={{ color: '#71817b' }}>Đang tải…</p> : txs.length ? <div style={{ display: 'grid', gap: 8 }}>
@@ -211,7 +162,5 @@ function Wallet() {
       {txTotal > 10 && <div style={{ display: 'flex', gap: 8, marginTop: 12, alignItems: 'center' }}><button className="bl-btn sm" disabled={txPage <= 1} onClick={() => setTxPage(p => p - 1)}>Trước</button><span>Trang {txPage}/{Math.ceil(txTotal / 10)}</span><button className="bl-btn sm" disabled={txPage >= Math.ceil(txTotal / 10)} onClick={() => setTxPage(p => p + 1)}>Sau</button></div>}
     </div>
 
-    {!!overview?.history.length && <div className="bl-card"><h2>Lịch sử mua gói đăng tin</h2><table className="bl-tbl"><thead><tr><th>Gói</th><th>Giá</th><th>Bắt đầu</th><th>Hết hạn</th><th>Trạng thái</th></tr></thead><tbody>
-      {overview.history.map(h => <tr key={h.id}><td>{h.name}</td><td>{coin(h.price)}</td><td>{dateVi(h.startsAt)}</td><td>{dateVi(h.endsAt)}</td><td>{h.status === 'ACTIVE' && h.endsAt && new Date(h.endsAt) < new Date() ? 'Hết hạn' : h.status === 'ACTIVE' ? 'Đang dùng' : h.status === 'CANCELLED' ? 'Đã thay/hủy' : h.status}</td></tr>)}</tbody></table></div>}
   </div>;
 }

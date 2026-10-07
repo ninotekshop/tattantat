@@ -124,3 +124,6 @@
 .ac-avatar-edit{display:flex;align-items:center;gap:16px;margin-bottom:18px}
 .ac-avatar-edit label.ac-btn{cursor:pointer}
 .ac-hint{margin:6px 0 0;font-size:12.5px;color:#6b7280}
+
+.ac-head{display:flex;align-items:center;gap:10px;padding:10px 14px 4px;color:#33443c;font-weight:700;font-size:14.5px;white-space:nowrap}.member-page a.ac-tab.ac-sub{margin-left:18px;width:calc(100% - 18px);padding:8px 12px;font-size:14px;border-left:2px solid #e3ece7;border-radius:0 11px 11px 0}.member-page a.ac-tab.ac-sub.on{border-left-color:#00a65a}
+.ac-collapsed .ac-head .ac-lbl{display:none}.ac-collapsed .member-page a.ac-tab.ac-sub,.ac-collapsed a.ac-tab.ac-sub{margin-left:0;width:100%;border-left:0}

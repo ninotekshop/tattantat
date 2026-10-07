@@ -2,12 +2,13 @@
 import './billing.css';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { apiGet, memberRequest } from '../../lib/api';
 import { readSession } from '../../lib/auth';
 import { PromoGuide } from '../../components/PromoGuide';
-import { coin, vndNeededForCoin } from '../../lib/coin';
-import { Plan, PromoPackage, dateVi, durationLabel, featureList, newKey, planLabel, FREE_PLAN_LABEL, promoDesc, promoLabel, vnd } from '../../lib/billing';
+import { PayModal } from '../../components/PayModal';
+import { coin } from '../../lib/coin';
+import { Plan, PromoPackage, dateVi, durationLabel, featureList, planLabel, FREE_PLAN_LABEL, promoDesc, promoLabel } from '../../lib/billing';
 
 type Overview = { balance: string; subscription: { name: string; endsAt: string | null } | null };
 
@@ -20,14 +21,6 @@ export default function PricingPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [buying, setBuying] = useState<Plan | null>(null);
-  const [busy, setBusy] = useState(false);
-  const [modalError, setModalError] = useState('');
-  const [missing, setMissing] = useState<number | null>(null);
-  // Thanh toán bằng mã QR: tạo mã PayOS đúng bằng giá gói; khi tiền về thì tự mua gói (tiền vào ví rồi trừ ngay cho gói).
-  type QrTopup = { id: string; code: string; amount: string; expiresAt: string; qrUrl: string | null; checkoutUrl?: string | null; bank?: { bankName: string; accountNumber: string; accountName: string } | null };
-  const [qr, setQr] = useState<QrTopup | null>(null);
-  const [qrState, setQrState] = useState<'idle' | 'waiting' | 'buying'>('idle');
-  const buyKey = useRef(newKey());
 
   useEffect(() => {
     Promise.all([apiGet<Plan[]>('/subscriptions/plans'), apiGet<PromoPackage[]>('/promotions/packages')])
@@ -43,53 +36,9 @@ export default function PricingPage() {
 
   function start(plan: Plan) {
     if (!readSession()) { router.push('/login?next=/goi-dich-vu'); return; }
-    setModalError(''); setMissing(null); setBuying(plan);
-  }
-  async function confirm() {
-    if (!buying) return;
-    setBusy(true); setModalError(''); setMissing(null);
-    try {
-      await memberRequest('/billing/subscriptions/purchase', 'POST', { planId: buying.id }, newKey());
-      router.push('/vi-tien?bought=plan');
-    } catch (e) {
-      const message = e instanceof Error ? e.message : 'Không thể mua gói.';
-      setModalError(message);
-      const m = /nạp thêm ([\d.]+)/.exec(message); if (m) setMissing(Number(m[1].replace(/\./g, '')));
-    } finally { setBusy(false); }
+    setBuying(plan);
   }
   const balance = Number(overview?.balance ?? 0);
-
-  function closeModal() { setBuying(null); setQr(null); setQrState('idle'); }
-  async function payByQr() {
-    if (!buying) return;
-    setBusy(true); setModalError('');
-    try {
-      const need = vndNeededForCoin(Math.ceil(Number(buying.price)));  // thanh toán đủ giá gói bằng QR, không trừ số dư ví hiện có
-      const t = await memberRequest<QrTopup>('/billing/topups', 'POST', { amount: need });
-      buyKey.current = newKey(); setQr(t); setQrState('waiting');
-    } catch (e) { setModalError(e instanceof Error ? e.message : 'Không tạo được mã QR.'); }
-    finally { setBusy(false); }
-  }
-  useEffect(() => {
-    if (!qr || !buying || qrState !== 'waiting') return;
-    let stop = false;
-    const tick = async () => {
-      try {
-        await memberRequest(`/billing/topups/${qr.id}/sync`, 'POST', {}).catch(() => undefined);
-        const list = await memberRequest<Array<{ id: string; status: string }>>('/billing/topups');
-        const me = list.find(x => x.id === qr.id);
-        if (stop || !me) return;
-        if (me.status === 'CONFIRMED') {
-          setQrState('buying');
-          try { await memberRequest('/billing/subscriptions/purchase', 'POST', { planId: buying.id }, buyKey.current); router.push('/vi-tien?bought=plan'); }
-          catch (e) { setQrState('idle'); setQr(null); setModalError((e instanceof Error ? e.message : 'Không thể mua gói.') + ' Tiền đã được cộng vào ví, bạn bấm "Thanh toán bằng ví" để hoàn tất.'); memberRequest<Overview>('/billing/overview').then(setOverview).catch(() => undefined); }
-        } else if (me.status !== 'PENDING') { setQrState('idle'); setQr(null); setModalError('Mã QR đã hết hạn hoặc bị hủy. Vui lòng tạo mã mới.'); }
-      } catch { /* thử lại ở lần sau */ }
-    };
-    const timer = setInterval(() => void tick(), 4000);
-    return () => { stop = true; clearInterval(timer); };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [qr, qrState, buying]);
 
   return <main className="bl">
     <h1>Gói dịch vụ dành cho người bán</h1>
@@ -117,11 +66,11 @@ export default function PricingPage() {
 
     <div className="bl-card" style={{ marginTop: 28 }}>
       <h2>Gói đẩy tin & tin nổi bật</h2>
-      <p className="sub" style={{ marginTop: -6 }}>Mua cho từng tin đăng để tiếp cận nhiều người mua hơn. Chọn tin trong trang <Link href="/vi-tien#day-tin" style={{ color: '#007c4b', fontWeight: 700 }}>Ví & gói của tôi</Link>.</p>
+      <p className="sub" style={{ marginTop: -6 }}>Mua cho từng tin đăng để tiếp cận nhiều người mua hơn. Chọn tin trong trang <Link href="/vi-tien/mua-goi#day-tin" style={{ color: '#007c4b', fontWeight: 700 }}>Ví & gói của tôi</Link>.</p>
       <PromoGuide />
         <div className="bl-grid plans">{promos.map(p => <div key={p.id} className="bl-plan"><div className="name">{p.name}</div><div><span className="bl-pill ok">{promoLabel(p.promotion_type)}</span></div><div style={{ color: '#4b5d56', fontSize: 13.5 }}>{promoDesc(p.promotion_type)}</div>
         <div className="bl-price">{coin(p.price)}<small> / {durationLabel(p.duration_hours)}</small></div>
-        <Link className="bl-btn" href="/vi-tien#day-tin">Chọn tin để đẩy</Link></div>)}
+        <Link className="bl-btn" href="/vi-tien/mua-goi#day-tin">Chọn tin để đẩy</Link></div>)}
         {!promos.length && !loading && <p style={{ color: '#71817b' }}>Chưa có gói đẩy tin.</p>}</div>
     </div>
 
@@ -131,30 +80,8 @@ export default function PricingPage() {
       <details><summary>Hết hạn gói thì tin đăng có mất không?</summary><p>Tin đã đăng không bị xóa, nhưng bạn không thể đăng thêm nếu số tin vượt hạn mức miễn phí.</p></details>
     </div>
 
-    {buying && <div className="bl-modal" onClick={() => !busy && qrState !== 'buying' && closeModal()}><div onClick={e => e.stopPropagation()} role="dialog" aria-modal="true" style={{ position: 'relative', ...(qr ? { maxWidth: 560 } : {}) }}>
-      <button type="button" aria-label="Đóng" disabled={busy || qrState === 'buying'} onClick={closeModal} style={{ position: 'absolute', top: 12, right: 12, width: 34, height: 34, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', border: 'none', borderRadius: '50%', background: '#f1f5f9', color: '#475569', fontSize: 20, lineHeight: 1, cursor: 'pointer' }}>✕</button>
-      <h2 style={{ marginTop: 0, paddingRight: 36 }}>Xác nhận mua gói</h2>
-      <p><b>{planLabel(buying.name)}</b> — {coin(buying.price)} / {buying.billing_cycle === 'YEARLY' ? 'năm' : 'tháng'}</p>
-      <p>Số dư TTTCoin hiện tại: <b>{coin(balance)}</b></p>
-      {qr ? <>
-        <div className="bl-qr">
-          {qr.qrUrl ? <img src={qr.qrUrl} alt="Mã QR thanh toán" /> : null}
-          <div>
-            <div className="bl-msg info">{qrState === 'buying' ? 'Đã nhận tiền, đang kích hoạt gói…' : <>Quét mã QR bằng ứng dụng ngân hàng và thanh toán <b>đúng số tiền {vnd(qr.amount)}</b>. Gói sẽ được <b>kích hoạt tự động</b> ngay khi nhận được tiền.</>}</div>
-            {qr.bank && <div className="bl-kv"><b>Ngân hàng</b><span className="v">{qr.bank.bankName}</span><span /><b>Số tài khoản</b><span className="v">{qr.bank.accountNumber}</span><span /><b>Nội dung</b><span className="v">{qr.code}</span><span /></div>}
-            {qr.checkoutUrl && !qr.bank && <a href={qr.checkoutUrl} target="_blank" rel="noreferrer" className="bl-btn sm primary">Mở trang thanh toán PayOS</a>}
-            <p style={{ color: '#71817b', fontSize: 12 }}>Đang chờ thanh toán… Vui lòng không đóng trang này.</p>
-          </div>
-        </div>
-        {modalError && <div className="bl-msg err">{modalError}</div>}
-      </> : <>
-        {Number(buying.price) > balance && <div className="bl-msg info">Số dư TTTCoin không đủ: còn thiếu <b>{coin(Number(buying.price) - balance)}</b>. Bạn có thể <a href={`/vi-tien?topup=${vndNeededForCoin(Number(buying.price) - balance)}#nap-tien`} style={{ fontWeight: 700 }}>NẠP THÊM TTTCoin</a>.</div>}
-        {modalError && <div className="bl-msg err">{modalError}</div>}
-        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-          {Number(buying.price) <= balance && !missing && <button className="bl-btn primary" disabled={busy} onClick={confirm}>{busy ? 'Đang xử lý…' : 'Thanh toán bằng ví'}</button>}
-          <button className={`bl-btn ${Number(buying.price) > balance || missing ? 'primary' : ''}`} disabled={busy} onClick={payByQr}>{busy ? 'Đang tạo mã…' : 'Thanh toán bằng mã QR'}</button>
-        </div>
-      </>}
-    </div></div>}
+    {buying && <PayModal item={{ kind: 'PLAN', title: planLabel(buying.name), subtitle: buying.billing_cycle === 'YEARLY' ? '1 năm' : '1 tháng', price: buying.price, planId: buying.id }} balance={balance}
+      onClose={() => setBuying(null)} onSuccess={() => router.push('/vi-tien/mua-goi?bought=plan')}
+      onRefresh={() => { memberRequest<Overview>('/billing/overview').then(setOverview).catch(() => undefined); }} />}
   </main>;
 }

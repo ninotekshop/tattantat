@@ -3,13 +3,13 @@ import '../app/account/account.css';
 import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { Suspense, useEffect, useState, type ReactNode } from 'react';
-import { BadgeCheck, Ban, Bell, BarChart3, Bookmark, ChevronRight, FileText, Heart, Mail, MessageCircle, Phone, PlusCircle, ShieldCheck, ShoppingBag, SlidersHorizontal, PanelLeftClose, PanelLeftOpen, User, Wallet, type LucideIcon } from 'lucide-react';
+import { BadgeCheck, Ban, Bell, BarChart3, Bookmark, ChevronRight, Coins, FileText, PackageCheck, Heart, Mail, MessageCircle, Phone, PlusCircle, ShieldCheck, ShoppingBag, SlidersHorizontal, PanelLeftClose, PanelLeftOpen, User, Wallet, type LucideIcon } from 'lucide-react';
 import { memberRequest } from '../lib/api';
 import type { WebSession } from '../lib/auth';
 import TrustBadge from './TrustBadge';
 
 type Me = { full_name: string; avatar_url?: string | null; email: string | null; phone: string | null; phone_verified: boolean };
-type Item = { key: string; href: string; label: string; icon: LucideIcon };
+type Item = { key: string; href: string; label: string; icon: LucideIcon; head?: boolean; sub?: boolean };
 const GROUPS: { title: string; items: Item[] }[] = [
   { title: 'Tài khoản', items: [
     { key: 'account:listings', href: '/account?section=listings', label: 'Tin đã đăng', icon: FileText },
@@ -21,7 +21,9 @@ const GROUPS: { title: string; items: Item[] }[] = [
   ] },
   { title: 'Mua bán', items: [
     { key: '/orders', href: '/orders', label: 'Đơn hàng', icon: ShoppingBag },
-    { key: '/vi-tien', href: '/vi-tien', label: 'Ví & gói', icon: Wallet },
+    { key: 'wallet-head', href: '/vi-tien', label: 'Ví & gói', icon: Wallet, head: true },
+    { key: '/vi-tien', href: '/vi-tien', label: 'Ví TTTCoin', icon: Coins, sub: true },
+    { key: '/vi-tien/mua-goi', href: '/vi-tien/mua-goi', label: 'Mua gói', icon: PackageCheck, sub: true },
     { key: '/thong-ke', href: '/thong-ke', label: 'Thống kê bán hàng', icon: BarChart3 },
   ] },
   { title: 'Tương tác', items: [
@@ -64,7 +66,7 @@ function Inner({ session, children }: { session: WebSession; children: ReactNode
           <button type="button" className="ac-toggle" onClick={toggleMenu} aria-expanded={!collapsed} title={collapsed ? 'Hiện menu' : 'Ẩn menu'}>{collapsed ? <PanelLeftOpen size={18} /> : <PanelLeftClose size={18} />}<span className="ac-lbl">Ẩn menu</span></button>
           {GROUPS.map(g => <div className="ac-group" key={g.title}>
             <p>{g.title}</p>
-            {g.items.map(it => <Link key={it.key} href={it.href} className={'ac-tab' + (active === it.key ? ' on' : '')} title={it.label} aria-current={active === it.key ? 'page' : undefined}><it.icon size={18} /><span className="ac-lbl">{it.label}</span><ChevronRight size={15} className="ac-arrow" /></Link>)}
+            {g.items.map(it => it.head ? <div key={it.key} className="ac-head" title={it.label}><it.icon size={18} /><span className="ac-lbl">{it.label}</span></div> : <Link key={it.key} href={it.href} className={'ac-tab' + (it.sub ? ' ac-sub' : '') + (active === it.key ? ' on' : '')} title={it.label} aria-current={active === it.key ? 'page' : undefined}><it.icon size={18} /><span className="ac-lbl">{it.label}</span><ChevronRight size={15} className="ac-arrow" /></Link>)}
           </div>)}
         </nav>
       </aside>
