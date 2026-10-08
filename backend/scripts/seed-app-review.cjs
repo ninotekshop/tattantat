@@ -1,5 +1,5 @@
 /**
- * Tạo 2 tài khoản demo cho Apple App Review (đã xác thực sẵn, không cần OTP) kèm dữ liệu mẫu:
+ * Tạo 2 tài khoản demo cho Apple App Review (đã xác thực sẵn, đăng nhập bằng SĐT + mật khẩu, không cần OTP) kèm dữ liệu mẫu:
  * tin đăng, hội thoại, yêu thích, thông báo, số dư ví.
  *
  * Chạy (trong thư mục backend, cần DATABASE_URL trong .env):
@@ -13,17 +13,17 @@ const bcrypt = require('bcryptjs');
 const { Client } = require('pg');
 
 const password = process.env.APPREVIEW_PASSWORD || 'Ttt@' + randomBytes(5).toString('hex');
-const SELLER = { email: 'appreview.seller@tattantat.vn', name: 'Cửa hàng Demo (Người bán)' };
-const BUYER = { email: 'appreview.buyer@tattantat.vn', name: 'Khách Demo (Người mua)' };
+const SELLER = { phone: process.env.APPREVIEW_SELLER_PHONE || '0900000101', email: 'appreview.seller@tattantat.vn', name: 'Cửa hàng Demo (Người bán)' };
+const BUYER = { phone: process.env.APPREVIEW_BUYER_PHONE || '0900000102', email: 'appreview.buyer@tattantat.vn', name: 'Khách Demo (Người mua)' };
 
 async function upsertUser(c, u, hash) {
   const found = (await c.query('SELECT id FROM users WHERE LOWER(email)=$1', [u.email])).rows[0];
   let id;
   if (found) {
     id = found.id;
-    await c.query(`UPDATE users SET password_hash=$2, status='ACTIVE', full_name=$3 WHERE id=$1`, [id, hash, u.name]);
+    await c.query(`UPDATE users SET password_hash=$2, status='ACTIVE', full_name=$3, phone=$4 WHERE id=$1`, [id, hash, u.name, u.phone]);
   } else {
-    id = (await c.query(`INSERT INTO users(email, full_name, password_hash) VALUES($1,$2,$3) RETURNING id`, [u.email, u.name, hash])).rows[0].id;
+    id = (await c.query(`INSERT INTO users(email, phone, full_name, password_hash) VALUES($1,$2,$3,$4) RETURNING id`, [u.email, u.phone, u.name, hash])).rows[0].id;
     await c.query('INSERT INTO user_profiles(user_id, display_name) VALUES($1,$2) ON CONFLICT DO NOTHING', [id, u.name]).catch(() => {});
   }
   // Đánh dấu đã xác thực (bỏ qua cột nào chưa tồn tại)
@@ -100,10 +100,10 @@ async function main() {
 
     await c.query('COMMIT');
     console.log('Đã tạo xong tài khoản demo cho App Review:');
-    console.log('  Người bán :', SELLER.email);
-    console.log('  Người mua :', BUYER.email);
+    console.log('  Người bán : SĐT', SELLER.phone, '(email', SELLER.email + ')');
+    console.log('  Người mua : SĐT', BUYER.phone, '(email', BUYER.email + ')');
     console.log('  Mật khẩu  :', password);
-    console.log('  (Đăng nhập bằng email ở trên; không cần OTP.)');
+    console.log('  Trên app: nhập SĐT -> Tiếp tục -> nhập mật khẩu (không cần OTP Zalo).');
   } catch (e) {
     await c.query('ROLLBACK').catch(() => {});
     console.error('LỖI:', e.message);
