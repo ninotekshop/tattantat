@@ -136,13 +136,13 @@ export function Footer() {
             <p className="app-subtitle">Mua bán thuận tiện hơn trên điện thoại.</p>
 
             <div className="app-badges">
-              <div className="app-store-btn">
+              <a className="app-store-btn" href="https://apps.apple.com/vn/app/t%E1%BA%A5t-t%E1%BA%A7n-t%E1%BA%ADt-mua-nhanh-b%C3%A1n-g%E1%BB%8Dn/id6819581261?l=vi" target="_blank" rel="noopener noreferrer" aria-label="Tải ứng dụng trên App Store" style={{ textDecoration: 'none', color: 'inherit' }}>
                 <span className="app-icon"></span>
                 <div>
                   <small>Download on the</small>
                   <strong>App Store</strong>
                 </div>
-              </div>
+              </a>
               <a className="app-store-btn" href="https://play.google.com/store/apps/details?id=com.tattantat.app&pcampaignid=web_share" target="_blank" rel="noopener noreferrer" aria-label="Tải ứng dụng trên Google Play" style={{ textDecoration: 'none', color: 'inherit' }}>
                 <span className="app-icon">▶</span>
                 <div>
@@ -180,10 +180,10 @@ export function Footer() {
 
           <div className="mobile-footer-badges">
             <div className="app-badges" style={{ justifyContent: 'center', marginBottom: 12 }}>
-              <div className="app-store-btn" style={{ padding: '6px 12px' }}>
+              <a className="app-store-btn" href="https://apps.apple.com/vn/app/t%E1%BA%A5t-t%E1%BA%A7n-t%E1%BA%ADt-mua-nhanh-b%C3%A1n-g%E1%BB%8Dn/id6819581261?l=vi" target="_blank" rel="noopener noreferrer" aria-label="Tải ứng dụng trên App Store" style={{ padding: '6px 12px', textDecoration: 'none', color: 'inherit' }}>
                 <span className="app-icon" style={{ fontSize: 16 }}></span>
                 <div><small style={{ fontSize: 8 }}>Download on</small><strong style={{ fontSize: 11 }}>App Store</strong></div>
-              </div>
+              </a>
               <a className="app-store-btn" href="https://play.google.com/store/apps/details?id=com.tattantat.app&pcampaignid=web_share" target="_blank" rel="noopener noreferrer" aria-label="Tải ứng dụng trên Google Play" style={{ padding: '6px 12px', textDecoration: 'none', color: 'inherit' }}>
                 <span className="app-icon" style={{ fontSize: 14 }}>▶</span>
                 <div><small style={{ fontSize: 8 }}>GET IT ON</small><strong style={{ fontSize: 11 }}>Google Play</strong></div>
