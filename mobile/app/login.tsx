@@ -11,8 +11,8 @@ import type { Session } from '@/lib/session';
 import { appleAvailable, appleLogin, confirmZaloOtp, googleLogin, sendZaloOtp, webLogin } from '@/lib/social';
 import { C, R } from '@/lib/theme';
 
-/** Tạm khoá đăng nhập Facebook cho tới khi ứng dụng Meta được duyệt. Đặt false để bật lại. */
-const FACEBOOK_PAUSED = true;
+/** Đặt true để tạm khoá đăng nhập Facebook. Ứng dụng Meta đã được xuất bản nên đang bật. */
+const FACEBOOK_PAUSED = false;
 
 type Step = 'start' | 'password' | 'otp' | 'zalo';
 
