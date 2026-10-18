@@ -28,7 +28,10 @@ export function MemberArea({ children, shell = true }: { children: (session: Web
   return (
     <main id="main-content" className="member-page">
       {!mounted ? (
-        <p style={{ padding: 40, textAlign: 'center', color: '#64748b' }}>Đang tải...</p>
+        <>
+          <h1 style={{ position: 'absolute', width: 1, height: 1, overflow: 'hidden', clip: 'rect(0 0 0 0)', whiteSpace: 'nowrap' }}>Khu vực thành viên Tất Tần Tật</h1>
+          <p style={{ padding: 40, textAlign: 'center', color: '#64748b' }}>Đang tải...</p>
+        </>
       ) : session ? (
         <div key={session.user.id}>{shell ? <AccountShell session={session}>{children(session)}</AccountShell> : children(session)}</div>
       ) : (
