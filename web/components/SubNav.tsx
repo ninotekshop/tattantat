@@ -11,7 +11,7 @@ export function SubNav() {
     <Link href="/categories" className="nav-categories"><Menu size={21} /> Danh mục <ChevronDown size={13} /></Link>
     <div className="subnav-links">
       <Link href="/" className={pathname === '/' ? 'active' : ''}><House size={16} fill="currentColor" /> Trang chủ</Link>
-      <Link href="/?sort=newest#products">Tin mới</Link>
+      <Link rel="nofollow" href="/?sort=newest#products">Tin mới</Link>
       <Link href="/bat-dong-san" className={pathname === '/bat-dong-san' ? 'active' : ''}>Bất động sản</Link>
       <Link href="/o-to" className={pathname === '/o-to' ? 'active' : ''}>Ô tô</Link>
       <Link href="/#discover">Khám phá</Link>

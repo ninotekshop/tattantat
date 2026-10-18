@@ -96,6 +96,7 @@ function ProductCard({ product }: { product: Product }) {
 function SubCategoryButton({ sub, parentIcon, parentKey, selectedSubSlug, selectedIntent }: { sub: SubCategorySpec; parentIcon: string; parentKey: string; selectedSubSlug: string | null; selectedIntent: string }) {
   return (
     <Link
+      rel="nofollow"
       href={`/categories?cat=${parentKey}&sub=${sub.slug}&intent=${selectedIntent}`}
       style={{
         display: 'flex',
@@ -171,6 +172,7 @@ function CategoryEngineContent() {
           {LISTING_INTENTS.map(intent => (
             <Link
               key={intent.code}
+              rel="nofollow"
               href={`/categories?cat=${parentCat.key}&intent=${intent.code}`}
               style={{
                 background: selectedIntent === intent.code ? '#00a65a' : '#f1f5f9',
@@ -265,7 +267,7 @@ function CategoryEngineContent() {
 
 export default function CategoriesClient() {
   return (
-    <Suspense fallback={<div className="shell" style={{ padding: 40, textAlign: 'center' }}><h1 style={{ position: 'absolute', width: 1, height: 1, overflow: 'hidden', clip: 'rect(0 0 0 0)', whiteSpace: 'nowrap' }}>Danh mục sản phẩm Tất Tần Tật</h1>Đang tải danh mục...</div>}>
+    <Suspense fallback={<div className="shell" style={{ padding: 40, textAlign: 'center' }}>Đang tải danh mục...</div>}>
       <CategoryEngineContent />
     </Suspense>
   );

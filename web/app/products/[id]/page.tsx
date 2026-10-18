@@ -308,7 +308,7 @@ export default function ProductDetailPage() {
       <nav className="detail-breadcrumb">
         <Link href="/">Trang chủ</Link> /
         <Link href={`/categories?cat=${catPath.parent.slug}`}>{catPath.parent.name}</Link> /
-        <Link href={`/categories?cat=${catPath.parent.slug}&sub=${catPath.sub.slug}`}>{catPath.sub.name}</Link> /
+        <Link rel="nofollow" href={`/categories?cat=${catPath.parent.slug}&sub=${catPath.sub.slug}`}>{catPath.sub.name}</Link> /
         <span>{product.title}</span>
       </nav>
 

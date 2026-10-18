@@ -34,7 +34,7 @@ export function Footer() {
         <h4 className="popular-keywords-heading"><Tag size={16} color="#00a65a" /> Từ khóa phổ biến</h4>
         <div className="popular-keywords-tags">
           {popularKeywords.map(keyword => (
-            <Link key={keyword} href={`/?q=${encodeURIComponent(keyword)}`} className="keyword-tag">
+            <Link key={keyword} rel="nofollow" href={`/?q=${encodeURIComponent(keyword)}`} className="keyword-tag">
               {keyword}
             </Link>
           ))}
@@ -97,10 +97,10 @@ export function Footer() {
             <h4 className="footer-heading">Mua bán</h4>
             <ul className="footer-links">
               <li><Link href="/categories">Danh mục sản phẩm</Link></li>
-              <li><Link href="/?sort=newest">Tin mới đăng</Link></li>
-              <li><Link href="/?sort=popular">Sản phẩm nổi bật</Link></li>
-              <li><Link href="/?sort=nearby">Gần bạn (GPS)</Link></li>
-              <li><Link href="/favorites">Yêu thích</Link></li>
+              <li><Link rel="nofollow" href="/?sort=newest">Tin mới đăng</Link></li>
+              <li><Link rel="nofollow" href="/?sort=popular">Sản phẩm nổi bật</Link></li>
+              <li><Link rel="nofollow" href="/?sort=nearby">Gần bạn (GPS)</Link></li>
+              <li><Link rel="nofollow" href="/favorites">Yêu thích</Link></li>
               <li><Link href="/sell" className="highlight-link">Đăng tin miễn phí</Link></li>
             </ul>
           </div>

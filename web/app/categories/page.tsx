@@ -13,7 +13,7 @@ export async function generateMetadata({ searchParams }: { searchParams: SP }): 
     return {
       title: 'Danh mục sản phẩm | Tất Tần Tật',
       description: 'Duyệt tất cả danh mục mua bán trên Tất Tần Tật: nhà đất, xe cộ, đồ điện tử, thời trang, thú cưng, dịch vụ và nhiều hơn nữa.',
-      alternates: { canonical: `${site()}/categories` },
+      alternates: { canonical: `${site()}/categories?cat=${CATEGORY_ENGINE_TAXONOMY[0].key}` },
     };
   }
   const sub = cat.subCategories.find(s => s.slug === str(p.sub));
