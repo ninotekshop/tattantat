@@ -6,7 +6,7 @@ const b64 = (s: string | Buffer) => Buffer.from(s).toString('base64url');
 const FB_API = 'v19.0';
 
 /** Chỉ cho quay về app qua scheme riêng của app (tattantat://) hoặc Expo (exp://) — không cho https để tránh chuyển hướng lung tung. */
-export const safeReturnUrl = (u?: string) => (u && /^(tattantat|exp|exps):\/\//.test(u) ? u : 'tattantat://oauth');
+export const safeReturnUrl = (u?: string) => (u && (/^(tattantat|exp|exps):\/\//.test(u) || /^https:\/\/(www\.)?tattantat\.vn\/oauth\/callback$/.test(u)) ? u : 'tattantat://oauth');
 
 export const signState = (secret: string, returnUrl: string) => {
   const body = `${crypto.randomBytes(12).toString('base64url')}.${Date.now() + 10 * 60_000}.${b64(returnUrl)}`;

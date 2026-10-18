@@ -358,45 +358,8 @@ export function AuthModal({ isOpen, onClose, initialMode = 'LOGIN', onSuccess }:
 
   const handleFacebookAuth = () => {
     if (FACEBOOK_PAUSED) { setError('Chức năng đăng nhập Facebook đang hoàn thiện, Quý khách vui lòng thử lại sau.'); return; }
-    const fbAppId = process.env.NEXT_PUBLIC_FACEBOOK_APP_ID || '2833629363678891';
-    if ((window as any).FB) {
-      (window as any).FB.login(
-        (response: any) => { void (async () => {
-          if (response?.authResponse?.accessToken) {
-            setLoading(true);
-            try {
-              const res = await fetch('/api/v1/auth/social', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  provider: 'facebook',
-                  providerAccountId: response.authResponse.userID || 'facebook_user_2026',
-                  accessToken: response.authResponse.accessToken,
-                }),
-              });
-              const data = await res.json();
-              if (data.success && data.data) {
-                saveSession(data.data);
-                onClose();
-                if (onSuccess) onSuccess();
-              } else {
-                setError(data.message || 'Chưa thể xác thực Facebook.');
-              }
-            } catch (err) {
-              setError('Lỗi kết nối Facebook.');
-            } finally {
-              setLoading(false);
-            }
-          } else {
-            setError('Người dùng đã hủy hoặc chưa hoàn tất đăng nhập Facebook.');
-          }
-        })(); },
-        { scope: 'public_profile,email' }
-      );
-    } else {
-      (window as any).__loadFb?.();
-      handleSocialLogin('facebook');
-    }
+    try { sessionStorage.setItem('oauth_next', window.location.pathname + window.location.search); } catch { /* bỏ qua */ }
+    window.location.href = '/api/v1/auth/oauth/facebook/start?returnUrl=' + encodeURIComponent(window.location.origin + '/oauth/callback');
   };
 
   const handleAppleAuth = async () => {
