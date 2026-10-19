@@ -467,6 +467,24 @@ export class ListingsService {
     return envelope((await this.db.query(`SELECT id,category_id::text AS "categoryId",data->>'title' AS title,status,revision,updated_at AS "updatedAt",product_id AS "productId" FROM listings l WHERE seller_id=$1 AND (product_id IS NULL OR EXISTS(SELECT 1 FROM products p WHERE p.id=l.product_id AND p.deleted_at IS NULL)) ORDER BY updated_at DESC LIMIT 100`,[sellerId])).rows);
   }
 
+  /** Các địa chỉ khác nhau từ tin đăng trước của người bán (mới nhất trước) để dùng lại cho tin mới. */
+  async savedAddresses(sellerId:string) {
+    const rows=(await this.db.query<{loc:Record<string,unknown>|null}>(`SELECT data->'location' AS loc FROM listings WHERE seller_id=$1 AND data->'location'->>'province' IS NOT NULL ORDER BY updated_at DESC LIMIT 60`,[sellerId])).rows;
+    const seen=new Set<string>(); const out:Record<string,unknown>[]=[];
+    for(const {loc} of rows){
+      if(!loc||typeof loc!=='object') continue;
+      const pick=(k:string)=>typeof loc[k]==='string'?(loc[k] as string).trim():'';
+      const item:Record<string,unknown>={province:pick('province'),district:pick('district'),ward:pick('ward'),address:pick('address')};
+      if(typeof loc.latitude==='number'&&typeof loc.longitude==='number'){item.latitude=loc.latitude;item.longitude=loc.longitude;}
+      if(typeof loc.hideExact==='boolean') item.hideExact=loc.hideExact;
+      const key=[item.province,item.district,item.ward,item.address].join('|').toLowerCase();
+      if(!item.province||seen.has(key)) continue;
+      seen.add(key); out.push(item);
+      if(out.length>=5) break;
+    }
+    return envelope(out);
+  }
+
   async byProduct(productId:string,sellerId:string) {
     const result=await this.db.query(`SELECT l.id FROM products p LEFT JOIN listings l ON l.product_id=p.id AND l.seller_id=p.seller_id
       WHERE p.id=$1 AND p.seller_id=$2 AND p.deleted_at IS NULL`,[productId,sellerId]);

@@ -86,6 +86,12 @@ export function ListingWizard() {
   const [conflict, setConflict] = useState(false);
   const [signedIn, setSignedIn] = useState(false);
 
+  const [savedAddrs, setSavedAddrs] = useState<NonNullable<ListingData['location']>[]>([]);
+  useEffect(() => {
+    if (!signedIn) return;
+    listingRequest<NonNullable<ListingData['location']>[]>('/listings/saved-addresses').then(r => setSavedAddrs(Array.isArray(r) ? r : [])).catch(() => {});
+  }, [signedIn]);
+
   const current = useRef<ListingData>({});
   const listingRef = useRef<Listing | null>(null);
   const saved = useRef('');
@@ -875,6 +881,18 @@ export function ListingWizard() {
                   </label>
 
                   <h3>Vị trí sản phẩm / dịch vụ</h3>
+                  {savedAddrs.length > 0 && (
+                    <div className="lf-field">
+                      <label>Dùng lại địa chỉ từ tin đăng trước</label>
+                      <div className="lf-options">
+                        {savedAddrs.map((a, i) => (
+                          <button key={i} type="button" className="lf-secondary" onClick={() => patch({ location: { ...current.current.location, ...a } })}>
+                            <MapPin size={14} /> {[a.address, a.ward, a.district, a.province].filter(Boolean).join(', ')}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                   <div className="lf-fields-grid">
                     <div className="lf-field">
                       <label htmlFor="province-select">Tỉnh / Thành phố</label>

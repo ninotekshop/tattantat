@@ -36,6 +36,11 @@ export default function Sell() {
   const [published, setPublished] = useState<{ productId: string; pending: boolean } | null>(null);
   const [group, setGroup] = useState<string | null>(null);
   const [step, setStep] = useState(0);
+  const [savedAddrs, setSavedAddrs] = useState<NonNullable<ListingData['location']>[]>([]);
+  useEffect(() => {
+    if (!session) return;
+    api<NonNullable<ListingData['location']>[]>('/listings/saved-addresses', { auth: true }).then(r => setSavedAddrs(Array.isArray(r) ? r : [])).catch(() => {});
+  }, [session]);
   const revision = useRef(0);
   const scroll = useRef<ScrollView>(null);
 
@@ -277,6 +282,12 @@ export default function Sell() {
         {key === 'place' ? <>
           <View style={st.card}>
             <Text style={st.cardTitle}>Khu vực giao dịch</Text>
+            {savedAddrs.length ? <View style={{ gap: 8 }}>
+              <Text style={{ color: C.ink, fontSize: 14, fontWeight: '600' }}>Dùng lại địa chỉ từ tin đăng trước</Text>
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+                {savedAddrs.map((a, i) => <Chip key={i} label={[a.address, a.ward, a.district, a.province].filter(Boolean).join(', ')} onPress={() => patch({ location: { ...data.location, ...a } })} />)}
+              </View>
+            </View> : null}
             <Button variant="outline" title={busy === 'loc' ? 'Đang lấy vị trí…' : 'Dùng vị trí hiện tại'} loading={busy === 'loc'} icon={<LocateFixed size={18} color={C.brand} />} onPress={locate} />
             <Picker label="Tỉnh / Thành phố" required value={data.location?.province} options={ALL_PROVINCES.map(p => ({ value: p.name, label: provinceLabel(p.name, p.code) }))} onChange={v => patch({ location: { ...data.location, province: v as string, district: '', ward: '' } })} error={err('location.province') || err('location')} />
             {province?.children?.length ? <Picker label="Quận / Huyện" value={data.location?.district} options={province.children.map(d => ({ value: d.name, label: d.name }))} onChange={v => patch({ location: { ...data.location, district: v as string, ward: '' } })} /> : null}

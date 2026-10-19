@@ -58,6 +58,7 @@ export class ListingsController {
     return this.listings.clearAndSeedDemo();
   }
   @Get('mine') @UseGuards(JwtAuthGuard) mine(@Req() req:AuthRequest){return this.listings.mine(req.user.id);}
+  @Get('saved-addresses') @UseGuards(JwtAuthGuard) savedAddresses(@Req() req:AuthRequest){return this.listings.savedAddresses(req.user.id);}
   @Get('by-product/:productId') @UseGuards(JwtAuthGuard)
   byProduct(@Req() req:AuthRequest,@Param('productId',ParseUUIDPipe) id:string){return this.listings.byProduct(id,req.user.id);}
   @Post('draft') @UseGuards(JwtAuthGuard) draft(@Req() req:AuthRequest,@Body() dto:DraftDto){return this.listings.create(req.user.id,dto.categoryId,dto.clientKey);}
