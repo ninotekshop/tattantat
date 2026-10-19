@@ -1,4 +1,4 @@
-import { BadRequestException, Body, Controller, Delete, Get, NotFoundException, OnModuleInit, Param, ParseUUIDPipe, Patch, Post, Put, Req, UseGuards } from '@nestjs/common';
+import { BadRequestException, Logger, Body, Controller, Delete, Get, NotFoundException, OnModuleInit, Param, ParseUUIDPipe, Patch, Post, Put, Req, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { DatabaseService } from '../database/database.service';
 
@@ -23,19 +23,23 @@ function clean(b: Body_) {
 @Controller('me/addresses')
 @UseGuards(JwtAuthGuard)
 export class AddressesController implements OnModuleInit {
+  private readonly log = new Logger('Addresses');
+  private ready = false;
   constructor(private readonly db: DatabaseService) {}
 
   async onModuleInit() {
-    try { await this.ensure(); } catch { /* sẽ thử lại khi dùng */ }
+    try { await this.ensure(); } catch (e) { this.log.error('Không tạo được bảng user_addresses: ' + (e instanceof Error ? e.message : String(e))); }
   }
   private async ensure() {
+    if (this.ready) return;
     await this.db.query(`CREATE TABLE IF NOT EXISTS user_addresses (
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(), user_id UUID NOT NULL, label TEXT NOT NULL DEFAULT 'Địa chỉ',
       province TEXT NOT NULL, district TEXT NOT NULL DEFAULT '', ward TEXT NOT NULL DEFAULT '', address TEXT NOT NULL DEFAULT '',
       latitude DOUBLE PRECISION, longitude DOUBLE PRECISION, hide_exact BOOLEAN NOT NULL DEFAULT true,
       is_default BOOLEAN NOT NULL DEFAULT false, created_at TIMESTAMPTZ NOT NULL DEFAULT now(), updated_at TIMESTAMPTZ NOT NULL DEFAULT now())`);
     await this.db.query(`CREATE INDEX IF NOT EXISTS idx_user_addresses_user ON user_addresses(user_id)`);
-    await this.db.query(`ALTER TABLE user_addresses ENABLE ROW LEVEL SECURITY`);
+    this.ready = true;
+    await this.db.query(`ALTER TABLE user_addresses ENABLE ROW LEVEL SECURITY`).catch(e => this.log.warn('Không bật RLS cho user_addresses: ' + (e instanceof Error ? e.message : String(e))));
   }
   private async list(uid: string) {
     await this.ensure();
