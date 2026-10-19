@@ -508,7 +508,7 @@ export class ListingsService {
   async savedAddresses(sellerId:string) {
     const rows=(await this.db.query<{loc:Record<string,unknown>|null}>(`SELECT data->'location' AS loc FROM listings WHERE seller_id=$1 AND data->'location'->>'province' IS NOT NULL ORDER BY updated_at DESC LIMIT 60`,[sellerId])).rows;
     const seen=new Set<string>(); const out:Record<string,unknown>[]=[];
-    const profile=(await this.db.query(`SELECT label,province,district,ward,address,latitude,longitude,hide_exact AS "hideExact" FROM user_addresses WHERE user_id=$1 ORDER BY is_default DESC, created_at ASC LIMIT 10`,[sellerId]).catch(()=>({rows:[] as Record<string,unknown>[]}))).rows;
+    const profile=(await this.db.query(`SELECT label,province,district,ward,address,latitude,longitude,hide_exact AS "hideExact" FROM user_trade_addresses WHERE user_id=$1 ORDER BY is_default DESC, created_at ASC LIMIT 10`,[sellerId]).catch(()=>({rows:[] as Record<string,unknown>[]}))).rows;
     for(const a of profile){
       const item:Record<string,unknown>={label:a.label,province:a.province,district:a.district,ward:a.ward,address:a.address,hideExact:a.hideExact,profile:true};
       if(typeof a.latitude==='number'&&typeof a.longitude==='number'){item.latitude=a.latitude;item.longitude=a.longitude;}
