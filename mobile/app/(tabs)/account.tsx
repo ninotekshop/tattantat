@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Alert, Linking, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
 import Constants from 'expo-constants';
-import { Bell, Bot, ChevronRight, FileText, Heart, LogOut, PackageOpen, ShieldCheck, Sparkles, Trash2, UserRound, type LucideIcon } from 'lucide-react-native';
+import { Bell, Bot, ChevronRight, FileText, Heart, LogOut, MapPin, PackageOpen, ShieldCheck, Sparkles, Trash2, UserRound, type LucideIcon } from 'lucide-react-native';
 import { api, media, SITE_URL } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { C, R, shadow } from '@/lib/theme';
@@ -80,6 +80,7 @@ export default function Account() {
       <Text style={st.groupTitle}>Tài khoản</Text>
       <View style={st.group}>
         <Row icon={UserRound} label="Hồ sơ cá nhân" onPress={() => router.push('/edit-profile')} />
+        <Row icon={MapPin} label="Địa chỉ của tôi" onPress={() => router.push('/addresses')} />
         <Row icon={ShieldCheck} label="Xác minh tài khoản" onPress={() => router.push('/verify')} />
         <BiometricRow />
         <Row icon={Bot} label="Trợ lý TTT" onPress={support} />

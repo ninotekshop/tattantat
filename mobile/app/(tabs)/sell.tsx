@@ -283,9 +283,9 @@ export default function Sell() {
           <View style={st.card}>
             <Text style={st.cardTitle}>Khu vực giao dịch</Text>
             {savedAddrs.length ? <View style={{ gap: 8 }}>
-              <Text style={{ color: C.ink, fontSize: 14, fontWeight: '600' }}>Dùng lại địa chỉ từ tin đăng trước</Text>
+              <Text style={{ color: C.ink, fontSize: 14, fontWeight: '600' }}>Chọn địa chỉ đã lưu (hồ sơ hoặc tin đăng trước)</Text>
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-                {savedAddrs.map((a, i) => <Chip key={i} label={[a.address, a.ward, a.district, a.province].filter(Boolean).join(', ')} onPress={() => patch({ location: { ...data.location, ...a } })} />)}
+                {savedAddrs.map((a, i) => <Chip key={i} label={((a as any).label ? (a as any).label + ': ' : '') + [a.address, a.ward, a.district, a.province].filter(Boolean).join(', ')} onPress={() => { const { label: _l, profile: _p, ...loc } = a as any; patch({ location: { ...data.location, ...loc } }); }} />)}
               </View>
             </View> : null}
             <Button variant="outline" title={busy === 'loc' ? 'Đang lấy vị trí…' : 'Dùng vị trí hiện tại'} loading={busy === 'loc'} icon={<LocateFixed size={18} color={C.brand} />} onPress={locate} />

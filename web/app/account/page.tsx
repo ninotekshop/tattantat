@@ -10,13 +10,14 @@ import { MemberArea } from '../../components/MemberArea';
 import { memberRequest, type Product } from '../../lib/api';
 import { readSession, saveSession, type WebSession } from '../../lib/auth';
 import { listingPrice, type ListingSummary } from '../../lib/listings';
+import AddressBook from '../../components/AddressBook';
 import TrustBadge from '../../components/TrustBadge';
 import ReferralCard from '../../components/ReferralCard';
 type Profile = { id: string; full_name: string; avatar_url?: string | null; email: string | null; phone: string | null; phone_verified: boolean };
 type Notice = { id: string; type?: string; title: string; content: string; is_read: boolean; created_at: string; reference_type: string; reference_id: string };
 type Block = { id: string; full_name: string };
-const sections = { profile: 'Hồ sơ', listings: 'Tin đã đăng', notifications: 'Thông báo', searches: 'Tìm kiếm đã lưu', prefs: 'Cài đặt thông báo', blocks: 'Đã chặn' };
-const SECTION_ICON = { profile: User, listings: FileText, notifications: Bell, searches: Bookmark, prefs: SlidersHorizontal, blocks: Ban } as const;
+const sections = { profile: 'Hồ sơ', addresses: 'Địa chỉ', listings: 'Tin đã đăng', notifications: 'Thông báo', searches: 'Tìm kiếm đã lưu', prefs: 'Cài đặt thông báo', blocks: 'Đã chặn' };
+const SECTION_ICON = { profile: User, addresses: MapPin, listings: FileText, notifications: Bell, searches: Bookmark, prefs: SlidersHorizontal, blocks: Ban } as const;
 const STATUS: Record<string, { label: string; cls: string }> = {
   ACTIVE: { label: 'Đang hiển thị', cls: 'ok' }, PENDING_REVIEW: { label: 'Chờ duyệt', cls: 'wait' }, REJECTED: { label: 'Bị từ chối', cls: 'bad' },
   HIDDEN: { label: 'Đã ẩn', cls: 'mute' }, SOLD: { label: 'Đã bán', cls: 'info' }, RESERVED: { label: 'Đang giao dịch', cls: 'info' }, DRAFT: { label: 'Nháp', cls: 'mute' }, EXPIRED: { label: 'Hết hạn', cls: 'mute' },
@@ -104,6 +105,8 @@ function Account({ session }: { session: WebSession }) {
             </div>
           </form>}
           {section === 'profile' && profile && <ReferralCard />}
+
+          {section === 'addresses' && <AddressBook />}
 
           {section === 'listings' && <>
             <div className="ac-bar"><h2>Tin đã đăng <small>{products.length}</small></h2><a className="ac-btn primary" href="/sell"><PlusCircle size={16} />Đăng tin / tiếp tục bản nháp ({drafts.length})</a></div>

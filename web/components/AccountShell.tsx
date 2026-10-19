@@ -3,7 +3,7 @@ import '../app/account/account.css';
 import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { Suspense, useEffect, useState, type ReactNode } from 'react';
-import { BadgeCheck, Ban, Bell, BarChart3, Bookmark, ChevronRight, Coins, FileText, PackageCheck, Heart, Mail, MessageCircle, Phone, PlusCircle, ShieldCheck, ShoppingBag, SlidersHorizontal, PanelLeftClose, PanelLeftOpen, User, Wallet, type LucideIcon } from 'lucide-react';
+import { BadgeCheck, Ban, Bell, BarChart3, Bookmark, ChevronRight, Coins, FileText, PackageCheck, Heart, MapPin, Mail, MessageCircle, Phone, PlusCircle, ShieldCheck, ShoppingBag, SlidersHorizontal, PanelLeftClose, PanelLeftOpen, User, Wallet, type LucideIcon } from 'lucide-react';
 import { memberRequest } from '../lib/api';
 import type { WebSession } from '../lib/auth';
 import TrustBadge from './TrustBadge';
@@ -14,6 +14,7 @@ const GROUPS: { title: string; items: Item[] }[] = [
   { title: 'Tài khoản', items: [
     { key: 'account:listings', href: '/account?section=listings', label: 'Tin đã đăng', icon: FileText },
     { key: 'account:profile', href: '/account?section=profile', label: 'Hồ sơ', icon: User },
+    { key: 'account:addresses', href: '/account?section=addresses', label: 'Địa chỉ của tôi', icon: MapPin },
     { key: 'account:searches', href: '/account?section=searches', label: 'Tìm kiếm đã lưu', icon: Bookmark },
     { key: 'account:prefs', href: '/account?section=prefs', label: 'Cài đặt thông báo', icon: SlidersHorizontal },
     { key: 'account:blocks', href: '/account?section=blocks', label: 'Đã chặn', icon: Ban },

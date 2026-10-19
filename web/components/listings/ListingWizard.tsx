@@ -883,11 +883,11 @@ export function ListingWizard() {
                   <h3>Vị trí sản phẩm / dịch vụ</h3>
                   {savedAddrs.length > 0 && (
                     <div className="lf-field">
-                      <label>Dùng lại địa chỉ từ tin đăng trước</label>
+                      <label>Chọn địa chỉ đã lưu (hồ sơ hoặc tin đăng trước)</label>
                       <div className="lf-options">
                         {savedAddrs.map((a, i) => (
-                          <button key={i} type="button" className="lf-secondary" onClick={() => patch({ location: { ...current.current.location, ...a } })}>
-                            <MapPin size={14} /> {[a.address, a.ward, a.district, a.province].filter(Boolean).join(', ')}
+                          <button key={i} type="button" className="lf-secondary" onClick={() => { const { label: _l, profile: _p, ...loc } = a as any; patch({ location: { ...current.current.location, ...loc } }); }}>
+                            <MapPin size={14} /> {(a as any).label ? (a as any).label + ': ' : ''}{[a.address, a.ward, a.district, a.province].filter(Boolean).join(', ')}
                           </button>
                         ))}
                       </div>
