@@ -1,4 +1,4 @@
-import { BadRequestException, Logger, Body, Controller, Delete, Get, NotFoundException, OnModuleInit, Param, ParseUUIDPipe, Patch, Post, Put, Req, UseGuards } from '@nestjs/common';
+import { BadRequestException, Logger, Body, Controller, Delete, Get, NotFoundException, OnModuleInit, ServiceUnavailableException, Param, ParseUUIDPipe, Patch, Post, Put, Req, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { DatabaseService } from '../database/database.service';
 
@@ -30,16 +30,31 @@ export class AddressesController implements OnModuleInit {
   async onModuleInit() {
     try { await this.ensure(); } catch (e) { this.log.error('Không tạo được bảng user_addresses: ' + (e instanceof Error ? e.message : String(e))); }
   }
-  private async ensure() {
-    if (this.ready) return;
-    await this.db.query(`CREATE TABLE IF NOT EXISTS user_addresses (
-      id UUID PRIMARY KEY DEFAULT gen_random_uuid(), user_id UUID NOT NULL, label TEXT NOT NULL DEFAULT 'Địa chỉ',
-      province TEXT NOT NULL, district TEXT NOT NULL DEFAULT '', ward TEXT NOT NULL DEFAULT '', address TEXT NOT NULL DEFAULT '',
-      latitude DOUBLE PRECISION, longitude DOUBLE PRECISION, hide_exact BOOLEAN NOT NULL DEFAULT true,
-      is_default BOOLEAN NOT NULL DEFAULT false, created_at TIMESTAMPTZ NOT NULL DEFAULT now(), updated_at TIMESTAMPTZ NOT NULL DEFAULT now())`);
-    await this.db.query(`CREATE INDEX IF NOT EXISTS idx_user_addresses_user ON user_addresses(user_id)`);
-    this.ready = true;
-    await this.db.query(`ALTER TABLE user_addresses ENABLE ROW LEVEL SECURITY`).catch(e => this.log.warn('Không bật RLS cho user_addresses: ' + (e instanceof Error ? e.message : String(e))));
+  private pending: Promise<void> | null = null;
+  /** Tạo bảng một lần (dùng chung một lời hứa để nhiều yêu cầu cùng lúc không tranh nhau tạo bảng). */
+  private ensure(): Promise<void> {
+    if (this.ready) return Promise.resolve();
+    if (!this.pending) {
+      this.pending = (async () => {
+        await this.db.query(`CREATE TABLE IF NOT EXISTS user_addresses (
+          id UUID PRIMARY KEY DEFAULT gen_random_uuid(), user_id UUID NOT NULL, label TEXT NOT NULL DEFAULT 'Địa chỉ',
+          province TEXT NOT NULL, district TEXT NOT NULL DEFAULT '', ward TEXT NOT NULL DEFAULT '', address TEXT NOT NULL DEFAULT '',
+          latitude DOUBLE PRECISION, longitude DOUBLE PRECISION, hide_exact BOOLEAN NOT NULL DEFAULT true,
+          is_default BOOLEAN NOT NULL DEFAULT false, created_at TIMESTAMPTZ NOT NULL DEFAULT now(), updated_at TIMESTAMPTZ NOT NULL DEFAULT now())`);
+        await this.db.query(`CREATE INDEX IF NOT EXISTS idx_user_addresses_user ON user_addresses(user_id)`);
+        this.ready = true;
+        // Giống các bảng khác: bật RLS kèm chính sách cho phép ứng dụng truy cập (không để RLS trống chính sách).
+        await this.db.query(`ALTER TABLE user_addresses ENABLE ROW LEVEL SECURITY`).catch(() => undefined);
+        await this.db.query(`DROP POLICY IF EXISTS "Allow_All_Access" ON user_addresses`).catch(() => undefined);
+        await this.db.query(`CREATE POLICY "Allow_All_Access" ON user_addresses FOR ALL USING (true) WITH CHECK (true)`).catch(e => this.log.warn('Không tạo policy cho user_addresses: ' + (e instanceof Error ? e.message : String(e))));
+      })().catch(e => {
+        this.pending = null;
+        const code = (e as { code?: string })?.code ?? '?';
+        this.log.error('Không tạo được bảng user_addresses: ' + (e instanceof Error ? e.message : String(e)));
+        throw new ServiceUnavailableException(`Chưa khởi tạo được sổ địa chỉ trên máy chủ (mã lỗi ${code}). Vui lòng báo quản trị viên.`);
+      });
+    }
+    return this.pending;
   }
   private async list(uid: string) {
     await this.ensure();
