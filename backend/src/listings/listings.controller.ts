@@ -63,6 +63,7 @@ export class ListingsController {
   byProduct(@Req() req:AuthRequest,@Param('productId',ParseUUIDPipe) id:string){return this.listings.byProduct(id,req.user.id);}
   @Post('draft') @UseGuards(JwtAuthGuard) draft(@Req() req:AuthRequest,@Body() dto:DraftDto){return this.listings.create(req.user.id,dto.categoryId,dto.clientKey);}
   @Get(':id') @UseGuards(OptionalJwtAuthGuard) get(@Req() req:{user?:{id:string}},@Param('id',ParseUUIDPipe) id:string,@Query('view') view?:string){return this.listings.get(id,req.user?.id,view==='published');}
+  @Post(':id/duplicate') @UseGuards(JwtAuthGuard) duplicate(@Req() req:AuthRequest,@Param('id',ParseUUIDPipe) id:string){return this.listings.duplicate(req.user.id,id);}
   @Put(':id') @UseGuards(JwtAuthGuard) save(@Req() req:AuthRequest,@Param('id',ParseUUIDPipe) id:string,@Body() dto:SaveDto){return this.listings.save(id,req.user.id,dto.revision,dto.data);}
   @Post(':id/publish') @UseGuards(JwtAuthGuard) publish(@Req() req:AuthRequest,@Param('id',ParseUUIDPipe) id:string,@Body() dto:RevisionDto,@Headers('idempotency-key') key:string){return this.listings.publish(id,req.user.id,dto.revision,key);}
   @Get('product-media/:productId/:sort') async productMedia(@Param('productId',ParseUUIDPipe) productId:string,@Param('sort') sort:string,@Res() res:Response){res.setHeader('Cache-Control','no-store');res.redirect(await this.listings.productMedia(productId,Number(sort)||0));}

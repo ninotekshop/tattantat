@@ -36,6 +36,14 @@ export class ListingMediaService {
     if(error) throw new ServiceUnavailableException('Không thể tải tệp. Kiểm tra cấu hình kho listing-media.');
     return {key,mime,size:body.length};
   }
+  /** Nhân bản một tệp trong kho sang tin đăng mới (mỗi tin giữ tệp riêng để xóa tệp ở tin này không ảnh hưởng tin kia). */
+  async copy(userId: string, listingId: string, fromKey: string) {
+    const ext=fromKey.includes('.')?fromKey.split('.').pop():'bin';
+    const key=userId+'/'+listingId+'/'+randomUUID()+'.'+ext;
+    const {error}=await this.client.storage.from(this.bucket).copy(fromKey,key);
+    if(error) throw new ServiceUnavailableException('Không thể sao chép tệp. Vui lòng thử lại.');
+    return key;
+  }
   async signed(key: string) {
     const {data,error}=await this.client.storage.from(this.bucket).createSignedUrl(key,900);
     if(error||!data) {

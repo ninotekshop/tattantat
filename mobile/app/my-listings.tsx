@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react';
 import { Alert, FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
-import { Eye, EyeOff, Pencil, Trash2 } from 'lucide-react-native';
+import { Copy, Eye, EyeOff, Pencil, Trash2 } from 'lucide-react-native';
 import { api } from '@/lib/api';
 import { timeAgo } from '@/lib/format';
 import { STATUS } from '@/lib/listing';
@@ -20,6 +20,10 @@ export default function MyListings() {
     const next = l.status === 'HIDDEN' ? 'ACTIVE' : 'HIDDEN';
     try { await api(`/products/${l.productId}/status`, { method: 'PATCH', auth: true, body: { status: next } }); load(); }
     catch (e) { Alert.alert('Chưa đổi được trạng thái', (e as Error).message); }
+  };
+  const duplicate = async (l: ListingSummary) => {
+    try { const r = await api<{ id: string }>(`/listings/${l.id}/duplicate`, { method: 'POST', auth: true }); load(); router.push({ pathname: '/sell', params: { id: r.id } }); }
+    catch (e) { Alert.alert('Chưa sao chép được', (e as Error).message); }
   };
   const remove = (l: ListingSummary) => Alert.alert('Xóa tin đăng?', `“${l.title ?? 'Bản nháp'}” sẽ bị xóa và không thể khôi phục.`, [
     { text: 'Hủy', style: 'cancel' },
@@ -47,6 +51,7 @@ export default function MyListings() {
               {item.productId && (item.status === 'ACTIVE' || item.status === 'HIDDEN') ? <Pressable onPress={() => toggle(item)} style={st.act}>
                 {item.status === 'HIDDEN' ? <Eye size={16} color={C.brand} /> : <EyeOff size={16} color={C.brand} />}<Text style={st.actText}>{item.status === 'HIDDEN' ? 'Hiện tin' : 'Ẩn tin'}</Text>
               </Pressable> : null}
+              <Pressable onPress={() => duplicate(item)} style={st.act}><Copy size={16} color={C.brand} /><Text style={st.actText}>Sao chép</Text></Pressable>
               <Pressable onPress={() => remove(item)} style={st.act}><Trash2 size={16} color={C.danger} /><Text style={[st.actText, { color: C.danger }]}>Xóa</Text></Pressable>
             </View>
           </View>

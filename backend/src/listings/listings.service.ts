@@ -2,6 +2,7 @@ import { ensureDeletionColumns } from '../products/deletion-audit';
 import { BadRequestException, ConflictException, Injectable, NotFoundException, Optional } from '@nestjs/common';
 import { ModerationPolicyService } from '../moderation/moderation-policy.service';
 import { NotificationsService } from '../account/notifications.service';
+import { randomUUID } from 'crypto';
 import type { PoolClient, QueryResultRow } from 'pg';
 import { DatabaseService } from '../database/database.service';
 import { ListingMediaService } from './listing-media.service';
@@ -461,6 +462,42 @@ export class ListingsService {
       return result.rows[0].id as string;
     });
     return this.get(id,sellerId);
+  }
+
+  /** Sao chép một tin (đã đăng hoặc nháp) thành bản nháp mới để chỉnh sửa rồi đăng như tin khác. */
+  async duplicate(sellerId:string, id:string) {
+    const src=(await this.db.query<Row>('SELECT * FROM listings WHERE id=$1 AND seller_id=$2',[id,sellerId])).rows[0];
+    if(!src) throw new NotFoundException('Không tìm thấy tin đăng của bạn.');
+    const count=(await this.db.query(`SELECT count(*)::integer AS count FROM listings WHERE seller_id=$1 AND status='DRAFT'`,[sellerId])).rows[0].count;
+    if(count>=100) throw new BadRequestException('Bạn đã có 100 bản nháp. Hãy hoàn thiện các bản nháp hiện tại.');
+    const template=await this.template(src.category_id).catch(()=>null);
+    const newId=(await this.db.query<{id:string}>(`INSERT INTO listings(seller_id,category_id,template_id,template_snapshot,client_key,data) VALUES($1,$2,$3,$4::jsonb,$5,'{}'::jsonb) RETURNING id`,
+      [sellerId,src.category_id,template?.id??src.template_id,JSON.stringify(template??src.template_snapshot),randomUUID()])).rows[0].id;
+    const copied:string[]=[];
+    try {
+      const data:ListingData={...src.data};
+      const map=new Map<string,string>();
+      for(const kind of ['images','videos'] as const) {
+        const ids=(src.data[kind] as string[]|undefined)??[];
+        for(const mediaId of ids) {
+          const m=(await this.db.query<{storage_key:string;mime_type:string;byte_size:number}>(`SELECT storage_key,mime_type,byte_size FROM listing_${kind} WHERE id=$1 AND listing_id=$2`,[mediaId,id])).rows[0];
+          if(!m) continue;
+          const key=await this.media.copy(sellerId,newId,m.storage_key);
+          copied.push(key);
+          const nid=(await this.db.query<{id:string}>(`INSERT INTO listing_${kind}(listing_id,storage_key,mime_type,byte_size) VALUES($1,$2,$3,$4) RETURNING id`,[newId,key,m.mime_type,m.byte_size])).rows[0].id;
+          map.set(mediaId,nid);
+        }
+        (data as any)[kind]=ids.map(x=>map.get(x)).filter(Boolean);
+      }
+      await this.db.query('UPDATE listings SET data=$2::jsonb WHERE id=$1',[newId,JSON.stringify(data)]);
+    } catch(e) {
+      await this.db.query('DELETE FROM listing_images WHERE listing_id=$1',[newId]).catch(()=>{});
+      await this.db.query('DELETE FROM listing_videos WHERE listing_id=$1',[newId]).catch(()=>{});
+      await this.db.query('DELETE FROM listings WHERE id=$1',[newId]).catch(()=>{});
+      for(const k of copied) await this.media.remove(k).catch(()=>{});
+      throw e;
+    }
+    return this.get(newId,sellerId);
   }
 
   async mine(sellerId:string) {

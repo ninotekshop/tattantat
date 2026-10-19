@@ -2,7 +2,7 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import './account.css';
 import { fileToAvatarDataUrl } from '../../lib/avatar';
-import { BadgeCheck, Ban, Bell, BellOff, BellRing, Bookmark, ChevronRight, Eye, EyeOff, FileText, Heart, BarChart3, Mail, MessageCircle, Pencil, Phone, PlusCircle, Search, ShieldCheck, ShoppingBag, SlidersHorizontal, Trash2, User, Wallet, ExternalLink, MapPin } from 'lucide-react';
+import { BadgeCheck, Ban, Bell, BellOff, BellRing, Bookmark, ChevronRight, Eye, EyeOff, FileText, Heart, BarChart3, Mail, MessageCircle, Pencil, Phone, PlusCircle, Search, ShieldCheck, ShoppingBag, SlidersHorizontal, Trash2, Copy, User, Wallet, ExternalLink, MapPin } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
 import { noticeIcon } from '../../components/NoticeIcon';
@@ -53,6 +53,11 @@ function Account({ session }: { session: WebSession }) {
     try { await memberRequest(path, method, body); setRevision(v => v + 1); }
     catch (e) { setError(e instanceof Error ? e.message : 'Thao tác chưa thành công.'); }
     finally { setBusy(false); }
+  }
+  async function duplicateListing(listingId: string) {
+    if (busy) return; setBusy(true); setError('');
+    try { const r = await memberRequest<{ id: string }>('/listings/' + listingId + '/duplicate', 'POST'); window.location.href = '/sell?listing=' + r.id; }
+    catch (e) { setError(e instanceof Error ? e.message : 'Chưa sao chép được tin.'); setBusy(false); }
   }
   async function uploadAvatar(file?: File) {
     if (!file) return; setBusy(true); setError(''); setMessage('');
@@ -113,6 +118,7 @@ function Account({ session }: { session: WebSession }) {
                   {p.status === 'ACTIVE' && <a className="ac-btn sm" href={'/products/' + p.id}><ExternalLink size={14} />Xem</a>}
                   {p.listingId && <a className="ac-btn sm" href={'/sell?listing=' + p.listingId}><Pencil size={14} />Sửa</a>}
                   {['ACTIVE', 'HIDDEN'].includes(p.status || '') && <button className="ac-btn sm" disabled={busy} onClick={() => action('/products/' + p.id + '/status', 'PATCH', { status: p.status === 'ACTIVE' ? 'HIDDEN' : 'ACTIVE' })}>{p.status === 'ACTIVE' ? <><EyeOff size={14} />Ẩn</> : <><Eye size={14} />Hiện</>}</button>}
+                  {p.listingId && <button className="ac-btn sm" disabled={busy} onClick={() => void duplicateListing(p.listingId!)}><Copy size={14} />Sao chép</button>}
                   {p.listingId && <button className="ac-btn sm danger" disabled={busy} onClick={() => { if (window.confirm('Xóa tin "' + (p.title || '') + '"? Tin sẽ biến mất khỏi trang và không thể tự khôi phục.')) void action('/listings/' + p.listingId, 'DELETE'); }}><Trash2 size={14} />Xóa</button>}
                 </div>
               </div></article>; })}</div>
