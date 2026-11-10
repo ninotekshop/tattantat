@@ -26,8 +26,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   const price = /^\d+(\.0+)?$/.test(p.price) ? `${Number(p.price).toLocaleString('vi-VN')}\u00a0đ` : '';
   const title = clip(`${p.title}${price ? ` - ${price}` : ''}`, 70);
   const description = clip(p.description || `${p.title}${p.location ? ` tại ${p.location}` : ''}. Mua bán an toàn trên Tất Tần Tật.`, 160);
-  const image = abs(p.images?.[0] ?? p.imageUrl);
-  return { title, description, alternates: { canonical: `${site()}/products/${p.id}` }, openGraph: { title, description, type: 'website', siteName: 'Tất Tần Tật', locale: 'vi_VN', url: `${site()}/products/${p.id}`, images: image ? [{ url: image }] : undefined }, twitter: { card: 'summary_large_image', title, description, images: image ? [image] : undefined } };
+  return { title, description, alternates: { canonical: `${site()}/products/${p.id}` }, openGraph: { title, description, type: 'website', siteName: 'Tất Tần Tật', locale: 'vi_VN', url: `${site()}/products/${p.id}` }, twitter: { card: 'summary_large_image', title, description } };
 }
 
 export default async function ProductLayout({ children, params }: { children: ReactNode; params: Promise<{ id: string }> }) {
