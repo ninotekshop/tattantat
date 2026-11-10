@@ -44,3 +44,4 @@
 .bl-plan[class*=tier-] .bl-btn.primary{background:var(--c);border-color:var(--c)}
 .bl-plan[class*=tier-] .bl-btn.primary:hover:not(:disabled){background:var(--c-dark)}
 .bl-plan[class*=tier-] .bl-btn:not(.primary){color:var(--c-dark);border-color:var(--c-line)}
+.bl-vat{font-size:13px;color:#4b5d56;margin-top:-6px}.bl-vat b{color:var(--c-dark,#007c4b)}

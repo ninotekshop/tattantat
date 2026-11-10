@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { memberRequest } from '../lib/api';
 import { coin, vndNeededForCoin } from '../lib/coin';
 import { newKey, vnd } from '../lib/billing';
+import { vatBreakdown } from './VatNote';
 
 export type PayItem = { kind: 'PLAN' | 'PROMO'; title: string; subtitle?: string; price: string; planId?: string; packageId?: string; productId?: string };
 type QrTopup = { id: string; code: string; amount: string; expiresAt: string; qrUrl: string | null; checkoutUrl?: string | null; bank?: { bankName: string; accountNumber: string; accountName: string } | null };
@@ -62,6 +63,7 @@ export function PayModal({ item, balance, onClose, onSuccess, onRefresh }: { ite
     <button type="button" aria-label="Đóng" disabled={locked} onClick={onClose} style={{ position: 'absolute', top: 12, right: 12, width: 34, height: 34, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', border: 'none', borderRadius: '50%', background: '#f1f5f9', color: '#475569', fontSize: 20, lineHeight: 1, cursor: 'pointer' }}>✕</button>
     <h2 style={{ marginTop: 0, paddingRight: 36 }}>Xác nhận mua gói</h2>
     <p style={{ margin: '0 0 4px' }}><b>{item.title}</b> — {coin(item.price)}{item.subtitle ? ` · ${item.subtitle}` : ''}</p>
+    {vatBreakdown(item.price) && <div className="bl-msg info" style={{ margin: '8px 0' }}>Giá gói {vnd(price)} + VAT 8% ({vnd(vatBreakdown(item.price)!.vat)}) = <b>{vnd(vatBreakdown(item.price)!.total)}</b>. VAT 8% được tính khi nạp TTTCoin: thanh toán QR hoặc nạp ví đã gồm VAT, dùng số dư ví sẽ không bị tính thêm.</div>}
     {qr ? <>
       <div className="bl-qr">
         {qr.qrUrl ? <img src={qr.qrUrl} alt="Mã QR thanh toán" /> : null}
@@ -82,7 +84,7 @@ export function PayModal({ item, balance, onClose, onSuccess, onRefresh }: { ite
         </button>
         <button type="button" disabled={busy} onClick={payByQr} style={opt(true)}>
           <b>{busy ? 'Đang tạo mã…' : 'Thanh toán trực tiếp bằng mã QR'}</b>
-          <div style={{ fontSize: 13, color: '#4b5d56', marginTop: 2 }}>Quét QR ngân hàng, thanh toán {vnd(vndNeededForCoin(price))} (đã gồm VAT 8%). Gói tự kích hoạt khi nhận được tiền.</div>
+          <div style={{ fontSize: 13, color: '#4b5d56', marginTop: 2 }}>Quét QR ngân hàng, thanh toán {vnd(vndNeededForCoin(price))} ({vnd(price)} + VAT 8%). Gói tự kích hoạt khi nhận được tiền.</div>
         </button>
       </div>
       {!enough && <p style={{ fontSize: 13, color: '#71817b', margin: '10px 0 0' }}>Muốn dùng ví? <a href={`/vi-tien?topup=${vndNeededForCoin(price - balance)}#nap-tien`} style={{ fontWeight: 700, color: '#007c4b' }}>Nạp thêm TTTCoin</a>.</p>}

@@ -9,6 +9,7 @@ import { PromoGuide } from '../../../components/PromoGuide';
 import { CelebrationDialog, type CelebrationKind } from '../../../components/CelebrationDialog';
 import { apiGet, memberRequest } from '../../../lib/api';
 import { coin } from '../../../lib/coin';
+import { VatNote } from '../../../components/VatNote';
 import { Plan, PromoPackage, dateVi, daysLeft, durationLabel, featureList, planLabel, planTier, FREE_PLAN_LABEL, promoDesc, promoLabel } from '../../../lib/billing';
 
 type Overview = {
@@ -77,7 +78,7 @@ function BuyPackages() {
       {hasBoth && <div className="bl-toggle" role="tablist"><button className={cycle === 'MONTHLY' ? 'on' : ''} onClick={() => setCycle('MONTHLY')}>Theo tháng</button><button className={cycle === 'YEARLY' ? 'on' : ''} onClick={() => setCycle('YEARLY')}>Theo năm</button></div>}
       <div className="bl-grid plans">{shown.map(plan => <div key={plan.id} className={`bl-plan tier-${planTier(plan.name)}`}>
         <div className="name">{planLabel(plan.name)}</div>
-        <div className="bl-price">{coin(plan.price)}<small> / {plan.billing_cycle === 'YEARLY' ? 'năm' : 'tháng'}</small></div>
+        <div className="bl-price">{coin(plan.price)}<small> / {plan.billing_cycle === 'YEARLY' ? 'năm' : 'tháng'}</small></div><VatNote price={plan.price} />
         <ul><li>{plan.max_listings === null ? 'Đăng tin không giới hạn' : `Đăng tối đa ${plan.max_listings} tin cùng lúc`}</li>{featureList(plan.features).map(f => <li key={f}>{f}</li>)}</ul>
         <button className="bl-btn primary" onClick={() => setPaying({ kind: 'PLAN', title: planLabel(plan.name), subtitle: plan.billing_cycle === 'YEARLY' ? '1 năm' : '1 tháng', price: plan.price, planId: plan.id })}>Mua gói</button>
       </div>)}{!shown.length && <p style={{ color: '#71817b' }}>Chưa có gói đăng tin nào được mở bán.</p>}</div>
@@ -89,7 +90,7 @@ function BuyPackages() {
         <div className="bl-f" style={{ marginBottom: 14 }}><label htmlFor="promo-listing" style={{ fontWeight: 700, display: 'block', marginBottom: 6 }}>Chọn tin cần đẩy</label>
           <select id="promo-listing" className="bl-in" style={{ maxWidth: 480 }} value={productId} onChange={e => setProductId(e.target.value)}><option value="">— Chọn tin đăng —</option>{listings.map(l => <option key={l.id} value={l.productId ?? ''}>{l.title || '(Chưa đặt tiêu đề)'}</option>)}</select></div>
         <div className="bl-grid plans">{promos.map(p => <div key={p.id} className="bl-plan"><div className="name">{p.name}</div><div><span className="bl-pill ok">{promoLabel(p.promotion_type)}</span></div><div style={{ color: '#4b5d56', fontSize: 13.5 }}>{promoDesc(p.promotion_type)}</div>
-          <div className="bl-price" style={{ fontSize: 24 }}>{coin(p.price)}<small> / {durationLabel(p.duration_hours)}</small></div>
+          <div className="bl-price" style={{ fontSize: 24 }}>{coin(p.price)}<small> / {durationLabel(p.duration_hours)}</small></div><VatNote price={p.price} />
           <button className="bl-btn primary" disabled={!productId} onClick={() => buyPromo(p)}>Mua gói này</button></div>)}</div></>}
       {!!overview?.promotions.length && <table className="bl-tbl" style={{ marginTop: 16 }}><thead><tr><th>Gói</th><th>Tin đăng</th><th>Giá</th><th>Hết hạn</th></tr></thead><tbody>
         {overview.promotions.map(p => <tr key={p.id}><td>{p.name}</td><td>{p.productTitle ?? '—'}</td><td>{coin(p.price)}</td><td>{p.status === 'PAID' ? dateVi(p.endsAt) : p.status}</td></tr>)}</tbody></table>}
