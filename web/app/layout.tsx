@@ -14,6 +14,8 @@ const beVietnamPro = Be_Vietnam_Pro({
 });
 
 export const metadata: Metadata = {
+  // Địa chỉ gốc để ghép các đường dẫn tương đối (ảnh chia sẻ...) thành https://tattantat.vn/... thay vì địa chỉ nội bộ của máy chủ.
+  metadataBase: new URL((process.env.NEXT_PUBLIC_SITE_URL || 'https://tattantat.vn').replace(/\/$/, '')),
   title: 'Tất Tần Tật - Mua bán mọi thứ, gần bạn',
   description: 'Mua bán mọi thứ, đơn giản và an toàn.',
   openGraph: {
