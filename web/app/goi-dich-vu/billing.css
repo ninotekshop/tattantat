@@ -25,3 +25,22 @@
 .bl-modal{position:fixed;inset:0;background:#0a1f17aa;z-index:100;display:grid;place-items:center;padding:18px}.bl-modal>div{background:#fff;border-radius:16px;padding:24px;max-width:440px;width:100%}
 .bl-faq details{border-bottom:1px solid #eef3ef;padding:12px 0}.bl-faq summary{cursor:pointer;font-weight:700}.bl-faq p{margin:8px 0 0;color:#5d7a69;line-height:1.7}
 @media(max-width:640px){.bl-qr{grid-template-columns:1fr}.bl h1{font-size:23px}.bl-kv{grid-template-columns:100px 1fr auto}}
+/* Giá không tràn khỏi thẻ; đơn vị kỳ hạn xuống dòng riêng */
+.bl-grid.plans{grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
+.bl-plan{min-width:0;--c:#0a9a61;--c-dark:#007c4b;--c-soft:#ecf8f1;--c-line:#cdeedd}
+.bl-plan .bl-price{font-size:clamp(22px,2.2vw,28px);line-height:1.15;overflow-wrap:anywhere}
+.bl-plan .bl-price small{display:block;margin-top:4px}
+/* Màu riêng cho từng gói */
+.bl-plan.tier-free{--c:#64748b;--c-dark:#475569;--c-soft:#f1f5f9;--c-line:#dbe3ec}
+.bl-plan.tier-pro{--c:#2563eb;--c-dark:#1d4ed8;--c-soft:#eff6ff;--c-line:#cfe0fd}
+.bl-plan.tier-business{--c:#0a9a61;--c-dark:#007c4b;--c-soft:#ecf8f1;--c-line:#cdeedd}
+.bl-plan.tier-enterprise{--c:#7c3aed;--c-dark:#6d28d9;--c-soft:#f5f0ff;--c-line:#e0d4fb}
+.bl-plan[class*=tier-]{border-color:var(--c-line);border-top:4px solid var(--c);background:linear-gradient(180deg,var(--c-soft),#fff 120px)}
+.bl-plan[class*=tier-] .name{color:var(--c-dark)}
+.bl-plan[class*=tier-] .bl-price{color:var(--c-dark)}
+.bl-plan[class*=tier-] li:before{background:var(--c)}
+.bl-plan[class*=tier-].hot{border:2px solid var(--c);border-top-width:4px;box-shadow:0 10px 30px color-mix(in srgb,var(--c) 18%,transparent)}
+.bl-plan[class*=tier-] .ribbon{background:var(--c)}
+.bl-plan[class*=tier-] .bl-btn.primary{background:var(--c);border-color:var(--c)}
+.bl-plan[class*=tier-] .bl-btn.primary:hover:not(:disabled){background:var(--c-dark)}
+.bl-plan[class*=tier-] .bl-btn:not(.primary){color:var(--c-dark);border-color:var(--c-line)}

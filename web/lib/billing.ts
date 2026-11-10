@@ -14,3 +14,12 @@ const PLAN_LABELS: Record<string, string> = { free: 'Free (Miễn phí)', 'gói 
 /** Tên hiển thị chuẩn của gói bán hàng: Free (Miễn phí), Pro (Chuyên nghiệp), Business (Kinh doanh), Enterprise (Cao cấp). */
 export const planLabel = (name: string | null | undefined) => PLAN_LABELS[String(name ?? '').trim().toLowerCase()] ?? String(name ?? '');
 export const FREE_PLAN_LABEL = 'Free (Miễn phí)';
+
+/** Nhóm màu của gói để tô khác nhau trên giao diện. */
+export function planTier(name: string | null | undefined): 'free' | 'pro' | 'business' | 'enterprise' {
+  const n = String(name ?? '').toLowerCase();
+  if (n.includes('enterprise') || n.includes('cao cấp')) return 'enterprise';
+  if (n.includes('business') || n.includes('kinh doanh')) return 'business';
+  if (n.includes('pro') || n.includes('chuyên nghiệp')) return 'pro';
+  return 'free';
+}

@@ -9,7 +9,7 @@ import { PromoGuide } from '../../../components/PromoGuide';
 import { CelebrationDialog, type CelebrationKind } from '../../../components/CelebrationDialog';
 import { apiGet, memberRequest } from '../../../lib/api';
 import { coin } from '../../../lib/coin';
-import { Plan, PromoPackage, dateVi, daysLeft, durationLabel, featureList, planLabel, FREE_PLAN_LABEL, promoDesc, promoLabel } from '../../../lib/billing';
+import { Plan, PromoPackage, dateVi, daysLeft, durationLabel, featureList, planLabel, planTier, FREE_PLAN_LABEL, promoDesc, promoLabel } from '../../../lib/billing';
 
 type Overview = {
   balance: string;
@@ -75,7 +75,7 @@ function BuyPackages() {
     <div className="bl-card" id="goi-dang-tin"><h2>Gói đăng tin</h2>
       <p className="sub" style={{ marginTop: -6 }}>Đăng được nhiều tin hơn cùng lúc. Mua lại đúng gói đang dùng sẽ được cộng dồn thời hạn; đổi sang gói khác sẽ áp dụng ngay.</p>
       {hasBoth && <div className="bl-toggle" role="tablist"><button className={cycle === 'MONTHLY' ? 'on' : ''} onClick={() => setCycle('MONTHLY')}>Theo tháng</button><button className={cycle === 'YEARLY' ? 'on' : ''} onClick={() => setCycle('YEARLY')}>Theo năm</button></div>}
-      <div className="bl-grid plans">{shown.map(plan => <div key={plan.id} className="bl-plan">
+      <div className="bl-grid plans">{shown.map(plan => <div key={plan.id} className={`bl-plan tier-${planTier(plan.name)}`}>
         <div className="name">{planLabel(plan.name)}</div>
         <div className="bl-price">{coin(plan.price)}<small> / {plan.billing_cycle === 'YEARLY' ? 'năm' : 'tháng'}</small></div>
         <ul><li>{plan.max_listings === null ? 'Đăng tin không giới hạn' : `Đăng tối đa ${plan.max_listings} tin cùng lúc`}</li>{featureList(plan.features).map(f => <li key={f}>{f}</li>)}</ul>

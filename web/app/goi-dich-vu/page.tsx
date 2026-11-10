@@ -8,7 +8,7 @@ import { readSession } from '../../lib/auth';
 import { PromoGuide } from '../../components/PromoGuide';
 import { PayModal } from '../../components/PayModal';
 import { coin } from '../../lib/coin';
-import { Plan, PromoPackage, dateVi, durationLabel, featureList, planLabel, FREE_PLAN_LABEL, promoDesc, promoLabel } from '../../lib/billing';
+import { Plan, PromoPackage, dateVi, durationLabel, featureList, planLabel, planTier, FREE_PLAN_LABEL, promoDesc, promoLabel } from '../../lib/billing';
 
 type Overview = { balance: string; subscription: { name: string; endsAt: string | null } | null };
 
@@ -48,12 +48,12 @@ export default function PricingPage() {
     {hasBoth && <div className="bl-toggle" role="tablist"><button className={cycle === 'MONTHLY' ? 'on' : ''} onClick={() => setCycle('MONTHLY')}>Theo tháng</button><button className={cycle === 'YEARLY' ? 'on' : ''} onClick={() => setCycle('YEARLY')}>Theo năm</button></div>}
     {loading && <p>Đang tải bảng giá…</p>}
     <div className="bl-grid plans">
-      {!shown.some(p => planLabel(p.name) === FREE_PLAN_LABEL) && <div className="bl-plan"><div className="name">{FREE_PLAN_LABEL}</div><div className="bl-price">0 đ</div>
+      {!shown.some(p => planLabel(p.name) === FREE_PLAN_LABEL) && <div className="bl-plan tier-free"><div className="name">{FREE_PLAN_LABEL}</div><div className="bl-price">0 đ</div>
         <ul><li>Đăng tối đa 10 tin cùng lúc</li><li>Hiển thị tin cơ bản</li><li>Chat trực tiếp với người mua</li></ul>
         <Link href="/sell" className="bl-btn">Đăng tin ngay</Link></div>}
       {shown.map(plan => {
         const perks = featureList(plan.features);
-        return <div key={plan.id} className={`bl-plan ${plan.id === popular ? 'hot' : ''}`}>
+        return <div key={plan.id} className={`bl-plan tier-${planTier(plan.name)} ${plan.id === popular ? 'hot' : ''}`}>
           {plan.id === popular && <span className="ribbon">Phổ biến</span>}
           <div className="name">{planLabel(plan.name)}</div>
           <div className="bl-price">{coin(plan.price)}<small> / {plan.billing_cycle === 'YEARLY' ? 'năm' : 'tháng'}</small></div>
