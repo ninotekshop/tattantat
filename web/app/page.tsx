@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { MarketplaceHome } from '../components/MarketplaceHome';
+import { getBaseUrl, type Product } from '../lib/api';
 
 const site = () => (process.env.NEXT_PUBLIC_SITE_URL ?? 'https://tattantat.vn').replace(/\/$/, '');
 
@@ -15,6 +16,25 @@ export async function generateMetadata({ searchParams }: { searchParams: Promise
   };
 }
 
+// Tải sẵn trang tin đầu tiên trên máy chủ để tin đăng nằm ngay trong HTML (Google, Facebook, Zalo đọc được).
+// Lỗi hoặc quá 3 giây thì trả null - trình duyệt sẽ tự tải như trước.
+async function loadInitial(q: string): Promise<{ items: Product[]; total: number } | null> {
+  const bases = [process.env.API_INTERNAL_BASE_URL, getBaseUrl(), `${site()}/api/v1`]
+    .map(b => (b ?? '').replace(/\/$/, ''))
+    .filter((b, i, a) => /^https?:\/\//i.test(b) && a.indexOf(b) === i);
+  const qs = new URLSearchParams({ sort: 'new', limit: '24' });
+  if (q) qs.set('q', q);
+  for (const base of bases) {
+    try {
+      const res = await fetch(`${base}/search/products?${qs}`, { next: { revalidate: 60 }, signal: AbortSignal.timeout(3000) });
+      if (!res.ok) continue;
+      const j = await res.json() as { success?: boolean; data?: { items?: Product[]; total?: number } };
+      if (j?.success && Array.isArray(j.data?.items)) return { items: j.data.items, total: j.data.total ?? j.data.items.length };
+    } catch { /* thử địa chỉ tiếp theo */ }
+  }
+  return null;
+}
+
 export default async function HomePage({
   searchParams,
 }: {
@@ -22,5 +42,5 @@ export default async function HomePage({
 }) {
   const params = await searchParams;
   const value = (key: string) => typeof params[key] === 'string' ? params[key] : '';
-  return <MarketplaceHome query={value('q')} group={value('category')} sort={value('sort')} view={value('view')} />;
+  return <MarketplaceHome query={value('q')} group={value('category')} sort={value('sort')} view={value('view')} initial={await loadInitial(value('q'))} />;
 }

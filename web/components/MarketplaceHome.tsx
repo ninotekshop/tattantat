@@ -180,7 +180,7 @@ function ProductCard({ product, viewMode = 'GRID_4' }: { product: Product; viewM
           </div>
           
           <div className="card-posted-date" style={{ display: 'flex', alignItems: 'center', gap: 5, color: '#64748b' }}>
-            <Clock size={13} /> Đăng {new Date(product.postedAt).toLocaleDateString('vi-VN')}
+            <Clock size={13} /> Đăng {new Date(product.postedAt).toLocaleDateString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' })}
           </div>
         </Link>
 
@@ -251,22 +251,24 @@ function ProductCard({ product, viewMode = 'GRID_4' }: { product: Product; viewM
 }
 
 const CONDITION_TEXT: Record<string, string> = { NEW: 'Mới 100%', LIKENEW: 'Như mới', USEDLIKENEW: 'Như mới', USEDGOOD: 'Đã dùng, còn tốt', USEDFAIR: 'Đã dùng, có hao mòn', FORPARTS: 'Cần sửa / lấy linh kiện', REFURBISHED: 'Đã tân trang' };
-export function MarketplaceHome({ query = '', group = '', sort = '', view = '' }: { query?: string; group?: string; sort?: string; view?: string }) {
+export function MarketplaceHome({ query = '', group = '', sort = '', view = '', initial = null }: { query?: string; group?: string; sort?: string; view?: string; initial?: { items: Product[]; total: number } | null }) {
   const router = useRouter();
   const categoryScrollRef = useRef<HTMLDivElement>(null);
 
-  const [products, setProducts] = useState<Product[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  // Tin đăng máy chủ đã tải sẵn (có trong HTML cho Google/Facebook/Zalo đọc); trình duyệt vẫn tải lại ngầm để cập nhật.
+  const [products, setProducts] = useState<Product[]>(initial?.items ?? []);
+  const [isLoading, setIsLoading] = useState(!initial);
+  const seeded = useRef(Boolean(initial));
   const [searchQuery, setSearchQuery] = useState(query);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [showBackToTop, setShowBackToTop] = useState(false);
 
   // Default display minimum 12 items matrix
-  const [visibleCount, setVisibleCount] = useState(12);
+  const [visibleCount, setVisibleCount] = useState(initial?.items.length || 12);
   type Filters = { minPrice: string; maxPrice: string; condition: string; verified: boolean; sortBy: string };
   const [filters, setFilters] = useState<Filters>({ minPrice: '', maxPrice: '', condition: '', verified: false, sortBy: 'new' });
   const [page, setPage] = useState(1);
-  const [total, setTotal] = useState(0);
+  const [total, setTotal] = useState(initial?.total ?? 0);
   const [loadingMore, setLoadingMore] = useState(false);
   const [saveMsg, setSaveMsg] = useState('');
 
@@ -375,7 +377,9 @@ export function MarketplaceHome({ query = '', group = '', sort = '', view = '' }
     let cancelled = false;
     async function load() {
       if (!nearbyReady) return;
-      setIsLoading(true); setPage(1);
+      // Lần đầu đã có tin từ máy chủ: không hiện khung chờ, chỉ tải lại ngầm.
+      if (seeded.current) seeded.current = false; else setIsLoading(true);
+      setPage(1);
       try {
         let res = await api.search(searchParams()).catch(() => ({ items: [] as Product[], total: 0, page: 1, limit: 24 }));
         // Quận/huyện chưa có tin: mở rộng ra cả tỉnh để vẫn thấy tin gần bạn.
