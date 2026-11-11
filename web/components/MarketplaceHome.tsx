@@ -45,7 +45,7 @@ function GridIcon({ cols, rows, size = 18 }: { cols: number; rows: number; size?
   return <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true" style={{ display: 'block' }}>{cells}</svg>;
 }
 
-function ProductCard({ product, viewMode = 'GRID_4' }: { product: Product; viewMode?: 'GRID_6' | 'GRID_4' | 'LIST' }) {
+export function ProductCard({ product, viewMode = 'GRID_4' }: { product: Product; viewMode?: 'GRID_6' | 'GRID_4' | 'LIST' }) {
   const [failedImage, setFailedImage] = useState(false);
   const router = useRouter();
   const { isFavorite: isSaved, toggle } = useFavorites();

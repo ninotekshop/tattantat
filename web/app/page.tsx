@@ -1,6 +1,9 @@
 import type { Metadata } from 'next';
 import { MarketplaceHome } from '../components/MarketplaceHome';
 import { getBaseUrl, type Product } from '../lib/api';
+import Link from 'next/link';
+import { CATEGORY_ENGINE_TAXONOMY } from '../lib/marketplace';
+import { landingHref } from '../lib/seo-landing';
 
 const site = () => (process.env.NEXT_PUBLIC_SITE_URL ?? 'https://tattantat.vn').replace(/\/$/, '');
 
@@ -42,5 +45,21 @@ export default async function HomePage({
 }) {
   const params = await searchParams;
   const value = (key: string) => typeof params[key] === 'string' ? params[key] : '';
-  return <MarketplaceHome query={value('q')} group={value('category')} sort={value('sort')} view={value('view')} initial={await loadInitial(value('q'))} />;
+  const filtered = ['q', 'sort', 'category', 'view'].some(k => value(k));
+  return (
+    <>
+      <MarketplaceHome query={value('q')} group={value('category')} sort={value('sort')} view={value('view')} initial={await loadInitial(value('q'))} />
+      {/* Liên kết tới các trang danh mục theo khu vực - giúp Google tìm thấy và người dùng vào nhanh. */}
+      {!filtered && (
+        <section className="shell" style={{ margin: '8px auto 40px' }}>
+          <h2 style={{ fontSize: 18, fontWeight: 700, color: '#0f172a', margin: '0 0 12px' }}>Mua bán tại Quy Nhơn</h2>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+            {CATEGORY_ENGINE_TAXONOMY.map(c => (
+              <Link key={c.key} href={landingHref(c.slug, 'quy-nhon')} style={{ padding: '7px 14px', borderRadius: 999, border: '1px solid #bbf7d0', background: '#f0fdf4', color: '#008247', fontSize: 13.5, fontWeight: 600, textDecoration: 'none' }}>{c.label} Quy Nhơn</Link>
+            ))}
+          </div>
+        </section>
+      )}
+    </>
+  );
 }

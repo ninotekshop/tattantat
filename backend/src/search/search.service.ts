@@ -140,7 +140,14 @@ export class SearchService implements OnModuleInit {
 
   /** Danh sách tin đang hiển thị cho sitemap.xml (tối đa 5.000 tin mới nhất). */
   async sitemap() {
-    const r = await this.db.query(`SELECT id::text, COALESCE(updated_at, published_at, created_at) AS updated FROM products WHERE status='ACTIVE' AND deleted_at IS NULL ORDER BY published_at DESC NULLS LAST LIMIT 5000`);
-    return { success: true, data: r.rows, message: null, errorCode: null };
+    const r = await this.db.query(`SELECT p.id::text, COALESCE(p.updated_at, p.published_at, p.created_at) AS updated, c.slug AS cat, pc.slug AS parent, p.address FROM products p LEFT JOIN categories c ON c.id=p.category_id LEFT JOIN categories pc ON pc.id=c.parent_id WHERE p.status='ACTIVE' AND p.deleted_at IS NULL ORDER BY p.published_at DESC NULLS LAST LIMIT 5000`);
+    // Không trả địa chỉ đầy đủ ra ngoài: chỉ đánh dấu tin thuộc khu vực nào (cho trang /mua-ban/<danh-muc>/<khu-vuc>).
+    const plain = (v: string) => v.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/gi, 'd').toLowerCase();
+    const AREAS: Array<[string, string]> = [['quy-nhon', 'quy nhon'], ['binh-dinh', 'binh dinh'], ['gia-lai', 'gia lai']];
+    const data = r.rows.map((row: { id: string; updated: string; cat: string | null; parent: string | null; address: string | null }) => {
+      const addr = plain(row.address ?? '');
+      return { id: row.id, updated: row.updated, cats: [row.cat, row.parent].filter(Boolean), areas: AREAS.filter(([, key]) => addr.includes(key)).map(([slug]) => slug) };
+    });
+    return { success: true, data, message: null, errorCode: null };
   }
 }
