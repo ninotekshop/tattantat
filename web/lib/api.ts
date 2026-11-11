@@ -4,6 +4,7 @@ export type ApiEnvelope<T> = { success: boolean; data: T; message: string | stri
 
 export type Product = {
   id: string;
+  viewCount?: number;
   title: string;
   price: string;
   location: string;

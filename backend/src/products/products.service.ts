@@ -62,7 +62,8 @@ export class ProductsService {
     );
     if (!result.rows[0]) throw new NotFoundException('Không tìm thấy sản phẩm');
     this.countView(id, result.rows[0].seller_id, viewerId ?? viewerKey ?? '');
-    return this.envelope(this.productPayload(result.rows[0]));
+    const views = await this.database.query<{ v: string }>('SELECT COALESCE(view_count,0)::text AS v FROM products WHERE id=$1', [id]).then((r) => r.rows[0]?.v ?? '0').catch(() => '0');
+    return this.envelope(this.productPayload({ ...result.rows[0], view_count: views } as any));
   }
 
   async mine(userId: string) {
@@ -178,6 +179,7 @@ export class ProductsService {
     const prefix = process.env.API_PREFIX ?? 'api/v1';
     return {
       id: row.id,
+      viewCount: Number((row as any).view_count ?? 0),
       title: row.title,
       price: row.price,
       priceMode: row.listing_price_mode ?? 'FIXED',

@@ -376,7 +376,7 @@ export default function ProductDetailPage() {
                 <div className="detail-meta-list">
                   <div><MapPin size={15} color="#00a65a" /> {product.location || 'Chưa cập nhật'}</div>
                   <div><Clock size={15} /> Đăng {new Date(product.postedAt).toLocaleDateString('vi-VN')}</div>
-                  <div><Eye size={15} /> 245 lượt xem · Mã tin: <b>TTT-{product.id.slice(0, 6)}</b></div>
+                  <div><Eye size={15} /> {(product.viewCount ?? 0).toLocaleString('vi-VN')} lượt xem · Mã tin: <b>TTT-{product.id.slice(0, 6)}</b></div>
                 </div>
 
                 {/* ACTION BUTTONS */}
