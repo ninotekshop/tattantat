@@ -5,6 +5,10 @@ import './marketplace.css';
 import './member.css';
 import './dog-theme.css';
 import { ClientLayout } from '../components/ClientLayout';
+import Script from 'next/script';
+
+// Mã đo lường Google Analytics 4 của tattantat.vn.
+const GA_ID = 'G-DDY617R0XL';
 
 const beVietnamPro = Be_Vietnam_Pro({
   subsets: ['vietnamese', 'latin'],
@@ -30,6 +34,8 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
     <html lang="vi" className={beVietnamPro.variable}>
       <body>
         <ClientLayout>{children}</ClientLayout>
+        <Script id="gtag-init" strategy="afterInteractive">{`window.dataLayer = window.dataLayer || []; function gtag(){dataLayer.push(arguments);} gtag('js', new Date()); gtag('config', '${GA_ID}');`}</Script>
+        <Script src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`} strategy="afterInteractive" />
       </body>
     </html>
   );
