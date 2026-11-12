@@ -86,7 +86,7 @@ export function AppHeader() {
               <MessageSquare size={18} /><span>Tin nhắn</span>
             </button>
             <button className="nav-link" onClick={() => requireAuth('/account')} style={{ background: 'transparent', border: 'none', cursor: 'pointer' }}>
-              <User size={18} /><span>{name ? name : 'Tài khoản'}</span>
+              <User size={18} /><span>Tài khoản & Tin đăng</span>
             </button>
           </nav>
 
