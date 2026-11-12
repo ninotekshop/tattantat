@@ -194,7 +194,7 @@ export default function Sell() {
   ];
   const cur = Math.min(step, steps.length - 1);
   const key = steps[cur].key;
-  const stepOf = (k: string) => (k === 'images' ? 'images' : ['title', 'description', 'condition'].includes(k) ? 'info' : ['price', 'priceMode'].includes(k) ? 'price' : k.startsWith('values.') ? 'specs' : 'place');
+  const stepOf = (k: string) => (k === 'images' ? 'images' : ['title', 'description', 'condition'].includes(k) ? 'info' : ['price', 'salePrice', 'priceMode'].includes(k) ? 'price' : k.startsWith('values.') ? 'specs' : 'place');
   const goTo = (k: string) => { const i = steps.findIndex(s => s.key === k); if (i >= 0) setStep(i); scroll.current?.scrollTo({ y: 0, animated: false }); };
   const move = (i: number) => { setStep(i); scroll.current?.scrollTo({ y: 0, animated: false }); };
 
@@ -226,7 +226,7 @@ export default function Sell() {
     </Pressable>
   );
   const loc = [data.location?.address, data.location?.ward, data.location?.district, data.location?.province].filter(Boolean).join(', ');
-  const priceText = priceless ? (PRICE_MODES[data.priceMode ?? ''] ?? '') : data.price ? `${Number(data.price).toLocaleString('vi-VN')} đ${data.negotiable ? ' (thương lượng)' : ''}` : '';
+  const priceText = priceless ? (PRICE_MODES[data.priceMode ?? ''] ?? '') : data.price ? `${data.salePrice ? Number(data.salePrice).toLocaleString('vi-VN') + ' đ (giảm từ ' : ''}${Number(data.price).toLocaleString('vi-VN')} đ${data.salePrice ? ')' : ''}${data.negotiable ? ' (thương lượng)' : ''}` : '';
   const isLast = cur === steps.length - 1;
 
   return (
@@ -270,8 +270,10 @@ export default function Sell() {
         </View> : null}
 
         {key === 'price' ? <View style={st.card}>
-          <View style={st.wrap}>{t.config.priceModes.map(m => <Chip key={m} label={PRICE_MODES[m] ?? m} active={data.priceMode === m} onPress={() => patch({ priceMode: m, ...(m === 'CONTACT' || m === 'FREE' ? { price: undefined } : {}) })} />)}</View>
+          <View style={st.wrap}>{t.config.priceModes.map(m => <Chip key={m} label={PRICE_MODES[m] ?? m} active={data.priceMode === m} onPress={() => patch({ priceMode: m, ...(m === 'CONTACT' || m === 'FREE' ? { price: undefined, salePrice: undefined } : {}) })} />)}</View>
           {!priceless ? <Input label="Giá bán *" keyboardType="number-pad" value={data.price ? Number(data.price).toLocaleString('vi-VN') : ''} onChangeText={v => patch({ price: v.replace(/\D/g, '') || undefined })} right={<Text style={{ color: C.muted }}>đ</Text>} error={err('price')} /> : null}
+          {!priceless ? <Input label="Giá giảm (không bắt buộc)" keyboardType="number-pad" placeholder="Nhập giá giảm nếu muốn khuyến mại" value={data.salePrice ? Number(data.salePrice).toLocaleString('vi-VN') : ''} onChangeText={v => patch({ salePrice: v.replace(/\D/g, '') || undefined })} right={<Text style={{ color: C.muted }}>đ</Text>} error={err('salePrice')} /> : null}
+          {!priceless && data.salePrice ? <Text style={{ color: C.muted, fontSize: 13 }}>Giá bán sẽ hiển thị gạch ngang, giá giảm hiển thị ngay bên dưới. Giá giảm phải nhỏ hơn giá bán.</Text> : null}
           {!priceless ? <View style={st.switchRow}><Text style={{ color: C.ink, fontSize: 15 }}>Có thể thương lượng</Text><Switch value={!!data.negotiable} onValueChange={v => patch({ negotiable: v })} trackColor={{ true: C.brand, false: '#CBD5E1' }} /></View> : null}
         </View> : null}
 

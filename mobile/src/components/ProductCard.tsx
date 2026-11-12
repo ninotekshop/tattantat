@@ -7,7 +7,8 @@ import { SITE_URL, api, media } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { useFavorites } from '@/lib/favorites';
 import { useHiddenProducts } from '@/lib/hidden';
-import { vnd, timeAgo } from '@/lib/format';
+import { timeAgo } from '@/lib/format';
+import { PriceView } from './PriceView';
 import { C, R, shadow } from '@/lib/theme';
 import type { Product } from '@/lib/types';
 
@@ -54,7 +55,7 @@ export const ProductCard = memo(function ProductCard({ p, width }: { p: Product;
         </View>
         <View style={{ padding: 10, gap: 4 }}>
           <Text numberOfLines={2} style={st.title}>{p.title}</Text>
-          <Text style={st.price}>{vnd(p.price, p.priceMode)}</Text>
+          <PriceView price={p.price} salePrice={p.salePrice} mode={p.priceMode} style={st.price} oldSize={11} />
           <View style={st.row}><MapPin size={12} color={C.muted} /><Text numberOfLines={1} style={st.meta}>{p.location}</Text></View>
           <Text numberOfLines={1} style={st.meta}>{timeAgo(p.postedAt)}</Text>
         </View>

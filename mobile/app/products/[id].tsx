@@ -6,7 +6,8 @@ import { Stack, router, useLocalSearchParams } from 'expo-router';
 import { Flag, Heart, MapPin, MessageCircle, Share2, ShieldCheck, Clock } from 'lucide-react-native';
 import { api, media, SITE_URL } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
-import { timeAgo, vnd } from '@/lib/format';
+import { timeAgo } from '@/lib/format';
+import { PriceView } from '@/components/PriceView';
 import { C, R, shadow } from '@/lib/theme';
 import type { Product } from '@/lib/types';
 import { Avatar, Button, ErrorBox, Loading } from '@/components/ui';
@@ -79,7 +80,7 @@ export default function ProductDetail() {
         </View>
         <View style={st.block}>
           <Text style={st.title}>{p.title}</Text>
-          <Text style={st.price}>{vnd(p.price, p.priceMode)}</Text>
+          <PriceView price={p.price} salePrice={p.salePrice} mode={p.priceMode} style={st.price} oldSize={14} />
           <View style={st.metaRow}><MapPin size={15} color={C.muted} /><Text style={st.meta}>{p.location}</Text></View>
           <View style={st.metaRow}><Clock size={15} color={C.muted} /><Text style={st.meta}>Đăng {timeAgo(p.postedAt)}</Text></View>
           {p.condition ? <View style={st.tag}><Text style={st.tagText}>{CONDITION[p.condition] ?? p.condition}</Text></View> : null}

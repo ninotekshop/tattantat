@@ -5,7 +5,7 @@ import { Image } from 'expo-image';
 import { ExternalLink, Eye, EyeOff, FileText, Pencil, Trash2 } from 'lucide-react-native';
 import { api, media } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
-import { vnd } from '@/lib/format';
+import { PriceView } from '@/components/PriceView';
 import { STATUS } from '@/lib/listing';
 import { C, R, shadow } from '@/lib/theme';
 import type { ListingSummary } from '@/lib/types';
@@ -17,7 +17,7 @@ const FILTERS = [
   { key: 'HIDDEN', label: 'Đã ẩn' }, { key: 'DRAFT', label: 'Bản nháp' },
 ] as const;
 
-type Row = { id: string; title: string; price?: string; priceMode?: string; imageUrl?: string | null; status: string; postedAt?: string | null; productId?: string; listingId?: string | null; draft?: boolean };
+type Row = { id: string; title: string; price?: string; salePrice?: string | null; priceMode?: string; imageUrl?: string | null; status: string; postedAt?: string | null; productId?: string; listingId?: string | null; draft?: boolean };
 
 export default function Manage() {
   const { session } = useAuth();
@@ -30,7 +30,7 @@ export default function Manage() {
     Promise.all([api<any[]>('/products/mine', { auth: true }), api<ListingSummary[]>('/listings/mine', { auth: true })]).then(([prods, lists]) => {
       const rows: Row[] = [
         ...lists.filter(d => !d.productId).map(d => ({ id: d.id, title: d.title || 'Bản nháp chưa có tiêu đề', status: 'DRAFT', postedAt: d.updatedAt, listingId: d.id, draft: true })),
-        ...prods.map(p => ({ id: p.id, title: p.title, price: String(p.price ?? '').replace(/\.0+$/, ''), priceMode: p.priceMode, imageUrl: p.imageUrl, status: p.status || '', postedAt: p.postedAt, productId: p.id, listingId: p.listingId })),
+        ...prods.map(p => ({ id: p.id, title: p.title, price: String(p.price ?? '').replace(/\.0+$/, ''), salePrice: p.salePrice ? String(p.salePrice).replace(/\.0+$/, '') : null, priceMode: p.priceMode, imageUrl: p.imageUrl, status: p.status || '', postedAt: p.postedAt, productId: p.id, listingId: p.listingId })),
       ];
       setItems(rows);
     }).catch(e => setError(e.message));
@@ -78,7 +78,7 @@ export default function Manage() {
                 </View>
                 <View style={st.body}>
                   <Text numberOfLines={2} style={st.title}>{item.title}</Text>
-                  {!item.draft ? <Text style={st.price}>{vnd(item.price, item.priceMode)}</Text> : null}
+                  {!item.draft ? <PriceView price={item.price} salePrice={item.salePrice} mode={item.priceMode} style={st.price} oldSize={11} /> : null}
                   {item.postedAt ? <Text style={st.date}>{item.draft ? 'Cập nhật' : 'Đăng'} {new Date(item.postedAt).toLocaleDateString('vi-VN')}</Text> : null}
                 </View>
               </Pressable>
