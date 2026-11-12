@@ -1,7 +1,7 @@
 import { avatarThumb } from '../storage/avatar';
 import { BadRequestException, Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { DatabaseService } from '../database/database.service';
-import { compactLocation, convertAddress } from '../geo/vn-merge';
+import { compactLocation, convertAddress, locationSearchTerms } from '../geo/vn-merge';
 
 export type AttrFilter = { min?: number; max?: number; eq?: string[] };
 export type SearchParams = { q?: string; categoryId?: number; categorySlug?: string; attrs?: Record<string, AttrFilter>; minPrice?: number; maxPrice?: number; condition?: string; location?: string; verified?: boolean; sort?: string; page?: number; limit?: number; since?: string };
@@ -84,7 +84,12 @@ export class SearchService implements OnModuleInit {
     if (p.minPrice !== undefined) where.push(`p.price >= ${add(p.minPrice)}`);
     if (p.maxPrice !== undefined) where.push(`p.price <= ${add(p.maxPrice)}`);
     if (p.condition) where.push(`p.condition::text = ${add(p.condition)}`);
-    if (p.location) where.push(`${this.norm(`COALESCE(p.address,'')`)} LIKE ${this.norm(add(`%${p.location.toLowerCase().replace(/[\\%_]/g, m => '\\' + m)}%`))}`);
+    if (p.location) {
+      const esc = (t: string) => t.toLowerCase().replace(/[\\%_]/g, m => '\\' + m);
+      const terms = locationSearchTerms(p.location) ?? [p.location];
+      const likes = terms.map(t => `${this.norm(`COALESCE(p.address,'')`)} LIKE ${this.norm(add(`%${esc(t)}%`))}`);
+      where.push(likes.length > 1 ? `(${likes.join(' OR ')})` : likes[0]);
+    }
     if (p.verified) where.push(`EXISTS (SELECT 1 FROM users u2 WHERE u2.id=p.seller_id AND COALESCE(u2.is_verified,false))`);
     if (p.since) where.push(`p.published_at > ${add(p.since)}::timestamptz`);
     if (viewerId) { const v = add(viewerId); where.push(`NOT EXISTS (SELECT 1 FROM user_blocks b WHERE (b.blocker_id=${v}::uuid AND b.blocked_id=p.seller_id) OR (b.blocker_id=p.seller_id AND b.blocked_id=${v}::uuid))`); }

@@ -104,3 +104,19 @@ export function compactLocation(address?: string | null): string | null {
   }
   return null;
 }
+
+/**
+ * Bộ lọc khu vực dạng nhãn mới ("Gia Lai mới" hoặc "Bình Định (Gia Lai mới)"): trả về mọi tên tỉnh (cũ + mới) cùng thuộc tỉnh mới đó,
+ * để tìm được cả tin có địa chỉ lưu theo tên cũ ("..., Bình Định"). Trả về null nếu không phải nhãn "mới" hoặc không nhận ra tỉnh.
+ */
+export function locationSearchTerms(input?: string | null): string[] | null {
+  if (!input) return null;
+  const m = /\(([^)]*?)\s+mới\)/i.exec(input) ?? /^(.*?)\s+mới$/i.exec(input.trim());
+  if (!m) return null;
+  const code = locIndex().provNew.get(strip(m[1]));
+  const newName = code ? VN_MERGE.np[code] : undefined;
+  if (!code || !newName) return null;
+  const names = new Set<string>([core(newName)]);
+  for (const [oldName, [c]] of Object.entries(VN_MERGE.p)) if (c === code) names.add(core(oldName));
+  return [...names];
+}
