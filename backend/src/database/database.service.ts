@@ -23,7 +23,7 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
     this.pool = new Pool({
       connectionString,
       ssl: { rejectUnauthorized: false },
-      max: Number(process.env.DB_POOL_MAX) || 10,
+      max: Number(process.env.DB_POOL_MAX) || 5,
       idleTimeoutMillis: 300_000,
       connectionTimeoutMillis: 15_000,
       keepAlive: true,
@@ -49,8 +49,6 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
 
   async onModuleInit() {
     // Ping định kỳ để kết nối tới DB không bị ngắt khi vắng người dùng (yêu cầu đầu tiên sẽ không phải bắt tay lại).
-    this.keepAliveTimer = setInterval(() => { void this.pool.query('SELECT 1').catch(() => undefined); }, 60_000);
-    this.keepAliveTimer.unref();
     this.ensurePerformanceIndexes();
     try { await this.query(`ALTER TYPE user_role ADD VALUE IF NOT EXISTS 'MOD'`); } catch (err: unknown) { console.warn('[DatabaseService] Chưa thêm được vai trò MOD:', err instanceof Error ? err.message : String(err)); }
     try {

@@ -30,7 +30,7 @@ async function loadInitial(q: string): Promise<{ items: Product[]; total: number
   if (q) qs.set('q', q);
   for (const base of bases) {
     try {
-      const res = await fetch(`${base}/search/products?${qs}`, { next: { revalidate: 60 }, signal: AbortSignal.timeout(3000) });
+      const res = await fetch(`${base}/search/products?${qs}`, { next: { revalidate: 300 }, signal: AbortSignal.timeout(3000) });
       if (!res.ok) continue;
       const j = await res.json() as { success?: boolean; data?: { items?: Product[]; total?: number } };
       if (j?.success && Array.isArray(j.data?.items)) return { items: j.data.items, total: j.data.total ?? j.data.items.length };

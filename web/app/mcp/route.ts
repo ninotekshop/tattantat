@@ -1,11 +1,14 @@
 import { handleMcpRequest, MCP_CORS } from '../../lib/mcp-server';
 import { serverCtx } from '../../lib/agent-server';
+import { rateLimit } from '../../lib/rate-limit';
 
 export const dynamic = 'force-dynamic';
 
 const JSON_HEADERS = { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', ...MCP_CORS };
 
 export async function POST(req: Request) {
+  const limited = rateLimit(req, 'mcp', 30);
+  if (limited) return limited;
   const raw = await req.text();
   if (raw.length > 64_000) return new Response(JSON.stringify({ jsonrpc: '2.0', id: null, error: { code: -32600, message: 'Request too large' } }), { status: 413, headers: JSON_HEADERS });
   const { status, body } = await handleMcpRequest(raw, serverCtx());
