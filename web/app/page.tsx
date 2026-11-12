@@ -4,6 +4,7 @@ import { getBaseUrl, type Product } from '../lib/api';
 import Link from 'next/link';
 import { CATEGORY_ENGINE_TAXONOMY } from '../lib/marketplace';
 import { landingHref } from '../lib/seo-landing';
+import { jsonLdString, listingsItemList } from '../lib/jsonld';
 
 const site = () => (process.env.NEXT_PUBLIC_SITE_URL ?? 'https://tattantat.vn').replace(/\/$/, '');
 
@@ -46,9 +47,14 @@ export default async function HomePage({
   const params = await searchParams;
   const value = (key: string) => typeof params[key] === 'string' ? params[key] : '';
   const filtered = ['q', 'sort', 'category', 'view'].some(k => value(k));
+  const initial = await loadInitial(value('q'));
   return (
     <>
-      <MarketplaceHome query={value('q')} group={value('category')} sort={value('sort')} view={value('view')} initial={await loadInitial(value('q'))} />
+      {/* Tin đăng kèm giá (Offer, VND) ở dạng JSON-LD để agent đọc được mà không cần JavaScript. */}
+      {!filtered && initial && initial.items.length > 0 && (
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdString(listingsItemList(site(), initial.items, 'Tin đăng mới nhất trên Tất Tần Tật')) }} />
+      )}
+      <MarketplaceHome query={value('q')} group={value('category')} sort={value('sort')} view={value('view')} initial={initial} />
       {/* Liên kết tới các trang danh mục theo khu vực - giúp Google tìm thấy và người dùng vào nhanh. */}
       {!filtered && (
         <section className="shell" style={{ margin: '8px auto 40px' }}>

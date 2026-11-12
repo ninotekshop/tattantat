@@ -114,7 +114,7 @@ export function Footer() {
               <li><Link href="/safety-guide">An toàn giao dịch</Link></li>
               <li><Link href="/posting-rules">Quy định đăng tin</Link></li>
               <li><Link href="/dispute-resolution">Báo cáo vi phạm</Link></li>
-              <li><Link href="/about">Liên hệ hỗ trợ</Link></li>
+              <li><Link href="/contact">Liên hệ hỗ trợ</Link></li>
             </ul>
           </div>
 
@@ -123,6 +123,7 @@ export function Footer() {
             <h4 className="footer-heading">Về Tất Tần Tật</h4>
             <ul className="footer-links">
               <li><Link href="/about">Giới thiệu</Link></li>
+              <li><Link href="/contact">Liên hệ</Link></li>
               <li><Link href="/terms">Điều khoản sử dụng</Link></li>
               <li><Link href="/privacy">Chính sách bảo mật</Link></li>
               <li><Link href="/regulations">Quy chế hoạt động</Link></li>

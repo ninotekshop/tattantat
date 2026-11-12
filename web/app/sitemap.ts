@@ -12,7 +12,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const fixed: MetadataRoute.Sitemap = [
     ...['', '/bat-dong-san', '/o-to'].map(p => ({ url: site + p, changeFrequency: 'daily' as const, priority: p === '' ? 1 : 0.8 })),
     ...CATEGORY_ENGINE_TAXONOMY.map(c => ({ url: `${site}/categories?cat=${encodeURIComponent(c.key)}`, changeFrequency: 'daily' as const, priority: 0.8 })),
-    ...['/about', '/safety-guide', '/posting-rules', '/terms', '/privacy', '/regulations'].map(p => ({ url: site + p, changeFrequency: 'monthly' as const, priority: 0.3 })),
+    ...['/about', '/contact', '/safety-guide', '/posting-rules', '/terms', '/privacy', '/regulations'].map(p => ({ url: site + p, changeFrequency: 'monthly' as const, priority: 0.3 })),
   ];
   const rows = await serverApiGet<Row[]>('/search/sitemap', 3600, 5000);
   if (!Array.isArray(rows)) return fixed;

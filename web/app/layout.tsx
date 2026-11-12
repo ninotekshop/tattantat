@@ -5,6 +5,9 @@ import './marketplace.css';
 import './member.css';
 import './dog-theme.css';
 import { ClientLayout } from '../components/ClientLayout';
+import { WebMcpTools } from '../components/WebMcpTools';
+import { jsonLdString, siteGraph } from '../lib/jsonld';
+import { siteUrl } from '../lib/seo-landing';
 import Script from 'next/script';
 
 // Mã đo lường Google Analytics 4 của tattantat.vn.
@@ -33,7 +36,10 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="vi" className={beVietnamPro.variable}>
       <body>
+        {/* Dữ liệu có cấu trúc toàn site: Organization, WebSite, ứng dụng di động. */}
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdString(siteGraph(siteUrl())) }} />
         <ClientLayout>{children}</ClientLayout>
+        <WebMcpTools />
         <Script id="gtag-init" strategy="afterInteractive">{`window.dataLayer = window.dataLayer || []; function gtag(){dataLayer.push(arguments);} gtag('js', new Date()); gtag('config', '${GA_ID}');`}</Script>
         <Script src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`} strategy="afterInteractive" />
       </body>
