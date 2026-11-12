@@ -12,7 +12,7 @@ export type Field = {
  */
 export type Template = { id: string; categoryId: string; version: number; name: string; fields: Field[]; config: { priceModes: string[]; condition?: 'required' | 'none'; minPrice?: number; maxPrice?: number } };
 export type ListingData = {
-  title?: string; description?: string; condition?: string; priceMode?: string; price?: string; negotiable?: boolean;
+  title?: string; description?: string; condition?: string; priceMode?: string; price?: string; salePrice?: string; negotiable?: boolean;
   location?: { province?: string; district?: string; ward?: string; address?: string; hideExact?: boolean; latitude?: number; longitude?: number };
   contact?: { name?: string; phone?: string; email?: string };
   values?: Record<string, unknown>; images?: string[]; videos?: string[];
@@ -92,7 +92,7 @@ export function validateTemplate(input: unknown): string | null {
 export function validateListing(data: unknown, template: Template, publish: boolean): Record<string,string> {
   const errors: Record<string,string> = {};
   if (!record(data)) return { form: 'Dữ liệu tin đăng không hợp lệ.' };
-  const allowed = ['title','description','condition','priceMode','price','negotiable','location','contact','values','images','videos'];
+  const allowed = ['title','description','condition','priceMode','price','salePrice','negotiable','location','contact','values','images','videos'];
   if (Object.keys(data).some(key=>!allowed.includes(key))) errors.form = 'Tin đăng chứa thuộc tính không được phép.';
   const text = (key: string, value: unknown, required: boolean, max: number, label: string) => {
     if (blank(value)) { if (publish && required) errors[key] = 'Vui lòng nhập ' + label + '.'; }
@@ -110,6 +110,13 @@ export function validateListing(data: unknown, template: Template, publish: bool
       if (publish && amount<min) errors.price='Giá tối thiểu của chuyên mục này là '+min.toLocaleString('vi-VN')+' đ.';
       else if (amount>max) errors.price='Giá tối đa của chuyên mục này là '+max.toLocaleString('vi-VN')+' đ.';
     }
+  }
+  // Giá giảm (tuỳ chọn): số nguyên VND, phải nhỏ hơn giá bán; không áp dụng cho "Liên hệ" / "Cho tặng".
+  if (!blank(data.salePrice)) {
+    if (['CONTACT','FREE'].includes(data.priceMode as string)) errors.salePrice='Giá giảm chỉ áp dụng khi có giá bán.';
+    else if (typeof data.salePrice!=='string' || !/^\d{1,13}$/.test(data.salePrice)) errors.salePrice='Giá giảm không hợp lệ (số nguyên VND).';
+    else if (typeof data.price!=='string' || !/^\d{1,13}$/.test(data.price) || BigInt(data.salePrice)>=BigInt(data.price)) errors.salePrice='Giá giảm phải nhỏ hơn giá bán.';
+    else if (BigInt(data.salePrice)<=0n) errors.salePrice='Giá giảm phải lớn hơn 0.';
   }
   if (data.negotiable!==undefined && typeof data.negotiable!=='boolean') errors.negotiable='Lựa chọn thương lượng không hợp lệ.';
   const location = data.location;

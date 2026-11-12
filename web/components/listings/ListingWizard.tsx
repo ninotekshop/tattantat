@@ -6,6 +6,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { ArrowLeft, ArrowRight, Check, CheckCircle2, Cloud, MapPin, ShieldCheck, FileText, AlertTriangle, Trash2, X, BadgeCheck, Lock, TriangleAlert, Sparkles } from 'lucide-react';
 import { readSession } from '../../lib/auth';
 import { memberRequest } from '../../lib/api';
+import { hasSale, OldPrice } from '../SalePrice';
 import { Listing, ListingCategory, ListingData, ListingError, ListingMedia, ListingSummary, Template, conditionLabels, listingPrice, listingRequest, priceLabels, publicData, validateListing, visible, looksLikeStreetAddress, DEFAULT_MIN_PRICE } from '../../lib/listings';
 import { CATEGORY_ENGINE_TAXONOMY, LISTING_INTENTS, ParentCategorySpec, SubCategorySpec, getCategoryPlaceholders } from '../../lib/marketplace';
 import { ALL_PROVINCES, removeAccents } from '../../lib/locations';
@@ -398,7 +399,7 @@ export function ListingWizard() {
         return;
       }
       if (selectedIntent === 'giveaway') {
-        patch({ priceMode: 'FREE', price: '0' });
+        patch({ priceMode: 'FREE', price: '0', salePrice: '' });
       }
       if (listing) setStep(1);
       else await begin();
@@ -421,7 +422,7 @@ export function ListingWizard() {
     }
 
     const all = validateListing(current.current, template, true);
-    const keys = step === 1 ? ['title', 'condition', 'description', 'values.'] : step === 2 ? ['images', 'videos'] : step === 3 ? ['price', 'priceMode', 'location'] : step === 4 ? ['contact'] : [];
+    const keys = step === 1 ? ['title', 'condition', 'description', 'values.'] : step === 2 ? ['images', 'videos'] : step === 3 ? ['price', 'salePrice', 'priceMode', 'location'] : step === 4 ? ['contact'] : [];
     const relevant = Object.fromEntries(
       Object.entries(all).filter(([k]) => keys.some(prefix => k === prefix || k.startsWith(prefix)) && !template.fields.some(f => k === 'values.' + f.key && ['image', 'video'].includes(f.type)))
     );
@@ -648,7 +649,7 @@ export function ListingWizard() {
                           type="button"
                           onClick={() => {
                             setSelectedIntent(intent.code);
-                            if (intent.code === 'giveaway') patch({ priceMode: 'FREE', price: '0' });
+                            if (intent.code === 'giveaway') patch({ priceMode: 'FREE', price: '0', salePrice: '' });
                           }}
                           style={{
                             background: selectedIntent === intent.code ? '#e0f6e9' : '#f8fafc',
@@ -851,7 +852,7 @@ export function ListingWizard() {
                   <div className="lf-fields-grid">
                     <div className="lf-field">
                       <label htmlFor="listing-price-mode">Cách tính giá</label>
-                      <select id="listing-price-mode" value={data.priceMode} onChange={e => patch({ priceMode: e.target.value })}>
+                      <select id="listing-price-mode" value={data.priceMode} onChange={e => patch({ priceMode: e.target.value, ...(['FREE', 'CONTACT'].includes(e.target.value) ? { salePrice: '' } : {}) })}>
                         {template.config.priceModes.map(mode => (
                           <option key={mode} value={mode}>{priceLabels[mode]}</option>
                         ))}
@@ -871,6 +872,21 @@ export function ListingWizard() {
                         />
                         {fieldError('price')}
                         <small>{listingPrice(data)} · Tối thiểu {(template.config.minPrice ?? DEFAULT_MIN_PRICE).toLocaleString('vi-VN')} đ{template.config.maxPrice ? ` · Tối đa ${template.config.maxPrice.toLocaleString('vi-VN')} đ` : ''}</small>
+                      </div>
+                    )}
+                    {!['FREE', 'CONTACT'].includes(data.priceMode ?? '') && (
+                      <div className="lf-field">
+                        <label htmlFor="listing-sale-price">Giá giảm (VND) <span style={{ fontWeight: 400, color: '#64748b' }}>- không bắt buộc</span></label>
+                        <input
+                          id="listing-sale-price"
+                          inputMode="numeric"
+                          maxLength={17}
+                          placeholder="Nhập giá giảm nếu muốn khuyến mại"
+                          value={String(data.salePrice ?? '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')}
+                          onChange={e => patch({ salePrice: e.target.value.replace(/[^0-9]/g, '').slice(0, 13) })}
+                        />
+                        {fieldError('salePrice')}
+                        <small>Nếu nhập, giá bán sẽ hiển thị gạch ngang và giá giảm hiển thị ngay bên dưới. Giá giảm phải nhỏ hơn giá bán.</small>
                       </div>
                     )}
                   </div>
@@ -1069,7 +1085,7 @@ export function ListingWizard() {
                     </div>
                     <p className="lf-eyebrow">{activeParent.label}{data.condition ? ' · ' + conditionLabels[data.condition] : ''}</p>
                     <h2>{data.title}</h2>
-                    <strong className="lf-price">{listingPrice(data)}</strong>
+                    {hasSale(data as any) && <OldPrice price={String(data.price)} />}<strong className="lf-price">{listingPrice(hasSale(data as any) ? { ...data, price: data.salePrice } : data)}</strong>
                     <p>
                       <MapPin size={15} />
                       {[previewData.location?.address, previewData.location?.ward, previewData.location?.district, previewData.location?.province].filter(Boolean).join(', ')}

@@ -8,6 +8,7 @@ import { useSearchParams } from 'next/navigation';
 import { ChevronLeft, ChevronRight, Flame, Filter, MapPin as MapPinIcon, Heart } from 'lucide-react';
 import { api, type Product } from '../../lib/api';
 import { VideoBadge } from '../../components/VideoBadge';
+import { hasSale, OldPrice } from '../../components/SalePrice';
 import { formatVnd, CATEGORY_ENGINE_TAXONOMY, LISTING_INTENTS, ParentCategorySpec, SubCategorySpec } from '../../lib/marketplace';
 
 /** Hàng cuộn ngang có nút mũi tên trái/phải để duyệt danh mục (ẩn khi đã ở đầu/cuối). */
@@ -81,7 +82,7 @@ function ProductCard({ product }: { product: Product }) {
         <Link href={'/products/' + product.id} style={{textDecoration:'none', color:'inherit'}}>
           <h3 className="card-title-full">{product.title}</h3>
           <div className="price-row">
-            <span className="price">{product.priceMode==='CONTACT' ? 'LIÊN HỆ' : product.priceMode==='FREE' ? 'TẶNG MIỄN PHÍ' : formatVnd(product.price)}</span>
+            {hasSale(product) && <OldPrice price={product.price} />}<span className="price">{product.priceMode==='CONTACT' ? 'LIÊN HỆ' : product.priceMode==='FREE' ? 'TẶNG MIỄN PHÍ' : formatVnd(hasSale(product) ? product.salePrice! : product.price)}</span>
           </div>
           <div className="location-row" style={{display:'flex', alignItems:'center', gap:4, color:'#64748b'}}>
             <MapPinIcon size={13} /> {product.location || 'Quy Nhơn'}

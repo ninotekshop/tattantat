@@ -14,6 +14,7 @@ import { formatVnd } from '../../../lib/marketplace';
 import { ProductTools } from '../../../components/vertical/ProductTools';
 import TrustBadge from '../../../components/TrustBadge';
 import './listing-detail.css';
+import { hasSale, OldPrice } from '../../../components/SalePrice';
 
 function formatCondition(condition?: string | null) {
   if (!condition) return 'Đã qua sử dụng (Tốt)';
@@ -367,8 +368,9 @@ export default function ProductDetailPage() {
                 <h1 className="detail-title">{product.title}</h1>
 
                 <div className="detail-price-box">
+                  {hasSale(product) && <OldPrice price={product.price} />}
                   <span className="detail-price">
-                    {product.priceMode === 'CONTACT' ? 'LIÊN HỆ' : product.priceMode === 'FREE' ? 'TẶNG MIỄN PHÍ' : formatVnd(product.price)}
+                    {product.priceMode === 'CONTACT' ? 'LIÊN HỆ' : product.priceMode === 'FREE' ? 'TẶNG MIỄN PHÍ' : formatVnd(hasSale(product) ? product.salePrice! : product.price)}
                   </span>
                   {(product as any).negotiable && <span className="nego-badge">Có thương lượng</span>}
                 </div>

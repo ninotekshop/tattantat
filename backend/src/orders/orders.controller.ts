@@ -81,7 +81,7 @@ export class OrdersController {
       // The row lock makes availability check + order creation atomic. A second
       // buyer will wait here, then see RESERVED rather than create a duplicate order.
       const product = await client.query<{ id: string; seller_id: string; title: string; price: string }>(
-        `SELECT id,seller_id,title,price::text FROM products p WHERE id=$1 AND status=$2 AND deleted_at IS NULL
+        `SELECT id,seller_id,title,COALESCE(sale_price,price)::text AS price FROM products p WHERE id=$1 AND status=$2 AND deleted_at IS NULL
          AND NOT EXISTS (SELECT 1 FROM user_blocks b WHERE (b.blocker_id=$3 AND b.blocked_id=p.seller_id) OR (b.blocked_id=$3 AND b.blocker_id=p.seller_id)) FOR UPDATE`,
         [body.productId, 'ACTIVE', request.user.id],
       );

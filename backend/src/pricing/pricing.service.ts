@@ -28,7 +28,7 @@ export class PricingService {
     if (shippingFee < 0n || paymentFee < 0n) throw new BadRequestException('Phí không được âm');
 
     const product = await this.db.query<{ price: string; listing_price_mode?: string }>(
-      'SELECT price::text,listing_price_mode FROM products WHERE id=$1 AND status=$2',
+      'SELECT COALESCE(sale_price,price)::text AS price,listing_price_mode FROM products WHERE id=$1 AND status=$2',
       [productId, 'ACTIVE'],
     );
     if (!product.rows[0]) throw new NotFoundException('Không tìm thấy sản phẩm đang bán');

@@ -13,6 +13,7 @@ import { listingPrice, type ListingSummary } from '../../lib/listings';
 import AddressBook from '../../components/AddressBook';
 import TrustBadge from '../../components/TrustBadge';
 import ReferralCard from '../../components/ReferralCard';
+import { hasSale, OldPrice } from '../../components/SalePrice';
 type Profile = { id: string; full_name: string; avatar_url?: string | null; email: string | null; phone: string | null; phone_verified: boolean };
 type Notice = { id: string; type?: string; title: string; content: string; is_read: boolean; created_at: string; reference_type: string; reference_id: string };
 type Block = { id: string; full_name: string };
@@ -114,7 +115,7 @@ function Account({ session }: { session: WebSession }) {
             <div className="ac-grid">{products.map(p => { const st = STATUS[p.status || ''] ?? { label: p.status || '', cls: 'mute' }; return <article className="ac-item" key={p.id}>
               <div className="ac-thumb">{p.imageUrl ? <img src={p.imageUrl} alt={p.title} loading="lazy" /> : <FileText size={30} />}<span className={'ac-chip ' + st.cls}>{st.label}</span></div>
               <div className="ac-item-b"><h3>{p.title}</h3>
-                <p className="ac-price">{listingPrice({ price: p.price.replace(/\.0+$/, ''), priceMode: p.priceMode || 'FIXED' })}</p>
+                <p className="ac-price">{hasSale(p) && <OldPrice price={p.price} />}{listingPrice({ price: (hasSale(p) ? p.salePrice! : p.price).replace(/\.0+$/, ''), priceMode: p.priceMode || 'FIXED' })}</p>
                 {p.postedAt && <p className="ac-date">Đăng {new Date(p.postedAt).toLocaleDateString('vi-VN')}</p>}
                 {p.status === 'REJECTED' && <p className="ac-hint">Hãy chỉnh sửa và gửi lại để được duyệt.</p>}
                 <div className="ac-actions">

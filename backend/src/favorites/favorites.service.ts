@@ -25,7 +25,7 @@ export class FavoritesService {
 
   async list(userId: string) {
     const result = await this.db.query<FavoriteProductRow>(
-      `SELECT p.id,p.title,p.price::text,p.address,p.created_at,p.description,p.condition,p.category_id,p.status::text,p.seller_id,p.listing_price_mode,(SELECT l.id FROM listings l WHERE l.product_id=p.id) AS listing_id,
+      `SELECT p.id,p.title,p.price::text,p.address,p.created_at,p.description,p.condition,p.category_id,p.status::text,p.seller_id,p.listing_price_mode, p.sale_price::text AS sale_price,(SELECT l.id FROM listings l WHERE l.product_id=p.id) AS listing_id,
               u.full_name AS seller_name,
               (SELECT url FROM product_images WHERE product_id=p.id ORDER BY sort_order LIMIT 1) AS image_url
        FROM favorites f JOIN products p ON p.id=f.product_id JOIN users u ON u.id=p.seller_id
@@ -62,7 +62,7 @@ export class FavoritesService {
   private payload(row: FavoriteProductRow) {
     return {
       id: row.id, title: row.title, price: row.price, location: (row.address ? (compactLocation(row.address) ?? convertAddress(row.address) ?? row.address) : null) ?? 'Chưa cập nhật',
-      sellerId: row.seller_id, priceMode: row.listing_price_mode ?? 'FIXED', listingId: row.listing_id,
+      sellerId: row.seller_id, priceMode: row.listing_price_mode ?? 'FIXED', salePrice: (row as any).sale_price ?? null, listingId: row.listing_id,
       postedAt: row.created_at, sellerName: row.seller_name, imageUrl: row.image_url ?? '',
       description: row.description, condition: row.condition, categoryId: row.category_id, status: row.status,
     };

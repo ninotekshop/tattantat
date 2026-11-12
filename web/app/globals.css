@@ -537,3 +537,6 @@ svg.lucide.lucide-trash-2, svg.lucide.lucide-triangle-alert, svg.lucide.lucide-f
 /* Hộp chọn Tỉnh/Thành phố: icon vị trí, quả cầu... dùng xanh tươi (không dùng xanh đậm/đen); trên nền xanh thì trắng */
 .location-modal-card svg.lucide { color: #00a65a; stroke: currentColor; }
 .location-modal-card .popular-chip:hover svg.lucide, .location-modal-card .popular-chip.active svg.lucide { color: #fff; }
+
+/* Giá giảm: giá gốc gạch ngang nằm trên giá giảm */
+.price-old { display: block; color: #94a3b8; font-size: 0.82em; font-weight: 500; text-decoration: line-through; line-height: 1.25; }

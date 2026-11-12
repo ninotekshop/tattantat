@@ -49,6 +49,8 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
 
   async onModuleInit() {
     // Ping định kỳ để kết nối tới DB không bị ngắt khi vắng người dùng (yêu cầu đầu tiên sẽ không phải bắt tay lại).
+    // Giá giảm của tin đăng (tuỳ chọn); phải có trước khi các truy vấn đọc cột này chạy.
+    try { await this.query('ALTER TABLE products ADD COLUMN IF NOT EXISTS sale_price NUMERIC(15,0)'); } catch (err: unknown) { console.warn('[DatabaseService] Chưa thêm được cột sale_price:', err instanceof Error ? err.message : String(err)); }
     this.ensurePerformanceIndexes();
     try { await this.query(`ALTER TYPE user_role ADD VALUE IF NOT EXISTS 'MOD'`); } catch (err: unknown) { console.warn('[DatabaseService] Chưa thêm được vai trò MOD:', err instanceof Error ? err.message : String(err)); }
     try {

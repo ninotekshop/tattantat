@@ -679,6 +679,7 @@ export class ListingsService {
       await this.checkMedia(client,id,row.data);
       const data=row.data;
       const price=['CONTACT','FREE'].includes(data.priceMode!)?'0':data.price!;
+      const salePrice=['CONTACT','FREE'].includes(data.priceMode!)||!data.salePrice?null:data.salePrice;
       const location=data.location!;
       const na=toNewAdmin(location.province,location.district,location.ward);
       const address=[...(location.hideExact!==false?[]:[location.address]),withNew(location.ward,na.ward),location.district,withNew(location.province,na.province)].filter(Boolean).join(', ');
@@ -692,13 +693,13 @@ export class ListingsService {
         const max=plan?plan.max:10;
         const count=(await client.query(`SELECT count(*)::integer AS count FROM products WHERE seller_id=$1 AND status IN ('DRAFT','PENDING_REVIEW','ACTIVE','RESERVED') AND deleted_at IS NULL`,[sellerId])).rows[0].count;
         if(max!==null&&count>=max) throw new BadRequestException('Bạn đã đạt giới hạn tin đăng của gói hiện tại.');
-        productId=(await client.query(`INSERT INTO products(seller_id,category_id,title,slug,description,price,condition,status,published_at,address,listing_price_mode,listing_negotiable)
-          VALUES($1,$2,$3,$4,$5,$6,$7::product_condition,$11::product_status,CASE WHEN $11='ACTIVE' THEN now() ELSE NULL END,$8,$9,$10) RETURNING id`,[sellerId,row.category_id,data.title!.trim(),'listing-'+id,data.description,price,data.condition??'NEW',address,data.priceMode,data.negotiable??false,nextStatus])).rows[0].id;
+        productId=(await client.query(`INSERT INTO products(seller_id,category_id,title,slug,description,price,condition,status,published_at,address,listing_price_mode,listing_negotiable,sale_price)
+          VALUES($1,$2,$3,$4,$5,$6,$7::product_condition,$11::product_status,CASE WHEN $11='ACTIVE' THEN now() ELSE NULL END,$8,$9,$10,$12) RETURNING id`,[sellerId,row.category_id,data.title!.trim(),'listing-'+id,data.description,price,data.condition??'NEW',address,data.priceMode,data.negotiable??false,nextStatus,salePrice])).rows[0].id;
       } else {
-        const updated=await client.query(`UPDATE products SET title=$3,description=$4,price=$5,condition=$6::product_condition,address=$7,listing_price_mode=$8,listing_negotiable=$9,updated_at=now(),
+        const updated=await client.query(`UPDATE products SET title=$3,description=$4,price=$5,condition=$6::product_condition,address=$7,listing_price_mode=$8,listing_negotiable=$9,sale_price=$11,updated_at=now(),
           status=(CASE WHEN status IN ('PENDING_REVIEW','REJECTED') THEN $10 WHEN status='ACTIVE' AND $10='PENDING_REVIEW' THEN 'PENDING_REVIEW' ELSE status::text END)::product_status,
           published_at=CASE WHEN status IN ('PENDING_REVIEW','REJECTED') AND $10='ACTIVE' THEN COALESCE(published_at,now()) ELSE published_at END
-          WHERE id=$1 AND seller_id=$2 AND status IN ('ACTIVE','HIDDEN','PENDING_REVIEW','REJECTED') AND deleted_at IS NULL RETURNING id, status::text AS status`,[productId,sellerId,data.title!.trim(),data.description,price,data.condition??'NEW',address,data.priceMode,data.negotiable??false,nextStatus]);
+          WHERE id=$1 AND seller_id=$2 AND status IN ('ACTIVE','HIDDEN','PENDING_REVIEW','REJECTED') AND deleted_at IS NULL RETURNING id, status::text AS status`,[productId,sellerId,data.title!.trim(),data.description,price,data.condition??'NEW',address,data.priceMode,data.negotiable??false,nextStatus,salePrice]);
         if(!updated.rows.length) throw new ConflictException('Tin đang có giao dịch hoặc không thể chỉnh sửa.');
         finalStatus=updated.rows[0].status;
       }

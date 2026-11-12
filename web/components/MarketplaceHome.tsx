@@ -18,6 +18,7 @@ import { useFavorites } from '../lib/favorites';
 import { CATEGORY_ENGINE_TAXONOMY } from '../lib/marketplace';
 import { LocationSelectorModal } from './LocationSelectorModal';
 import { LocationSelection, removeAccents } from '../lib/locations';
+import { hasSale, OldPrice } from './SalePrice';
 
 function formatVnd(val: string) {
   return parseInt(val || '0', 10).toLocaleString('vi-VN') + 'đ';
@@ -172,7 +173,7 @@ export function ProductCard({ product, viewMode = 'GRID_4' }: { product: Product
           <h3 className="card-title-full">{product.title}</h3>
           {metadataText && <div className="card-metadata">{metadataText}</div>}
           <div className="price-row">
-            <span className="price">{product.priceMode === 'CONTACT' ? 'LIÊN HỆ' : product.priceMode === 'FREE' ? 'TẶNG MIỄN PHÍ' : formatVnd(product.price)}</span>
+            {hasSale(product) && <OldPrice price={product.price} />}<span className="price">{product.priceMode === 'CONTACT' ? 'LIÊN HỆ' : product.priceMode === 'FREE' ? 'TẶNG MIỄN PHÍ' : formatVnd(hasSale(product) ? product.salePrice! : product.price)}</span>
           </div>
 
           <div className="location-row" style={{ display: 'flex', alignItems: 'center', gap: 5, color: '#64748b' }}>

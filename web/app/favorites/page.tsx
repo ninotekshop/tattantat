@@ -8,6 +8,7 @@ import { memberRequest, type Product } from '../../lib/api';
 import { useFavorites } from '../../lib/favorites';
 import { listingPrice } from '../../lib/listings';
 import { VideoBadge } from '../../components/VideoBadge';
+import { hasSale, OldPrice } from '../../components/SalePrice';
 
 type Sort = 'recent' | 'price-asc' | 'price-desc';
 const numericPrice = (p: Product) => (p.priceMode === 'CONTACT' || p.priceMode === 'FREE' ? 0 : Number(String(p.price).replace(/\.0+$/, '')) || 0);
@@ -98,7 +99,7 @@ function Favorites() {
               <button className="fav-remove" title="Bỏ yêu thích" aria-label={'Bỏ yêu thích: ' + p.title} disabled={busyId === p.id} onClick={() => void remove(p.id)}><Heart size={17} /></button>
               <div className="fav-body">
                 <Link className="fav-name" href={'/products/' + p.id}>{p.title}</Link>
-                <div className="fav-price">{listingPrice({ price: String(p.price).replace(/\.0+$/, ''), priceMode: p.priceMode || 'FIXED' })}</div>
+                <div className="fav-price">{hasSale(p) && <OldPrice price={p.price} />}{listingPrice({ price: String(hasSale(p) ? p.salePrice : p.price).replace(/\.0+$/, ''), priceMode: p.priceMode || 'FIXED' })}</div>
                 <div className="fav-meta"><MapPin size={14} /><span>{p.location || 'Chưa cập nhật'}</span></div>
                 <div className="fav-foot">
                   <Link className="fav-btn primary" href={'/messages?product=' + encodeURIComponent(p.id)}>Nhắn tin</Link>

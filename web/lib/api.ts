@@ -24,6 +24,7 @@ export type Product = {
   status?: string;
   listingId?: string | null;
   priceMode?: string;
+  salePrice?: string | null;
 };
 
 export type Category = { id: number; name: string; slug: string; icon_url?: string | null };
